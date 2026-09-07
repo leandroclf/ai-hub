@@ -32,6 +32,10 @@ type Command struct {
 	ProtocolID        string       `json:"protocol_id"`
 	StepID            string       `json:"step_id"`
 	CommandID         string       `json:"command_id"`
+	// TraceID correlaciona esta chamada ponta a ponta nos logs de
+	// Orbita/Cometa/Libra/Pulsar (nao e um span de tracing distribuido
+	// real — ver internal/platform/logging).
+	TraceID           string       `json:"trace_id,omitempty"`
 	DispatchMode      DispatchMode `json:"dispatch_mode"`
 	Epoch             int64        `json:"epoch"`
 	ServiceCode       string       `json:"service_code"`

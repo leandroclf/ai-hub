@@ -16,12 +16,14 @@ const placeholderProviderCost = 0.20
 
 type protocolFact struct {
 	ProtocolID string `json:"protocol_id"`
+	TraceID    string `json:"trace_id,omitempty"`
 	TenantID   string `json:"tenant_id"`
 	Status     string `json:"status"`
 }
 
 type operationFact struct {
 	ProtocolID        string `json:"protocol_id"`
+	TraceID           string `json:"trace_id,omitempty"`
 	ProviderAccountID string `json:"provider_account_id"`
 	Kind              string `json:"kind"`
 }
@@ -53,24 +55,29 @@ func RunRevenueConsumer(ctx context.Context, q *queue.Client, queueURL string, s
 }
 
 func handleProtocolFact(ctx context.Context, store *Store, atlas *atlasclient.Client, fact protocolFact, log *slog.Logger) {
+	log.Debug("libra: fato de protocolo recebido", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID, "status", fact.Status)
 	contract, err := atlas.Contract(ctx, fact.TenantID)
 	if err != nil {
-		log.Warn("libra: contrato nao encontrado para fato de protocolo", "tenant_id", fact.TenantID)
+		log.Warn("libra: contrato nao encontrado para fato de protocolo", "trace_id", fact.TraceID, "tenant_id", fact.TenantID)
 		return
 	}
 	switch fact.Status {
 	case "SUCCEEDED", "PARTIALLY_SUCCEEDED":
 		if err := store.RecordFact(ctx, fact.TenantID, fact.ProtocolID, "REVENUE", "product.success", contract.UnitPrice, "BRL"); err != nil {
-			log.Error("libra: falha ao registrar receita", "error", err)
+			log.Error("libra: falha ao registrar receita", "trace_id", fact.TraceID, "error", err)
+		} else {
+			log.Info("libra: receita registrada", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID, "amount", contract.UnitPrice)
 		}
 		if contract.StrictBalance {
 			_ = store.Capture(ctx, fact.ProtocolID)
+			log.Debug("libra: reserva capturada", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID)
 		}
 	default: // FAILED, EXPIRED, CANCELLED
 		// FIN-05: falha/expiracao nao gera receita do medidor de
 		// sucesso; reserva estrita (se existir) e liberada.
 		if contract.StrictBalance {
 			_ = store.Release(ctx, fact.ProtocolID)
+			log.Debug("libra: reserva liberada (sem sucesso)", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID)
 		}
 	}
 }
@@ -93,7 +100,9 @@ func RunCostConsumer(ctx context.Context, q *queue.Client, queueURL string, stor
 			var fact operationFact
 			if err := json.Unmarshal(m.Envelope.Payload, &fact); err == nil && fact.ProtocolID != "" && fact.Kind == "SUCCEEDED" {
 				if err := store.RecordFact(ctx, "", fact.ProtocolID, "COST", "provider.operation", placeholderProviderCost, "BRL"); err != nil {
-					log.Error("libra: falha ao registrar custo", "error", err)
+					log.Error("libra: falha ao registrar custo", "trace_id", fact.TraceID, "error", err)
+				} else {
+					log.Info("libra: custo registrado", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID, "amount", placeholderProviderCost)
 				}
 			}
 			_ = q.Delete(ctx, queueURL, m.ReceiptHandle)

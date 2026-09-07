@@ -1,10 +1,22 @@
 # Auditoria da implementação — Hub de Interoperabilidade "Constelação"
 
-**Data:** 6/7 de setembro de 2026. **Escopo:** implementação de código real (não apenas
-documentação) da fatia inicial definida em
-`openspec/changes/hub-interoperabilidade-v4/tasks.md`, a partir das specs em
+**Data:** 6/7 de setembro de 2026 (revisado e ampliado em 7 de setembro de 2026).
+**Escopo:** implementação de código real (não apenas documentação) da fatia inicial
+definida em `openspec/changes/hub-interoperabilidade-v4/tasks.md`, a partir das specs em
 `openspec/changes/hub-interoperabilidade-v4/specs/*/spec.md` e do `design.md` da mesma
 mudança. Código em `hub/`.
+
+**Documentos complementares desta revisão:**
+- `openspec/changes/hub-interoperabilidade-v4/TRACEABILITY.md` — revisão
+  requisito-a-requisito de **todos os 98 itens** do OpenSpec contra o código real
+  (não apenas um resumo qualitativo como este documento): 23 ✅ implementados e
+  testados, 45 ⚠️ parciais, 25 ❌ não implementados, 5 📄 documentais/decisão.
+- `hub/evidence/EVIDENCE.md` — evidência de execução real capturada diretamente do
+  banco de dados (hub_control/hub_core/hub_finance), das filas SQS/tópicos SNS
+  (incluindo uma demonstração real de acúmulo/drenagem de mensagem), do S3, dos logs
+  (INFO/DEBUG/WARN/ERROR, com correlação por `trace_id`) e de capturas de tela do
+  admin-ui e do Swagger UI, com catálogo configurado para provedores síncronos e
+  assíncronos (polling e callback).
 
 ## Como ler este documento
 
@@ -124,6 +136,23 @@ manuais desta sessão:
 
 Script de init do Postgres também precisou de correção (conectar a `-d postgres` em vez
 do banco default do usuário, que não existe até a primeira criação).
+
+**Achados adicionais desta revisão** (não corrigidos — registrados para trabalho
+futuro; detalhe em `hub/evidence/EVIDENCE.md`):
+
+6. **Erro de credencial mal atribuído em comando QUEUED tardio**: se um comando
+   ASYNC/AUTO é processado pelo Cometa depois que o protocolo já expirou por SLA, o
+   `context.WithDeadline` herdado do `step_deadline` já está vencido; a chamada de
+   resolução de credencial ao Atlas falha por "context deadline exceeded" e é
+   classificada como `credential_unavailable`. Nenhum efeito inseguro resulta disso
+   (nenhuma chamada ao provedor, nenhum sucesso tardio publicado), mas a causa raiz
+   real é o deadline vencido, não a credencial — o código/mensagem de erro é
+   impreciso nesse caso específico.
+7. **Tabela `inbox` confirmada vazia em uso real**: existe no schema (COM-03) mas
+   nenhum consumidor (Cometa, Órbita, Libra, Pulsar) a utiliza para deduplicar
+   `event_id`; a deduplicação efetiva depende de chaves específicas de cada domínio
+   (idempotency_key, command_id, `(protocol_id, kind, meter)`), não de um mecanismo
+   genérico de inbox.
 
 ## Simplificações e placeholders assumidos (por decisão explícita, não por descuido)
 

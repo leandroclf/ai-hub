@@ -103,6 +103,13 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// trace_id correlaciona esta admissao ponta a ponta nos logs de
+	// Orbita/Cometa/Libra/Pulsar (correlacao por log, nao span de
+	// tracing distribuido real — ver internal/platform/logging).
+	traceID := idgen.New()
+	w.Header().Set("X-Trace-Id", traceID)
+	h.log.Info("admissao recebida", "trace_id", traceID, "tenant_id", tenantID, "idempotency_key", idempotencyKey)
+
 	var req CreateRequest
 	rawBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -125,6 +132,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 	canon, _ := json.Marshal(req)
 	sum := sha256.Sum256(canon)
 	requestHash := hex.EncodeToString(sum[:])
+	h.log.Debug("hash de idempotencia calculado", "trace_id", traceID, "request_hash", requestHash, "mode", mode)
 
 	ctx := r.Context()
 
@@ -183,7 +191,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 				reason = "limite estrito do tenant excedido"
 			}
 			body := FinalBody{ProtocolID: protocolID, ErrorCode: "STRICT_BALANCE_UNAVAILABLE", ErrorMessage: reason}
-			_, _ = h.finalizer.Finalize(ctx, tenantID, protocolID, 0, StatusFailed, body, "STRICT_BALANCE_UNAVAILABLE")
+			_, _ = h.finalizer.Finalize(ctx, traceID, tenantID, protocolID, 0, StatusFailed, body, "STRICT_BALANCE_UNAVAILABLE")
 			writeErr(w, http.StatusPaymentRequired, "strict_balance_unavailable", reason)
 			return
 		}
@@ -191,9 +199,11 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 
 	cmd := dispatch.Command{
 		TenantID: tenantID, ProtocolID: protocolID, StepID: protocolID, CommandID: commandID,
-		DispatchMode: dispatchMode, Epoch: 1, ServiceCode: req.ServiceCode, ServiceVersion: req.ServiceVersion,
+		TraceID: traceID, DispatchMode: dispatchMode, Epoch: 1, ServiceCode: req.ServiceCode, ServiceVersion: req.ServiceVersion,
 		ProviderAccountID: req.ProviderAccountID, RequestBody: req.Input, StepDeadline: clientDeadline,
 	}
+	h.log.Debug("comando de despacho construido", "trace_id", traceID, "protocol_id", protocolID,
+		"command_id", commandID, "dispatch_mode", dispatchMode, "provider_account_id", req.ProviderAccountID)
 
 	if mode == "SYNC" {
 		h.handleSyncDispatch(w, r, tenantID, protocolID, commandID, cmd)
@@ -242,7 +252,7 @@ func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, te
 		status = StatusSucceeded
 	}
 	body := FinalBody{ProtocolID: protocolID, Result: result.ResponseBody, ErrorCode: result.ErrorCode, ErrorMessage: result.ErrorMessage}
-	applied, err := h.finalizer.Finalize(r.Context(), tenantID, protocolID, current.Version, status, body, "")
+	applied, err := h.finalizer.Finalize(r.Context(), cmd.TraceID, tenantID, protocolID, current.Version, status, body, "")
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
 		return

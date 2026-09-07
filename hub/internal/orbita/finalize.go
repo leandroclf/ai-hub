@@ -25,6 +25,7 @@ type FinalBody struct {
 // (webhook) e Libra (receita), conforme COM-01.
 type ProtocolFinalizedFact struct {
 	ProtocolID string    `json:"protocol_id"`
+	TraceID    string    `json:"trace_id,omitempty"`
 	TenantID   string    `json:"tenant_id"`
 	Status     string    `json:"status"`
 	FinalBody  FinalBody `json:"final_body"`
@@ -46,7 +47,7 @@ func NewFinalizer(store *Store, log *slog.Logger) *Finalizer {
 // Finalize tenta a transicao terminal; retorna false se o protocolo ja
 // havia sido finalizado por outro caminho (ex.: deadline concorrente),
 // preservando a regra de uma unica transicao terminal serializavel.
-func (f *Finalizer) Finalize(ctx context.Context, tenantID, protocolID string, expectedVersion int, status Status, body FinalBody, reason string) (bool, error) {
+func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID string, expectedVersion int, status Status, body FinalBody, reason string) (bool, error) {
 	eventID := idgen.New()
 	body.Status = string(status)
 
@@ -54,14 +55,16 @@ func (f *Finalizer) Finalize(ctx context.Context, tenantID, protocolID string, e
 		ProtocolID: protocolID, ExpectedVersion: expectedVersion, Status: status,
 		FinalBody: body, TerminalReason: reason, FinalEventID: eventID,
 	}, func(tx *sqlTx) error {
-		fact := ProtocolFinalizedFact{ProtocolID: protocolID, TenantID: tenantID, Status: string(status), FinalBody: body, EventID: eventID}
+		fact := ProtocolFinalizedFact{ProtocolID: protocolID, TraceID: traceID, TenantID: tenantID, Status: string(status), FinalBody: body, EventID: eventID}
 		return outbox.Enqueue(ctx, tx.Tx(), "protocol", protocolID, "protocol.finalized", fact)
 	})
 	if err != nil {
 		return false, err
 	}
 	if !applied {
-		f.log.Info("finalizacao ignorada: protocolo ja possuia transicao terminal", "protocol_id", protocolID)
+		f.log.Info("finalizacao ignorada: protocolo ja possuia transicao terminal", "trace_id", traceID, "protocol_id", protocolID)
+		return false, nil
 	}
+	f.log.Info("protocolo finalizado", "trace_id", traceID, "protocol_id", protocolID, "status", status, "reason", reason)
 	return applied, nil
 }

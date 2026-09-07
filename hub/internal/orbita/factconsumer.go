@@ -10,6 +10,7 @@ import (
 
 type operationFact struct {
 	ProtocolID   string `json:"protocol_id"`
+	TraceID      string `json:"trace_id,omitempty"`
 	Kind         string `json:"kind"`
 	ResponseBody any    `json:"response_body,omitempty"`
 	ErrorMessage string `json:"error_message,omitempty"`
@@ -42,12 +43,14 @@ func RunOperationFactConsumer(ctx context.Context, q *queue.Client, queueURL str
 			if fact.Kind == "UNKNOWN" || fact.ProtocolID == "" {
 				// Ainda pendente/incerto: nao finaliza; deixa para
 				// reconciliacao ou proxima observacao (EXE-09).
+				log.Debug("fact consumer: fato UNKNOWN/incompleto, aguardando proxima observacao", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID)
 				_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
 				continue
 			}
+			log.Debug("fact consumer: fato de operacao recebido", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID, "kind", fact.Kind)
 			p, err := store.GetByID(ctx, fact.ProtocolID)
 			if err != nil {
-				log.Warn("fact consumer: protocolo desconhecido para fato recebido", "protocol_id", fact.ProtocolID)
+				log.Warn("fact consumer: protocolo desconhecido para fato recebido", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID)
 				_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
 				continue
 			}
@@ -57,8 +60,8 @@ func RunOperationFactConsumer(ctx context.Context, q *queue.Client, queueURL str
 					status = StatusSucceeded
 				}
 				body := FinalBody{ProtocolID: fact.ProtocolID, Result: fact.ResponseBody, ErrorMessage: fact.ErrorMessage}
-				if _, err := finalizer.Finalize(ctx, p.TenantID, fact.ProtocolID, p.Version, status, body, ""); err != nil {
-					log.Error("fact consumer: falha ao finalizar protocolo", "error", err, "protocol_id", fact.ProtocolID)
+				if _, err := finalizer.Finalize(ctx, fact.TraceID, p.TenantID, fact.ProtocolID, p.Version, status, body, ""); err != nil {
+					log.Error("fact consumer: falha ao finalizar protocolo", "trace_id", fact.TraceID, "error", err, "protocol_id", fact.ProtocolID)
 				}
 			}
 			// Ack somente apos a finalizacao (ou decisao de ignorar)

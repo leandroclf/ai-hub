@@ -46,6 +46,7 @@ type Envelope struct {
 	OccurredAt        time.Time       `json:"occurred_at"`
 	RecordedAt        time.Time       `json:"recorded_at"`
 	CausationID       string          `json:"causation_id,omitempty"`
+	TraceID           string          `json:"trace_id,omitempty"`
 	AggregateVersion  int             `json:"aggregate_version"`
 	ConfigVersions     map[string]string `json:"config_versions,omitempty"`
 	Payload           json.RawMessage `json:"payload"`

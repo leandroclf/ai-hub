@@ -30,7 +30,7 @@ func RunDeadlineTimer(ctx context.Context, store *Store, finalizer *Finalizer, i
 					ErrorCode:    "SLA_EXCEEDED",
 					ErrorMessage: "prazo do cliente esgotado antes da conclusao (EXE-11)",
 				}
-				applied, err := finalizer.Finalize(ctx, d.TenantID, d.ProtocolID, d.Version, StatusExpired, body, "SLA_EXCEEDED")
+				applied, err := finalizer.Finalize(ctx, "", d.TenantID, d.ProtocolID, d.Version, StatusExpired, body, "SLA_EXCEEDED")
 				if err != nil {
 					log.Error("deadline timer: falha ao finalizar por expiracao", "error", err, "protocol_id", d.ProtocolID)
 					continue

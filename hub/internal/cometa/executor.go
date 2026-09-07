@@ -22,6 +22,7 @@ import (
 // Orbita (para finalizar protocolos ASYNC) e por Libra (para custo).
 type OperationFact struct {
 	ProtocolID        string   `json:"protocol_id"`
+	TraceID           string   `json:"trace_id,omitempty"`
 	OperationID       string   `json:"operation_id"`
 	ProviderAccountID string   `json:"provider_account_id"`
 	ProviderRequestID string   `json:"provider_request_id,omitempty"`
@@ -60,6 +61,8 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	// reentrega de transporte/mensagem idempotente: uma operacao ja
 	// criada para este command_id nunca e reenviada ao provedor.
 	operationID := cmd.CommandID
+	e.log.Debug("comando recebido para execucao", "trace_id", cmd.TraceID, "protocol_id", cmd.ProtocolID,
+		"operation_id", operationID, "dispatch_mode", cmd.DispatchMode, "provider_account_id", cmd.ProviderAccountID)
 	if existing, err := e.store.Get(ctx, operationID); err == nil {
 		switch existing.State {
 		case StateSucceeded, StateFailed:
@@ -78,6 +81,8 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	cred, err := e.atlas.ResolveCredential(ctx, cmd.TenantID, cmd.ProviderAccountID)
 	if err != nil {
 		// SEG-05: sem fallback implicito. Recusa antes do envio.
+		e.log.Warn("credencial indisponivel, recusando antes do envio (SEG-05)", "trace_id", cmd.TraceID,
+			"tenant_id", cmd.TenantID, "provider_account_id", cmd.ProviderAccountID, "error", err)
 		_ = e.store.CreateOperation(ctx, Operation{
 			OperationID: operationID, ProtocolID: cmd.ProtocolID,
 			ProviderAccountID: cmd.ProviderAccountID, State: StateFailed,
@@ -87,6 +92,8 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 			Kind: dispatch.FactRejected, ErrorCode: "credential_unavailable", ErrorMessage: err.Error(),
 		}
 	}
+	e.log.Debug("credencial resolvida (SEG-05)", "trace_id", cmd.TraceID, "binding_id", cred.BindingID,
+		"credential_mode", cred.CredentialMode, "settlement_party", cred.SettlementParty)
 
 	if err := e.store.CreateOperation(ctx, Operation{
 		OperationID:         operationID,
@@ -120,6 +127,9 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	if pa.ProviderMode == string(providersim.ModeAsyncCallback) {
 		req.CallbackURL = e.callbackURLFor(operationID)
 	}
+
+	e.log.Debug("enviando chamada ao provedor", "trace_id", cmd.TraceID, "operation_id", operationID,
+		"provider_base_url", pa.BaseURL, "provider_mode", pa.ProviderMode, "attempt_id", attemptID)
 
 	body, _ := json.Marshal(req)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, pa.BaseURL+"/v1/operations", bytes.NewReader(body))
@@ -180,12 +190,14 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	_ = e.store.ClearPolling(ctx, operationID)
 
 	fact := OperationFact{
-		ProtocolID: cmd.ProtocolID, OperationID: operationID,
+		ProtocolID: cmd.ProtocolID, TraceID: cmd.TraceID, OperationID: operationID,
 		ProviderAccountID: cmd.ProviderAccountID, ProviderRequestID: result.ProviderRequestID,
 		Kind: string(kind), ResponseBody: cmd.RequestBody, ErrorMessage: result.Detail,
 	}
+	e.log.Info("operacao finalizada", "trace_id", cmd.TraceID, "protocol_id", cmd.ProtocolID,
+		"operation_id", operationID, "kind", kind)
 	if err := e.publishOperationFact(ctx, operationID, fact); err != nil {
-		e.log.Error("falha ao publicar fato de operacao na outbox", "error", err)
+		e.log.Error("falha ao publicar fato de operacao na outbox", "trace_id", cmd.TraceID, "error", err)
 	}
 
 	return dispatch.Result{
