@@ -60,6 +60,21 @@ exercitada de forma automatizada por `screenshots/validate.mjs`; todas as telas
 existentes e o Swagger passaram. O endpoint `/metrics` passou a contar requisições por
 método/status sem usar IDs de negócio como labels.
 
+## Auditoria de logs e correção do PostgreSQL
+
+Foi coletado o log de todos os containers. O padrão `FATAL: database "hub" does not
+exist` teve origem no healthcheck `pg_isready -U hub`, que omitia o banco bootstrap.
+O Compose foi corrigido para `pg_isready -U hub -d postgres`, o PostgreSQL foi recriado
+sem remover o volume e os serviços foram reiniciados de forma ordenada. A evidência
+completa está em `logs/all_containers_final.log` e
+`reports/container_log_audit_2026-09-07.md`.
+
+Durante a substituição forçada foram registrados quatro erros transitórios de
+reconexão (DNS/connection refused) nos loops do Pulsar, Órbita e Cometa. Após a
+estabilização, a janela limpa de 30 segundos teve zero `FATAL`, `ERROR`, `WARN`,
+`panic` ou `exception`; todos os healthchecks responderam com sucesso e a nova rodada
+de e2e/S3/multi-cliente passou.
+
 ## Configuração de catálogo (serviços e provedores síncronos/assíncronos)
 
 `hub/deploy/seed/seed.sh` (executado contra a stack real, saída completa em

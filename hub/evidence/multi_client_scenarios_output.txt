@@ -18,9 +18,9 @@
 HTTP 200
 
 ### tenant=cliente-alpha provider=prov-poll-1 mode=ASYNC service=protocolo-publico
-{"mode":"ASYNC","protocol_id":"01a079e9-bc50-71c1-9937-092b89b9954e","result_version":0,"status":"ACCEPTED"}
+{"final_body":{"error_message":"simulado","protocol_id":"01a079e9-bc50-71c1-9937-092b89b9954e","result_version":0,"status":"SUCCEEDED"},"mode":"ASYNC","protocol_id":"01a079e9-bc50-71c1-9937-092b89b9954e","result_version":1,"status":"SUCCEEDED"}
 
-HTTP 202
+HTTP 200
 
 ### tenant=cliente-beta provider=prov-sync-1 mode=SYNC service=consulta-cadastral-publica
 {"final_body":{"protocol_id":"01a079e9-bc60-7e81-9195-e1744054d73c","result":{"cpf":"22222222222"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a079e9-bc60-7e81-9195-e1744054d73c","result_version":1,"status":"SUCCEEDED"}
@@ -28,14 +28,14 @@ HTTP 202
 HTTP 200
 
 ### tenant=cliente-beta provider=prov-poll-2 mode=ASYNC service=protocolo-publico
-{"mode":"ASYNC","protocol_id":"01a079e9-bc7f-75bf-9d7e-15ab06319932","result_version":0,"status":"ACCEPTED"}
+{"final_body":{"error_message":"simulado","protocol_id":"01a079e9-bc7f-75bf-9d7e-15ab06319932","result_version":0,"status":"SUCCEEDED"},"mode":"ASYNC","protocol_id":"01a079e9-bc7f-75bf-9d7e-15ab06319932","result_version":1,"status":"SUCCEEDED"}
 
-HTTP 202
+HTTP 200
 
 ### tenant=cliente-gamma provider=prov-callback-1 mode=ASYNC service=protocolo-publico
-{"mode":"ASYNC","protocol_id":"01a079e9-bc8d-7c25-bfc4-a3895f85bd9f","result_version":0,"status":"ACCEPTED"}
+{"final_body":{"error_message":"simulado","protocol_id":"01a079e9-bc8d-7c25-bfc4-a3895f85bd9f","result_version":0,"status":"SUCCEEDED"},"mode":"ASYNC","protocol_id":"01a079e9-bc8d-7c25-bfc4-a3895f85bd9f","result_version":1,"status":"SUCCEEDED"}
 
-HTTP 202
+HTTP 200
 
 ### tenant=cliente-gamma provider=prov-sync-1 mode=SYNC service=consulta-cadastral-publica
 {"final_body":{"protocol_id":"01a079e9-bc9c-774c-99db-7f30aa9ee345","result":{"force_fail":true},"result_version":0,"status":"FAILED"},"mode":"SYNC","protocol_id":"01a079e9-bc9c-774c-99db-7f30aa9ee345","result_version":1,"status":"FAILED"}
@@ -43,5 +43,6 @@ HTTP 202
 HTTP 200
 
 ### metricas
+http_requests_total{method="POST",status="OK"} 6
 
 cenarios concluidos

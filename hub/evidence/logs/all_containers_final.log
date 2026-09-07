@@ -1,0 +1,136 @@
+pulsar-1        | {"time":"2026-09-07T11:11:07.62319063Z","level":"ERROR","msg":"pulsar: falha ao buscar entregas devidas","component":"pulsar","error":"pulsar: buscar entregas devidas: dial tcp: lookup postgres on 127.0.0.11:53: no such host"}
+pulsar-1        | {"time":"2026-09-07T11:11:32.681569091Z","level":"INFO","msg":"http_request","component":"pulsar","method":"GET","path":"/healthz/ready","status":200,"duration_ms":0}
+pulsar-1        | {"time":"2026-09-07T11:11:47.574441501Z","level":"INFO","msg":"http server starting","component":"pulsar","addr":":8083"}
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:11:11:32 +0000] "GET / HTTP/1.1" 200 734 "-" "curl/8.5.0" "-"
+libra-1         | {"time":"2026-09-07T11:11:32.69492167Z","level":"INFO","msg":"http_request","component":"libra","method":"GET","path":"/healthz/ready","status":200,"duration_ms":5}
+libra-1         | {"time":"2026-09-07T11:11:47.716177422Z","level":"INFO","msg":"http server starting","component":"libra","addr":":8084"}
+cometa-1        | {"time":"2026-09-07T11:11:07.387389339Z","level":"ERROR","msg":"outbox: falha ao buscar pendentes","component":"cometa","error":"outbox: buscar pendentes: dial tcp 172.18.0.3:5432: connect: connection refused","aggregate_type":"operation"}
+cometa-1        | {"time":"2026-09-07T11:11:32.67367053Z","level":"INFO","msg":"http_request","component":"cometa","method":"GET","path":"/healthz/ready","status":200,"duration_ms":0}
+cometa-1        | {"time":"2026-09-07T11:11:47.627993531Z","level":"INFO","msg":"http server starting","component":"cometa","addr":":8082"}
+provider-sim-1  | {"time":"2026-09-07T11:11:32.702223382Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"GET","path":"/healthz/ready","status":200,"duration_ms":0}
+kong-1          | 172.18.0.1 - - [07/Sep/2026:11:11:32 +0000] "GET /status HTTP/1.1" 200 1810 "-" "curl/8.5.0"
+postgres-1      | 
+postgres-1      | PostgreSQL Database directory appears to contain a database; Skipping initialization
+postgres-1      | 
+postgres-1      | 2026-09-07 11:11:07.931 UTC [1] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit
+postgres-1      | 2026-09-07 11:11:07.931 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+postgres-1      | 2026-09-07 11:11:07.931 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+postgres-1      | 2026-09-07 11:11:07.936 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+postgres-1      | 2026-09-07 11:11:07.944 UTC [29] LOG:  database system was shut down at 2026-09-07 11:11:07 UTC
+postgres-1      | 2026-09-07 11:11:07.951 UTC [1] LOG:  database system is ready to accept connections
+orbita-1        | {"time":"2026-09-07T11:11:07.42582935Z","level":"ERROR","msg":"deadline timer: falha ao buscar protocolos vencidos","component":"orbita","error":"orbita: buscar deadlines vencidos: dial tcp 172.18.0.3:5432: connect: connection refused"}
+orbita-1        | {"time":"2026-09-07T11:11:07.425832136Z","level":"ERROR","msg":"outbox: falha ao buscar pendentes","component":"orbita","error":"outbox: buscar pendentes: dial tcp 172.18.0.3:5432: connect: connection refused","aggregate_type":"protocol"}
+orbita-1        | {"time":"2026-09-07T11:11:32.638565972Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/healthz/ready","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T11:11:47.60290752Z","level":"INFO","msg":"http server starting","component":"orbita","addr":":8080"}
+orbita-1        | {"time":"2026-09-07T11:12:07.510177562Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07b91-7d56-7215-994e-4765bd12cdb2","tenant_id":"cliente-alpha","idempotency_key":"multi-alpha-sync"}
+orbita-1        | {"time":"2026-09-07T11:12:07.510340989Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07b91-7d56-7215-994e-4765bd12cdb2","request_hash":"73e1a5a51a4956f0b4ab5b87adc436847c68ff5bca4dffb7ee0dd63f278277dd","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T11:12:07.511008431Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T11:12:07.519526954Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07b91-7d5f-77f3-8d3b-18c85d3e7c56","tenant_id":"cliente-alpha","idempotency_key":"multi-alpha-poll"}
+orbita-1        | {"time":"2026-09-07T11:12:07.519585995Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07b91-7d5f-77f3-8d3b-18c85d3e7c56","request_hash":"853ca1a73cf584d5a45e824014a13d97d2101787316c453b95fa28722c674fbf","mode":"ASYNC"}
+orbita-1        | {"time":"2026-09-07T11:12:07.520273053Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T11:12:07.530240043Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07b91-7d6a-7394-a828-58eb419388c5","tenant_id":"cliente-beta","idempotency_key":"multi-beta-sync"}
+orbita-1        | {"time":"2026-09-07T11:12:07.530300978Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07b91-7d6a-7394-a828-58eb419388c5","request_hash":"d6dda812571c2d0557a9d26bf672b1e75418ffdf846763716345a4d5427c0cec","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T11:12:07.531022571Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T11:12:07.554095447Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07b91-7d82-70f5-90fb-f5501120756d","tenant_id":"cliente-beta","idempotency_key":"multi-beta-poll"}
+orbita-1        | {"time":"2026-09-07T11:12:07.554307805Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07b91-7d82-70f5-90fb-f5501120756d","request_hash":"1c6f0140436f12371468d88be6f75c4633fec4142949db6576efd7617b2b5130","mode":"ASYNC"}
+orbita-1        | {"time":"2026-09-07T11:12:07.55579295Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":1}
+orbita-1        | {"time":"2026-09-07T11:12:07.569322931Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07b91-7d91-74d6-a0c8-52e366417bc4","tenant_id":"cliente-gamma","idempotency_key":"multi-gamma-callback"}
+orbita-1        | {"time":"2026-09-07T11:12:07.569395978Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07b91-7d91-74d6-a0c8-52e366417bc4","request_hash":"872a6e3bef81da3e6214c6033bd09012c4ecef99f32c2b01d6e5cc6f9d0c8f00","mode":"ASYNC"}
+orbita-1        | {"time":"2026-09-07T11:12:07.570044494Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T11:12:07.583638836Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07b91-7d9f-79a3-a936-ac6b6ab299b1","tenant_id":"cliente-gamma","idempotency_key":"multi-gamma-fail"}
+orbita-1        | {"time":"2026-09-07T11:12:07.583714337Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07b91-7d9f-79a3-a936-ac6b6ab299b1","request_hash":"3dc5304e2f7f1c3f57afd8171ee8639999399558611e5441025cee2f2efe6398","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T11:12:07.584833857Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":1}
+orbita-1        | {"time":"2026-09-07T11:12:10.596631144Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/metrics","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T11:11:32.665453522Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/healthz/ready","status":200,"duration_ms":19}
+atlas-1         | {"time":"2026-09-07T11:11:47.640184381Z","level":"INFO","msg":"http server starting","component":"atlas","addr":":8081"}
+atlas-1         | {"time":"2026-09-07T11:12:07.435493576Z","level":"INFO","msg":"http_request","component":"atlas","method":"POST","path":"/v1/services","status":201,"duration_ms":29}
+atlas-1         | {"time":"2026-09-07T11:12:07.446532616Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/services/consulta-cadastral-publica/1","status":200,"duration_ms":3}
+atlas-1         | {"time":"2026-09-07T11:12:07.461051943Z","level":"INFO","msg":"http_request","component":"atlas","method":"POST","path":"/v1/services","status":201,"duration_ms":4}
+atlas-1         | {"time":"2026-09-07T11:12:07.470108275Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/services/protocolo-publico/1","status":200,"duration_ms":1}
+atlas-1         | {"time":"2026-09-07T11:12:07.483921418Z","level":"INFO","msg":"http_request","component":"atlas","method":"POST","path":"/v1/contracts","status":201,"duration_ms":4}
+atlas-1         | {"time":"2026-09-07T11:12:07.493006463Z","level":"INFO","msg":"http_request","component":"atlas","method":"POST","path":"/v1/contracts","status":201,"duration_ms":1}
+atlas-1         | {"time":"2026-09-07T11:12:07.502353972Z","level":"INFO","msg":"http_request","component":"atlas","method":"POST","path":"/v1/contracts","status":201,"duration_ms":2}
+localstack-1    | 2026-09-07T11:10:36.978  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:38.246  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:39.827  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:39.830  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:39.830  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:46.981  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:48.249  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:49.831  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:49.832  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:49.833  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:56.984  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:58.252  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:59.834  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:59.836  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:10:59.837  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:06.987  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:08.255  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:09.837  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:09.839  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:09.840  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:16.990  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:18.258  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:19.840  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:19.842  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:19.842  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:26.994  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:28.262  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:29.844  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:29.845  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:29.846  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:36.998  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:38.265  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:39.849  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:39.850  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:39.850  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:47.002  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:47.562  INFO --- [et.reactor-9] localstack.request.aws     : AWS sns.CreateTopic => 200
+localstack-1    | 2026-09-07T11:11:47.565  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.CreateQueue => 200
+localstack-1    | 2026-09-07T11:11:47.567  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.GetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.571  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.SetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.573  INFO --- [t.reactor-11] localstack.request.aws     : AWS sns.Subscribe => 200
+localstack-1    | 2026-09-07T11:11:47.586  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.CreateQueue => 200
+localstack-1    | 2026-09-07T11:11:47.589  INFO --- [et.reactor-1] localstack.request.aws     : AWS sns.CreateTopic => 200
+localstack-1    | 2026-09-07T11:11:47.592  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.CreateQueue => 200
+localstack-1    | 2026-09-07T11:11:47.594  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.GetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.597  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.SetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.599  INFO --- [et.reactor-8] localstack.request.aws     : AWS sns.Subscribe => 200
+localstack-1    | 2026-09-07T11:11:47.602  INFO --- [t.reactor-11] localstack.request.aws     : AWS sns.CreateTopic => 200
+localstack-1    | 2026-09-07T11:11:47.623  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.CreateQueue => 200
+localstack-1    | 2026-09-07T11:11:47.627  INFO --- [et.reactor-9] localstack.request.aws     : AWS sns.CreateTopic => 200
+localstack-1    | 2026-09-07T11:11:47.696  INFO --- [et.reactor-5] localstack.request.aws     : AWS sns.CreateTopic => 200
+localstack-1    | 2026-09-07T11:11:47.699  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.CreateQueue => 200
+localstack-1    | 2026-09-07T11:11:47.701  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.GetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.703  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.SetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.705  INFO --- [et.reactor-9] localstack.request.aws     : AWS sns.Subscribe => 200
+localstack-1    | 2026-09-07T11:11:47.708  INFO --- [et.reactor-5] localstack.request.aws     : AWS sns.CreateTopic => 200
+localstack-1    | 2026-09-07T11:11:47.709  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.CreateQueue => 200
+localstack-1    | 2026-09-07T11:11:47.711  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.GetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.713  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.SetQueueAttributes => 200
+localstack-1    | 2026-09-07T11:11:47.715  INFO --- [et.reactor-9] localstack.request.aws     : AWS sns.Subscribe => 200
+localstack-1    | 2026-09-07T11:11:48.269  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:49.853  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:49.854  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:49.854  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:57.577  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:57.605  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:57.631  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:57.719  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:11:57.721  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:07.580  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:07.607  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:07.634  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:07.724  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:07.725  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:17.585  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:17.610  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:17.637  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:17.727  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:17.728  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:27.588  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:27.614  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:27.640  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:27.730  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T11:12:27.731  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
