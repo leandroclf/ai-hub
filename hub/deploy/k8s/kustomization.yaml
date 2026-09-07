@@ -1,0 +1,21 @@
+# Agrega os manifests de REFERENCIA dos 5 servicos de negocio do Hub de
+# Interoperabilidade. NAO aplicado a nenhum cluster (ver README.md desta
+# pasta). provider-sim e webhook-sink (docker-compose) sao utilitarios de
+# teste local e propositalmente NAO tem manifest aqui.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# PLACEHOLDER: namespace unico de referencia. Isolamento real por
+# celula/tenant (OPE-08) e a estrategia de namespace por ambiente/celula
+# dependem de P-11 - nao decidido neste arquivo.
+namespace: hub
+
+commonLabels:
+  app.kubernetes.io/part-of: hub-interoperabilidade
+
+resources:
+  - atlas.yaml
+  - orbita.yaml
+  - cometa.yaml
+  - pulsar.yaml
+  - libra.yaml

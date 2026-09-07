@@ -1,0 +1,204 @@
+# Manifest de REFERENCIA para o Pulsar (entrega de webhooks/callbacks ao
+# cliente, retry ate EXHAUSTED, porta 8083). Worker de fila.
+#
+# NAO APLICADO a nenhum cluster real (ver hub/deploy/k8s/README.md). Ver
+# atlas.yaml para as referencias completas de OPE-04/OPE-05; ver
+# cometa.yaml para a justificativa HPA-vs-KEDA (OPE-05/OPE-12).
+#
+# Este arquivo inclui, como REFERENCIA ILUSTRATIVA, um exemplo de KEDA
+# ScaledObject escalando por profundidade de fila (backlog de entrega),
+# que eh o sinal citado em OPE-05 ("escalar workers com base nessa
+# metrica externa e na quantidade de timers vencidos"). O ScaledObject
+# NAO eh instalado/valido sem o operador KEDA (CRDs keda.sh) no cluster
+# e os valores de fila/limiares sao placeholders nao qualificados
+# (P-02/P-11) - incluido apenas para documentar a decisao de desenho,
+# nao para ser aplicado como esta.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pulsar-config
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: worker
+data:
+  HTTP_ADDR: ":8083"
+  ORBITA_URL: "http://orbita:8080"
+  # PLACEHOLDER: ver nota equivalente em orbita.yaml sobre QUEUE_ENDPOINT
+  # em ambientes gerenciados (P-01).
+  QUEUE_ENDPOINT: "http://localstack.hub-local.svc.cluster.local:4566"
+  QUEUE_REGION: "us-east-1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pulsar-secret
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: worker
+type: Opaque
+stringData:
+  CORE_DSN: "postgres://REPLACE_USER:REPLACE_PASSWORD@REPLACE_HOST:5432/hub_core?sslmode=require"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: worker
+  annotations:
+    # OPE-05/OPE-12: controlador de escala pretendido para este
+    # Deployment eh KEDA (ver ScaledObject de exemplo abaixo), nao HPA -
+    # nenhum HorizontalPodAutoscaler deve ser criado apontando para este
+    # mesmo Deployment ao mesmo tempo (regra: um controlador por
+    # Deployment, nunca ambos concorrendo).
+    hub.lfsolucoes/scaling-controller: "keda (referencia, nao aplicado)"
+spec:
+  replicas: 3 # OPE-04: minimo de 3 em ppd/prd, distribuidas em 3 zonas
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pulsar
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pulsar
+        app.kubernetes.io/part-of: hub-interoperabilidade
+        app.kubernetes.io/component: worker
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: pulsar
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: pulsar
+      # OPE-05: drenagem graciosa - parar de reclamar novo trabalho,
+      # terminar ou devolver posse com seguranca antes do prazo.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: pulsar
+          # PLACEHOLDER: registry/tag reais dependem de P-01.
+          image: "<registry-placeholder>/hub-pulsar:<tag-placeholder>"
+          ports:
+            - name: http
+              containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: pulsar-config
+            - secretRef:
+                name: pulsar-secret
+          startupProbe:
+            httpGet:
+              path: /healthz/startup
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+            successThreshold: 1
+          resources:
+            # PLACEHOLDER de referencia - a qualificar por perfil de carga
+            # real (P-02).
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: worker
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: pulsar
+  ports:
+    - name: http
+      port: 8083
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: worker
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pulsar
+---
+# REFERENCIA ILUSTRATIVA - requer o operador KEDA instalado (CRDs
+# keda.sh/v1alpha1) para ter qualquer efeito; nao aplicado nesta tarefa.
+# Substitui HPA para este Deployment (OPE-05: um controlador de escala
+# por Deployment, sem HPA paralelo concorrente). Escala por profundidade
+# de fila SQS (backlog de entrega de webhook), que aproxima o sinal de
+# "backlog e idade da obrigacao" citado em OPE-05/OPE-12.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pulsar
+  labels:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: worker
+spec:
+  scaleTargetRef:
+    name: pulsar
+  # OPE-05: respeitar minimo/maximo e estabilizacao de reducao.
+  minReplicaCount: 3 # PLACEHOLDER: piso operacional (OPE-04)
+  maxReplicaCount: 15 # PLACEHOLDER: teto a qualificar em P-02/P-11
+  cooldownPeriod: 120
+  pollingInterval: 15
+  advanced:
+    horizontalPodAutoscalerConfig:
+      behavior:
+        scaleDown:
+          stabilizationWindowSeconds: 300
+  triggers:
+    - type: aws-sqs-queue
+      metadata:
+        # PLACEHOLDER: nome/ARN de fila real dependem da topologia de
+        # filas por celula (P-01/P-11), nao definida neste arquivo.
+        queueURL: "https://sqs.us-east-1.amazonaws.com/REPLACE_ACCOUNT_ID/REPLACE_QUEUE_NAME"
+        queueLength: "50" # PLACEHOLDER: limiar de backlog nao qualificado
+        awsRegion: "us-east-1"
+        identityOwner: pod # assume IRSA no ServiceAccount do pod

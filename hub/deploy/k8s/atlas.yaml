@@ -1,0 +1,220 @@
+# Manifest de REFERENCIA para o Atlas (API de controle/config/SLA, porta 8081).
+#
+# NAO APLICADO a nenhum cluster real (ver hub/deploy/k8s/README.md). Reflete:
+#   - OPE-04: 3 replicas em ppd/prd distribuidas em tres zonas.
+#   - OPE-05: probes de startup/readiness/liveness com propositos e prazos
+#     distintos, HPA para APIs, distribuicao por zona, PodDisruptionBudget,
+#     rolling update com capacidade adicional.
+#   - OPE-12: HPA para APIs dentro de envelopes homologados (Karpenter/
+#     Crossplane ficam fora deste arquivo: escalam nos/celulas, nao pods).
+#
+# registry/tag reais (image), classes de no, limites de recursos por perfil
+# de carga e envelopes de HPA dependem de decisoes de negocio ainda
+# pendentes (ver openspec/changes/hub-interoperabilidade-v4/proposal.md,
+# secao "Open Questions": P-01 conta/regiao/K8s gerenciado/registro OCI;
+# P-02 catalogo real/volumes/mix de carga).
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: atlas-config
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+data:
+  # Configuracao (nao secreta), mesmos nomes de env var do docker-compose.
+  HTTP_ADDR: ":8081"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: atlas-secret
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+type: Opaque
+stringData:
+  # PLACEHOLDER: string de conexao contem credencial -> SHALL NOT ser
+  # versionada com valor real. Em ppd/prd, popular via secret manager
+  # externo (Vault/External Secrets/Sealed Secrets) conforme decidido em
+  # P-01, nunca commitando o valor efetivo neste repositorio.
+  CONTROL_DSN: "postgres://REPLACE_USER:REPLACE_PASSWORD@REPLACE_HOST:5432/hub_control?sslmode=require"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atlas
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  # OPE-04: replicas minimas de tres em ppd/prd (dev/hom usariam 2 -
+  # nao modelado aqui; este arquivo eh o perfil ppd/prd de referencia).
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # OPE-05/OPE-14: rolling update com capacidade adicional (surge)
+      # e zero indisponibilidade planejada durante o rollout.
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: atlas
+        app.kubernetes.io/part-of: hub-interoperabilidade
+        app.kubernetes.io/component: api
+    spec:
+      # OPE-04: distribuicao por zona. topologySpreadConstraints substitui
+      # a anti-afinidade classica de pod para o mesmo objetivo (distribuir
+      # as 3 replicas nas 3 zonas disponiveis, sem empilhar em uma so).
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: atlas
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: atlas
+      # OPE-05/OPE-14: prazo de encerramento gracioso maior que a
+      # drenagem homologada de conexoes/tarefas em voo (valor de
+      # referencia; ajustar apos qualificar drenagem real - P-02).
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: atlas
+          # PLACEHOLDER: registry/tag reais dependem de P-01 (conta/regiao/
+          # K8s gerenciado/registro OCI). O binario e o mesmo Dockerfile
+          # generico de hub/deploy/Dockerfile com build arg SERVICE=atlas.
+          image: "<registry-placeholder>/hub-atlas:<tag-placeholder>"
+          ports:
+            - name: http
+              containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: atlas-config
+            - secretRef:
+                name: atlas-secret
+          # OPE-05: startup cobre inicializacao lenta (conexao inicial ao
+          # banco de controle) sem contar como falha de liveness/readiness.
+          startupProbe:
+            httpGet:
+              path: /healthz/startup
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12 # ate ~60s para ficar pronto
+          # OPE-05: readiness com verificacao autenticada e prazo curto -
+          # tira o pod de trafego rapido quando uma dependencia falha,
+          # sem esperar o mesmo prazo de liveness.
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+            successThreshold: 1
+          # OPE-05: liveness so identifica processo travado - prazo maior
+          # e menos sensivel, para NAO reiniciar por indisponibilidade
+          # transitoria de provedor/dependencia externa.
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+            successThreshold: 1
+          resources:
+            # PLACEHOLDER de referencia - a qualificar por perfil de carga
+            # real (P-02: catalogo/volumes/mix real). Nao tratar como
+            # dimensionamento final.
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: atlas
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: atlas
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: atlas
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  # OPE-04/OPE-05: com 3 replicas distribuidas em 3 zonas, manter ao
+  # menos 2 disponiveis garante continuidade dentro da carga critica
+  # apos perder uma zona ou durante disrupcao voluntaria (rolling/drain).
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas
+---
+# OPE-12/OPE-05: Atlas eh API (nao worker de fila) -> HPA, nao KEDA.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: atlas
+  labels:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: atlas
+  minReplicas: 3
+  # PLACEHOLDER: teto de referencia - envelope real de escala (maximo de
+  # pods, orcamento de conexoes ao PostgreSQL somado nas replicas - OPE-02)
+  # depende de P-02/P-11.
+  maxReplicas: 9
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleDown:
+      # Evita reducao agressiva que force nova rajada de conexoes/cold
+      # start (OPE-12: previsao de expansao/retracao com margem).
+      stabilizationWindowSeconds: 300

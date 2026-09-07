@@ -1,0 +1,194 @@
+# Manifest de REFERENCIA para a Orbita (API de admissao/consulta, porta
+# 8080, front publico via Kong).
+#
+# NAO APLICADO a nenhum cluster real (ver hub/deploy/k8s/README.md). Ver
+# atlas.yaml para as referencias completas de OPE-04/OPE-05/OPE-12; este
+# arquivo segue a mesma convencao.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: orbita-config
+  labels:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+data:
+  # Configuracao (nao secreta): URLs internas de outros servicos e fila,
+  # mesmos nomes de env var do docker-compose.
+  HTTP_ADDR: ":8080"
+  ATLAS_URL: "http://atlas:8081"
+  LIBRA_URL: "http://libra:8084"
+  COMETA_URL: "http://cometa:8082"
+  # PLACEHOLDER: no docker-compose local aponta para o LocalStack. Em
+  # dev/hom/ppd/prd o SQS/SNS real da AWS normalmente dispensa endpoint
+  # customizado (resolucao default do SDK + IRSA) - decisao de topologia
+  # de fila/conta pendente em P-01.
+  QUEUE_ENDPOINT: "http://localstack.hub-local.svc.cluster.local:4566"
+  QUEUE_REGION: "us-east-1"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: orbita-secret
+  labels:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+type: Opaque
+stringData:
+  # PLACEHOLDER: string de conexao contem credencial -> nunca versionar
+  # valor real. Popular via secret manager externo (P-01).
+  CORE_DSN: "postgres://REPLACE_USER:REPLACE_PASSWORD@REPLACE_HOST:5432/hub_core?sslmode=require"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orbita
+  labels:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  replicas: 3 # OPE-04: minimo de 3 em ppd/prd, distribuidas em 3 zonas
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orbita
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: orbita
+        app.kubernetes.io/part-of: hub-interoperabilidade
+        app.kubernetes.io/component: api
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: orbita
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: orbita
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: orbita
+          # PLACEHOLDER: registry/tag reais dependem de P-01.
+          image: "<registry-placeholder>/hub-orbita:<tag-placeholder>"
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: orbita-config
+            - secretRef:
+                name: orbita-secret
+          startupProbe:
+            httpGet:
+              path: /healthz/startup
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /healthz/ready
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 2
+            successThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /healthz/live
+              port: http
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 4
+            successThreshold: 1
+          resources:
+            # PLACEHOLDER de referencia - a qualificar por perfil de carga
+            # real (P-02). Orbita eh o caminho critico de admissao/SYNC
+            # (OPE-09), por isso o limite de CPU eh um pouco maior que o
+            # dos workers como ponto de partida.
+            requests:
+              cpu: "500m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orbita
+  labels:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: orbita
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: orbita
+  labels:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orbita
+---
+# OPE-12/OPE-05: Orbita eh API -> HPA, nao KEDA.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orbita
+  labels:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: hub-interoperabilidade
+    app.kubernetes.io/component: api
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orbita
+  minReplicas: 3
+  # PLACEHOLDER: teto de referencia - envelope real depende de P-02/P-11
+  # (orcamento de conexoes ao PostgreSQL somado nas replicas - OPE-02).
+  maxReplicas: 12
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
