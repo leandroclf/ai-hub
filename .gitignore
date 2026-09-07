@@ -1,0 +1,10 @@
+# Configurações locais da IDE
+.idea/
+
+# Artefatos locais do Claude Code
+.claude/
+
+# Arquivos de sistema e temporários
+.DS_Store
+*.swp
+*.swo
