@@ -49,11 +49,48 @@ func (h *Handlers) handleServices(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "invalid_body", err.Error())
 		return
 	}
+	if err := validateService(svc); err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid_service", err.Error())
+		return
+	}
 	if err := h.store.UpsertService(r.Context(), svc); err != nil {
 		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, svc)
+}
+
+func validateService(svc Service) error {
+	if strings.TrimSpace(svc.Code) == "" {
+		return errors.New("code e obrigatorio")
+	}
+	if svc.Version < 1 {
+		return errors.New("version deve ser maior ou igual a 1")
+	}
+	if strings.TrimSpace(svc.Description) == "" {
+		return errors.New("description e obrigatoria")
+	}
+	if svc.ClientSLASeconds <= 0 {
+		return errors.New("client_sla_seconds deve ser maior que zero")
+	}
+	if svc.RetryTTLSeconds < 0 {
+		return errors.New("retry_ttl_seconds nao pode ser negativo")
+	}
+	if len(svc.Modes) == 0 {
+		return errors.New("modes deve conter ao menos um modo")
+	}
+	seen := make(map[string]struct{}, len(svc.Modes))
+	for _, mode := range svc.Modes {
+		mode = strings.ToUpper(strings.TrimSpace(mode))
+		if mode != "SYNC" && mode != "ASYNC" && mode != "AUTO" {
+			return errors.New("modes aceita somente SYNC, ASYNC ou AUTO")
+		}
+		if _, ok := seen[mode]; ok {
+			return errors.New("modes nao pode conter duplicidades")
+		}
+		seen[mode] = struct{}{}
+	}
+	return nil
 }
 
 func (h *Handlers) handleGetService(w http.ResponseWriter, r *http.Request) {

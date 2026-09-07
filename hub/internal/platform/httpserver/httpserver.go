@@ -21,12 +21,12 @@ type CheckFunc func(ctx context.Context) error
 // registrados, deixando o servico livre para registrar suas proprias
 // rotas de negocio via Handle/HandleFunc.
 type Server struct {
-	mux      *http.ServeMux
-	log      *slog.Logger
-	startup  CheckFunc
+	mux       *http.ServeMux
+	log       *slog.Logger
+	startup   CheckFunc
 	readiness CheckFunc
-	liveness CheckFunc
-	metrics  *Registry
+	liveness  CheckFunc
+	metrics   *Registry
 }
 
 // New cria um Server com as tres probes (OPE-05). Qualquer CheckFunc
@@ -109,6 +109,13 @@ func (s *Server) withLogging(next http.Handler) http.Handler {
 			"status", rec.status,
 			"duration_ms", time.Since(start).Milliseconds(),
 		)
+		// Métricas deliberadamente sem path, tenant, protocol_id ou
+		// qualquer dado de negócio: URLs com IDs gerariam cardinalidade
+		// ilimitada. Método e status são suficientes para saúde operacional.
+		s.metrics.Inc("http_requests_total", map[string]string{
+			"method": r.Method,
+			"status": http.StatusText(rec.status),
+		})
 	})
 }
 
