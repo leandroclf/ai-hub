@@ -41,3 +41,14 @@ HTTPS com certificado cliente, cadeia de confiança, rotação e armazenamento s
 As referências `vault://` também precisam ser ligadas a Secrets Manager/KMS ou cofre
 equivalente. Inbound OAuth/OIDC do cliente ainda não está implementado; a entrada local
 continua baseada em `X-Tenant-Id`.
+
+## Compatibilidade dos testes legados
+
+Os testes E2E originais da fatia inicial referenciam deliberadamente os fixtures
+`consulta-cadastral`/`prov-sync-1`. Após a substituição solicitada, uma execução sem
+cache (`go test -count=1 -tags e2e ./test/e2e/...`) não é um teste válido do catálogo
+HivePlace e falha por ausência desses fixtures. Os testes unitários, o build, o Compose,
+a validação das telas e a verificação de contagem do catálogo importado passaram. Uma
+nova suíte E2E específica do contrato externo HivePlace deve ser criada antes de chamar
+essas APIs reais; ela não foi executada para não disparar operações externas com as
+credenciais do environment.

@@ -8,6 +8,11 @@ dos logs de cada serviço e de capturas de tela do frontend e do Swagger. Nada a
 simulado ou reconstruído a posteriori — todo arquivo nesta pasta é a saída literal de um
 comando executado contra a stack real.
 
+**Estado corrente:** a importação HivePlace descrita ao final deste documento substitui
+o catálogo de fixtures de teste. As seções de tráfego, filas e faturamento anteriores
+continuam como evidência histórica da fatia inicial e não representam o catálogo
+corrente do plano de controle.
+
 Ver também `IMPLEMENTATION_AUDIT.md` (raiz do repositório) para a auditoria de
 implementação e `openspec/changes/hub-interoperabilidade-v4/TRACEABILITY.md` para a
 revisão requisito-a-requisito de todo o OpenSpec contra este código.
@@ -15,8 +20,8 @@ revisão requisito-a-requisito de todo o OpenSpec contra este código.
 ## Como reproduzir
 
 ```bash
-cd hub/deploy && docker compose up -d --build   # sobe a stack e roda o seed
-cd ../evidence && ./generate_traffic.sh          # gera os 10 cenarios abaixo
+cd hub/deploy && docker compose up -d --build   # sobe a stack; seed de fixtures é no-op
+cd .. && deploy/import_hiveplace_collection.sh  # importa Hive: 34 produtos/232 endpoints
 ```
 
 ## Reexecução confirmada em 07/09/2026
@@ -176,14 +181,14 @@ Geradas via Playwright (Chromium do sistema) contra a stack real e o admin-ui em
 dev, script em `shoot.mjs`:
 
 - `admin-ui-00-inicial.png` — tela inicial.
-- `admin-ui-01-servicos.png` — catálogo, com o serviço `consulta-cadastral` v1 real
+- `admin-ui-01-servicos.png` — catálogo, com o produto `hiveplace-01-token-request` v1 real
   consultado ao vivo via API.
-- `admin-ui-02-contas-provedor.png` — configuração de `prov-oauth-1`, exibindo OAuth
-  Client Credentials e TTL sem exibir segredo.
+- `admin-ui-02-contas-provedor.png` — configuração de `provider-hiveplace-hml`, exibindo
+  HivePlace, OAuth Client Credentials e TTL sem exibir segredo.
 - `admin-ui-03-credenciais.png` — resolução real de credencial (SEG-05) para
-  tenant `acme` / `prov-sync-1`, mostrando o vínculo `SHARED_HUB` resolvido (sem expor
+  tenant `hiveplace-sandbox` / `provider-hiveplace-hml`, mostrando o vínculo `SHARED_HUB` resolvido (sem expor
   segredo — só `secret_ref`).
-- `admin-ui-04-contratos.png` — contrato do tenant `acme`.
+- `admin-ui-04-contratos.png` — contrato do tenant `hiveplace-sandbox`.
 - `swagger-ui-01-overview.png` — Swagger UI real (container `swagger-ui`, porta 8092)
   servindo os dois documentos OpenAPI do hub.
 - `swagger-ui-02-endpoint-expanded.png` — detalhe do endpoint `POST /v1/protocols`
@@ -214,6 +219,20 @@ isso foi corrigido, o serviço foi reconstruído e a rodada final passou.
 Limite da evidência: `MTLS_OAUTH` demonstra a política e a associação da referência de
 certificado no simulador, mas não substitui handshake TLS/mTLS nem uma PKI real. Também
 não há exposição de segredo: os campos persistidos são apenas referências `vault://`.
+
+## Importação HivePlace a partir da collection Postman
+
+Em 07/09/2026, a collection `Hive` fornecida pelo usuário foi tratada como fonte de
+metadados e importada pelo script `../deploy/import_hiveplace_collection.sh`. O resultado
+foi uma conta `provider-hiveplace-hml` (`provider_id=HivePlace`, ambiente `HML`), 34
+produtos e 232 endpoints no catálogo `provider_api_catalog`. A distribuição dos endpoints
+por autenticação é: 150 `NONE`, 69 `BEARER`, 11 `API_KEY` e 2 `BASIC`.
+
+Os valores do environment não foram persistidos. O banco guarda somente referências
+`postman-Hive-HML-userName`, `postman-Hive-HML-userPass` e a referência agregada do
+vínculo compartilhado. Os registros de teste do plano de controle foram removidos;
+protocolos e operações históricas em `hub_core` foram preservados. A saída da consulta
+está em `db/hiveplace_catalog_import.txt`.
 
 ## Achados desta sessão (novos, além dos 5 já registrados na auditoria anterior)
 

@@ -1,0 +1,76 @@
+PROVEDOR
+  provider_account_id   | provider_id | environment |             base_url             |        auth_type         |                    oauth_token_url                     |      oauth_client_id      |  oauth_client_secret_ref  | token_ttl_seconds 
+------------------------+-------------+-------------+----------------------------------+--------------------------+--------------------------------------------------------+---------------------------+---------------------------+-------------------
+ provider-hiveplace-hml | HivePlace   | HML         | https://hm2.api.hiveplace.com.br | OAUTH_CLIENT_CREDENTIALS | https://hm2.api.hiveplace.com.br/security/oauth2/token | postman-Hive-HML-userName | postman-Hive-HML-userPass |               300
+(1 row)
+
+PRODUTOS
+ product_count 
+---------------
+            34
+(1 row)
+
+                   code                   | version |                 description                 |       modes       | published 
+------------------------------------------+---------+---------------------------------------------+-------------------+-----------
+ hiveplace-01-token-request               |       1 | HivePlace API — TOKEN REQUEST               | {SYNC,ASYNC,AUTO} | t
+ hiveplace-02-bioface                     |       1 | HivePlace API — Bioface                     | {SYNC,ASYNC,AUTO} | t
+ hiveplace-03-facematch-1xn-v3            |       1 | HivePlace API — Facematch 1xN V3            | {SYNC,ASYNC,AUTO} | t
+ hiveplace-04-facematch-1xn-v4-apikey     |       1 | HivePlace API — Facematch 1xN V4 - Apikey   | {SYNC,ASYNC,AUTO} | t
+ hiveplace-05-facematch-1xn-key-v3        |       1 | HivePlace API — Facematch 1xN Key V3        | {SYNC,ASYNC,AUTO} | t
+ hiveplace-06-antispoofing                |       1 | HivePlace API — AntiSpoofing                | {SYNC,ASYNC,AUTO} | t
+ hiveplace-07-device-direct-risk          |       1 | HivePlace API — Device Direct Risk          | {SYNC,ASYNC,AUTO} | t
+ hiveplace-08-safebrowser                 |       1 | HivePlace API — SafeBrowser                 | {SYNC,ASYNC,AUTO} | t
+ hiveplace-09-documentoscopia             |       1 | HivePlace API — DocumentosCopia             | {SYNC,ASYNC,AUTO} | t
+ hiveplace-10-document-reuse              |       1 | HivePlace API — Document-Reuse              | {SYNC,ASYNC,AUTO} | t
+ hiveplace-11-facemap3d                   |       1 | HivePlace API — FaceMap3d                   | {SYNC,ASYNC,AUTO} | t
+ hiveplace-12-facemap3d-key               |       1 | HivePlace API — FaceMap3d Key               | {SYNC,ASYNC,AUTO} | t
+ hiveplace-13-orange-guard                |       1 | HivePlace API — Orange Guard                | {SYNC,ASYNC,AUTO} | t
+ hiveplace-14-data-enrichment             |       1 | HivePlace API — Data-Enrichment             | {SYNC,ASYNC,AUTO} | t
+ hiveplace-15-alive-check                 |       1 | HivePlace API — Alive Check                 | {SYNC,ASYNC,AUTO} | t
+ hiveplace-16-prova-vida                  |       1 | HivePlace API — Prova Vida                  | {SYNC,ASYNC,AUTO} | t
+ hiveplace-17-test-v3                     |       1 | HivePlace API — Test_V3                     | {SYNC,ASYNC,AUTO} | t
+ hiveplace-18-valida-score                |       1 | HivePlace API — Valida Score                | {SYNC,ASYNC,AUTO} | t
+ hiveplace-19-transaction-fraud-detection |       1 | HivePlace API — Transaction Fraud Detection | {SYNC,ASYNC,AUTO} | t
+ hiveplace-20-renda-360                   |       1 | HivePlace API — RENDA-360                   | {SYNC,ASYNC,AUTO} | t
+ hiveplace-21-agrodigital                 |       1 | HivePlace API — AgroDigital                 | {SYNC,ASYNC,AUTO} | t
+ hiveplace-22-valida-telefone             |       1 | HivePlace API — VALIDA-TELEFONE             | {SYNC,ASYNC,AUTO} | t
+ hiveplace-23-alive-check                 |       1 | HivePlace API — Alive-check                 | {SYNC,ASYNC,AUTO} | t
+ hiveplace-24-valida-email                |       1 | HivePlace API — VALIDA-EMAIL                | {SYNC,ASYNC,AUTO} | t
+ hiveplace-25-valida-endereco             |       1 | HivePlace API — VALIDA-ENDERECO             | {SYNC,ASYNC,AUTO} | t
+ hiveplace-26-life-proof                  |       1 | HivePlace API — Life-Proof                  | {SYNC,ASYNC,AUTO} | t
+ hiveplace-27-hive-datatrust              |       1 | HivePlace API — Hive-DataTrust              | {SYNC,ASYNC,AUTO} | t
+ hiveplace-28-cobranca                    |       1 | HivePlace API — Cobranca                    | {SYNC,ASYNC,AUTO} | t
+ hiveplace-29-laudoinspe-oremota          |       1 | HivePlace API — LaudoInspeçãoRemota         | {SYNC,ASYNC,AUTO} | t
+ hiveplace-30-frauddetectionh             |       1 | HivePlace API — FraudDetectionH             | {SYNC,ASYNC,AUTO} | t
+ hiveplace-31-ocr-document-extration      |       1 | HivePlace API — OCR-Document-Extration      | {SYNC,ASYNC,AUTO} | t
+ hiveplace-32-data-verification           |       1 | HivePlace API — Data Verification           | {SYNC,ASYNC,AUTO} | t
+ hiveplace-33-cnpj-verification           |       1 | HivePlace API — cnpj-verification           | {SYNC,ASYNC,AUTO} | t
+ hiveplace-34-smv                         |       1 | HivePlace API — SMV                         | {SYNC,ASYNC,AUTO} | t
+(34 rows)
+
+ENDPOINTS
+ endpoint_count | product_count | folder_count 
+----------------+---------------+--------------
+            232 |            34 |           34
+(1 row)
+
+ auth_type | endpoint_count 
+-----------+----------------
+ API_KEY   |             11
+ BASIC     |              2
+ BEARER    |             69
+ NONE      |            150
+(4 rows)
+
+
+HISTORICO_CORE
+ table_name | rows 
+------------+------
+ protocols  |   45
+(1 row)
+
+ table_name | rows 
+------------+------
+ operations |   43
+(1 row)
+

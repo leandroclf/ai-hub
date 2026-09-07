@@ -30,6 +30,15 @@ SHARED_HUB/TENANT_DEDICATED. A validação do cadastro rejeita perfis incompleto
 Isso não encerra os requisitos de produto composto, seleção automática de provedor,
 autenticação inbound real, ledger, RLS, tracing distribuído ou observabilidade completa.
 
+**Importação HivePlace (07/09/2026):** a collection Postman fornecida foi importada como
+34 produtos e 232 endpoints sanitizados na tabela `provider_api_catalog`, associados à
+conta `provider-hiveplace-hml` em HML. Os serviços de teste do plano de controle foram
+removidos sem apagar histórico de `hub_core`/`hub_finance`. O catálogo registra apenas
+metadados de método, path, headers/query names e tipo de autenticação; bodies, tokens,
+API keys e senhas não são persistidos.
+O `seed` de fixtures foi desabilitado para impedir que reinicializações reintroduzam as
+APIs de teste; a importação é explícita em `hub/deploy/import_hiveplace_collection.sh`.
+
 ## Como ler este documento
 
 Cada item é marcado como:

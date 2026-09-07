@@ -24,17 +24,17 @@ async function lookup(tabLabel, values, expected) {
 }
 
 await page.goto("http://localhost:5173/", { waitUntil: "networkidle" });
-await lookup("Catálogo de serviços", ["consulta-cadastral", "1"], "consulta-cadastral");
-await lookup("Contas de provedor", ["prov-sync-1"], "prov-sync-1");
+await lookup("Catálogo de serviços", ["hiveplace-01-token-request", "1"], "hiveplace-01-token-request");
+await lookup("Contas de provedor", ["provider-hiveplace-hml"], "provider-hiveplace-hml");
 await check("credenciais", async () => {
   await page.getByRole("button", { name: /Vínculos de credencial/i }).click();
   const form = page.locator("form").filter({ has: page.getByRole("button", { name: /resolver/i }) }).first();
-  await form.locator("input").nth(0).fill("acme");
-  await form.locator("input").nth(1).fill("prov-sync-1");
+  await form.locator("input").nth(0).fill("hiveplace-sandbox");
+  await form.locator("input").nth(1).fill("provider-hiveplace-hml");
   await form.getByRole("button", { name: /resolver/i }).click();
   await page.waitForTimeout(500);
 }, "SHARED_HUB");
-await lookup("Contratos", ["acme"], "acme");
+await lookup("Contratos", ["hiveplace-sandbox"], "hiveplace-sandbox");
 await page.goto("http://localhost:8092/", { waitUntil: "networkidle" });
 await check("swagger", () => page.waitForTimeout(500), "Orbita - API publica");
 

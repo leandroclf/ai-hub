@@ -31,10 +31,10 @@ await page.goto("http://localhost:5173/", { waitUntil: "networkidle" });
 await page.screenshot({ path: `${outDir}/admin-ui-00-inicial.png`, fullPage: true });
 console.log("captured admin-ui-00-inicial");
 
-await lookupAndShoot("Catálogo de serviços", ["consulta-cadastral", "1"], "admin-ui-01-servicos");
-await lookupAndShoot("Contas de provedor", ["prov-oauth-1"], "admin-ui-02-contas-provedor");
-await lookupAndShoot("Vínculos de credencial", ["acme", "prov-sync-1"], "admin-ui-03-credenciais");
-await lookupAndShoot("Contratos", ["acme"], "admin-ui-04-contratos");
+await lookupAndShoot("Catálogo de serviços", ["hiveplace-01-token-request", "1"], "admin-ui-01-servicos");
+await lookupAndShoot("Contas de provedor", ["provider-hiveplace-hml"], "admin-ui-02-contas-provedor");
+await lookupAndShoot("Vínculos de credencial", ["hiveplace-sandbox", "provider-hiveplace-hml"], "admin-ui-03-credenciais");
+await lookupAndShoot("Contratos", ["hiveplace-sandbox"], "admin-ui-04-contratos");
 
 // --- Swagger UI ---
 await page.goto("http://localhost:8092/", { waitUntil: "networkidle" });
