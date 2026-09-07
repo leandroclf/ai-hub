@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: Hub de Interoperabilidade — API pública da Órbita
+  version: "1.0.0"
+  description: >
+    Contrato HTTP público de admissão e consulta (EXE-01, EXE-02, EXE-07,
+    EXE-14, COM-05). Formaliza a API já implementada e testada em
+    `hub/internal/orbita/handlers.go`. tenant_id é resolvido pela borda
+    confiável (SEG-01); nesta referência local, sem OAuth2/OIDC real, é
+    aceito diretamente via header `X-Tenant-Id` — placeholder de
+    autenticação documentado em `IMPLEMENTATION_AUDIT.md`.
+servers:
+  - url: http://localhost:8080
+    description: Órbita local (docker compose)
+
+paths:
+  /v1/protocols:
+    post:
+      summary: Admissão durável de um protocolo (EXE-01, EXE-02, EXE-14)
+      operationId: createProtocol
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema: { type: string }
+          description: Identidade do tenant, injetada pela borda confiável (placeholder nesta referência).
+        - name: Idempotency-Key
+          in: header
+          required: true
+          schema: { type: string }
+          description: Obrigatória na criação (EXE-01); mesma chave e mesmo hash recuperam o mesmo protocolo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateRequest' }
+      responses:
+        "200":
+          description: >
+            SYNC concluído na mesma conexão (sucesso ou falha de negócio),
+            ou repetição de admissão já existente (idempotência).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProtocolResponse' }
+        "202":
+          description: ASYNC/AUTO aceito; final obtido depois por GET ou webhook.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProtocolResponse' }
+        "400":
+          description: Corpo inválido, mode inválido ou Idempotency-Key ausente.
+        "401":
+          description: X-Tenant-Id ausente.
+        "402":
+          description: Reserva financeira estrita indisponível ou limite excedido (FIN-06).
+        "403":
+          description: Tenant sem contrato elegível.
+        "409":
+          description: Idempotency-Key reutilizada com payload diferente (EXE-01).
+        "504":
+          description: Resultado do provedor incerto (UNKNOWN) dentro do orçamento SYNC (EXE-14).
+        "503":
+          description: Autoridade durável indisponível; aceite não confirmado (DAD-09).
+
+  /v1/protocols/{protocolId}:
+    get:
+      summary: Consulta unificada de estado/resultado (EXE-07, COM-05)
+      operationId: getProtocol
+      parameters:
+        - name: X-Tenant-Id
+          in: header
+          required: true
+          schema: { type: string }
+        - name: protocolId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          description: >
+            Mesma representação usada pelo webhook para o mesmo
+            protocolo/versão final (COM-05), pendente ou finalizada.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProtocolResponse' }
+        "401":
+          description: X-Tenant-Id ausente.
+        "404":
+          description: Protocolo inexistente ou pertencente a outro tenant (mesma resposta, sem revelar existência — SEG-04).
+
+components:
+  schemas:
+    CreateRequest:
+      type: object
+      required: [mode, provider_account_id, service_code, service_version]
+      properties:
+        mode: { type: string, enum: [SYNC, ASYNC, AUTO] }
+        provider_account_id: { type: string }
+        service_code: { type: string }
+        service_version: { type: integer }
+        input:
+          description: Payload canônico de entrada do serviço, específico do domínio.
+          type: object
+          additionalProperties: true
+
+    ProtocolResponse:
+      type: object
+      properties:
+        protocol_id: { type: string, format: uuid, description: "UUIDv7 (EXE-16)" }
+        status:
+          type: string
+          enum: [ACCEPTED, RUNNING, WAITING_PROVIDER, RECONCILING, SUCCEEDED, PARTIALLY_SUCCEEDED, FAILED, EXPIRED, CANCELLED]
+        result_version: { type: integer }
+        mode: { type: string, enum: [SYNC, ASYNC, AUTO] }
+        final_body:
+          description: Presente somente quando o protocolo já possui uma versão final materializada.
+          type: object
+          properties:
+            protocol_id: { type: string, format: uuid }
+            status: { type: string }
+            result_version: { type: integer }
+            result: { type: object, additionalProperties: true }
+            error_code: { type: string }
+            error_message: { type: string }

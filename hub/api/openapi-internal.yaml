@@ -1,0 +1,101 @@
+openapi: 3.0.3
+info:
+  title: Hub de Interoperabilidade — contratos internos (COM-06, FIN-06, EXE-08)
+  version: "1.0.0"
+  description: >
+    Contratos HTTP internos entre aplicações do domínio (Órbita→Cometa,
+    Órbita→Libra, Pulsar→Órbita), formalizando o que já está implementado
+    em `hub/internal/dispatch`, `hub/internal/cometa`, `hub/internal/libra`
+    e `hub/internal/pulsar`. Nunca exposto pelo Portal/Kong ao público.
+servers:
+  - url: http://cometa:8082
+  - url: http://libra:8084
+  - url: http://orbita:8080
+
+paths:
+  /internal/commands/direct:
+    post:
+      summary: Despacho direto SYNC (COM-06)
+      operationId: dispatchDirect
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Command' }
+      responses:
+        "200":
+          description: Resposta direta — pode indicar fato final, UNKNOWN ou recusa (COM-06).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Result' }
+
+  /internal/operations/{operationId}:
+    get:
+      summary: Consulta interna por operation_id (EXE-04) — não consulta o provedor
+      operationId: getOperation
+      parameters:
+        - { name: operationId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Estado conhecido da operação em Cometa }
+        "404": { description: Operação não encontrada }
+
+  /internal/reservations:
+    post:
+      summary: Reserva atômica de saldo estrito (FIN-06)
+      operationId: reserve
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReserveRequest' }
+      responses:
+        "201": { description: Reserva confirmada (idempotente por protocol_id) }
+        "409": { description: Reserva excederia o limite estrito do tenant }
+
+  /internal/protocols/{protocolId}:
+    get:
+      summary: Mesma representação final do GET público (COM-05), usada por Pulsar para materializar o webhook
+      operationId: getProtocolInternal
+      parameters:
+        - { name: protocolId, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Representação final ou pendente do protocolo }
+        "404": { description: Protocolo inexistente }
+
+components:
+  schemas:
+    Command:
+      type: object
+      description: COM-06 — nunca inclui segredo em claro.
+      properties:
+        tenant_id: { type: string }
+        protocol_id: { type: string, format: uuid }
+        step_id: { type: string }
+        command_id: { type: string, format: uuid }
+        dispatch_mode: { type: string, enum: [DIRECT, QUEUED] }
+        epoch: { type: integer }
+        service_code: { type: string }
+        service_version: { type: integer }
+        provider_account_id: { type: string }
+        request_body: { type: object, additionalProperties: true }
+        step_deadline: { type: string, format: date-time }
+
+    Result:
+      type: object
+      properties:
+        command_id: { type: string }
+        operation_id: { type: string }
+        provider_request_id: { type: string }
+        kind: { type: string, enum: [SUCCEEDED, FAILED, UNKNOWN, REJECTED] }
+        response_body: { type: object, additionalProperties: true }
+        error_code: { type: string }
+        error_message: { type: string }
+
+    ReserveRequest:
+      type: object
+      required: [tenant_id, protocol_id, amount]
+      properties:
+        tenant_id: { type: string }
+        protocol_id: { type: string, format: uuid }
+        amount: { type: number }
+        currency: { type: string, default: BRL }

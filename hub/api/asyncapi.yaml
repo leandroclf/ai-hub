@@ -1,0 +1,102 @@
+asyncapi: '2.6.0'
+info:
+  title: Hub de Interoperabilidade — eventos e comandos (COM-01, COM-03)
+  version: '1.0.0'
+  description: >
+    Formaliza os tópicos SNS e filas SQS já implementados em
+    `hub/internal/queue/queue.go` e usados pelos cinco serviços. Envelope
+    obrigatório conforme COM-03. Broker de referência local: LocalStack
+    (SQS Standard + SNS); em prd seria SNS+SQS reais da conta/região
+    aprovada em P-01.
+
+servers:
+  local:
+    url: http://localstack:4566
+    protocol: sqs+sns
+    description: LocalStack (referência local/dev)
+
+defaultContentType: application/json
+
+channels:
+  cometa-commands:
+    description: Fila SQS consumida por Cometa — comandos QUEUED (ASYNC/AUTO) publicados pela Órbita (EXE-15).
+    subscribe:
+      summary: Cometa consome comandos de despacho em fila.
+      message: { $ref: '#/components/messages/CommandDispatch' }
+
+  hub-operation-facts:
+    description: >
+      Tópico SNS publicado por Cometa quando observa um fato externo
+      (COM-01). Fan-out para as filas orbita-operation-facts,
+      libra-cost-facts.
+    publish:
+      message: { $ref: '#/components/messages/OperationObserved' }
+
+  orbita-operation-facts:
+    description: Fila SQS da Órbita assinada a hub-operation-facts — finaliza protocolos ASYNC/AUTO.
+    subscribe:
+      message: { $ref: '#/components/messages/OperationObserved' }
+
+  libra-cost-facts:
+    description: Fila SQS do Libra assinada a hub-operation-facts — registra custo do provedor (FIN-04).
+    subscribe:
+      message: { $ref: '#/components/messages/OperationObserved' }
+
+  hub-protocol-facts:
+    description: >
+      Tópico SNS publicado pela Órbita quando finaliza um protocolo
+      (COM-01). Fan-out para pulsar-protocol-facts, libra-revenue-facts.
+    publish:
+      message: { $ref: '#/components/messages/ProtocolFinalized' }
+
+  pulsar-protocol-facts:
+    description: Fila SQS do Pulsar assinada a hub-protocol-facts — cria a entrega de webhook (EXE-08).
+    subscribe:
+      message: { $ref: '#/components/messages/ProtocolFinalized' }
+
+  libra-revenue-facts:
+    description: Fila SQS do Libra assinada a hub-protocol-facts — registra receita e captura/libera reserva (FIN-04/FIN-06).
+    subscribe:
+      message: { $ref: '#/components/messages/ProtocolFinalized' }
+
+components:
+  messages:
+    CommandDispatch:
+      name: command.dispatch
+      payload: { $ref: '#/components/schemas/Envelope' }
+
+    OperationObserved:
+      name: operation.observed
+      payload: { $ref: '#/components/schemas/Envelope' }
+
+    ProtocolFinalized:
+      name: protocol.finalized
+      payload: { $ref: '#/components/schemas/Envelope' }
+
+  schemas:
+    Envelope:
+      type: object
+      description: >
+        Envelope obrigatório (COM-03): event_id, tipo, versão do schema,
+        produtor, tenant_id, protocol_id, datas, causation_id e versões de
+        configuração. step_id/operation_id/attempt_id quando pertinentes.
+      required: [event_id, type, schema_version, producer, protocol_id, occurred_at, recorded_at]
+      properties:
+        event_id: { type: string }
+        type: { type: string, enum: [command.dispatch, operation.observed, protocol.finalized] }
+        schema_version: { type: integer }
+        producer: { type: string, enum: [orbita, cometa] }
+        tenant_id: { type: string }
+        protocol_id: { type: string, format: uuid }
+        step_id: { type: string }
+        operation_id: { type: string }
+        attempt_id: { type: string }
+        occurred_at: { type: string, format: date-time }
+        recorded_at: { type: string, format: date-time }
+        causation_id: { type: string }
+        aggregate_version: { type: integer }
+        config_versions: { type: object, additionalProperties: { type: string } }
+        payload:
+          type: object
+          additionalProperties: true
+          description: Corpo específico do tipo de evento (dispatch.Command, cometa.OperationFact ou orbita.ProtocolFinalizedFact).
