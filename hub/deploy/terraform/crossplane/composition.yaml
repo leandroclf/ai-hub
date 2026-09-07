@@ -1,0 +1,285 @@
+# Composition de REFERÊNCIA para xhubcells.constelacao.hub.internal
+# (ver xrd.yaml). Usa o modo clássico "Resources" (patch-and-transform)
+# do Crossplane para legibilidade — uma implementação real poderia
+# migrar para o pipeline de Composition Functions sem mudar o
+# contrato do XRD.
+#
+# NÃO é production-grade: nomes de fila/tópico por célula aqui são
+# ILUSTRATIVOS (ex. "<cellName>-cometa-commands"). A implementação Go
+# atual (hub/internal/queue/queue.go, hub/cmd/*/main.go) ainda usa
+# nomes fixos sem prefixo de célula — adotar filas por célula em
+# produção exigiria uma mudança de código correspondente, fora do
+# escopo desta revisão de Terraform/Crossplane.
+#
+# Providers Crossplane assumidos (não instalados/testados neste
+# ambiente): provider-aws (família rds/sqs/sns/iam), estilo Upbound
+# (rds.aws.upbound.io, sqs.aws.upbound.io, sns.aws.upbound.io,
+# iam.aws.upbound.io).
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xhubcells.constelacao.hub.internal.reference
+  labels:
+    hub.constelacao/reference: "true"
+spec:
+  compositeTypeRef:
+    apiVersion: constelacao.hub.internal/v1alpha1
+    kind: XHubCell
+  mode: Resources
+  resources:
+    # -------------------------------------------------------------
+    # PostgreSQL hub_core da célula (ARQ-05: separado por célula;
+    # DAD-07: multi-AZ + PITR 35 dias).
+    # -------------------------------------------------------------
+    - name: core-db
+      base:
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: Instance
+        spec:
+          forProvider:
+            engine: postgres
+            dbName: hub_core
+            username: hub_core_app
+            multiAz: true
+            storageType: gp3
+            allocatedStorage: 100
+            storageEncrypted: true
+            deletionProtection: true
+            skipFinalSnapshot: false
+            backupWindow: "03:00-04:00"
+            maintenanceWindow: "sun:04:30-sun:05:30"
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.dbEngineVersion
+          toFieldPath: spec.forProvider.engineVersion
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.dbInstanceClass
+          toFieldPath: spec.forProvider.instanceClass
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.backupRetentionDays
+          toFieldPath: spec.forProvider.backupRetentionPeriod
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.dbSubnetGroupName
+          toFieldPath: spec.forProvider.dbSubnetGroupName
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.vpcSecurityGroupIds
+          toFieldPath: spec.forProvider.vpcSecurityGroupIds
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.kmsKeyArn
+          toFieldPath: spec.forProvider.kmsKeyId
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "hub-%s-core"
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: spec.forProvider.identifier
+          transforms:
+            - type: string
+              string:
+                fmt: "hub-%s-hub-core"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.endpoint
+          toFieldPath: status.coreDbEndpoint
+
+    # -------------------------------------------------------------
+    # PostgreSQL hub_finance da célula (autoridade financeira única
+    # do contrato de saldo estrito — Decision 2 do design.md).
+    # -------------------------------------------------------------
+    - name: finance-db
+      base:
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: Instance
+        spec:
+          forProvider:
+            engine: postgres
+            dbName: hub_finance
+            username: hub_finance_app
+            multiAz: true
+            storageType: gp3
+            allocatedStorage: 100
+            storageEncrypted: true
+            deletionProtection: true
+            skipFinalSnapshot: false
+            backupWindow: "03:00-04:00"
+            maintenanceWindow: "sun:04:30-sun:05:30"
+          writeConnectionSecretToRef:
+            namespace: crossplane-system
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.dbEngineVersion
+          toFieldPath: spec.forProvider.engineVersion
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.dbInstanceClass
+          toFieldPath: spec.forProvider.instanceClass
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.backupRetentionDays
+          toFieldPath: spec.forProvider.backupRetentionPeriod
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.dbSubnetGroupName
+          toFieldPath: spec.forProvider.dbSubnetGroupName
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.vpcSecurityGroupIds
+          toFieldPath: spec.forProvider.vpcSecurityGroupIds
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.kmsKeyArn
+          toFieldPath: spec.forProvider.kmsKeyId
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "hub-%s-finance"
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: spec.forProvider.identifier
+          transforms:
+            - type: string
+              string:
+                fmt: "hub-%s-hub-finance"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.endpoint
+          toFieldPath: status.financeDbEndpoint
+
+    # -------------------------------------------------------------
+    # Fila de comandos ASYNC/AUTO da célula (COM-01/EXE-15). ILUSTRATIVA:
+    # a implementação Go atual usa o nome fixo "cometa-commands" sem
+    # prefixo de célula (ver ../main.tf); esta Composition demonstra
+    # como uma fila JÁ namespaced por célula seria provisionada, caso
+    # essa evolução de código seja decidida no futuro.
+    # -------------------------------------------------------------
+    - name: cell-commands-queue
+      base:
+        apiVersion: sqs.aws.upbound.io/v1beta1
+        kind: Queue
+        spec:
+          forProvider:
+            fifoQueue: false
+            messageRetentionSeconds: 345600
+            visibilityTimeoutSeconds: 60
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.kmsKeyArn
+          toFieldPath: spec.forProvider.kmsMasterKeyId
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-cometa-commands"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.url
+          toFieldPath: status.commandsQueueUrl
+
+    # -------------------------------------------------------------
+    # Tópicos SNS de fatos da célula (COM-01/COM-03). Mesma ressalva
+    # de nomenclatura ilustrativa acima.
+    # -------------------------------------------------------------
+    - name: cell-operation-facts-topic
+      base:
+        apiVersion: sns.aws.upbound.io/v1beta1
+        kind: Topic
+        spec:
+          forProvider: {}
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.kmsKeyArn
+          toFieldPath: spec.forProvider.kmsMasterKeyId
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-hub-operation-facts"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.arn
+          toFieldPath: status.operationFactsTopicArn
+
+    - name: cell-protocol-facts-topic
+      base:
+        apiVersion: sns.aws.upbound.io/v1beta1
+        kind: Topic
+        spec:
+          forProvider: {}
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.region
+          toFieldPath: spec.forProvider.region
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.kmsKeyArn
+          toFieldPath: spec.forProvider.kmsMasterKeyId
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "%s-hub-protocol-facts"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.arn
+          toFieldPath: status.protocolFactsTopicArn
+
+    # -------------------------------------------------------------
+    # Papel IAM (IRSA) da célula: workloads de Órbita/Cometa/Pulsar/
+    # Libra desta célula assumem este papel para acessar apenas os
+    # próprios recursos (banco via Secrets Manager, filas/tópicos
+    # próprios) — nunca credencial estática em manifesto (ARQ-05).
+    # -------------------------------------------------------------
+    - name: cell-workload-role
+      base:
+        apiVersion: iam.aws.upbound.io/v1beta1
+        kind: Role
+        spec:
+          forProvider:
+            assumeRolePolicy: |
+              {
+                "Version": "2012-10-17",
+                "Statement": [{
+                  "Effect": "Allow",
+                  "Principal": {"Federated": "PLACEHOLDER_OIDC_PROVIDER_ARN"},
+                  "Action": "sts:AssumeRoleWithWebIdentity"
+                }]
+              }
+      patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.cellName
+          toFieldPath: metadata.name
+          transforms:
+            - type: string
+              string:
+                fmt: "hub-%s-workload-role"
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.parameters.oidcProviderArn
+          toFieldPath: spec.forProvider.assumeRolePolicy
+          transforms:
+            - type: string
+              string:
+                # Substitui o placeholder pelo ARN real do OIDC
+                # provider do cluster (ver eks_oidc_provider_arn em
+                # ../outputs.tf). Simplificação: uma Composition real
+                # usaria patch estruturado por Composition Function em
+                # vez de substituição textual.
+                fmt: "%s"
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.atProvider.arn
+          toFieldPath: status.cellRoleArn

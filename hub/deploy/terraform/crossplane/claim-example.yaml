@@ -1,0 +1,26 @@
+# Exemplo de CLAIM (não aplicado a nenhum cluster real) mostrando como
+# Atlas/Plataforma pediriam o provisionamento declarativo de uma nova
+# célula ("cell-02") depois de registrar demanda/placement (ARQ-06).
+# Valores de conta/região/ARNs são fictícios — nunca reais.
+apiVersion: constelacao.hub.internal/v1alpha1
+kind: HubCell
+metadata:
+  name: cell-02
+  namespace: hub-platform
+spec:
+  parameters:
+    cellName: cell-02
+    region: us-east-1 # PLACEHOLDER — pendente de aprovação em P-01
+    dbEngineVersion: "16.4"
+    dbInstanceClass: db.r6g.large
+    backupRetentionDays: 35
+    dbSubnetGroupName: hub-constelacao-db # ver aws_db_subnet_group.this em ../main.tf
+    vpcSecurityGroupIds:
+      - sg-PLACEHOLDER0000000000
+    kmsKeyArn: arn:aws:kms:us-east-1:000000000000:key/PLACEHOLDER # ver aws_kms_key.hub em ../main.tf
+    oidcProviderArn: arn:aws:iam::000000000000:oidc-provider/PLACEHOLDER # ver eks_oidc_provider_arn em ../outputs.tf
+    tags:
+      Cell: cell-02
+      ManagedBy: crossplane
+  compositionRef:
+    name: xhubcells.constelacao.hub.internal.reference

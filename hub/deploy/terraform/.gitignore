@@ -1,0 +1,16 @@
+# Nunca versionar plugins baixados, estado ou variáveis locais —
+# nenhum terraform apply real foi (ou pode ser) executado aqui (P-01
+# pendente). Ver README.md deste diretório.
+.terraform/
+.terraform.tfstate.lock.info
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!example.tfvars
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json

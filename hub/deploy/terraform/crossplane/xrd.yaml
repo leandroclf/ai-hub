@@ -1,0 +1,109 @@
+# XRD (CompositeResourceDefinition) de REFERÊNCIA — demonstra como uma
+# nova célula (ARQ-01/ARQ-02/DAD-01/DAD-11) seria provisionada
+# declarativamente pelo plano de gestão do Crossplane (ARQ-06, CFG-06,
+# OPE-12), a partir da demanda/placement registrados por Atlas.
+#
+# NÃO é production-grade: é uma simplificação para ilustrar a forma do
+# contrato (parâmetros/status), sem cobrir todos os casos de borda de
+# uma implementação real (rotação de credencial, upgrade de engine,
+# múltiplas regiões, etc.). Nunca foi aplicado a um cluster real — não
+# há EKS/Crossplane provisionado nesta revisão (ver ../README.md e
+# P-01).
+#
+# Reflete os recursos definidos em ../main.tf: PostgreSQL (RDS) por
+# domínio core/finance, filas SQS, tópicos SNS e papel IAM por célula.
+# Crossplane SHALL apenas reconciliar o estado desejado; a decisão de
+# QUANDO expandir permanece em Atlas + política de capacidade,
+# NÃO SHALL vir do próprio Crossplane (ARQ-06).
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xhubcells.constelacao.hub.internal
+  labels:
+    hub.constelacao/reference: "true"
+spec:
+  group: constelacao.hub.internal
+  names:
+    kind: XHubCell
+    plural: xhubcells
+  claimNames:
+    kind: HubCell
+    plural: hubcells
+  connectionSecretKeys:
+    - core_db_endpoint
+    - core_db_username
+    - core_db_password
+    - finance_db_endpoint
+    - finance_db_username
+    - finance_db_password
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                parameters:
+                  type: object
+                  properties:
+                    cellName:
+                      type: string
+                      description: "Identificador da célula (ex.: cell-02). Vira prefixo de todos os recursos filhos."
+                    region:
+                      type: string
+                      description: "PLACEHOLDER — pendente de aprovação em P-01. Sem default: deve vir do placement aprovado, nunca de escolha silenciosa de Engenharia (DEC-01)."
+                    dbEngineVersion:
+                      type: string
+                      default: "16.4"
+                    dbInstanceClass:
+                      type: string
+                      default: "db.r6g.large"
+                    backupRetentionDays:
+                      type: integer
+                      default: 35
+                      minimum: 35
+                      description: "DAD-07: PITR de 35 dias, nunca menor."
+                    dbSubnetGroupName:
+                      type: string
+                      description: "Subnet group privado multi-AZ já existente (ver aws_db_subnet_group.this em ../main.tf)."
+                    vpcSecurityGroupIds:
+                      type: array
+                      items:
+                        type: string
+                    kmsKeyArn:
+                      type: string
+                      description: "ARN da KMS key compartilhada (ver aws_kms_key.hub em ../main.tf)."
+                    oidcProviderArn:
+                      type: string
+                      description: "ARN do OIDC provider do EKS, para o trust policy do papel IAM da célula (IRSA)."
+                    tags:
+                      type: object
+                      additionalProperties:
+                        type: string
+                  required:
+                    - cellName
+                    - region
+                    - dbSubnetGroupName
+                    - kmsKeyArn
+                    - oidcProviderArn
+              required:
+                - parameters
+            status:
+              type: object
+              properties:
+                coreDbEndpoint:
+                  type: string
+                financeDbEndpoint:
+                  type: string
+                commandsQueueUrl:
+                  type: string
+                operationFactsTopicArn:
+                  type: string
+                protocolFactsTopicArn:
+                  type: string
+                cellRoleArn:
+                  type: string
