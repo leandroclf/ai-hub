@@ -1,0 +1,29 @@
+_format_version: "3.0"
+# Configuracao declarativa do Portal (ARQ-01: "Portal — gateway: TLS,
+# autenticacao de borda, quotas tecnicas, rotas, limites de payload").
+# TLS termina fora deste arquivo (proxy real de producao); autenticacao
+# OAuth2/OIDC (SEG-01) e um placeholder aqui — nesta referencia local o
+# Portal apenas roteia, sem validar identidade, o que fica marcado como
+# gap explicito na auditoria (a Orbita aceita X-Tenant-Id diretamente).
+
+services:
+  - name: orbita
+    url: http://orbita:8080
+    routes:
+      - name: orbita-protocols
+        paths:
+          - /v1/protocols
+        strip_path: false
+    plugins:
+      - name: rate-limiting
+        config:
+          minute: 300
+          policy: local
+
+  - name: atlas
+    url: http://atlas:8081
+    routes:
+      - name: atlas-admin
+        paths:
+          - /admin/atlas
+        strip_path: true

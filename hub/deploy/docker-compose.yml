@@ -1,0 +1,166 @@
+name: hub-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hub
+      POSTGRES_PASSWORD: hub
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-init:/docker-entrypoint-initdb.d
+      - ../migrations:/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hub"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: sqs,sns,s3
+      DEFAULT_REGION: us-east-1
+    ports:
+      - "4566:4566"
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:4566/_localstack/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  atlas:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: atlas }
+    environment:
+      HTTP_ADDR: ":8081"
+      CONTROL_DSN: "postgres://hub:hub@postgres:5432/hub_control?sslmode=disable"
+    ports: ["8081:8081"]
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  orbita:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: orbita }
+    environment:
+      HTTP_ADDR: ":8080"
+      CORE_DSN: "postgres://hub:hub@postgres:5432/hub_core?sslmode=disable"
+      ATLAS_URL: "http://atlas:8081"
+      LIBRA_URL: "http://libra:8084"
+      COMETA_URL: "http://cometa:8082"
+      QUEUE_ENDPOINT: "http://localstack:4566"
+      QUEUE_REGION: "us-east-1"
+    ports: ["8080:8080"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_healthy }
+      atlas: { condition: service_started }
+
+  cometa:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: cometa }
+    environment:
+      HTTP_ADDR: ":8082"
+      SELF_URL: "http://cometa:8082"
+      CORE_DSN: "postgres://hub:hub@postgres:5432/hub_core?sslmode=disable"
+      ATLAS_URL: "http://atlas:8081"
+      QUEUE_ENDPOINT: "http://localstack:4566"
+      QUEUE_REGION: "us-east-1"
+    ports: ["8082:8082"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_healthy }
+      atlas: { condition: service_started }
+
+  pulsar:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: pulsar }
+    environment:
+      HTTP_ADDR: ":8083"
+      CORE_DSN: "postgres://hub:hub@postgres:5432/hub_core?sslmode=disable"
+      ORBITA_URL: "http://orbita:8080"
+      QUEUE_ENDPOINT: "http://localstack:4566"
+      QUEUE_REGION: "us-east-1"
+    ports: ["8083:8083"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_healthy }
+
+  libra:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: libra }
+    environment:
+      HTTP_ADDR: ":8084"
+      FINANCE_DSN: "postgres://hub:hub@postgres:5432/hub_finance?sslmode=disable"
+      ATLAS_URL: "http://atlas:8081"
+      QUEUE_ENDPOINT: "http://localstack:4566"
+      QUEUE_REGION: "us-east-1"
+    ports: ["8084:8084"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      localstack: { condition: service_healthy }
+      atlas: { condition: service_started }
+
+  provider-sim:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: provider-sim }
+    environment:
+      HTTP_ADDR: ":8090"
+    ports: ["8090:8090"]
+
+  webhook-sink:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args: { SERVICE: webhook-sink }
+    environment:
+      HTTP_ADDR: ":8091"
+    ports: ["8091:8091"]
+
+  seed:
+    image: curlimages/curl:8.10.1
+    entrypoint: ["/bin/sh", "/seed/seed.sh"]
+    environment:
+      ATLAS_URL: "http://atlas:8081"
+      PULSAR_URL: "http://pulsar:8083"
+      COMETA_URL: "http://cometa:8082"
+    volumes:
+      - ./seed:/seed:ro
+    depends_on:
+      - atlas
+      - pulsar
+      - cometa
+      - provider-sim
+      - webhook-sink
+
+  kong:
+    image: kong:3.8
+    environment:
+      KONG_DATABASE: "off"
+      KONG_DECLARATIVE_CONFIG: "/kong/kong.yml"
+      KONG_PROXY_ACCESS_LOG: "/dev/stdout"
+      KONG_ADMIN_ACCESS_LOG: "/dev/stdout"
+      KONG_PROXY_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_ERROR_LOG: "/dev/stderr"
+      KONG_ADMIN_LISTEN: "0.0.0.0:8001"
+    volumes:
+      - ../deploy/kong:/kong:ro
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+    depends_on:
+      - orbita
