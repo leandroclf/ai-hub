@@ -1,0 +1,17 @@
+           tenant_id            |  kind   | count |  sum   
+--------------------------------+---------+-------+--------
+                                | COST    |    16 | 3.2000
+ acme                           | REVENUE |     8 | 8.0000
+ acme-dedicated                 | REVENUE |     1 | 1.0000
+ acme-strict                    | REVENUE |     1 | 1.0000
+ cliente-alpha                  | REVENUE |     2 | 2.5000
+ cliente-beta                   | REVENUE |     2 | 2.5000
+ cliente-gamma                  | REVENUE |     1 | 1.2500
+ e2e-strict-1788751417853208084 | REVENUE |     1 | 1.0000
+(8 rows)
+
+  state   | count 
+----------+-------
+ CAPTURED |     2
+(1 row)
+

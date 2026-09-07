@@ -1,0 +1,40 @@
+{
+    "QueueUrls": [
+        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/cometa-commands",
+        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/libra-revenue-facts",
+        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/pulsar-protocol-facts",
+        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/libra-cost-facts",
+        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/orbita-operation-facts"
+    ]
+}
+{
+    "Topics": [
+        {
+            "TopicArn": "arn:aws:sns:us-east-1:000000000000:hub-protocol-facts"
+        },
+        {
+            "TopicArn": "arn:aws:sns:us-east-1:000000000000:hub-operation-facts"
+        }
+    ]
+}
+{
+    "Buckets": [
+        {
+            "Name": "hub-objects-test",
+            "CreationDate": "2026-09-07T02:45:45.000Z"
+        }
+    ],
+    "Owner": {
+        "DisplayName": "webfile",
+        "ID": "75aa57f09aa0c8caeab4f8c24e99d10f8e7faeebf76c078efc7c6caea54ba06a"
+    }
+}
+{
+    "AcceptRanges": "bytes",
+    "LastModified": "Mon, 07 Sep 2026 03:24:25 GMT",
+    "ContentLength": 76,
+    "ETag": "\"2af7bd9bb8d97d1ce8e10c25d045017d\"",
+    "ContentType": "application/json",
+    "ServerSideEncryption": "AES256",
+    "Metadata": {}
+}

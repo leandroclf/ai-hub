@@ -1,0 +1,49 @@
+# Relatório de consumo, faturamento e SLA — execução multi-cliente
+
+Gerado em UTC: 2026-09-07T03:30:16Z
+
+## Consumo por cliente, modo e status
+   tenant_id   | mode  |  status   | quantidade 
+---------------+-------+-----------+------------
+ cliente-alpha | ASYNC | SUCCEEDED |          1
+ cliente-alpha | SYNC  | SUCCEEDED |          1
+ cliente-beta  | ASYNC | SUCCEEDED |          1
+ cliente-beta  | SYNC  | SUCCEEDED |          1
+ cliente-gamma | ASYNC | SUCCEEDED |          1
+ cliente-gamma | SYNC  | FAILED    |          1
+(6 rows)
+
+## Consumo por provedor
+   tenant_id   | provider_account_id |   state   | quantidade 
+---------------+---------------------+-----------+------------
+ cliente-alpha | prov-poll-1         | SUCCEEDED |          1
+ cliente-alpha | prov-sync-1         | SUCCEEDED |          1
+ cliente-beta  | prov-poll-2         | SUCCEEDED |          1
+ cliente-beta  | prov-sync-1         | SUCCEEDED |          1
+ cliente-gamma | prov-callback-1     | SUCCEEDED |          1
+ cliente-gamma | prov-sync-1         | FAILED    |          1
+(6 rows)
+
+## Faturamento por cliente
+   tenant_id   |  kind   | fatos | total_brl 
+---------------+---------+-------+-----------
+ cliente-alpha | REVENUE |     2 |    2.5000
+ cliente-beta  | REVENUE |     2 |    2.5000
+ cliente-gamma | REVENUE |     1 |    1.2500
+(3 rows)
+
+## SLA observado
+   tenant_id   | mode  |  status   | duracao_s | dentro_sla 
+---------------+-------+-----------+-----------+------------
+ cliente-alpha | SYNC  | SUCCEEDED |     0.017 | t
+ cliente-alpha | ASYNC | SUCCEEDED |     3.936 | t
+ cliente-beta  | SYNC  | SUCCEEDED |     0.017 | t
+ cliente-beta  | ASYNC | SUCCEEDED |     3.896 | t
+ cliente-gamma | ASYNC | SUCCEEDED |     0.899 | t
+ cliente-gamma | SYNC  | FAILED    |     0.014 | t
+(6 rows)
+
+## Monitoramento
+GET /metrics do Orbita retornou 200 e passou a expor a série de baixa cardinalidade
+`http_requests_total{method="GET",status="OK"}`. Ainda não existem contadores de
+negócio por produto/provedor; essa é uma pendência separada de instrumentação.

@@ -18,6 +18,15 @@ mudança. Código em `hub/`.
   admin-ui e do Swagger UI, com catálogo configurado para provedores síncronos e
   assíncronos (polling e callback).
 
+**Atualização da execução multi-cliente (07/09/2026):** foram publicados no catálogo
+dois serviços públicos de ensaio, criados três tenants adicionais e executados seis
+consumos distribuídos entre provedor síncrono, dois fluxos de polling e callback. O
+cadastro de serviços passou a rejeitar payloads sem código, versão, descrição, SLA ou
+com modos inválidos; a regra possui teste unitário. O servidor HTTP passou a expor
+`http_requests_total` com labels de baixa cardinalidade (método/status). Esses avanços
+não encerram os requisitos de produto composto, seleção automática de provedor,
+autenticação real, ledger, RLS, tracing distribuído ou observabilidade completa.
+
 ## Como ler este documento
 
 Cada item é marcado como:

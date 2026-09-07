@@ -19,6 +19,47 @@ cd hub/deploy && docker compose up -d --build   # sobe a stack e roda o seed
 cd ../evidence && ./generate_traffic.sh          # gera os 10 cenarios abaixo
 ```
 
+## Reexecução confirmada em 07/09/2026
+
+A stack foi reconstruída no estado atual do `main` com `docker compose up -d --build`,
+seguida de `go test -tags e2e ./test/e2e/...`, que passou, e
+`go test -tags e2e ./internal/objectstore`, que também passou. O tráfego foi gerado
+novamente por `generate_traffic.sh`; a saída desta execução está em
+`traffic_output_current.txt`.
+
+Os recortes atuais, capturados diretamente dos componentes, estão em:
+
+- `db/hub_control_current.txt`, `db/hub_core_current.txt` e
+  `db/hub_finance_current.txt` — catálogo, execução, entregas, outbox, inbox e
+  fatos financeiros;
+- `queues/s3_components_current.txt` — cinco filas SQS, dois tópicos SNS, bucket e
+  metadados do objeto S3;
+- `logs/current_stack.log` e `logs/current_trace_ids.txt` — logs dos cinco serviços e
+  amostra dos `trace_id` propagados.
+
+Nesta reexecução, o log capturado apresentou 59 mensagens DEBUG, 87 INFO e 1 WARN;
+nenhum ERROR ocorreu no intervalo. O banco confirmou 11 operações `SUCCEEDED`, 4
+`FAILED`, 14 entregas `DELIVERED`, 30 eventos de outbox publicados e `inbox_count=0`.
+O resultado do S3 confirma o round-trip do objeto `evidence/roundtrip.json` com 76
+bytes e `ContentType=application/json`.
+
+As capturas das telas do admin-ui e do Swagger foram regeneradas pelo
+`screenshots/shoot.mjs` contra a UI local e o container Swagger, incluindo todas as
+cinco telas administrativas e as visões geral e expandida do endpoint.
+
+O ensaio adicional multi-cliente/multi-provedor foi executado por
+`multi_client_scenarios.sh`. Ele publicou duas APIs no catálogo (`consulta-cadastral-publica`
+e `protocolo-publico`), criou contratos para `cliente-alpha`, `cliente-beta` e
+`cliente-gamma`, consumiu provedores síncronos, polling e callback e registrou a saída
+em `multi_client_scenarios_output.txt`. O relatório agregado de consumo, faturamento e
+SLA está em `reports/multi_client_billing_sla_monitoring.txt`.
+
+O cadastro de serviços agora rejeita código, versão, descrição, SLA, TTL ou modos
+inválidos, com cobertura unitária em `internal/atlas/handlers_test.go`. A UI foi
+exercitada de forma automatizada por `screenshots/validate.mjs`; todas as telas
+existentes e o Swagger passaram. O endpoint `/metrics` passou a contar requisições por
+método/status sem usar IDs de negócio como labels.
+
 ## Configuração de catálogo (serviços e provedores síncronos/assíncronos)
 
 `hub/deploy/seed/seed.sh` (executado contra a stack real, saída completa em

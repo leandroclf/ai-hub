@@ -1,0 +1,38 @@
+            code            | version |       modes       | client_sla_seconds | retry_ttl_seconds | published 
+----------------------------+---------+-------------------+--------------------+-------------------+-----------
+ consulta-cadastral         |       1 | {SYNC,ASYNC,AUTO} |                 30 |                15 | t
+ consulta-cadastral-publica |       1 | {SYNC,ASYNC,AUTO} |                 30 |                10 | t
+ protocolo-assincrono       |       1 | {ASYNC,AUTO}      |                 45 |                20 | t
+ protocolo-publico          |       1 | {ASYNC,AUTO}      |                 45 |                10 | t
+(4 rows)
+
+      provider_account_id       |  provider_id   | provider_mode  
+--------------------------------+----------------+----------------
+ e2e-nocred-1788751417836479546 | provider-sim   | sync
+ prov-callback-1                | provider-sim   | async_callback
+ prov-nocred-evid               | provider-sim   | sync
+ prov-poll-1                    | provider-sim   | async_poll
+ prov-poll-2                    | provider-sim-b | async_poll
+ prov-sync-1                    | provider-sim   | sync
+(6 rows)
+
+           tenant_id            | plan | unit_price | strict_balance | credential_mode_required 
+--------------------------------+------+------------+----------------+--------------------------
+ acme                           | unit |     1.0000 | f              | SHARED_HUB
+ acme-dedicated                 | unit |     1.0000 | f              | TENANT_DEDICATED
+ acme-strict                    | unit |     1.0000 | t              | SHARED_HUB
+ cliente-alpha                  | unit |     1.2500 | f              | SHARED_HUB
+ cliente-beta                   | unit |     1.2500 | f              | SHARED_HUB
+ cliente-gamma                  | unit |     1.2500 | f              | SHARED_HUB
+ e2e-strict-1788751417853208084 | unit |     1.0000 | t              | SHARED_HUB
+(7 rows)
+
+ credential_mode  |   tenant_id    | provider_account_id | state 
+------------------+----------------+---------------------+-------
+ SHARED_HUB       |                | prov-callback-1     | ATIVO
+ SHARED_HUB       |                | prov-poll-1         | ATIVO
+ SHARED_HUB       |                | prov-poll-2         | ATIVO
+ TENANT_DEDICATED | acme-dedicated | prov-sync-1         | ATIVO
+ SHARED_HUB       |                | prov-sync-1         | ATIVO
+(5 rows)
+

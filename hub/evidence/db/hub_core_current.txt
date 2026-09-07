@@ -1,0 +1,44 @@
+  status   | mode  | count 
+-----------+-------+-------
+ EXPIRED   | ASYNC |     2
+ SUCCEEDED | ASYNC |     6
+ SUCCEEDED | AUTO  |     1
+ FAILED    | SYNC  |     5
+ SUCCEEDED | SYNC  |     9
+(5 rows)
+
+           tenant_id            |      provider_account_id       |   state   | count 
+--------------------------------+--------------------------------+-----------+-------
+ acme                           | e2e-nocred-1788751417836479546 | FAILED    |     1
+ acme                           | prov-callback-1                | SUCCEEDED |     1
+ acme                           | prov-nocred-evid               | FAILED    |     1
+ acme                           | prov-poll-1                    | SUCCEEDED |     2
+ acme                           | prov-poll-2                    | SUCCEEDED |     1
+ acme                           | prov-sync-1                    | FAILED    |     2
+ acme                           | prov-sync-1                    | SUCCEEDED |     4
+ acme-dedicated                 | prov-sync-1                    | SUCCEEDED |     1
+ acme-strict                    | prov-sync-1                    | SUCCEEDED |     1
+ cliente-alpha                  | prov-poll-1                    | SUCCEEDED |     1
+ cliente-alpha                  | prov-sync-1                    | SUCCEEDED |     1
+ cliente-beta                   | prov-poll-2                    | SUCCEEDED |     1
+ cliente-beta                   | prov-sync-1                    | SUCCEEDED |     1
+ cliente-gamma                  | prov-callback-1                | SUCCEEDED |     1
+ cliente-gamma                  | prov-sync-1                    | FAILED    |     1
+ e2e-strict-1788751417853208084 | prov-sync-1                    | SUCCEEDED |     1
+(16 rows)
+
+   state   | count 
+-----------+-------
+ DELIVERED |    14
+(1 row)
+
+ published | count 
+-----------+-------
+ t         |    42
+(1 row)
+
+ inbox_count 
+-------------
+           0
+(1 row)
+
