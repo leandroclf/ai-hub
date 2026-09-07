@@ -45,8 +45,29 @@ curl -sf -X POST "$ATLAS_URL/v1/provider-accounts" -H 'Content-Type: application
   "base_url": "http://provider-sim:8090", "provider_mode": "async_poll"
 }'
 
+echo "cadastrando perfis de autenticacao do provedor (Basic, OAuth e mTLS+OAuth)..."
+curl -sf -X POST "$ATLAS_URL/v1/provider-accounts" -H 'Content-Type: application/json' -d '{
+  "provider_account_id": "prov-basic-1", "provider_id": "provider-sim", "environment": "local",
+  "base_url": "http://provider-sim:8090", "provider_mode": "sync", "auth_type": "BASIC",
+  "auth_username": "hub-client", "auth_secret_ref": "vault://provider/basic/client",
+  "token_ttl_seconds": 90
+}'
+curl -sf -X POST "$ATLAS_URL/v1/provider-accounts" -H 'Content-Type: application/json' -d '{
+  "provider_account_id": "prov-oauth-1", "provider_id": "provider-sim", "environment": "local",
+  "base_url": "http://provider-sim:8090", "provider_mode": "sync", "auth_type": "OAUTH_CLIENT_CREDENTIALS",
+  "oauth_token_url": "http://provider-sim:8090/oauth/token", "oauth_client_id": "hub-oauth-client",
+  "oauth_client_secret_ref": "vault://provider/oauth/client", "token_ttl_seconds": 90
+}'
+curl -sf -X POST "$ATLAS_URL/v1/provider-accounts" -H 'Content-Type: application/json' -d '{
+  "provider_account_id": "prov-mtls-oauth-1", "provider_id": "provider-sim", "environment": "local",
+  "base_url": "http://provider-sim:8090", "provider_mode": "sync", "auth_type": "MTLS_OAUTH",
+  "oauth_token_url": "http://provider-sim:8090/oauth/token", "oauth_client_id": "hub-mtls-client",
+  "oauth_client_secret_ref": "vault://provider/oauth/mtls-client",
+  "mtls_certificate_ref": "vault://provider/mtls/cert", "token_ttl_seconds": 90
+}'
+
 echo "cadastrando credencial compartilhada (SHARED_HUB)..."
-for acc in prov-sync-1 prov-poll-1 prov-callback-1 prov-poll-2; do
+for acc in prov-sync-1 prov-poll-1 prov-callback-1 prov-poll-2 prov-basic-1 prov-oauth-1 prov-mtls-oauth-1; do
   curl -sf -X POST "$ATLAS_URL/v1/credential-bindings" -H 'Content-Type: application/json' -d "{
     \"binding_id\": \"bind-shared-$acc\", \"credential_mode\": \"SHARED_HUB\",
     \"provider_account_id\": \"$acc\", \"secret_ref\": \"vault://shared/$acc\",
@@ -76,6 +97,16 @@ echo "cadastrando credencial dedicada (TENANT_DEDICATED) do tenant acme-dedicate
 curl -sf -X POST "$ATLAS_URL/v1/credential-bindings" -H 'Content-Type: application/json' -d '{
   "binding_id": "bind-dedicated-acme", "credential_mode": "TENANT_DEDICATED", "tenant_id": "acme-dedicated",
   "provider_account_id": "prov-sync-1", "secret_ref": "vault://dedicated/acme", "settlement_party": "HUB", "state": "ATIVO"
+}'
+
+echo "cadastrando contrato e credencial dedicada para o perfil OAuth..."
+curl -sf -X POST "$ATLAS_URL/v1/contracts" -H 'Content-Type: application/json' -d '{
+  "tenant_id": "acme-dedicated-oauth", "plan": "unit", "unit_price": 1.00, "strict_balance": false,
+  "client_sla_seconds": 30, "credential_mode_required": "TENANT_DEDICATED"
+}'
+curl -sf -X POST "$ATLAS_URL/v1/credential-bindings" -H 'Content-Type: application/json' -d '{
+  "binding_id": "bind-dedicated-oauth", "credential_mode": "TENANT_DEDICATED", "tenant_id": "acme-dedicated-oauth",
+  "provider_account_id": "prov-oauth-1", "secret_ref": "vault://dedicated/acme-oauth", "settlement_party": "HUB", "state": "ATIVO"
 }'
 
 echo "cadastrando destino de webhook do tenant acme (webhook-sink)..."

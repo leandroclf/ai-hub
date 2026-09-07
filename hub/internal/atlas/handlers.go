@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -126,11 +127,54 @@ func (h *Handlers) handleProviderAccounts(w http.ResponseWriter, r *http.Request
 		writeErr(w, http.StatusBadRequest, "invalid_body", err.Error())
 		return
 	}
+	if err := validateProviderAccount(&pa); err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid_provider_account", err.Error())
+		return
+	}
 	if err := h.store.UpsertProviderAccount(r.Context(), pa); err != nil {
 		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
 		return
 	}
 	writeJSON(w, http.StatusCreated, pa)
+}
+
+func validateProviderAccount(pa *ProviderAccount) error {
+	if strings.TrimSpace(pa.ProviderAccountID) == "" || strings.TrimSpace(pa.ProviderID) == "" {
+		return errors.New("provider_account_id e provider_id sao obrigatorios")
+	}
+	baseURL, err := url.ParseRequestURI(strings.TrimSpace(pa.BaseURL))
+	if err != nil || baseURL.Scheme == "" || baseURL.Host == "" {
+		return errors.New("base_url deve ser uma URL valida")
+	}
+	pa.AuthType = strings.ToUpper(strings.TrimSpace(pa.AuthType))
+	if pa.AuthType == "" {
+		pa.AuthType = "NONE"
+	}
+	if pa.TokenTTLSeconds == 0 {
+		pa.TokenTTLSeconds = 300
+	}
+	if pa.TokenTTLSeconds < 1 {
+		return errors.New("token_ttl_seconds deve ser maior que zero")
+	}
+	switch pa.AuthType {
+	case "NONE":
+	case "BASIC":
+		if strings.TrimSpace(pa.AuthUsername) == "" || strings.TrimSpace(pa.AuthSecretRef) == "" {
+			return errors.New("BASIC exige auth_username e auth_secret_ref")
+		}
+	case "OAUTH_CLIENT_CREDENTIALS", "MTLS_OAUTH":
+		tokenURL, parseErr := url.ParseRequestURI(strings.TrimSpace(pa.OAuthTokenURL))
+		if parseErr != nil || tokenURL.Scheme == "" || tokenURL.Host == "" ||
+			strings.TrimSpace(pa.OAuthClientID) == "" || strings.TrimSpace(pa.OAuthClientSecretRef) == "" {
+			return errors.New("OAuth exige oauth_token_url, oauth_client_id e oauth_client_secret_ref")
+		}
+		if pa.AuthType == "MTLS_OAUTH" && strings.TrimSpace(pa.MTLSCertificateRef) == "" {
+			return errors.New("MTLS_OAUTH exige mtls_certificate_ref")
+		}
+	default:
+		return errors.New("auth_type aceita somente NONE, BASIC, OAUTH_CLIENT_CREDENTIALS ou MTLS_OAUTH")
+	}
+	return nil
 }
 
 func (h *Handlers) handleGetProviderAccount(w http.ResponseWriter, r *http.Request) {

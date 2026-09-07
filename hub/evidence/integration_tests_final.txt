@@ -1,0 +1,26 @@
+?   	ai-hub/hub/cmd/atlas	[no test files]
+?   	ai-hub/hub/cmd/cometa	[no test files]
+?   	ai-hub/hub/cmd/libra	[no test files]
+?   	ai-hub/hub/cmd/orbita	[no test files]
+?   	ai-hub/hub/cmd/provider-sim	[no test files]
+?   	ai-hub/hub/cmd/pulsar	[no test files]
+?   	ai-hub/hub/cmd/webhook-sink	[no test files]
+ok  	ai-hub/hub/internal/atlas	(cached)
+?   	ai-hub/hub/internal/atlasclient	[no test files]
+?   	ai-hub/hub/internal/cometa	[no test files]
+?   	ai-hub/hub/internal/dispatch	[no test files]
+?   	ai-hub/hub/internal/libra	[no test files]
+?   	ai-hub/hub/internal/libraclient	[no test files]
+ok  	ai-hub/hub/internal/objectstore	(cached)
+?   	ai-hub/hub/internal/orbita	[no test files]
+?   	ai-hub/hub/internal/outbox	[no test files]
+?   	ai-hub/hub/internal/platform/config	[no test files]
+?   	ai-hub/hub/internal/platform/httpserver	[no test files]
+ok  	ai-hub/hub/internal/platform/idgen	(cached)
+?   	ai-hub/hub/internal/platform/logging	[no test files]
+?   	ai-hub/hub/internal/platform/pg	[no test files]
+?   	ai-hub/hub/internal/providerauth	[no test files]
+?   	ai-hub/hub/internal/providersim	[no test files]
+?   	ai-hub/hub/internal/pulsar	[no test files]
+?   	ai-hub/hub/internal/queue	[no test files]
+ok  	ai-hub/hub/test/e2e	(cached)

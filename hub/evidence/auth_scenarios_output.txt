@@ -1,0 +1,24 @@
+### BASIC tenant=acme provider=prov-basic-1
+{"final_body":{"protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","result":{"scenario":"BASIC"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+### OAUTH_FIRST tenant=acme provider=prov-oauth-1
+{"final_body":{"protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","result":{"scenario":"OAUTH_FIRST"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+### OAUTH_CACHE_HIT tenant=acme provider=prov-oauth-1
+{"final_body":{"protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","result":{"scenario":"OAUTH_CACHE_HIT"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+### MTLS_OAUTH tenant=acme provider=prov-mtls-oauth-1
+{"final_body":{"protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","result":{"scenario":"MTLS_OAUTH"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+### DEDICATED_OAUTH tenant=acme-dedicated-oauth provider=prov-oauth-1
+{"final_body":{"protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","result":{"scenario":"DEDICATED_OAUTH"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+### redis token metadata (valores nunca exibidos)
+hub:provider-token:prov-mtls-oauth-1 ttl=89
+hub:provider-token:prov-oauth-1 ttl=89
+l=89

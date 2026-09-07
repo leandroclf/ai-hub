@@ -17,6 +17,7 @@ import (
 	"ai-hub/hub/internal/platform/httpserver"
 	"ai-hub/hub/internal/platform/logging"
 	"ai-hub/hub/internal/platform/pg"
+	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/queue"
 )
 
@@ -28,6 +29,7 @@ func main() {
 	atlasURL := config.Env("ATLAS_URL", "http://localhost:8081")
 	queueEndpoint := config.Env("QUEUE_ENDPOINT", "http://localhost:4566")
 	queueRegion := config.Env("QUEUE_REGION", "us-east-1")
+	redisAddr := config.Env("REDIS_ADDR", "localhost:6379")
 
 	db, err := pg.WaitReady(dsn, 30_000_000_000)
 	if err != nil {
@@ -38,7 +40,13 @@ func main() {
 
 	store := cometa.NewStore(db)
 	atlas := atlasclient.New(atlasURL, 30*time.Second)
-	exec := cometa.NewExecutor(store, atlas, log, selfURL)
+	tokenCache := providerauth.NewTokenCache(redisAddr)
+	if err := tokenCache.Ping(context.Background()); err != nil {
+		log.Error("nao foi possivel conectar ao Redis de tokens", "error", err)
+		panic(err)
+	}
+	defer tokenCache.Close()
+	exec := cometa.NewExecutor(store, atlas, log, selfURL, tokenCache)
 	handlers := cometa.NewHandlers(exec, store)
 
 	ctx, cancel := context.WithCancel(context.Background())

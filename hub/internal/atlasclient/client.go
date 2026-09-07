@@ -55,10 +55,18 @@ type Contract struct {
 
 // ProviderAccount e a projecao local de uma conta de provedor.
 type ProviderAccount struct {
-	ProviderAccountID string `json:"provider_account_id"`
-	ProviderID        string `json:"provider_id"`
-	BaseURL           string `json:"base_url"`
-	ProviderMode      string `json:"provider_mode"`
+	ProviderAccountID    string `json:"provider_account_id"`
+	ProviderID           string `json:"provider_id"`
+	BaseURL              string `json:"base_url"`
+	ProviderMode         string `json:"provider_mode"`
+	AuthType             string `json:"auth_type"`
+	AuthUsername         string `json:"auth_username"`
+	AuthSecretRef        string `json:"auth_secret_ref"`
+	OAuthTokenURL        string `json:"oauth_token_url"`
+	OAuthClientID        string `json:"oauth_client_id"`
+	OAuthClientSecretRef string `json:"oauth_client_secret_ref"`
+	MTLSCertificateRef   string `json:"mtls_certificate_ref"`
+	TokenTTLSeconds      int    `json:"token_ttl_seconds"`
 }
 
 // CredentialBinding e a projecao local de um vinculo de credencial

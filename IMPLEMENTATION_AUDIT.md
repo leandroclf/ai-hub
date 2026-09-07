@@ -18,14 +18,17 @@ mudança. Código em `hub/`.
   admin-ui e do Swagger UI, com catálogo configurado para provedores síncronos e
   assíncronos (polling e callback).
 
-**Atualização da execução multi-cliente (07/09/2026):** foram publicados no catálogo
+**Atualização da execução multi-cliente/autenticação (07/09/2026):** foram publicados no catálogo
 dois serviços públicos de ensaio, criados três tenants adicionais e executados seis
 consumos distribuídos entre provedor síncrono, dois fluxos de polling e callback. O
 cadastro de serviços passou a rejeitar payloads sem código, versão, descrição, SLA ou
 com modos inválidos; a regra possui teste unitário. O servidor HTTP passou a expor
 `http_requests_total` com labels de baixa cardinalidade (método/status). Esses avanços
-não encerram os requisitos de produto composto, seleção automática de provedor,
-autenticação real, ledger, RLS, tracing distribuído ou observabilidade completa.
+foram ampliados com perfis de autenticação de saída BASIC, OAuth 2.0 Client Credentials,
+MTLS_OAUTH simulado no provedor local, cache de token Redis com TTL e vínculos
+SHARED_HUB/TENANT_DEDICATED. A validação do cadastro rejeita perfis incompletos.
+Isso não encerra os requisitos de produto composto, seleção automática de provedor,
+autenticação inbound real, ledger, RLS, tracing distribuído ou observabilidade completa.
 
 ## Como ler este documento
 
@@ -72,7 +75,7 @@ não aplicados a nenhum ambiente real.
 | 4. Core execution (SYNC/ASYNC) | ✅ | Todas as 8 tarefas (admissão, despacho DIRECT, credencial, deadline, TTL, ASYNC, concorrência callback/polling, GET) implementadas e cobertas por `hub/test/e2e/e2e_test.go` + testes manuais documentados abaixo |
 | 5. Delivery (webhook) | ✅ | `hub/internal/pulsar` — materialização única + HMAC-SHA256 + retry; `TestGetMatchesWebhookBody` prova que GET e webhook devolvem bytes idênticos |
 | 6. Financial | ✅ | `hub/internal/libra` — medição por chave econômica e reserva estrita com lock consultivo por tenant; `TestStrictBalanceLimitExceeded` |
-| 7. Observability and resilience | ⚠️ | Probes diferenciadas (startup/ready/live) e `/metrics` minimalista implementados (7.1); Redis nunca foi implementado — "funciona sem Redis" é satisfeito trivialmente por ausência total de L1/L2, não pela qualificação de um cache real desligado (7.2); indisponibilidade do writer testada manualmente duas vezes, não automatizada em teste de regressão (7.3) |
+| 7. Observability and resilience | ⚠️ | Probes diferenciadas (startup/ready/live) e `/metrics` minimalista implementados (7.1); cache L2 Redis de tokens de provedor implementado e exercitado com TTL (7.2), mas ainda sem teste automatizado de degradação quando Redis fica indisponível; indisponibilidade do writer testada manualmente duas vezes, não automatizada em teste de regressão (7.3) |
 | 8. Slice 2 (polling avançado, credencial dedicada) | ⚠️ | Credencial `TENANT_DEDICATED` testada e funcionando (8.2); os três modos explícitos de polling por vínculo de EXE-05 (`CALLBACK_ONLY`/`POLLING_ONLY`/`CALLBACK_WITH_POLLING_FALLBACK`) foram aproximados pelo `provider_mode` da conta, não implementados como configuração por vínculo (8.1) |
 | 9. Slice 3 (produto composto, planos avançados) | ❌ | Grafo de composição (CAT-04), agregação com merge (CAT-03) e planos de faixas/franquia (FIN-02) **não implementados** — apenas serviço de passo único e preço unitário |
 | 10. Rollout and gates | ⚠️ | Este documento + os testes e2e constituem evidência de G1 (local/dev); G2+ exige sandbox real de cliente/provedor e decisões P-01/P-02/etc., fora do alcance desta entrega |
@@ -170,7 +173,8 @@ futuro; detalhe em `hub/evidence/EVIDENCE.md`):
 | Autenticação (SEG-01) | `X-Tenant-Id` aceito diretamente pela Órbita, sem OAuth2/OIDC/mTLS real | Requer IdP real e configuração de Kong (plugin `openid-connect`/`key-auth`), fora do alcance local |
 | Credenciais/segredos (CFG-05, SEG-05) | `secret_ref` é uma string fictícia (`vault://...`); nenhuma integração com Secrets Manager/KMS | Depende de conta AWS real (P-01) |
 | SSRF em destinos de webhook (SEG-02) | **Nenhuma validação** de destino é aplicada ao cadastrar `webhook_destinations` ou ao executar a entrega | Gap de segurança real, não apenas simplificação — deve ser implementado antes de aceitar URLs fornecidas por clientes reais |
-| Cache (DAD-10) | Nenhum L1 nem L2 implementado; toda leitura vai direto ao PostgreSQL | Satisfaz trivialmente "funciona sem Redis", mas não qualifica o comportamento de bypass/degradação de um cache real desligado |
+| Cache (DAD-10) | Cache L2 implementado para tokens OAuth de saída; leituras de catálogo continuam no PostgreSQL | O caminho saudável, chave e TTL foram comprovados localmente; ainda falta qualificar fallback/bypass e renovação concorrente com Redis indisponível |
+| Autenticação de provedor (SEG-05) | BASIC, OAuth Client Credentials, MTLS_OAUTH e compartilhamento/dedicação são funcionais no ambiente local; mTLS usa `X-MTLS-Certificate-Ref` no simulador | mTLS criptográfico exige TLS/PKI/certificados reais; referências `vault://` ainda não são resolvidas por Secrets Manager/KMS |
 | Polling por vínculo (EXE-05) | Três modos aproximados por `provider_mode` da conta, não configuráveis por vínculo cliente-provedor | Exigiria campo adicional em `credential_bindings` ou tabela própria de política de polling |
 | AUTO (EXE-02) | Tratado como equivalente a ASYNC (202 imediato) | EXE-02 exige espera limitada com possível 200 síncrono; não implementado |
 | Composição/agregação (CAT-03/04) | Não implementado — apenas serviço de passo único | Escopo explicitamente adiado para a "slice 3" em QUA-04 |

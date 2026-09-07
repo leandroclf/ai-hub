@@ -1,0 +1,15 @@
+ provider_account_id | provider_id  | provider_mode |        auth_type         | auth_username |           oauth_token_url            | oauth_client_id  |    mtls_certificate_ref    | token_ttl_seconds 
+---------------------+--------------+---------------+--------------------------+---------------+--------------------------------------+------------------+----------------------------+-------------------
+ prov-basic-1        | provider-sim | sync          | BASIC                    | hub-client    |                                      |                  |                            |                90
+ prov-mtls-oauth-1   | provider-sim | sync          | MTLS_OAUTH               |               | http://provider-sim:8090/oauth/token | hub-mtls-client  | vault://provider/mtls/cert |                90
+ prov-oauth-1        | provider-sim | sync          | OAUTH_CLIENT_CREDENTIALS |               | http://provider-sim:8090/oauth/token | hub-oauth-client |                            |                90
+(3 rows)
+
+ credential_mode  |      tenant_id       | provider_account_id | state 
+------------------+----------------------+---------------------+-------
+ TENANT_DEDICATED | acme-dedicated-oauth | prov-oauth-1        | ATIVO
+ SHARED_HUB       |                      | prov-basic-1        | ATIVO
+ SHARED_HUB       |                      | prov-mtls-oauth-1   | ATIVO
+ SHARED_HUB       |                      | prov-oauth-1        | ATIVO
+(4 rows)
+

@@ -1,0 +1,2 @@
+hub:provider-token:prov-mtls-oauth-1 ttl=88
+hub:provider-token:prov-oauth-1 ttl=88

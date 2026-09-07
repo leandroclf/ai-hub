@@ -102,6 +102,14 @@ export interface ProviderAccount {
   environment: string;
   base_url: string;
   provider_mode: string;
+  auth_type: "NONE" | "BASIC" | "OAUTH_CLIENT_CREDENTIALS" | "MTLS_OAUTH" | string;
+  auth_username: string;
+  auth_secret_ref: string;
+  oauth_token_url: string;
+  oauth_client_id: string;
+  oauth_client_secret_ref: string;
+  mtls_certificate_ref: string;
+  token_ttl_seconds: number;
 }
 
 export function createProviderAccount(pa: ProviderAccount): Promise<ProviderAccount> {

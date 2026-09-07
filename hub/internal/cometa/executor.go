@@ -14,6 +14,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/providersim"
 )
 
@@ -21,32 +22,33 @@ import (
 // "operation") quando Cometa observa um fato externo — consumido por
 // Orbita (para finalizar protocolos ASYNC) e por Libra (para custo).
 type OperationFact struct {
-	ProtocolID        string   `json:"protocol_id"`
-	TraceID           string   `json:"trace_id,omitempty"`
-	OperationID       string   `json:"operation_id"`
-	ProviderAccountID string   `json:"provider_account_id"`
-	ProviderRequestID string   `json:"provider_request_id,omitempty"`
-	Kind              string   `json:"kind"` // SUCCEEDED | FAILED | UNKNOWN
-	ResponseBody      any      `json:"response_body,omitempty"`
-	ErrorMessage      string   `json:"error_message,omitempty"`
+	ProtocolID        string `json:"protocol_id"`
+	TraceID           string `json:"trace_id,omitempty"`
+	OperationID       string `json:"operation_id"`
+	ProviderAccountID string `json:"provider_account_id"`
+	ProviderRequestID string `json:"provider_request_id,omitempty"`
+	Kind              string `json:"kind"` // SUCCEEDED | FAILED | UNKNOWN
+	ResponseBody      any    `json:"response_body,omitempty"`
+	ErrorMessage      string `json:"error_message,omitempty"`
 }
 
 // Executor resolve credencial, chama o provedor (sincrono, poll ou
 // callback conforme provider_mode homologado da conta — CAT-11) e
 // persiste evidencia (EXE-04).
 type Executor struct {
-	store   *Store
-	atlas   *atlasclient.Client
-	log     *slog.Logger
-	client  *http.Client
-	selfURL string
+	store      *Store
+	atlas      *atlasclient.Client
+	log        *slog.Logger
+	client     *http.Client
+	selfURL    string
+	tokenCache *providerauth.TokenCache
 }
 
 // NewExecutor cria um Executor. selfURL e a base URL publica deste
 // Cometa, usada para montar o endereco de callback informado ao
 // provedor simulado em modo async_callback.
-func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, selfURL string) *Executor {
-	return &Executor{store: store, atlas: atlas, log: log, client: &http.Client{Timeout: 15 * time.Second}, selfURL: selfURL}
+func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, selfURL string, tokenCache *providerauth.TokenCache) *Executor {
+	return &Executor{store: store, atlas: atlas, log: log, client: &http.Client{Timeout: 15 * time.Second}, selfURL: selfURL, tokenCache: tokenCache}
 }
 
 // Execute processa um dispatch.Command: cria a operacao, resolve
@@ -97,10 +99,10 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 
 	if err := e.store.CreateOperation(ctx, Operation{
 		OperationID:         operationID,
-		ProtocolID:           cmd.ProtocolID,
-		ProviderAccountID:    cmd.ProviderAccountID,
-		CredentialBindingID:  nullable(cred.BindingID),
-		State:                StatePrepared,
+		ProtocolID:          cmd.ProtocolID,
+		ProviderAccountID:   cmd.ProviderAccountID,
+		CredentialBindingID: nullable(cred.BindingID),
+		State:               StatePrepared,
 	}); err != nil {
 		e.log.Error("falha ao persistir operacao antes do envio", "error", err)
 		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorMessage: "falha ao persistir operacao"}
@@ -137,6 +139,14 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if err := e.tokenCache.Apply(ctx, e.client, pa.ProviderAccountID, providerauth.Config{
+		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: pa.AuthSecretRef,
+		TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID,
+		ClientSecretRef: pa.OAuthClientSecretRef, MTLSCertificateRef: pa.MTLSCertificateRef,
+		TokenTTLSeconds: pa.TokenTTLSeconds,
+	}, httpReq); err != nil {
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", err)
+	}
 
 	resp, err := e.client.Do(httpReq)
 	if err != nil {

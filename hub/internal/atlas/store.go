@@ -81,24 +81,50 @@ func (s *Store) GetService(ctx context.Context, code string, version int) (Servi
 
 // ProviderAccount e uma conta de provedor homologada (CAT-06, DAD-02).
 type ProviderAccount struct {
-	ProviderAccountID string `json:"provider_account_id"`
-	ProviderID        string `json:"provider_id"`
-	Environment       string `json:"environment"`
-	BaseURL           string `json:"base_url"`
-	ProviderMode      string `json:"provider_mode"`
+	ProviderAccountID    string `json:"provider_account_id"`
+	ProviderID           string `json:"provider_id"`
+	Environment          string `json:"environment"`
+	BaseURL              string `json:"base_url"`
+	ProviderMode         string `json:"provider_mode"`
+	AuthType             string `json:"auth_type"`
+	AuthUsername         string `json:"auth_username"`
+	AuthSecretRef        string `json:"auth_secret_ref"`
+	OAuthTokenURL        string `json:"oauth_token_url"`
+	OAuthClientID        string `json:"oauth_client_id"`
+	OAuthClientSecretRef string `json:"oauth_client_secret_ref"`
+	MTLSCertificateRef   string `json:"mtls_certificate_ref"`
+	TokenTTLSeconds      int    `json:"token_ttl_seconds"`
 }
 
 // UpsertProviderAccount cadastra/atualiza uma conta de provedor.
 func (s *Store) UpsertProviderAccount(ctx context.Context, pa ProviderAccount) error {
+	if pa.AuthType == "" {
+		pa.AuthType = "NONE"
+	}
+	if pa.TokenTTLSeconds == 0 {
+		pa.TokenTTLSeconds = 300
+	}
 	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO provider_accounts (provider_account_id, provider_id, environment, base_url, provider_mode)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO provider_accounts (provider_account_id, provider_id, environment, base_url, provider_mode,
+			auth_type, auth_username, auth_secret_ref, oauth_token_url, oauth_client_id,
+			oauth_client_secret_ref, mtls_certificate_ref, token_ttl_seconds)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		ON CONFLICT (provider_account_id) DO UPDATE SET
 			provider_id = EXCLUDED.provider_id,
 			environment = EXCLUDED.environment,
 			base_url = EXCLUDED.base_url,
-			provider_mode = EXCLUDED.provider_mode
-	`, pa.ProviderAccountID, pa.ProviderID, pa.Environment, pa.BaseURL, pa.ProviderMode)
+			provider_mode = EXCLUDED.provider_mode,
+			auth_type = EXCLUDED.auth_type,
+			auth_username = EXCLUDED.auth_username,
+			auth_secret_ref = EXCLUDED.auth_secret_ref,
+			oauth_token_url = EXCLUDED.oauth_token_url,
+			oauth_client_id = EXCLUDED.oauth_client_id,
+			oauth_client_secret_ref = EXCLUDED.oauth_client_secret_ref,
+			mtls_certificate_ref = EXCLUDED.mtls_certificate_ref,
+			token_ttl_seconds = EXCLUDED.token_ttl_seconds
+	`, pa.ProviderAccountID, pa.ProviderID, pa.Environment, pa.BaseURL, pa.ProviderMode,
+		pa.AuthType, pa.AuthUsername, pa.AuthSecretRef, pa.OAuthTokenURL, pa.OAuthClientID,
+		pa.OAuthClientSecretRef, pa.MTLSCertificateRef, pa.TokenTTLSeconds)
 	if err != nil {
 		return fmt.Errorf("atlas: publicar conta de provedor: %w", err)
 	}
@@ -109,10 +135,14 @@ func (s *Store) UpsertProviderAccount(ctx context.Context, pa ProviderAccount) e
 func (s *Store) GetProviderAccount(ctx context.Context, id string) (ProviderAccount, error) {
 	var pa ProviderAccount
 	row := s.db.QueryRowContext(ctx, `
-		SELECT provider_account_id, provider_id, environment, base_url, provider_mode
+		SELECT provider_account_id, provider_id, environment, base_url, provider_mode,
+		       auth_type, auth_username, auth_secret_ref, oauth_token_url, oauth_client_id,
+		       oauth_client_secret_ref, mtls_certificate_ref, token_ttl_seconds
 		FROM provider_accounts WHERE provider_account_id = $1
 	`, id)
-	err := row.Scan(&pa.ProviderAccountID, &pa.ProviderID, &pa.Environment, &pa.BaseURL, &pa.ProviderMode)
+	err := row.Scan(&pa.ProviderAccountID, &pa.ProviderID, &pa.Environment, &pa.BaseURL, &pa.ProviderMode,
+		&pa.AuthType, &pa.AuthUsername, &pa.AuthSecretRef, &pa.OAuthTokenURL, &pa.OAuthClientID,
+		&pa.OAuthClientSecretRef, &pa.MTLSCertificateRef, &pa.TokenTTLSeconds)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ProviderAccount{}, ErrNotFound
 	}
@@ -127,7 +157,7 @@ func (s *Store) GetProviderAccount(ctx context.Context, id string) (ProviderAcco
 type CredentialBinding struct {
 	BindingID         string `json:"binding_id"`
 	CredentialMode    string `json:"credential_mode"` // SHARED_HUB | TENANT_DEDICATED
-	TenantID          string `json:"tenant_id"`        // vazio quando SHARED_HUB
+	TenantID          string `json:"tenant_id"`       // vazio quando SHARED_HUB
 	ProviderAccountID string `json:"provider_account_id"`
 	SecretRef         string `json:"secret_ref"`
 	SettlementParty   string `json:"settlement_party"`

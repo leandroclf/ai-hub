@@ -23,3 +23,26 @@ func TestValidateService(t *testing.T) {
 		})
 	}
 }
+
+func TestValidateProviderAccount(t *testing.T) {
+	valid := []ProviderAccount{
+		{ProviderAccountID: "basic", ProviderID: "p", BaseURL: "http://provider:8090", AuthType: "BASIC", AuthUsername: "hub", AuthSecretRef: "vault://basic"},
+		{ProviderAccountID: "oauth", ProviderID: "p", BaseURL: "http://provider:8090", AuthType: "OAUTH_CLIENT_CREDENTIALS", OAuthTokenURL: "http://provider:8090/oauth/token", OAuthClientID: "client", OAuthClientSecretRef: "vault://oauth"},
+		{ProviderAccountID: "mtls", ProviderID: "p", BaseURL: "http://provider:8090", AuthType: "MTLS_OAUTH", OAuthTokenURL: "http://provider:8090/oauth/token", OAuthClientID: "client", OAuthClientSecretRef: "vault://oauth", MTLSCertificateRef: "vault://cert"},
+	}
+	for _, account := range valid {
+		if err := validateProviderAccount(&account); err != nil {
+			t.Errorf("conta valida rejeitada: %s: %v", account.ProviderAccountID, err)
+		}
+	}
+	invalid := []ProviderAccount{
+		{ProviderAccountID: "missing-basic", ProviderID: "p", BaseURL: "http://provider:8090", AuthType: "BASIC"},
+		{ProviderAccountID: "missing-mtls", ProviderID: "p", BaseURL: "http://provider:8090", AuthType: "MTLS_OAUTH", OAuthTokenURL: "http://provider:8090/oauth/token", OAuthClientID: "client", OAuthClientSecretRef: "vault://oauth"},
+		{ProviderAccountID: "unknown", ProviderID: "p", BaseURL: "http://provider:8090", AuthType: "KERBEROS"},
+	}
+	for _, account := range invalid {
+		if err := validateProviderAccount(&account); err == nil {
+			t.Errorf("conta invalida aceita: %s", account.ProviderAccountID)
+		}
+	}
+}

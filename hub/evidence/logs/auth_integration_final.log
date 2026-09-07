@@ -1,0 +1,516 @@
+libra-1  | {"time":"2026-09-07T12:05:37.629564224Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:05:37.638167837Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:05:37.641604682Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","amount":1}
+libra-1  | {"time":"2026-09-07T12:05:37.653178115Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:05:37.675364929Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:05:37.67749309Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","amount":1}
+libra-1  | {"time":"2026-09-07T12:05:37.683581246Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:05:37.692273065Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:05:37.69521404Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:05:37.697146253Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","amount":1}
+libra-1  | {"time":"2026-09-07T12:05:37.701003686Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:05:37.701003797Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:05:37.702707371Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","amount":1}
+libra-1  | {"time":"2026-09-07T12:05:37.707379001Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:05:37.710230628Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","amount":1}
+libra-1  | {"time":"2026-09-07T12:08:19.619236748Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:08:19.622907772Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","amount":1}
+libra-1  | {"time":"2026-09-07T12:08:19.644086646Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:08:19.648451812Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:08:19.650806337Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","amount":1}
+libra-1  | {"time":"2026-09-07T12:08:19.655198092Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:08:19.659818747Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:08:19.659973587Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:08:19.663436611Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","amount":1}
+libra-1  | {"time":"2026-09-07T12:08:20.608884916Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:08:20.610955869Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","amount":1}
+libra-1  | {"time":"2026-09-07T12:08:20.625926562Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","amount":0.2}
+libra-1  | {"time":"2026-09-07T12:08:20.627756163Z","level":"DEBUG","msg":"libra: fato de protocolo recebido","component":"libra","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","status":"SUCCEEDED"}
+libra-1  | {"time":"2026-09-07T12:08:20.630999675Z","level":"INFO","msg":"libra: receita registrada","component":"libra","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","amount":1}
+libra-1  | {"time":"2026-09-07T12:08:20.641403715Z","level":"INFO","msg":"libra: custo registrado","component":"libra","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","amount":0.2}
+cometa-1  | {"time":"2026-09-07T12:05:36.611726701Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","operation_id":"01a07bc2-74e1-7a43-99a1-23998a664bcf","dispatch_mode":"DIRECT","provider_account_id":"prov-basic-1"}
+cometa-1  | {"time":"2026-09-07T12:05:36.613336459Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","binding_id":"bind-shared-prov-basic-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1      | {"time":"2026-09-07T12:05:36.617316683Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","operation_id":"01a07bc2-74e1-7a43-99a1-23998a664bcf","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc2-74e7-7aff-957d-1cdd749cdcb7"}
+cometa-1      | {"time":"2026-09-07T12:05:36.621886943Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","operation_id":"01a07bc2-74e1-7a43-99a1-23998a664bcf","kind":"SUCCEEDED"}
+cometa-1      | {"time":"2026-09-07T12:05:36.623832401Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":12}
+cometa-1        | {"time":"2026-09-07T12:05:36.638416359Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","operation_id":"01a07bc2-74fc-750c-8b0d-54c47b72c7d3","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:05:36.639765018Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","binding_id":"bind-shared-prov-oauth-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:05:36.643454657Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","operation_id":"01a07bc2-74fc-750c-8b0d-54c47b72c7d3","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc2-7501-7de5-ba40-8f49163dff9b"}
+atlas-1   | {"time":"2026-09-07T12:04:16.288037481Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/services/consulta-cadastral/1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:04:17.235031891Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-oauth-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:04:18.184403589Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:04:19.134108441Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+swagger-ui-1  | 172.18.0.1 - - [07/Sep/2026:12:04:19 +0000] "GET / HTTP/1.1" 200 327 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:19 +0000] "GET /swagger-ui.css HTTP/1.1" 200 23577 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:19 +0000] "GET /index.css HTTP/1.1" 200 151 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:19 +0000] "GET /swagger-initializer.js HTTP/1.1" 200 390 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:19 +0000] "GET /swagger-ui-standalone-preset.js HTTP/1.1" 200 69603 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:19 +0000] "GET /swagger-ui-bundle.js HTTP/1.1" 200 403129 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:20 +0000] "GET /specs/openapi.yaml HTTP/1.1" 200 1853 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:04:20 +0000] "GET /favicon-32x32.png HTTP/1.1" 200 628 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET / HTTP/1.1" 200 327 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /swagger-ui.css HTTP/1.1" 200 23577 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /index.css HTTP/1.1" 200 151 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /swagger-initializer.js HTTP/1.1" 200 390 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /swagger-ui-standalone-preset.js HTTP/1.1" 200 69603 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /swagger-ui-bundle.js HTTP/1.1" 200 403129 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /specs/openapi.yaml HTTP/1.1" 200 1853 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:27 +0000] "GET /favicon-32x32.png HTTP/1.1" 200 628 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:34 +0000] "GET / HTTP/1.1" 200 327 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+atlas-1         | {"time":"2026-09-07T12:05:36.609580205Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.613230661Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.615623628Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-basic-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.639646235Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.641820602Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-oauth-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.66641928Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":1}
+atlas-1         | {"time":"2026-09-07T12:05:36.713748531Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.715895206Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-mtls-oauth-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.737402195Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme-dedicated-oauth","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:36.741254069Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:37.639277979Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:05:37.708168562Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme-dedicated-oauth","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.497874261Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+pulsar-1    | {"time":"2026-09-07T12:05:37.627788705Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.630524175Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","delivery_id":"01a07bc2-78dc-7287-83ff-c21f2e0e58b7","destination":"http://webhook-sink:8091/webhook"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.679587658Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.682020079Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","delivery_id":"01a07bc2-7910-7200-80e0-c0e5dc45a0ed","destination":"http://webhook-sink:8091/webhook"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.687392473Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.691262199Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","delivery_id":"01a07bc2-7917-7e21-bcc2-4d0fc4bf396c","destination":"http://webhook-sink:8091/webhook"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.69686769Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.699071013Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","delivery_id":"01a07bc2-7921-7477-8350-25cf2596af61","destination":"http://webhook-sink:8091/webhook"}
+postgres-1  | 2026-09-07 12:06:08.047 UTC [27] LOG:  checkpoint starting: time
+postgres-1      | 2026-09-07 12:06:14.642 UTC [27] LOG:  checkpoint complete: wrote 66 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=6.567 s, sync=0.012 s, total=6.596 s; sync files=50, longest=0.005 s, average=0.001 s; distance=255 kB, estimate=255 kB; lsn=0/22D3330, redo lsn=0/22D32F8
+pulsar-1        | {"time":"2026-09-07T12:05:37.703164969Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:05:37.703564138Z","level":"DEBUG","msg":"pulsar: tenant sem destino de webhook cadastrado","component":"pulsar","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","tenant_id":"acme-dedicated-oauth"}
+pulsar-1        | {"time":"2026-09-07T12:08:19.642156757Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:08:19.64516061Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","delivery_id":"01a07bc4-f1ba-79f1-b7e6-3d9dd68b52ca","destination":"http://webhook-sink:8091/webhook"}
+orbita-1        | {"time":"2026-09-07T12:03:53.121221437Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc0-e0a1-7347-86d6-b4e82d0c173e","tenant_id":"acme","idempotency_key":"auth-basic-evidence"}
+orbita-1        | {"time":"2026-09-07T12:03:53.121284175Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc0-e0a1-7347-86d6-b4e82d0c173e","request_hash":"45226eb6a518a90cf115160479b7aa66ac6dd5c9f503a2223139d38ff7bee0bf","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:03:53.122235759Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":1}
+orbita-1        | {"time":"2026-09-07T12:03:53.13081127Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc0-e0aa-7c46-aa43-7ebb2fe454cf","tenant_id":"acme","idempotency_key":"auth-oauth-first-evidence"}
+orbita-1        | {"time":"2026-09-07T12:03:53.130890769Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc0-e0aa-7c46-aa43-7ebb2fe454cf","request_hash":"9499bec621f7fc8985e2540653e4c843d40a76986433eafb94afb8c647534382","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:03:53.131509499Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:03:53.140054833Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc0-e0b4-70bb-914d-168f46255553","tenant_id":"acme","idempotency_key":"auth-oauth-cache-evidence"}
+orbita-1        | {"time":"2026-09-07T12:03:53.140124183Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc0-e0b4-70bb-914d-168f46255553","request_hash":"d22ebcba1b9b882ad183a769ae6b2c674229d6a56bc1b4b614aadcab20b01ca5","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:03:53.140900389Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:03:53.149768639Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc0-e0bd-7ba5-af36-b8285a79f45e","tenant_id":"acme","idempotency_key":"auth-mtls-oauth-evidence"}
+orbita-1        | {"time":"2026-09-07T12:03:53.15002011Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc0-e0bd-7ba5-af36-b8285a79f45e","request_hash":"f4e8a6e1e535a7450f47a08989e8529f0b3e8483a73d94453df30dbb5f876e25","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:03:53.150767872Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":1}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.618089552Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.643818609Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/oauth/token","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.644158256Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.692269634Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.717997788Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/oauth/token","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.718379925Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:05:36.74522797Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.510357669Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.537158646Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/oauth/token","status":200,"duration_ms":0}
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:34 +0000] "GET /swagger-ui.css HTTP/1.1" 200 23577 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:34 +0000] "GET /index.css HTTP/1.1" 200 151 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:34 +0000] "GET /swagger-initializer.js HTTP/1.1" 200 390 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:34 +0000] "GET /swagger-ui-standalone-preset.js HTTP/1.1" 200 69603 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:34 +0000] "GET /swagger-ui-bundle.js HTTP/1.1" 200 403129 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:35 +0000] "GET /specs/openapi.yaml HTTP/1.1" 200 1853 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+swagger-ui-1    | 172.18.0.1 - - [07/Sep/2026:12:08:35 +0000] "GET /favicon-32x32.png HTTP/1.1" 200 628 "http://localhost:8092/" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/152.0.0.0 Safari/537.36" "-"
+orbita-1        | {"time":"2026-09-07T12:03:53.159739666Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc0-e0c7-7b2d-833c-a5589e1e6ef7","tenant_id":"acme-dedicated-oauth","idempotency_key":"auth-dedicated-oauth-evidence"}
+orbita-1        | {"time":"2026-09-07T12:03:53.159805219Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc0-e0c7-7b2d-833c-a5589e1e6ef7","request_hash":"658c735d82ae7bfcae38740ebf1ccdc30e42c7b1aea90cfa6b8386621e3807e3","mode":"SYNC"}
+pulsar-1        | {"time":"2026-09-07T12:08:19.655573466Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:08:19.65805523Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","delivery_id":"01a07bc4-f1c8-715e-8e60-9672067a1846","destination":"http://webhook-sink:8091/webhook"}
+pulsar-1        | {"time":"2026-09-07T12:08:19.664203489Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:08:19.666575697Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","delivery_id":"01a07bc4-f1d0-7b40-beed-7351d7322340","destination":"http://webhook-sink:8091/webhook"}
+pulsar-1        | {"time":"2026-09-07T12:08:20.61059363Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:08:20.612874767Z","level":"INFO","msg":"pulsar: entrega agendada","component":"pulsar","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","delivery_id":"01a07bc4-f583-71a1-9dee-b5dd325ffc6e","destination":"http://webhook-sink:8091/webhook"}
+pulsar-1        | {"time":"2026-09-07T12:08:20.628598883Z","level":"DEBUG","msg":"pulsar: fato de protocolo recebido","component":"pulsar","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","status":"SUCCEEDED"}
+pulsar-1        | {"time":"2026-09-07T12:08:20.629032666Z","level":"DEBUG","msg":"pulsar: tenant sem destino de webhook cadastrado","component":"pulsar","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","tenant_id":"acme-dedicated-oauth"}
+atlas-1         | {"time":"2026-09-07T12:08:19.505797999Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.507962869Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-basic-1","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.537440815Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:03:53.160464916Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:04:41.79292711Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/healthz/ready","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:04:41.802237839Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/metrics","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:02.01978298Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc1-edc3-7bd6-b3d2-a6b8f8d4c77e","tenant_id":"acme","idempotency_key":"auth-basic-evidence"}
+orbita-1        | {"time":"2026-09-07T12:05:02.019855756Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc1-edc3-7bd6-b3d2-a6b8f8d4c77e","request_hash":"45226eb6a518a90cf115160479b7aa66ac6dd5c9f503a2223139d38ff7bee0bf","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:02.020478294Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:02.028849531Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc1-edcc-7cdc-a0a9-4754dff92ad7","tenant_id":"acme","idempotency_key":"auth-oauth-first-evidence"}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.565508307Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+webhook-sink-1  | {"time":"2026-09-07T12:05:38.557396592Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc2-750a-7702-a308-a6eec27a59b1"}
+webhook-sink-1  | {"time":"2026-09-07T12:05:38.564147631Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc2-74f0-7851-b3c7-a5b784eabfec"}
+webhook-sink-1  | {"time":"2026-09-07T12:05:38.567034164Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc2-753a-7679-b361-99811b3d7d40"}
+cometa-1        | {"time":"2026-09-07T12:05:36.647913407Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","operation_id":"01a07bc2-74fc-750c-8b0d-54c47b72c7d3","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:05:36.649871559Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":11}
+cometa-1        | {"time":"2026-09-07T12:05:36.664879552Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","operation_id":"01a07bc2-7516-786c-96e7-1180d3951cdc","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:05:36.666597944Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","binding_id":"bind-shared-prov-oauth-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:05:36.691733338Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","operation_id":"01a07bc2-7516-786c-96e7-1180d3951cdc","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc2-751c-79e4-bec6-934a135e6d8a"}
+cometa-1        | {"time":"2026-09-07T12:05:36.695940437Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","operation_id":"01a07bc2-7516-786c-96e7-1180d3951cdc","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:05:36.697766872Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":32}
+cometa-1        | {"time":"2026-09-07T12:05:36.712440979Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","operation_id":"01a07bc2-7546-7583-a1ae-4c2fdb6f36ea","dispatch_mode":"DIRECT","provider_account_id":"prov-mtls-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:05:36.713873265Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","binding_id":"bind-shared-prov-mtls-oauth-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:05:36.71758255Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","operation_id":"01a07bc2-7546-7583-a1ae-4c2fdb6f36ea","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc2-754b-7f34-93ed-3bfe76ad6b93"}
+cometa-1        | {"time":"2026-09-07T12:05:36.722124677Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","operation_id":"01a07bc2-7546-7583-a1ae-4c2fdb6f36ea","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:05:36.723893243Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":11}
+cometa-1        | {"time":"2026-09-07T12:05:36.739844575Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","operation_id":"01a07bc2-7561-7816-b8cd-9688e00893c5","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:05:36.741376057Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","binding_id":"bind-dedicated-oauth","credential_mode":"TENANT_DEDICATED","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:05:36.744818001Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","operation_id":"01a07bc2-7561-7816-b8cd-9688e00893c5","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc2-7567-7184-967d-5e2f95a80ec8"}
+cometa-1        | {"time":"2026-09-07T12:05:36.755912986Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","operation_id":"01a07bc2-7561-7816-b8cd-9688e00893c5","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:05:36.758775614Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":18}
+cometa-1        | {"time":"2026-09-07T12:08:19.503895672Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","operation_id":"01a07bc4-f129-7f0d-a028-251a23f2f0a7","dispatch_mode":"DIRECT","provider_account_id":"prov-basic-1"}
+cometa-1        | {"time":"2026-09-07T12:08:19.505901052Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","binding_id":"bind-shared-prov-basic-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:08:19.509744419Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","operation_id":"01a07bc4-f129-7f0d-a028-251a23f2f0a7","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc4-f134-70cc-b683-c0d2d4eeab52"}
+cometa-1        | {"time":"2026-09-07T12:08:19.513968841Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","operation_id":"01a07bc4-f129-7f0d-a028-251a23f2f0a7","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:08:19.515576807Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":11}
+cometa-1        | {"time":"2026-09-07T12:08:19.531178993Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","operation_id":"01a07bc4-f149-7359-af6a-6505807f5fc2","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:08:19.532875545Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","binding_id":"bind-shared-prov-oauth-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:08:19.536837194Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","operation_id":"01a07bc4-f149-7359-af6a-6505807f5fc2","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc4-f14f-7164-8c16-6f391804fe75"}
+cometa-1        | {"time":"2026-09-07T12:08:19.541069851Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","operation_id":"01a07bc4-f149-7359-af6a-6505807f5fc2","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:08:19.542959113Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":11}
+cometa-1        | {"time":"2026-09-07T12:08:19.559984709Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","operation_id":"01a07bc4-f166-7103-bc88-4a23f318717f","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:08:19.561721416Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","binding_id":"bind-shared-prov-oauth-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:08:19.564991798Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","operation_id":"01a07bc4-f166-7103-bc88-4a23f318717f","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc4-f16b-767b-b846-091c50b9187f"}
+cometa-1        | {"time":"2026-09-07T12:08:19.569099601Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","operation_id":"01a07bc4-f166-7103-bc88-4a23f318717f","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:08:19.570796283Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":10}
+cometa-1        | {"time":"2026-09-07T12:08:19.586703051Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","operation_id":"01a07bc4-f180-7ca2-94d6-08bfba57945f","dispatch_mode":"DIRECT","provider_account_id":"prov-mtls-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:08:19.587841536Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","binding_id":"bind-shared-prov-mtls-oauth-1","credential_mode":"SHARED_HUB","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:08:19.592842935Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","operation_id":"01a07bc4-f180-7ca2-94d6-08bfba57945f","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc4-f186-73c6-bd1e-e318bfe77dcb"}
+cometa-1        | {"time":"2026-09-07T12:08:19.597955331Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","operation_id":"01a07bc4-f180-7ca2-94d6-08bfba57945f","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:08:19.599982944Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":13}
+cometa-1        | {"time":"2026-09-07T12:08:19.617161737Z","level":"DEBUG","msg":"comando recebido para execucao","component":"cometa","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","operation_id":"01a07bc4-f19e-7f26-a0db-9976dc25a562","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+cometa-1        | {"time":"2026-09-07T12:08:19.61844871Z","level":"DEBUG","msg":"credencial resolvida (SEG-05)","component":"cometa","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","binding_id":"bind-dedicated-oauth","credential_mode":"TENANT_DEDICATED","settlement_party":"HUB"}
+cometa-1        | {"time":"2026-09-07T12:08:19.621944726Z","level":"DEBUG","msg":"enviando chamada ao provedor","component":"cometa","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","operation_id":"01a07bc4-f19e-7f26-a0db-9976dc25a562","provider_base_url":"http://provider-sim:8090","provider_mode":"sync","attempt_id":"01a07bc4-f1a4-7337-9c5f-17af696962af"}
+atlas-1         | {"time":"2026-09-07T12:08:19.532662305Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.535018693Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-oauth-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.561532992Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.58774774Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.590143563Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-mtls-oauth-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.614871913Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme-dedicated-oauth","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.618343233Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:19.620369993Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:20.62856524Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme-dedicated-oauth","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:25.15922788Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/services/consulta-cadastral/1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:25.825438869Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-sync-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:26.491620342Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":1}
+atlas-1         | {"time":"2026-09-07T12:08:27.040818401Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:31.275205028Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/services/consulta-cadastral/1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:32.22392321Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/provider-accounts/prov-oauth-1","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:33.191008765Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/credentials/resolve","status":200,"duration_ms":0}
+atlas-1         | {"time":"2026-09-07T12:08:34.157042357Z","level":"INFO","msg":"http_request","component":"atlas","method":"GET","path":"/v1/contracts/acme","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.593276508Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/oauth/token","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:02.028933899Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc1-edcc-7cdc-a0a9-4754dff92ad7","request_hash":"9499bec621f7fc8985e2540653e4c843d40a76986433eafb94afb8c647534382","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:02.029609497Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:02.03743486Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc1-edd5-768f-b916-dbbab9254fd5","tenant_id":"acme","idempotency_key":"auth-oauth-cache-evidence"}
+orbita-1        | {"time":"2026-09-07T12:05:02.03748258Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc1-edd5-768f-b916-dbbab9254fd5","request_hash":"d22ebcba1b9b882ad183a769ae6b2c674229d6a56bc1b4b614aadcab20b01ca5","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:02.038354154Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:02.046487225Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc1-edde-7755-a7f4-0a960a950dbb","tenant_id":"acme","idempotency_key":"auth-mtls-oauth-evidence"}
+orbita-1        | {"time":"2026-09-07T12:05:02.04656958Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc1-edde-7755-a7f4-0a960a950dbb","request_hash":"f4e8a6e1e535a7450f47a08989e8529f0b3e8483a73d94453df30dbb5f876e25","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:02.047389146Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.593620883Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+provider-sim-1  | {"time":"2026-09-07T12:08:19.622340168Z","level":"INFO","msg":"http_request","component":"provider-sim","method":"POST","path":"/v1/operations","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:02.056380627Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc1-ede8-75ba-ab18-e3824dbb1f0a","tenant_id":"acme-dedicated-oauth","idempotency_key":"auth-dedicated-oauth-evidence"}
+orbita-1        | {"time":"2026-09-07T12:05:02.056428768Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc1-ede8-75ba-ab18-e3824dbb1f0a","request_hash":"658c735d82ae7bfcae38740ebf1ccdc30e42c7b1aea90cfa6b8386621e3807e3","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:02.057052177Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:36.607740726Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","tenant_id":"acme","idempotency_key":"auth-basic-evidence-1788782736"}
+orbita-1        | {"time":"2026-09-07T12:05:36.607788576Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","request_hash":"45226eb6a518a90cf115160479b7aa66ac6dd5c9f503a2223139d38ff7bee0bf","mode":"SYNC"}
+webhook-sink-1  | {"time":"2026-09-07T12:05:38.569835647Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc2-7554-77d2-afc5-c8df3c31ca28"}
+webhook-sink-1  | {"time":"2026-09-07T12:08:20.558929721Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc4-f13c-72ff-9fbb-bdb860165da8"}
+webhook-sink-1  | {"time":"2026-09-07T12:08:20.564444422Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc4-f157-7c59-ba5a-2acb86acfcca"}
+webhook-sink-1  | {"time":"2026-09-07T12:08:20.567633952Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc4-f173-7a09-a6f6-9b6d8362db43"}
+webhook-sink-1  | {"time":"2026-09-07T12:08:21.558113696Z","level":"INFO","msg":"webhook recebido","component":"webhook-sink","event_id":"01a07bc4-f190-7a3e-9b13-f799d466eebb"}
+orbita-1        | {"time":"2026-09-07T12:05:36.611027951Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","command_id":"01a07bc2-74e1-7a43-99a1-23998a664bcf","dispatch_mode":"DIRECT","provider_account_id":"prov-basic-1"}
+orbita-1        | {"time":"2026-09-07T12:05:36.626758809Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:05:36.627197301Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":19}
+cometa-1        | {"time":"2026-09-07T12:08:19.62586131Z","level":"INFO","msg":"operacao finalizada","component":"cometa","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","operation_id":"01a07bc4-f19e-7f26-a0db-9976dc25a562","kind":"SUCCEEDED"}
+cometa-1        | {"time":"2026-09-07T12:08:19.627675943Z","level":"INFO","msg":"http_request","component":"cometa","method":"POST","path":"/internal/commands/direct","status":200,"duration_ms":10}
+orbita-1        | {"time":"2026-09-07T12:05:36.635526991Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","tenant_id":"acme","idempotency_key":"auth-oauth-first-evidence-1788782736"}
+orbita-1        | {"time":"2026-09-07T12:05:36.635575952Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","request_hash":"9499bec621f7fc8985e2540653e4c843d40a76986433eafb94afb8c647534382","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:36.638143076Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","command_id":"01a07bc2-74fc-750c-8b0d-54c47b72c7d3","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:05:36.652632066Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:05:36.652994736Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":17}
+orbita-1        | {"time":"2026-09-07T12:05:36.661723995Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","tenant_id":"acme","idempotency_key":"auth-oauth-cache-evidence-1788782736"}
+orbita-1        | {"time":"2026-09-07T12:05:36.661788937Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","request_hash":"d22ebcba1b9b882ad183a769ae6b2c674229d6a56bc1b4b614aadcab20b01ca5","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:36.664603535Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","command_id":"01a07bc2-7516-786c-96e7-1180d3951cdc","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:05:36.700615824Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:05:36.701135539Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":39}
+orbita-1        | {"time":"2026-09-07T12:05:36.709613827Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","tenant_id":"acme","idempotency_key":"auth-mtls-oauth-evidence-1788782736"}
+orbita-1        | {"time":"2026-09-07T12:05:36.709662659Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","request_hash":"f4e8a6e1e535a7450f47a08989e8529f0b3e8483a73d94453df30dbb5f876e25","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:36.71216977Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","command_id":"01a07bc2-7546-7583-a1ae-4c2fdb6f36ea","dispatch_mode":"DIRECT","provider_account_id":"prov-mtls-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:05:36.7267547Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:05:36.727276057Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":17}
+orbita-1        | {"time":"2026-09-07T12:05:36.736068033Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","tenant_id":"acme-dedicated-oauth","idempotency_key":"auth-dedicated-oauth-evidence-1788782736"}
+orbita-1        | {"time":"2026-09-07T12:05:36.7361515Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","request_hash":"658c735d82ae7bfcae38740ebf1ccdc30e42c7b1aea90cfa6b8386621e3807e3","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:05:36.739524214Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","command_id":"01a07bc2-7561-7816-b8cd-9688e00893c5","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:05:36.761993819Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:05:36.762367069Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":26}
+orbita-1        | {"time":"2026-09-07T12:05:37.627723072Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc2-74df-7b37-9732-49ce55aa10bb","protocol_id":"01a07bc2-74e1-7a42-b28a-45b2ea314a1b","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:05:37.669838897Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc2-74fb-77f7-b938-1a2dba99f27f","protocol_id":"01a07bc2-74fc-750a-a823-9e692bd902e9","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:05:37.681533576Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc2-7515-7af5-be3d-14fb333d794f","protocol_id":"01a07bc2-7516-7866-8f2f-aeef63779c55","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:05:37.691164676Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc2-7545-794b-b01d-24d9928f9753","protocol_id":"01a07bc2-7546-7580-a900-bee640fec06e","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:05:37.696628572Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc2-7560-70f0-a583-a5199df6f0b7","protocol_id":"01a07bc2-7561-7814-9c3b-e51b4e190fc5","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:05:38.556480313Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc2-74fc-750a-a823-9e692bd902e9","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:38.563389098Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc2-74e1-7a42-b28a-45b2ea314a1b","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:38.566506434Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc2-7516-7866-8f2f-aeef63779c55","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:05:38.569445475Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc2-7546-7580-a900-bee640fec06e","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:08:19.4960554Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","tenant_id":"acme","idempotency_key":"auth-basic-evidence-1788782899"}
+orbita-1        | {"time":"2026-09-07T12:08:19.496112948Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","request_hash":"45226eb6a518a90cf115160479b7aa66ac6dd5c9f503a2223139d38ff7bee0bf","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:08:19.503256464Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","command_id":"01a07bc4-f129-7f0d-a028-251a23f2f0a7","dispatch_mode":"DIRECT","provider_account_id":"prov-basic-1"}
+orbita-1        | {"time":"2026-09-07T12:08:19.518852138Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:08:19.519421005Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":23}
+orbita-1        | {"time":"2026-09-07T12:08:19.528567135Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","tenant_id":"acme","idempotency_key":"auth-oauth-first-evidence-1788782899"}
+orbita-1        | {"time":"2026-09-07T12:08:19.528614003Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","request_hash":"9499bec621f7fc8985e2540653e4c843d40a76986433eafb94afb8c647534382","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:08:19.530943141Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","command_id":"01a07bc4-f149-7359-af6a-6505807f5fc2","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:08:19.547676489Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:08:19.548307943Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":19}
+orbita-1        | {"time":"2026-09-07T12:08:19.557437413Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","tenant_id":"acme","idempotency_key":"auth-oauth-cache-evidence-1788782899"}
+orbita-1        | {"time":"2026-09-07T12:08:19.557482588Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","request_hash":"d22ebcba1b9b882ad183a769ae6b2c674229d6a56bc1b4b614aadcab20b01ca5","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:08:19.559767673Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","command_id":"01a07bc4-f166-7103-bc88-4a23f318717f","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:08:19.574195668Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:08:19.574668223Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":17}
+orbita-1        | {"time":"2026-09-07T12:08:19.58441439Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","tenant_id":"acme","idempotency_key":"auth-mtls-oauth-evidence-1788782899"}
+orbita-1        | {"time":"2026-09-07T12:08:19.584458152Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","request_hash":"f4e8a6e1e535a7450f47a08989e8529f0b3e8483a73d94453df30dbb5f876e25","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:08:19.58647869Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","command_id":"01a07bc4-f180-7ca2-94d6-08bfba57945f","dispatch_mode":"DIRECT","provider_account_id":"prov-mtls-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:08:19.604545579Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:08:19.605012154Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":20}
+orbita-1        | {"time":"2026-09-07T12:08:19.613642838Z","level":"INFO","msg":"admissao recebida","component":"orbita","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","tenant_id":"acme-dedicated-oauth","idempotency_key":"auth-dedicated-oauth-evidence-1788782899"}
+orbita-1        | {"time":"2026-09-07T12:08:19.613707048Z","level":"DEBUG","msg":"hash de idempotencia calculado","component":"orbita","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","request_hash":"658c735d82ae7bfcae38740ebf1ccdc30e42c7b1aea90cfa6b8386621e3807e3","mode":"SYNC"}
+orbita-1        | {"time":"2026-09-07T12:08:19.61688106Z","level":"DEBUG","msg":"comando de despacho construido","component":"orbita","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","command_id":"01a07bc4-f19e-7f26-a0db-9976dc25a562","dispatch_mode":"DIRECT","provider_account_id":"prov-oauth-1"}
+orbita-1        | {"time":"2026-09-07T12:08:19.63079388Z","level":"INFO","msg":"protocolo finalizado","component":"orbita","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","status":"SUCCEEDED","reason":""}
+orbita-1        | {"time":"2026-09-07T12:08:19.631367545Z","level":"INFO","msg":"http_request","component":"orbita","method":"POST","path":"/v1/protocols","status":200,"duration_ms":17}
+orbita-1        | {"time":"2026-09-07T12:08:19.641813564Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc4-f128-70be-a4f1-f9e22a11565f","protocol_id":"01a07bc4-f129-7f0a-9b63-f0d6574b8556","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:08:19.65346395Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc4-f148-7894-b15f-0d29d7f969c6","protocol_id":"01a07bc4-f149-7358-8f3c-197cfe178e62","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:08:19.65871632Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc4-f165-7698-9eb4-2c9ab8a97bb2","protocol_id":"01a07bc4-f166-7101-9633-b7a4480df1fd","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:08:20.557864273Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc4-f129-7f0a-9b63-f0d6574b8556","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:08:20.563919478Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc4-f149-7358-8f3c-197cfe178e62","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:08:20.566984535Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc4-f166-7101-9633-b7a4480df1fd","status":200,"duration_ms":0}
+orbita-1        | {"time":"2026-09-07T12:08:20.623842845Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc4-f180-763f-8715-95d86d6aaf27","protocol_id":"01a07bc4-f180-7ca1-96b6-207a269669ea","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:08:20.637091097Z","level":"DEBUG","msg":"fact consumer: fato de operacao recebido","component":"orbita","trace_id":"01a07bc4-f19d-79b9-9ef0-67dd02feda27","protocol_id":"01a07bc4-f19e-7f24-b652-7e49c6212058","kind":"SUCCEEDED"}
+orbita-1        | {"time":"2026-09-07T12:08:21.557395138Z","level":"INFO","msg":"http_request","component":"orbita","method":"GET","path":"/internal/protocols/01a07bc4-f180-7ca1-96b6-207a269669ea","status":200,"duration_ms":0}
+localstack-1    | 2026-09-07T12:03:51.717  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:03:51.726  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:03:51.727  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:03:51.727  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:03:55.636  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:01.720  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:01.730  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:01.732  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:01.732  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:05.640  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:11.722  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:11.735  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:11.736  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:11.739  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:15.642  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:21.725  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:21.739  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:21.740  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:21.741  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:25.645  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:31.728  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:31.743  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:31.744  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:31.746  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:35.649  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:41.731  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:41.747  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:41.749  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:41.750  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:45.652  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:51.739  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:51.753  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:51.756  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:51.757  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:04:55.655  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:01.742  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:01.756  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:01.758  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:01.760  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:05.658  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:11.745  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:11.759  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:11.760  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:11.762  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:15.661  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:21.748  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:21.762  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:21.763  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:21.764  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:25.664  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:31.751  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:31.766  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:31.766  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:31.767  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:35.667  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.586  INFO --- [et.reactor-4] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.589  INFO --- [et.reactor-0] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.594  INFO --- [t.reactor-11] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.602  INFO --- [et.reactor-6] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.613  INFO --- [et.reactor-6] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.614  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.619  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.619  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.623  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.629  INFO --- [et.reactor-6] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.633  INFO --- [et.reactor-2] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.640  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.641  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.645  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.648  INFO --- [t.reactor-11] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.649  INFO --- [et.reactor-0] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.658  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.661  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.662  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.670  INFO --- [t.reactor-12] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:05:37.676  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.678  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.679  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.684  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.685  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.686  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.688  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.690  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.692  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.694  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.695  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.696  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.698  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:37.699  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.700  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.701  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.703  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.705  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.706  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:37.711  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:05:45.670  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:47.705  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:47.708  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:47.709  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:47.714  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:55.673  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:57.708  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:57.710  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:57.712  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:05:57.717  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:05.676  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:07.712  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:07.714  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:07.715  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:07.719  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:15.679  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:17.715  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:17.717  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:17.718  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:17.721  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:25.683  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:27.718  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:27.721  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:27.722  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:27.724  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:35.685  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:37.721  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:37.724  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:37.726  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:37.726  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:45.688  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:47.724  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:47.727  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:47.728  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:47.729  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:55.692  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:57.728  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:57.731  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:57.732  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:06:57.732  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:05.695  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:07.732  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:07.734  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:07.735  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:07.736  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:15.698  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:17.736  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:17.737  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:17.738  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:17.740  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:25.701  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:27.740  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:27.741  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:27.742  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:27.744  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:35.704  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:37.744  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:37.746  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:37.747  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:37.748  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:45.707  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:47.747  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:47.750  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:47.751  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:47.753  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:55.710  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:57.750  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:57.753  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:57.754  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:07:57.756  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:05.714  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:07.753  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:07.756  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:07.757  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:07.758  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:15.717  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:17.756  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:17.758  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:17.760  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:17.761  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.585  INFO --- [et.reactor-2] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:19.591  INFO --- [et.reactor-6] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:19.596  INFO --- [et.reactor-1] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:19.600  INFO --- [et.reactor-9] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:19.606  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.608  INFO --- [et.reactor-5] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:19.615  INFO --- [et.reactor-7] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:19.620  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.626  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.626  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.639  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.645  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.646  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.649  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.650  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.652  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.654  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.655  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.656  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.657  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.659  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:19.660  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.662  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.663  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.666  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:19.667  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.585  INFO --- [et.reactor-1] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:20.591  INFO --- [et.reactor-9] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:20.594  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.599  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.601  INFO --- [et.reactor-7] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:20.608  INFO --- [t.reactor-12] localstack.request.aws     : AWS sns.Publish => 200
+localstack-1    | 2026-09-07T12:08:20.613  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.614  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.616  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.617  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.625  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.627  INFO --- [et.reactor-7] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.629  INFO --- [t.reactor-12] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.632  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.632  INFO --- [t.reactor-10] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.634  INFO --- [t.reactor-13] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.635  INFO --- [et.reactor-0] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.637  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:20.639  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:20.642  INFO --- [et.reactor-3] localstack.request.aws     : AWS sqs.DeleteMessage => 200
+localstack-1    | 2026-09-07T12:08:25.721  INFO --- [et.reactor-8] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:30.637  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:30.639  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:30.641  INFO --- [et.reactor-9] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:30.644  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:35.723  INFO --- [et.reactor-4] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:40.641  INFO --- [t.reactor-11] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:40.641  INFO --- [et.reactor-2] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:40.644  INFO --- [et.reactor-6] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:40.646  INFO --- [et.reactor-1] localstack.request.aws     : AWS sqs.ReceiveMessage => 200
+localstack-1    | 2026-09-07T12:08:45.727  INFO --- [et.reactor-5] localstack.request.aws     : AWS sqs.ReceiveMessage => 200

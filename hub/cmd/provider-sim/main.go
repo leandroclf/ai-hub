@@ -21,6 +21,7 @@ func main() {
 	mux := http.NewServeMux()
 	sim.Routes(mux)
 	srv.Handle("/v1/", mux)
+	srv.Handle("/oauth/", mux)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

@@ -83,12 +83,14 @@ de e2e/S3/multi-cliente passou.
 - **2 serviços/produtos**: `consulta-cadastral` v1 (SYNC+ASYNC+AUTO, SLA 30s) e
   `protocolo-assincrono` v1 (ASYNC+AUTO apenas, SLA 45s) — ver
   `db/hub_control.txt`.
-- **5 contas de provedor**: `prov-sync-1` (síncrono), `prov-poll-1` e `prov-poll-2`
+- **8 contas de provedor**: `prov-sync-1` (síncrono), `prov-poll-1` e `prov-poll-2`
   (assíncronos por polling, dois provedores distintos), `prov-callback-1` (assíncrono
-  por callback), `prov-nocred-evid` (sem credencial, para o cenário de recusa).
-- **5 vínculos de credencial**: 4 `SHARED_HUB` + 1 `TENANT_DEDICATED`.
-- **3 contratos de tenant**: `acme` (padrão), `acme-strict` (saldo estrito), 
-  `acme-dedicated` (credencial dedicada exigida).
+  por callback), `prov-nocred-evid` (sem credencial, para o cenário de recusa),
+  `prov-basic-1`, `prov-oauth-1` e `prov-mtls-oauth-1` (autenticação de saída).
+- **9 vínculos de credencial**: 8 `SHARED_HUB` + 1 `TENANT_DEDICATED`, incluindo o
+  vínculo dedicado `acme-dedicated-oauth` para OAuth.
+- **4 contratos de tenant**: `acme` (padrão), `acme-strict` (saldo estrito),
+  `acme-dedicated` e `acme-dedicated-oauth` (credenciais dedicadas exigidas).
 - **1 destino de webhook** (`acme` → `webhook-sink`).
 
 ## Tráfego gerado (`traffic_output.txt`)
@@ -176,7 +178,8 @@ dev, script em `shoot.mjs`:
 - `admin-ui-00-inicial.png` — tela inicial.
 - `admin-ui-01-servicos.png` — catálogo, com o serviço `consulta-cadastral` v1 real
   consultado ao vivo via API.
-- `admin-ui-02-contas-provedor.png` — busca de `prov-sync-1`.
+- `admin-ui-02-contas-provedor.png` — configuração de `prov-oauth-1`, exibindo OAuth
+  Client Credentials e TTL sem exibir segredo.
 - `admin-ui-03-credenciais.png` — resolução real de credencial (SEG-05) para
   tenant `acme` / `prov-sync-1`, mostrando o vínculo `SHARED_HUB` resolvido (sem expor
   segredo — só `secret_ref`).
@@ -185,6 +188,32 @@ dev, script em `shoot.mjs`:
   servindo os dois documentos OpenAPI do hub.
 - `swagger-ui-02-endpoint-expanded.png` — detalhe do endpoint `POST /v1/protocols`
   expandido, com schemas, respostas e descrições reais.
+
+## Autenticação de provedores e cache Redis (07/09/2026)
+
+Foi executado `auth_scenarios.sh` contra a stack local reconstruída. Todos os cinco
+cenários retornaram HTTP 200 e `SUCCEEDED`:
+
+- `BASIC` com `prov-basic-1` e credencial compartilhada;
+- `OAUTH_FIRST` com Client Credentials, obtendo token no endpoint do provedor;
+- `OAUTH_CACHE_HIT` com a mesma conta, reutilizando o token armazenado no Redis;
+- `MTLS_OAUTH` com OAuth e referência de certificado validada pelo simulador local;
+- `DEDICATED_OAUTH` com contrato `TENANT_DEDICATED` e referência dedicada.
+
+Os protocolos e perfis podem ser reproduzidos em `auth_scenarios_output.txt` e
+`db/provider_auth_profiles.txt`. O arquivo `db/redis_token_cache.txt` contém somente
+nomes de chave e TTL, sem token ou segredo. A execução final observou duas chaves
+`hub:provider-token:*` com TTL de aproximadamente 89 segundos; `DBSIZE=2`.
+
+Os logs completos desta rodada estão em `logs/auth_integration_final.log`, com DEBUG
+habilitado e sem `FATAL`, `ERROR` ou `WARN` na janela coletada. A janela limpa posterior
+está em `logs/auth_clean_window.log`. O primeiro ensaio anterior registrou um 404/504
+transitório porque a rota `/oauth/token` ainda não estava publicada pelo `provider-sim`;
+isso foi corrigido, o serviço foi reconstruído e a rodada final passou.
+
+Limite da evidência: `MTLS_OAUTH` demonstra a política e a associação da referência de
+certificado no simulador, mas não substitui handshake TLS/mTLS nem uma PKI real. Também
+não há exposição de segredo: os campos persistidos são apenas referências `vault://`.
 
 ## Achados desta sessão (novos, além dos 5 já registrados na auditoria anterior)
 

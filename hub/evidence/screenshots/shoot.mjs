@@ -32,7 +32,7 @@ await page.screenshot({ path: `${outDir}/admin-ui-00-inicial.png`, fullPage: tru
 console.log("captured admin-ui-00-inicial");
 
 await lookupAndShoot("Catálogo de serviços", ["consulta-cadastral", "1"], "admin-ui-01-servicos");
-await lookupAndShoot("Contas de provedor", ["prov-sync-1"], "admin-ui-02-contas-provedor");
+await lookupAndShoot("Contas de provedor", ["prov-oauth-1"], "admin-ui-02-contas-provedor");
 await lookupAndShoot("Vínculos de credencial", ["acme", "prov-sync-1"], "admin-ui-03-credenciais");
 await lookupAndShoot("Contratos", ["acme"], "admin-ui-04-contratos");
 

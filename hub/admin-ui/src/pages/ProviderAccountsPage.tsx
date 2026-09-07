@@ -12,6 +12,14 @@ const emptyForm = {
   environment: "sandbox",
   base_url: "",
   provider_mode: "",
+  auth_type: "NONE",
+  auth_username: "",
+  auth_secret_ref: "",
+  oauth_token_url: "",
+  oauth_client_id: "",
+  oauth_client_secret_ref: "",
+  mtls_certificate_ref: "",
+  token_ttl_seconds: "300",
 };
 
 export default function ProviderAccountsPage() {
@@ -33,7 +41,10 @@ export default function ProviderAccountsPage() {
     setBusy(true);
     setStatus(null);
     try {
-      const created = await createProviderAccount({ ...form });
+      const created = await createProviderAccount({
+        ...form,
+        token_ttl_seconds: Number(form.token_ttl_seconds),
+      });
       upsertLocal(created);
       setStatus({ kind: "ok", text: `Conta ${created.provider_account_id} cadastrada.` });
     } catch (err) {
@@ -108,6 +119,43 @@ export default function ProviderAccountsPage() {
               onChange={(e) => setForm({ ...form, base_url: e.target.value })}
             />
           </label>
+          <label>
+            Autenticação
+            <select value={form.auth_type} onChange={(e) => setForm({ ...form, auth_type: e.target.value })}>
+              <option value="NONE">NONE</option>
+              <option value="BASIC">BASIC</option>
+              <option value="OAUTH_CLIENT_CREDENTIALS">OAUTH Client Credentials</option>
+              <option value="MTLS_OAUTH">mTLS + OAuth</option>
+            </select>
+          </label>
+          <label>
+            TTL do token (s)
+            <input type="number" min={1} value={form.token_ttl_seconds} onChange={(e) => setForm({ ...form, token_ttl_seconds: e.target.value })} />
+          </label>
+          <label>
+            Usuário Basic
+            <input value={form.auth_username} onChange={(e) => setForm({ ...form, auth_username: e.target.value })} />
+          </label>
+          <label>
+            Referência do segredo
+            <input placeholder="vault://..." value={form.auth_secret_ref} onChange={(e) => setForm({ ...form, auth_secret_ref: e.target.value })} />
+          </label>
+          <label className="span-2">
+            URL do token OAuth
+            <input placeholder="https://idp.example/oauth/token" value={form.oauth_token_url} onChange={(e) => setForm({ ...form, oauth_token_url: e.target.value })} />
+          </label>
+          <label>
+            OAuth client ID
+            <input value={form.oauth_client_id} onChange={(e) => setForm({ ...form, oauth_client_id: e.target.value })} />
+          </label>
+          <label>
+            Referência do client secret
+            <input placeholder="vault://..." value={form.oauth_client_secret_ref} onChange={(e) => setForm({ ...form, oauth_client_secret_ref: e.target.value })} />
+          </label>
+          <label className="span-2">
+            Referência do certificado mTLS
+            <input placeholder="vault://..." value={form.mtls_certificate_ref} onChange={(e) => setForm({ ...form, mtls_certificate_ref: e.target.value })} />
+          </label>
           <button className="primary" type="submit" disabled={busy}>
             Cadastrar conta
           </button>
@@ -150,12 +198,14 @@ export default function ProviderAccountsPage() {
               <th>Ambiente</th>
               <th>Base URL</th>
               <th>Modo</th>
+              <th>Autenticação</th>
+              <th>TTL (s)</th>
             </tr>
           </thead>
           <tbody>
             {accounts.length === 0 && (
               <tr>
-                <td colSpan={5} className="empty-row">
+                <td colSpan={7} className="empty-row">
                   Nenhuma conta cadastrada ou consultada ainda.
                 </td>
               </tr>
@@ -167,6 +217,8 @@ export default function ProviderAccountsPage() {
                 <td>{a.environment}</td>
                 <td>{a.base_url}</td>
                 <td>{a.provider_mode}</td>
+                <td>{a.auth_type}</td>
+                <td>{a.token_ttl_seconds}</td>
               </tr>
             ))}
           </tbody>
