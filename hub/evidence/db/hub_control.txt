@@ -1,0 +1,46 @@
+=== hub_control ===
+              List of relations
+ Schema |        Name         | Type  | Owner 
+--------+---------------------+-------+-------
+ public | contracts           | table | hub
+ public | credential_bindings | table | hub
+ public | placements          | table | hub
+ public | provider_accounts   | table | hub
+ public | services            | table | hub
+(5 rows)
+
+--- services ---
+         code         | version |       modes       | client_sla_seconds | retry_ttl_seconds | published 
+----------------------+---------+-------------------+--------------------+-------------------+-----------
+ consulta-cadastral   |       1 | {SYNC,ASYNC,AUTO} |                 30 |                15 | t
+ protocolo-assincrono |       1 | {ASYNC,AUTO}      |                 45 |                20 | t
+(2 rows)
+
+--- provider_accounts ---
+ provider_account_id |  provider_id   |         base_url         | provider_mode  
+---------------------+----------------+--------------------------+----------------
+ prov-sync-1         | provider-sim   | http://provider-sim:8090 | sync
+ prov-poll-1         | provider-sim   | http://provider-sim:8090 | async_poll
+ prov-callback-1     | provider-sim   | http://provider-sim:8090 | async_callback
+ prov-poll-2         | provider-sim-b | http://provider-sim:8090 | async_poll
+ prov-nocred-evid    | provider-sim   | http://provider-sim:8090 | sync
+(5 rows)
+
+--- credential_bindings ---
+         binding_id          | credential_mode  |   tenant_id    | provider_account_id |           secret_ref           | settlement_party | state 
+-----------------------------+------------------+----------------+---------------------+--------------------------------+------------------+-------
+ bind-shared-prov-sync-1     | SHARED_HUB       |                | prov-sync-1         | vault://shared/prov-sync-1     | HUB              | ATIVO
+ bind-shared-prov-poll-1     | SHARED_HUB       |                | prov-poll-1         | vault://shared/prov-poll-1     | HUB              | ATIVO
+ bind-shared-prov-callback-1 | SHARED_HUB       |                | prov-callback-1     | vault://shared/prov-callback-1 | HUB              | ATIVO
+ bind-shared-prov-poll-2     | SHARED_HUB       |                | prov-poll-2         | vault://shared/prov-poll-2     | HUB              | ATIVO
+ bind-dedicated-acme         | TENANT_DEDICATED | acme-dedicated | prov-sync-1         | vault://dedicated/acme         | HUB              | ATIVO
+(5 rows)
+
+--- contracts ---
+   tenant_id    | plan | unit_price | strict_balance | client_sla_seconds | credential_mode_required 
+----------------+------+------------+----------------+--------------------+--------------------------
+ acme           | unit |     1.0000 | f              |                 30 | SHARED_HUB
+ acme-strict    | unit |     1.0000 | t              |                 30 | SHARED_HUB
+ acme-dedicated | unit |     1.0000 | f              |                 30 | TENANT_DEDICATED
+(3 rows)
+

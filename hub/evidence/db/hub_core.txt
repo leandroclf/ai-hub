@@ -1,0 +1,106 @@
+=== hub_core ===
+               List of relations
+ Schema |         Name         | Type  | Owner 
+--------+----------------------+-------+-------
+ public | attempts             | table | hub
+ public | deliveries           | table | hub
+ public | inbox                | table | hub
+ public | operations           | table | hub
+ public | outbox               | table | hub
+ public | polling_schedule     | table | hub
+ public | protocols            | table | hub
+ public | webhook_destinations | table | hub
+(8 rows)
+
+--- protocols (todos os cenarios gerados) ---
+             protocol_id              |   tenant_id    | mode  | dispatch_mode |  status   | result_version |          accepted_at          |      client_deadline_at       |         finalized_at          
+--------------------------------------+----------------+-------+---------------+-----------+----------------+-------------------------------+-------------------------------+-------------------------------
+ 01a079bd-8e1d-71a5-a5f2-d50f7a37486f | acme           | SYNC  | DIRECT        | SUCCEEDED |              1 | 2026-09-07 02:41:00.957101+00 | 2026-09-07 02:41:30.957101+00 | 2026-09-07 02:41:00.979352+00
+ 01a079bd-8e41-719e-b0c0-525c2e683cca | acme           | SYNC  | DIRECT        | FAILED    |              1 | 2026-09-07 02:41:00.993103+00 | 2026-09-07 02:41:30.993103+00 | 2026-09-07 02:41:01.009661+00
+ 01a079bd-8e5d-745c-8fc6-e0aee94b9c13 | acme           | ASYNC | QUEUED        | SUCCEEDED |              1 | 2026-09-07 02:41:01.021282+00 | 2026-09-07 02:41:31.021282+00 | 2026-09-07 02:41:04.852577+00
+ 01a079bd-8e70-75dc-a5da-7d49134681fe | acme           | ASYNC | QUEUED        | SUCCEEDED |              1 | 2026-09-07 02:41:01.040381+00 | 2026-09-07 02:41:31.040381+00 | 2026-09-07 02:41:04.87595+00
+ 01a079bd-8e81-7261-b12f-ca2159f88bdc | acme           | ASYNC | QUEUED        | SUCCEEDED |              1 | 2026-09-07 02:41:01.057152+00 | 2026-09-07 02:41:31.057152+00 | 2026-09-07 02:41:03.834213+00
+ 01a079bd-8e8f-7d2d-bd88-fe3e203b0779 | acme           | AUTO  | QUEUED        | SUCCEEDED |              1 | 2026-09-07 02:41:01.071862+00 | 2026-09-07 02:41:31.071862+00 | 2026-09-07 02:41:04.881276+00
+ 01a079bd-8e9e-7f08-a978-f167d32e7d5d | acme-strict    | SYNC  | DIRECT        | SUCCEEDED |              1 | 2026-09-07 02:41:01.086982+00 | 2026-09-07 02:41:31.086982+00 | 2026-09-07 02:41:01.114984+00
+ 01a079bd-8ec7-75d2-afed-892e86ec0cb1 | acme-dedicated | SYNC  | DIRECT        | SUCCEEDED |              1 | 2026-09-07 02:41:01.127379+00 | 2026-09-07 02:41:31.127379+00 | 2026-09-07 02:41:01.145168+00
+ 01a079bd-8eec-7d4a-a634-94c6e7179052 | acme           | SYNC  | DIRECT        | FAILED    |              1 | 2026-09-07 02:41:01.164869+00 | 2026-09-07 02:41:31.164869+00 | 2026-09-07 02:41:01.17189+00
+(9 rows)
+
+--- operations ---
+             operation_id             |             protocol_id              | provider_account_id | provider_request_id |   state   
+--------------------------------------+--------------------------------------+---------------------+---------------------+-----------
+ 01a079bd-8e1d-71a9-b25c-dcd2afe6544d | 01a079bd-8e1d-71a5-a5f2-d50f7a37486f | prov-sync-1         | prov-req-000001     | SUCCEEDED
+ 01a079bd-8e41-71a1-8e09-2b659ed23add | 01a079bd-8e41-719e-b0c0-525c2e683cca | prov-sync-1         | prov-req-000002     | FAILED
+ 01a079bd-8e5d-745e-b316-5265eb5618dd | 01a079bd-8e5d-745c-8fc6-e0aee94b9c13 | prov-poll-1         | prov-req-000003     | SUCCEEDED
+ 01a079bd-8e70-75df-8c6a-b5b38ef3cf44 | 01a079bd-8e70-75dc-a5da-7d49134681fe | prov-poll-2         | prov-req-000004     | SUCCEEDED
+ 01a079bd-8e81-7266-b2e8-ce2e8807d8a6 | 01a079bd-8e81-7261-b12f-ca2159f88bdc | prov-callback-1     | prov-req-000005     | SUCCEEDED
+ 01a079bd-8e8f-7d2f-bb1b-09c8429ab342 | 01a079bd-8e8f-7d2d-bd88-fe3e203b0779 | prov-poll-1         | prov-req-000006     | SUCCEEDED
+ 01a079bd-8e9e-7f0b-9c31-de1e6574d422 | 01a079bd-8e9e-7f08-a978-f167d32e7d5d | prov-sync-1         | prov-req-000007     | SUCCEEDED
+ 01a079bd-8ec7-75d5-ba22-5582e77d2d97 | 01a079bd-8ec7-75d2-afed-892e86ec0cb1 | prov-sync-1         | prov-req-000008     | SUCCEEDED
+ 01a079bd-8eec-7d4e-8192-bc6ae86c2b1c | 01a079bd-8eec-7d4a-a634-94c6e7179052 | prov-nocred-evid    |                     | FAILED
+(9 rows)
+
+--- attempts ---
+              attempt_id              |             operation_id             | attempt_type |            sent_at            |          received_at          | error_code 
+--------------------------------------+--------------------------------------+--------------+-------------------------------+-------------------------------+------------
+ 01a079bd-8e26-754e-8b1a-ecd79decba83 | 01a079bd-8e1d-71a9-b25c-dcd2afe6544d | SUBMIT       | 2026-09-07 02:41:00.966349+00 | 2026-09-07 02:41:00.971347+00 | 
+ 01a079bd-8e47-7562-85db-272e65c4c5a4 | 01a079bd-8e41-71a1-8e09-2b659ed23add | SUBMIT       | 2026-09-07 02:41:00.999354+00 | 2026-09-07 02:41:01.001648+00 | 
+ 01a079bd-8e6d-7483-86a5-4754cbfd451e | 01a079bd-8e5d-745e-b316-5265eb5618dd | SUBMIT       | 2026-09-07 02:41:01.037297+00 | 2026-09-07 02:41:01.041742+00 | 
+ 01a079bd-8e85-79a8-b04e-bf21993f9960 | 01a079bd-8e70-75df-8c6a-b5b38ef3cf44 | SUBMIT       | 2026-09-07 02:41:01.061634+00 | 2026-09-07 02:41:01.064267+00 | 
+ 01a079bd-8e99-78dd-91fc-f6a1687792bd | 01a079bd-8e81-7266-b2e8-ce2e8807d8a6 | SUBMIT       | 2026-09-07 02:41:01.081582+00 | 2026-09-07 02:41:01.083919+00 | 
+ 01a079bd-8ea8-74fb-ad49-b52997dba1a1 | 01a079bd-8e8f-7d2f-bb1b-09c8429ab342 | SUBMIT       | 2026-09-07 02:41:01.096327+00 | 2026-09-07 02:41:01.098558+00 | 
+ 01a079bd-8eaf-77b5-8120-b2c70b908ddd | 01a079bd-8e9e-7f0b-9c31-de1e6574d422 | SUBMIT       | 2026-09-07 02:41:01.103506+00 | 2026-09-07 02:41:01.106416+00 | 
+ 01a079bd-8ecd-7552-8a84-8fd83b7ebc03 | 01a079bd-8ec7-75d5-ba22-5582e77d2d97 | SUBMIT       | 2026-09-07 02:41:01.13335+00  | 2026-09-07 02:41:01.135727+00 | 
+(8 rows)
+
+--- polling_schedule (deve estar vazia se tudo ja resolveu) ---
+ operation_id | next_run_at | attempts_count | deadline_at 
+--------------+-------------+----------------+-------------
+(0 rows)
+
+--- deliveries ---
+             delivery_id              |             protocol_id              |               event_id               |         destination_url          |   state   | attempts_count 
+--------------------------------------+--------------------------------------+--------------------------------------+----------------------------------+-----------+----------------
+ 01a079bd-923b-7f1f-80b2-7a92c894c2a9 | 01a079bd-8e1d-71a5-a5f2-d50f7a37486f | 01a079bd-8e33-740e-825a-9eadc8ca7d2a | http://webhook-sink:8091/webhook | DELIVERED |              0
+ 01a079bd-9278-7207-aa7f-aaaaf645853f | 01a079bd-8e41-719e-b0c0-525c2e683cca | 01a079bd-8e51-794f-8c9f-3bca9d139e6f | http://webhook-sink:8091/webhook | DELIVERED |              0
+ 01a079bd-9281-7ed9-94ff-2075f479781a | 01a079bd-8eec-7d4a-a634-94c6e7179052 | 01a079bd-8ef3-7cfa-8a10-7e62b25a1b30 | http://webhook-sink:8091/webhook | DELIVERED |              0
+ 01a079bd-9d54-7b47-ad22-29179086a268 | 01a079bd-8e81-7261-b12f-ca2159f88bdc | 01a079bd-995a-72b2-a3c4-467ff7ae76bf | http://webhook-sink:8091/webhook | DELIVERED |              0
+ 01a079bd-a127-7add-836f-a09a47f16672 | 01a079bd-8e5d-745c-8fc6-e0aee94b9c13 | 01a079bd-9d54-7768-815e-327849a13ec0 | http://webhook-sink:8091/webhook | DELIVERED |              0
+ 01a079bd-a13f-7e7b-a06b-f7eca776303c | 01a079bd-8e70-75dc-a5da-7d49134681fe | 01a079bd-9d6b-7d1a-b948-8aa50f38db03 | http://webhook-sink:8091/webhook | DELIVERED |              0
+ 01a079bd-a14c-71b7-aa70-8560a6c52d62 | 01a079bd-8e8f-7d2d-bd88-fe3e203b0779 | 01a079bd-9d71-735b-affc-7d9b0793a2dd | http://webhook-sink:8091/webhook | DELIVERED |              0
+(7 rows)
+
+--- webhook_destinations ---
+ tenant_id |               url                
+-----------+----------------------------------
+ acme      | http://webhook-sink:8091/webhook
+(1 row)
+
+--- outbox (published deve ser t para tudo ja processado) ---
+ id | aggregate_type |             aggregate_id             |     event_type     | published 
+----+----------------+--------------------------------------+--------------------+-----------
+  1 | operation      | 01a079bd-8e1d-71a9-b25c-dcd2afe6544d | operation.observed | t
+  2 | protocol       | 01a079bd-8e1d-71a5-a5f2-d50f7a37486f | protocol.finalized | t
+  3 | operation      | 01a079bd-8e41-71a1-8e09-2b659ed23add | operation.observed | t
+  4 | protocol       | 01a079bd-8e41-719e-b0c0-525c2e683cca | protocol.finalized | t
+  5 | operation      | 01a079bd-8e9e-7f0b-9c31-de1e6574d422 | operation.observed | t
+  6 | protocol       | 01a079bd-8e9e-7f08-a978-f167d32e7d5d | protocol.finalized | t
+  7 | operation      | 01a079bd-8ec7-75d5-ba22-5582e77d2d97 | operation.observed | t
+  8 | protocol       | 01a079bd-8ec7-75d2-afed-892e86ec0cb1 | protocol.finalized | t
+  9 | protocol       | 01a079bd-8eec-7d4a-a634-94c6e7179052 | protocol.finalized | t
+ 10 | operation      | 01a079bd-8e81-7266-b2e8-ce2e8807d8a6 | operation.observed | t
+ 11 | operation      | 01a079bd-8e5d-745e-b316-5265eb5618dd | operation.observed | t
+ 12 | protocol       | 01a079bd-8e81-7261-b12f-ca2159f88bdc | protocol.finalized | t
+ 13 | operation      | 01a079bd-8e70-75df-8c6a-b5b38ef3cf44 | operation.observed | t
+ 14 | operation      | 01a079bd-8e8f-7d2f-bb1b-09c8429ab342 | operation.observed | t
+ 15 | protocol       | 01a079bd-8e5d-745c-8fc6-e0aee94b9c13 | protocol.finalized | t
+ 16 | protocol       | 01a079bd-8e70-75dc-a5da-7d49134681fe | protocol.finalized | t
+ 17 | protocol       | 01a079bd-8e8f-7d2d-bd88-fe3e203b0779 | protocol.finalized | t
+(17 rows)
+
+--- inbox (esperado vazio - gap conhecido, ver auditoria) ---
+ count 
+-------
+     0
+(1 row)
+

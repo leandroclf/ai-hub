@@ -1,0 +1,55 @@
+### 1. SYNC sucesso (consulta-cadastral, prov-sync-1, tenant acme)
+{"final_body":{"protocol_id":"01a079bd-8e1d-71a5-a5f2-d50f7a37486f","result":{"cpf":"11111111111"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a079bd-8e1d-71a5-a5f2-d50f7a37486f","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+
+### 2. SYNC falha forcada
+{"final_body":{"protocol_id":"01a079bd-8e41-719e-b0c0-525c2e683cca","result":{"force_fail":true},"result_version":0,"status":"FAILED"},"mode":"SYNC","protocol_id":"01a079bd-8e41-719e-b0c0-525c2e683cca","result_version":1,"status":"FAILED"}
+
+HTTP 200
+
+### 3. ASYNC polling, produto assincrono, provedor A (prov-poll-1)
+{"mode":"ASYNC","protocol_id":"01a079bd-8e5d-745c-8fc6-e0aee94b9c13","result_version":0,"status":"ACCEPTED"}
+
+HTTP 202
+
+### 4. ASYNC polling, produto assincrono, provedor B (prov-poll-2)
+{"mode":"ASYNC","protocol_id":"01a079bd-8e70-75dc-a5da-7d49134681fe","result_version":0,"status":"ACCEPTED"}
+
+HTTP 202
+
+### 5. ASYNC callback
+{"mode":"ASYNC","protocol_id":"01a079bd-8e81-7261-b12f-ca2159f88bdc","result_version":0,"status":"ACCEPTED"}
+
+HTTP 202
+
+### 6. AUTO
+{"mode":"AUTO","protocol_id":"01a079bd-8e8f-7d2d-bd88-fe3e203b0779","result_version":0,"status":"ACCEPTED"}
+
+HTTP 202
+
+### 7. Saldo estrito - reserva dentro do limite (tenant acme-strict)
+{"final_body":{"protocol_id":"01a079bd-8e9e-7f08-a978-f167d32e7d5d","result":{"cpf":"22222222222"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a079bd-8e9e-7f08-a978-f167d32e7d5d","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+
+### 8. Credencial dedicada (tenant acme-dedicated)
+{"final_body":{"protocol_id":"01a079bd-8ec7-75d2-afed-892e86ec0cb1","result":{"cpf":"33333333333"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a079bd-8ec7-75d2-afed-892e86ec0cb1","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+
+### 9. Cadastrando conta de provedor sem credencial (para o cenario de recusa)
+{"provider_account_id":"prov-nocred-evid","provider_id":"provider-sim","environment":"local","base_url":"http://provider-sim:8090","provider_mode":"sync"}
+
+### 9b. SYNC com credencial indisponivel (SEG-05, sem fallback)
+{"final_body":{"error_code":"credential_unavailable","error_message":"atlasclient: credencial indisponivel para tenant=acme provider_account=prov-nocred-evid, sem fallback","protocol_id":"01a079bd-8eec-7d4a-a634-94c6e7179052","result_version":0,"status":"FAILED"},"mode":"SYNC","protocol_id":"01a079bd-8eec-7d4a-a634-94c6e7179052","result_version":1,"status":"FAILED"}
+
+HTTP 200
+
+### 10. Idempotencia - repeticao da chave do item 1 (mesmo payload)
+{"final_body":{"protocol_id":"01a079bd-8e1d-71a5-a5f2-d50f7a37486f","result":{"cpf":"11111111111"},"result_version":0,"status":"SUCCEEDED"},"mode":"SYNC","protocol_id":"01a079bd-8e1d-71a5-a5f2-d50f7a37486f","result_version":1,"status":"SUCCEEDED"}
+
+HTTP 200
+
+Aguardando 6s para as operacoes assincronas (itens 3-6) resolverem...
+trafego gerado. Consulte hub/evidence/db, hub/evidence/queues e hub/evidence/logs para a evidencia capturada a partir daqui.

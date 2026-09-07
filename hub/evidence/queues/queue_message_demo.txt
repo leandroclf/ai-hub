@@ -1,0 +1,43 @@
+=== demonstracao real de acumulo e drenagem de mensagem SQS ===
+(consultado de dentro do container LocalStack via awslocal - o aws-cli do host tem
+uma resolucao DNS inconsistente para o hostname sqs.*.localhost.localstack.cloud)
+
+--- estado do container Cometa ---
+hub-local-cometa-1 | Exited (2) About a minute ago
+--- fila cometa-commands, Cometa PARADO (mensagem real pendente do protocolo evid-queue-demo-002) ---
+{
+    "Attributes": {
+        "ApproximateNumberOfMessages": "1"
+    }
+}
+--- corpo real da mensagem (peek, visibility-timeout 30 para nao remover) ---
+{
+    "Messages": [
+        {
+            "MessageId": "c0d27759-0e66-438d-a381-53bda2320269",
+            "ReceiptHandle": "NjYzYTZmNDQtYzRiYy00NWQwLTg5MTItZDQzNDllNGU4YmQ1IGFybjphd3M6c3FzOnVzLWVhc3QtMTowMDAwMDAwMDAwMDA6Y29tZXRhLWNvbW1hbmRzIGMwZDI3NzU5LTBlNjYtNDM4ZC1hMzgxLTUzYmRhMjMyMDI2OSAxNzg4NzQ5MDY1LjkzNjEwOQ==",
+            "MD5OfBody": "5d5e15969cb62b21a9dcc7ab4fc91dbf",
+            "Body": "{\"event_id\":\"01a079bf-59ee-7a01-89cf-80de3a554c62\",\"type\":\"command.dispatch\",\"schema_version\":1,\"producer\":\"orbita\",\"tenant_id\":\"acme\",\"protocol_id\":\"01a079bf-59ee-79fe-b71a-858c1256534b\",\"occurred_at\":\"2026-09-07T02:42:58.672520032Z\",\"recorded_at\":\"2026-09-07T02:42:58.672520083Z\",\"aggregate_version\":1,\"payload\":{\"tenant_id\":\"acme\",\"protocol_id\":\"01a079bf-59ee-79fe-b71a-858c1256534b\",\"step_id\":\"01a079bf-59ee-79fe-b71a-858c1256534b\",\"command_id\":\"01a079bf-59ee-7a01-89cf-80de3a554c62\",\"trace_id\":\"01a079bf-59ed-70cd-ae7f-be969525720b\",\"dispatch_mode\":\"QUEUED\",\"epoch\":1,\"service_code\":\"protocolo-assincrono\",\"service_version\":1,\"provider_account_id\":\"prov-poll-1\",\"request_body\":{\"delay_ms\":500},\"step_deadline\":\"2026-09-07T02:43:28.670652561Z\"}}"
+        }
+    ]
+}
+--- reiniciando Cometa para drenar a fila ---
+hub-local-cometa-1
+--- fila cometa-commands apos Cometa retomar (deve estar drenada) ---
+{
+    "Attributes": {
+        "ApproximateNumberOfMessages": "0"
+    }
+}
+
+--- achado durante o ensaio: Cometa efetivamente processou o comando apos religar (02:44:56),
+quase 2 minutos depois de enfileirado (02:42:58) — confirma que a fila reteve a mensagem
+durante toda a indisponibilidade do consumidor e a entregou integralmente na retomada.
+Como o protocolo ja havia expirado (EXPIRED/SLA_EXCEEDED) antes da retomada, o
+context.WithDeadline do comando (herdado do step_deadline original) já estava vencido;
+a chamada de resolucao de credencial ao Atlas falhou por "context deadline exceeded" e
+foi classificada como "credencial indisponivel" — a causa raiz real e o deadline
+vencido, nao a credencial em si. Nenhum efeito inseguro ocorreu (nenhuma chamada ao
+provedor, nenhum sucesso tardio publicado), mas o codigo/mensagem de erro nesse caso
+especifico e impreciso. Registrado como achado em IMPLEMENTATION_AUDIT.md, nao corrigido
+nesta sessao.

@@ -1,0 +1,40 @@
+=== hub_finance ===
+            List of relations
+ Schema |      Name      | Type  | Owner 
+--------+----------------+-------+-------
+ public | credit_limits  | table | hub
+ public | economic_facts | table | hub
+ public | ledger_entries | table | hub
+ public | reservations   | table | hub
+(4 rows)
+
+--- economic_facts ---
+   tenant_id    |             protocol_id              |  kind   |       meter        | amount | currency 
+----------------+--------------------------------------+---------+--------------------+--------+----------
+ acme           | 01a079bd-8e1d-71a5-a5f2-d50f7a37486f | REVENUE | product.success    | 1.0000 | BRL
+                | 01a079bd-8e1d-71a5-a5f2-d50f7a37486f | COST    | provider.operation | 0.2000 | BRL
+                | 01a079bd-8e9e-7f08-a978-f167d32e7d5d | COST    | provider.operation | 0.2000 | BRL
+                | 01a079bd-8ec7-75d2-afed-892e86ec0cb1 | COST    | provider.operation | 0.2000 | BRL
+ acme-dedicated | 01a079bd-8ec7-75d2-afed-892e86ec0cb1 | REVENUE | product.success    | 1.0000 | BRL
+ acme-strict    | 01a079bd-8e9e-7f08-a978-f167d32e7d5d | REVENUE | product.success    | 1.0000 | BRL
+                | 01a079bd-8e81-7261-b12f-ca2159f88bdc | COST    | provider.operation | 0.2000 | BRL
+ acme           | 01a079bd-8e81-7261-b12f-ca2159f88bdc | REVENUE | product.success    | 1.0000 | BRL
+                | 01a079bd-8e5d-745c-8fc6-e0aee94b9c13 | COST    | provider.operation | 0.2000 | BRL
+                | 01a079bd-8e70-75dc-a5da-7d49134681fe | COST    | provider.operation | 0.2000 | BRL
+                | 01a079bd-8e8f-7d2d-bd88-fe3e203b0779 | COST    | provider.operation | 0.2000 | BRL
+ acme           | 01a079bd-8e5d-745c-8fc6-e0aee94b9c13 | REVENUE | product.success    | 1.0000 | BRL
+ acme           | 01a079bd-8e70-75dc-a5da-7d49134681fe | REVENUE | product.success    | 1.0000 | BRL
+ acme           | 01a079bd-8e8f-7d2d-bd88-fe3e203b0779 | REVENUE | product.success    | 1.0000 | BRL
+(14 rows)
+
+--- reservations ---
+             protocol_id              |  tenant_id  | amount |  state   
+--------------------------------------+-------------+--------+----------
+ 01a079bd-8e9e-7f08-a978-f167d32e7d5d | acme-strict | 1.0000 | CAPTURED
+(1 row)
+
+--- credit_limits ---
+ tenant_id | limit_amount | currency 
+-----------+--------------+----------
+(0 rows)
+

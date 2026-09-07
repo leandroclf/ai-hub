@@ -1,0 +1,4 @@
+=== RUN   TestPutGetRoundTrip
+--- PASS: TestPutGetRoundTrip (0.13s)
+PASS
+ok  	ai-hub/hub/internal/objectstore	0.138s
