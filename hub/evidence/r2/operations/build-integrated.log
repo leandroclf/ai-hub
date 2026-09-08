@@ -1,0 +1,499 @@
+ Image ai-hub-r2-pulsar:r2 Building 
+ Image ai-hub-r2-cometa:r2 Building 
+ Image ai-hub-r2-webhook-sink:r2 Building 
+ Image ai-hub-r2-admin-ui:r2 Building 
+ Image ai-hub-r2-atlas:r2 Building 
+ Image ai-hub-r2-provider-sim:r2 Building 
+ Image ai-hub-r2-libra:r2 Building 
+ Image ai-hub-r2-orbita:r2 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 4.32kB done
+#1 DONE 0.0s
+
+#2 [provider-sim internal] load build definition from Dockerfile
+#2 transferring dockerfile: 686B done
+#2 DONE 0.0s
+
+#3 [admin-ui internal] load build definition from Dockerfile.ui
+#3 transferring dockerfile: 528B done
+#3 DONE 0.1s
+
+#4 [atlas internal] load metadata for docker.io/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac
+#4 DONE 0.0s
+
+#5 [cometa internal] load metadata for gcr.io/distroless/static-debian12@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2
+#5 DONE 0.8s
+
+#6 [webhook-sink internal] load .dockerignore
+#6 transferring context: 107B done
+#6 DONE 0.0s
+
+#7 [orbita stage-1 1/2] FROM gcr.io/distroless/static-debian12@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2
+#7 resolve gcr.io/distroless/static-debian12@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2 0.0s done
+#7 DONE 0.0s
+
+#8 [orbita build 1/6] FROM docker.io/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac
+#8 resolve docker.io/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac 0.0s done
+#8 DONE 0.0s
+
+#9 [orbita internal] load build context
+#9 transferring context: 192.77kB 0.1s done
+#9 transferring context: 192.77kB 0.1s done
+#9 DONE 0.1s
+
+#10 [atlas build 2/6] WORKDIR /src
+#10 CACHED
+
+#11 [atlas build 3/6] COPY go.mod go.sum ./
+#11 CACHED
+
+#12 [provider-sim build 4/6] RUN go mod download
+#12 CACHED
+
+#13 [cometa build 4/6] RUN go mod download
+#13 CACHED
+
+#14 [atlas build 4/6] RUN go mod download
+#14 CACHED
+
+#15 [auth] nginxinc/nginx-unprivileged:pull token for registry-1.docker.io
+#15 DONE 0.0s
+
+#16 [auth] library/node:pull token for registry-1.docker.io
+#16 DONE 0.0s
+
+#17 [pulsar build 4/6] RUN go mod download
+#17 ...
+
+#18 [provider-sim build 5/6] COPY . .
+#18 DONE 0.2s
+
+#19 [atlas build 5/6] COPY . .
+#19 DONE 0.2s
+
+#20 [cometa build 5/6] COPY . .
+#20 DONE 0.3s
+
+#21 [cometa build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/cometa
+#21 ...
+
+#22 [admin-ui internal] load metadata for docker.io/library/node:22.23.2-alpine
+#22 DONE 2.4s
+
+#23 [atlas build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/atlas
+#23 ...
+
+#24 [admin-ui internal] load metadata for docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine
+#24 DONE 2.7s
+
+#6 [admin-ui internal] load .dockerignore
+#6 transferring context: 107B done
+#6 DONE 0.0s
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 resolve docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0 0.0s done
+#25 ...
+
+#26 [admin-ui internal] load build context
+#26 transferring context: 155.34kB 0.0s done
+#26 DONE 0.1s
+
+#27 [admin-ui build 1/6] FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+#27 resolve docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 0.0s done
+#27 DONE 0.4s
+
+#28 [provider-sim build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/provider-sim
+#28 ...
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 sha256:475220ce293c45a17eeae0ee08f6e581d5803952de46d9aa0b389ccf597bd17c 15.55MB / 15.55MB 0.9s done
+#25 sha256:b1cab6cc50e8e002ae282112b1577b103d7c9f1640165dd8e22e7fd4d1a7f7a4 1.40kB / 1.40kB 0.5s done
+#25 sha256:47afafbd588807deeed6121409b7d242a85d0c9342f2e6898364d3929105b3cc 1.21kB / 1.21kB 0.3s done
+#25 sha256:052bb0e619f89bc3496c36108074004faae5db2a0e18f1c2500481e0da1c88fb 402B / 402B 0.3s done
+#25 sha256:ccbda49cc37b4488ddd883c5fed5d83953efa7cd5720275a9cbedc28f54b5e54 958B / 958B 0.3s done
+#25 sha256:3356c6c7bece8866900d2d390e9a638ad9a1cb14ea73fae6d67abc8804574327 628B / 628B 0.2s done
+#25 sha256:435c26134b7449bfbb5948cb18588835f8ed3d88bfe9a45f875d74274a2353be 2.80kB / 2.80kB 0.2s done
+#25 sha256:212764114b7e8c403d58457c9abb8f864d04d58bfa26c7d78ec9a10f300848dd 1.79MB / 1.79MB 0.5s done
+#25 sha256:f637881d1138581d892d9eb942c56e0ccc7758fe3bdc0f1e6cd66059fdfd8185 3.64MB / 3.64MB 0.4s done
+#25 extracting sha256:f637881d1138581d892d9eb942c56e0ccc7758fe3bdc0f1e6cd66059fdfd8185 0.3s done
+#25 extracting sha256:212764114b7e8c403d58457c9abb8f864d04d58bfa26c7d78ec9a10f300848dd 1.0s done
+#25 DONE 3.4s
+
+#17 [pulsar build 4/6] RUN go mod download
+#17 DONE 5.3s
+
+#29 [libra build 4/6] RUN go mod download
+#29 DONE 5.3s
+
+#30 [webhook-sink build 4/6] RUN go mod download
+#30 DONE 5.3s
+
+#31 [libra build 5/6] COPY . .
+#31 ...
+
+#32 [orbita build 4/6] RUN go mod download
+#32 DONE 5.3s
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 extracting sha256:435c26134b7449bfbb5948cb18588835f8ed3d88bfe9a45f875d74274a2353be 0.1s done
+#25 extracting sha256:3356c6c7bece8866900d2d390e9a638ad9a1cb14ea73fae6d67abc8804574327 0.2s done
+#25 DONE 3.8s
+
+#27 [admin-ui build 1/6] FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+#27 sha256:a2980c1fee17dfd6263234b253955e0e9d5f38d47c0e71c001139897134899d0 1.26MB / 1.26MB 0.4s done
+#27 sha256:16da5a6403776464b5bf551ef294de57da242eac594527ea551a46e7f76ac2d6 445B / 445B 0.2s done
+#27 sha256:efbef6f9e333972a10ca323e700496a64e7ddcc3a6725e6afbbae52e690f4a4a 52.63MB / 52.63MB 1.9s done
+#27 extracting sha256:efbef6f9e333972a10ca323e700496a64e7ddcc3a6725e6afbbae52e690f4a4a
+#27 ...
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 extracting sha256:ccbda49cc37b4488ddd883c5fed5d83953efa7cd5720275a9cbedc28f54b5e54 0.2s done
+#25 DONE 4.0s
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 extracting sha256:052bb0e619f89bc3496c36108074004faae5db2a0e18f1c2500481e0da1c88fb 0.1s done
+#25 extracting sha256:47afafbd588807deeed6121409b7d242a85d0c9342f2e6898364d3929105b3cc 0.1s done
+#25 DONE 4.1s
+
+#33 [orbita build 5/6] COPY . .
+#33 ...
+
+#34 [pulsar build 5/6] COPY . .
+#34 DONE 1.3s
+
+#35 [webhook-sink build 5/6] COPY . .
+#35 DONE 1.2s
+
+#31 [libra build 5/6] COPY . .
+#31 DONE 1.3s
+
+#33 [orbita build 5/6] COPY . .
+#33 DONE 1.3s
+
+#36 [webhook-sink build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/webhook-sink
+#36 ...
+
+#27 [admin-ui build 1/6] FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+#27 extracting sha256:efbef6f9e333972a10ca323e700496a64e7ddcc3a6725e6afbbae52e690f4a4a 2.9s done
+#27 DONE 5.2s
+
+#27 [admin-ui build 1/6] FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+#27 extracting sha256:a2980c1fee17dfd6263234b253955e0e9d5f38d47c0e71c001139897134899d0
+#27 ...
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 extracting sha256:b1cab6cc50e8e002ae282112b1577b103d7c9f1640165dd8e22e7fd4d1a7f7a4 1.5s done
+#25 DONE 5.5s
+
+#27 [admin-ui build 1/6] FROM docker.io/library/node:22.23.2-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
+#27 extracting sha256:a2980c1fee17dfd6263234b253955e0e9d5f38d47c0e71c001139897134899d0 0.3s done
+#27 extracting sha256:16da5a6403776464b5bf551ef294de57da242eac594527ea551a46e7f76ac2d6 0.1s done
+#27 DONE 5.6s
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 extracting sha256:475220ce293c45a17eeae0ee08f6e581d5803952de46d9aa0b389ccf597bd17c
+#25 ...
+
+#37 [admin-ui build 2/6] WORKDIR /app
+#37 DONE 0.5s
+
+#38 [admin-ui build 3/6] COPY admin-ui/package*.json ./
+#38 ...
+
+#25 [admin-ui stage-1 1/3] FROM docker.io/nginxinc/nginx-unprivileged:1.28.0-alpine@sha256:c97ff0bf7cbae369953c6da1232ec14ad9f971d66360c5698db0856a4cd657a0
+#25 extracting sha256:475220ce293c45a17eeae0ee08f6e581d5803952de46d9aa0b389ccf597bd17c 0.9s done
+#25 DONE 6.4s
+
+#38 [admin-ui build 3/6] COPY admin-ui/package*.json ./
+#38 DONE 0.3s
+
+#39 [admin-ui build 4/6] RUN npm ci --ignore-scripts
+#39 ...
+
+#40 [admin-ui stage-1 2/3] COPY deploy/r2/nginx.conf /etc/nginx/conf.d/default.conf
+#40 DONE 0.4s
+
+#41 [orbita build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/orbita
+#41 ...
+
+#39 [admin-ui build 4/6] RUN npm ci --ignore-scripts
+#39 7.287 
+#39 7.287 added 67 packages, and audited 68 packages in 6s
+#39 7.287 
+#39 7.287 7 packages are looking for funding
+#39 7.287   run `npm fund` for details
+#39 7.299 
+#39 7.299 2 vulnerabilities (1 moderate, 1 high)
+#39 7.299 
+#39 7.299 To address all issues (including breaking changes), run:
+#39 7.299   npm audit fix --force
+#39 7.299 
+#39 7.299 Run `npm audit` for details.
+#39 7.302 npm notice
+#39 7.302 npm notice New major version of npm available! 10.9.8 -> 12.0.2
+#39 7.302 npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.0.2
+#39 7.302 npm notice To update run: npm install -g npm@12.0.2
+#39 7.302 npm notice
+#39 DONE 8.1s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 ...
+
+#43 [admin-ui build 5/6] COPY admin-ui/ ./
+#43 ...
+
+#44 [pulsar build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/pulsar
+#44 ...
+
+#43 [admin-ui build 5/6] COPY admin-ui/ ./
+#43 DONE 0.5s
+
+#45 [admin-ui build 6/6] RUN npm run build
+#45 1.202 
+#45 1.202 > atlas-admin-ui@0.1.0 build
+#45 1.202 > tsc --noEmit && vite build
+#45 1.202 
+#45 ...
+
+#28 [provider-sim build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/provider-sim
+#28 DONE 22.2s
+
+#7 [pulsar stage-1 1/2] FROM gcr.io/distroless/static-debian12@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2
+#7 CACHED
+
+#46 [provider-sim stage-1 2/2] COPY --from=build /out/service /service
+#46 DONE 0.3s
+
+#23 [atlas build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/atlas
+#23 ...
+
+#47 [provider-sim] exporting to image
+#47 exporting layers
+#47 exporting layers 1.0s done
+#47 exporting manifest sha256:0e20eb5b0265e3c07a6ba23d0d679d563e6334bacbbae88da4dece6d9a93383c 0.0s done
+#47 exporting config sha256:8fb487c6062131d4ab445848d99a00861ba4b3a63b6ef323064bc88f1f820bb0 0.0s done
+#47 exporting attestation manifest sha256:f6a35cf98e3a5b3ac65c4a1756bb37e962b2be84cd523a77239ebc061fd2a961
+#47 exporting attestation manifest sha256:f6a35cf98e3a5b3ac65c4a1756bb37e962b2be84cd523a77239ebc061fd2a961 0.1s done
+#47 exporting manifest list sha256:b5dee0d11de629573576683897de69f45199df9b58ff352d50f38d0971e882e9
+#47 exporting manifest list sha256:b5dee0d11de629573576683897de69f45199df9b58ff352d50f38d0971e882e9 0.0s done
+#47 naming to docker.io/library/ai-hub-r2-provider-sim:r2 done
+#47 unpacking to docker.io/library/ai-hub-r2-provider-sim:r2
+#47 unpacking to docker.io/library/ai-hub-r2-provider-sim:r2 0.5s done
+#47 ...
+
+#23 [atlas build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/atlas
+#23 DONE 24.2s
+
+#47 [provider-sim] exporting to image
+#47 DONE 1.9s
+
+#48 [atlas stage-1 2/2] COPY --from=build /out/service /service
+#48 DONE 0.3s
+
+#44 [pulsar build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/pulsar
+#44 ...
+
+#49 [atlas] exporting to image
+#49 ...
+
+#50 [provider-sim] resolving provenance for metadata file
+#50 DONE 0.1s
+
+#49 [atlas] exporting to image
+#49 exporting layers 1.3s done
+#49 exporting manifest sha256:5711021851ee463ff2ac200f6090055c4ca29dbda48767896b6f1798afc03a70
+#49 exporting manifest sha256:5711021851ee463ff2ac200f6090055c4ca29dbda48767896b6f1798afc03a70 0.1s done
+#49 exporting config sha256:cf648fa1131884962a24643a43046c4d0b60b6519cd84308faa8076876b35037 0.0s done
+#49 exporting attestation manifest sha256:5c19f69e9188478e9d871df6b9e82e6ce6b1b5a5b6b0f10b47776c275106cba5
+#49 exporting attestation manifest sha256:5c19f69e9188478e9d871df6b9e82e6ce6b1b5a5b6b0f10b47776c275106cba5 0.3s done
+#49 exporting manifest list sha256:38fd2feb2741f08c2d1941970d2cbe4fc00a38321e608b3ddc2d69491f3e7346
+#49 exporting manifest list sha256:38fd2feb2741f08c2d1941970d2cbe4fc00a38321e608b3ddc2d69491f3e7346 0.0s done
+#49 naming to docker.io/library/ai-hub-r2-atlas:r2 done
+#49 unpacking to docker.io/library/ai-hub-r2-atlas:r2 0.1s done
+#49 DONE 2.0s
+
+#41 [orbita build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/orbita
+#41 ...
+
+#51 [atlas] resolving provenance for metadata file
+#51 DONE 0.0s
+
+#45 [admin-ui build 6/6] RUN npm run build
+#45 12.78 vite v5.4.21 building for production...
+#45 12.88 transforming...
+#45 14.86 ✓ 38 modules transformed.
+#45 15.06 rendering chunks...
+#45 15.07 computing gzip size...
+#45 15.09 dist/index.html                   0.42 kB │ gzip:  0.29 kB
+#45 15.09 dist/assets/index-CzL5Fx-4.css    5.56 kB │ gzip:  1.87 kB
+#45 15.09 dist/assets/index-C0Vu78Ki.js   181.07 kB │ gzip: 57.59 kB
+#45 15.10 ✓ built in 2.27s
+#45 DONE 15.6s
+
+#36 [webhook-sink build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/webhook-sink
+#36 ...
+
+#52 [admin-ui stage-1 3/3] COPY --from=build /app/dist /usr/share/nginx/html
+#52 DONE 0.5s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 ...
+
+#53 [admin-ui] exporting to image
+#53 exporting layers
+#53 exporting layers 0.2s done
+#53 exporting manifest sha256:d2527f4cdd9feea5a77c7380d03806b7e80794b9159478a09d7a90eed9cacfa0 0.0s done
+#53 exporting config sha256:d29daf4463b124762b142a098793772d486f3792d4bd3da14148881bd3106d6a 0.0s done
+#53 exporting attestation manifest sha256:50700886e8d01ab8a9e20c35a1972ffeaf9f313fb40bfa01273bb4d436def027 0.1s done
+#53 exporting manifest list sha256:ce46c44780ea2d492f693a01b454ee2865efe0e108ea1ddc51f47f596a04cfb0
+#53 exporting manifest list sha256:ce46c44780ea2d492f693a01b454ee2865efe0e108ea1ddc51f47f596a04cfb0 0.0s done
+#53 naming to docker.io/library/ai-hub-r2-admin-ui:r2 done
+#53 unpacking to docker.io/library/ai-hub-r2-admin-ui:r2
+#53 ...
+
+#36 [webhook-sink build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/webhook-sink
+#36 DONE 27.1s
+
+#54 [webhook-sink stage-1 2/2] COPY --from=build /out/service /service
+#54 CACHED
+
+#55 [webhook-sink] exporting to image
+#55 exporting layers done
+#55 exporting manifest sha256:7a58852a9b37f1e08f95547f7b9efcd63b2fe47bfa0abe1575e0ce4bc64b8c48 0.0s done
+#55 exporting config sha256:fa695f631b2202102fffb1e58343ab7a2611fa477c269e375918c399c8bfa9b3
+#55 ...
+
+#53 [admin-ui] exporting to image
+#53 unpacking to docker.io/library/ai-hub-r2-admin-ui:r2 0.4s done
+#53 DONE 0.9s
+
+#55 [webhook-sink] exporting to image
+#55 exporting config sha256:fa695f631b2202102fffb1e58343ab7a2611fa477c269e375918c399c8bfa9b3 0.0s done
+#55 exporting attestation manifest sha256:ebab455a30bd9ce5c70f6b6527e033917923693772eebeb38910eb24c6558b8f 0.1s done
+#55 exporting manifest list sha256:da74c62d84543e73e03ef31b2ce64d9a1811aa10def9f9ea5a7acf2386560211
+#55 exporting manifest list sha256:da74c62d84543e73e03ef31b2ce64d9a1811aa10def9f9ea5a7acf2386560211 0.1s done
+#55 naming to docker.io/library/ai-hub-r2-webhook-sink:r2 0.0s done
+#55 unpacking to docker.io/library/ai-hub-r2-webhook-sink:r2 0.1s done
+#55 DONE 0.5s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 ...
+
+#56 [admin-ui] resolving provenance for metadata file
+#56 DONE 0.0s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 ...
+
+#57 [webhook-sink] resolving provenance for metadata file
+#57 DONE 0.0s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 ...
+
+#21 [cometa build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/cometa
+#21 DONE 36.3s
+
+#58 [cometa stage-1 2/2] COPY --from=build /out/service /service
+#58 DONE 0.2s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 ...
+
+#59 [cometa] exporting to image
+#59 exporting layers 0.8s done
+#59 exporting manifest sha256:de5ad6b00fc2af2455a15cf1e6bca79de7e3b4a4997be204a7cfd5b3449966de 0.0s done
+#59 exporting config sha256:1abecc77cf113058f764c2b2a0f731713f8b1fa250ee87ac0e5a315b60879d29 0.0s done
+#59 exporting attestation manifest sha256:97e230915625fd5965750c7fe401a5667da235a07e708e23d42e22097e7a1793 0.0s done
+#59 exporting manifest list sha256:9f8d348849ff6290a93552357bd0e4cd7e437d760c78bfafb3e83aada101bc7d
+#59 exporting manifest list sha256:9f8d348849ff6290a93552357bd0e4cd7e437d760c78bfafb3e83aada101bc7d 0.0s done
+#59 naming to docker.io/library/ai-hub-r2-cometa:r2 done
+#59 unpacking to docker.io/library/ai-hub-r2-cometa:r2 0.1s done
+#59 ...
+
+#44 [pulsar build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/pulsar
+#44 DONE 31.6s
+
+#59 [cometa] exporting to image
+#59 DONE 1.3s
+
+#60 [pulsar stage-1 2/2] COPY --from=build /out/service /service
+#60 DONE 0.2s
+
+#42 [libra build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/libra
+#42 DONE 31.9s
+
+#61 [cometa] resolving provenance for metadata file
+#61 DONE 0.0s
+
+#62 [libra stage-1 2/2] COPY --from=build /out/service /service
+#62 DONE 0.2s
+
+#63 [pulsar] exporting to image
+#63 ...
+
+#41 [orbita build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/orbita
+#41 DONE 32.2s
+
+#64 [orbita stage-1 2/2] COPY --from=build /out/service /service
+#64 DONE 0.1s
+
+#65 [libra] exporting to image
+#65 exporting layers 0.6s done
+#65 exporting manifest sha256:b1a43b7fff59455892281b57cc2faf3e8ebd39072420a4f5d50e3b96303c9d90 0.0s done
+#65 exporting config sha256:17f0dd34882a4959e104b1d9e7d70da8f67f12d480315062b8758551b4e5ed86
+#65 ...
+
+#63 [pulsar] exporting to image
+#63 exporting layers 0.7s done
+#63 exporting manifest sha256:98594c698aff322a231fec07dcc8a04690b897f2f3f74ea5b5d43139907900b5 0.0s done
+#63 exporting config sha256:6c5875a3397d6b2c29b693995102cbfd1bc685f99f7b04726fb81e50b7e48fd5 0.0s done
+#63 exporting attestation manifest sha256:53be3fc76ea5959bd91191013ad8568fc38b037f4652689de67a508e913bff7d 0.0s done
+#63 exporting manifest list sha256:0fad0ee1927f7e69eff64ab6854945423781da14bd5208eae336c420974fb0d4 0.0s done
+#63 naming to docker.io/library/ai-hub-r2-pulsar:r2 done
+#63 unpacking to docker.io/library/ai-hub-r2-pulsar:r2 0.1s done
+#63 DONE 1.0s
+
+#65 [libra] exporting to image
+#65 exporting config sha256:17f0dd34882a4959e104b1d9e7d70da8f67f12d480315062b8758551b4e5ed86 0.0s done
+#65 exporting attestation manifest sha256:5f452586437dc8db4288b7a0839d090856659fadf9c3775888c741a4a627c1c4
+#65 exporting attestation manifest sha256:5f452586437dc8db4288b7a0839d090856659fadf9c3775888c741a4a627c1c4 0.5s done
+#65 exporting manifest list sha256:3dabc8eda638d8540f4107f98354c4f6e477d60580e0c2305ed219449ac334fb
+#65 exporting manifest list sha256:3dabc8eda638d8540f4107f98354c4f6e477d60580e0c2305ed219449ac334fb 0.1s done
+#65 naming to docker.io/library/ai-hub-r2-libra:r2 0.0s done
+#65 unpacking to docker.io/library/ai-hub-r2-libra:r2
+#65 unpacking to docker.io/library/ai-hub-r2-libra:r2 0.2s done
+#65 DONE 1.7s
+
+#66 [orbita] exporting to image
+#66 exporting layers 1.1s done
+#66 exporting manifest sha256:004064a291776135b073efe21c3e4b75c78b432cf992a5843a9e0a88e992abd3 0.1s done
+#66 exporting config sha256:2cf9b0fc96974d4e5c6c255a127633d331ea737aba7aaf79a8a6d37b36f569ea 0.0s done
+#66 exporting attestation manifest sha256:902db760646835cf3cb94122d7b3484c86fc2c5c0d849f1e09fe1993b114e36e 0.1s done
+#66 exporting manifest list sha256:dc9a51d230efae26a5f7571550fa886f5a631a5e20ff36c45d67452d3aed696c
+#66 ...
+
+#67 [pulsar] resolving provenance for metadata file
+#67 DONE 0.0s
+
+#66 [orbita] exporting to image
+#66 exporting manifest list sha256:dc9a51d230efae26a5f7571550fa886f5a631a5e20ff36c45d67452d3aed696c 0.4s done
+#66 naming to docker.io/library/ai-hub-r2-orbita:r2
+#66 naming to docker.io/library/ai-hub-r2-orbita:r2 done
+#66 unpacking to docker.io/library/ai-hub-r2-orbita:r2
+#66 unpacking to docker.io/library/ai-hub-r2-orbita:r2 0.2s done
+#66 DONE 2.0s
+
+#68 [libra] resolving provenance for metadata file
+#68 DONE 0.0s
+
+#69 [orbita] resolving provenance for metadata file
+#69 DONE 0.0s
+ Image ai-hub-r2-provider-sim:r2 Built 
+ Image ai-hub-r2-webhook-sink:r2 Built 
+ Image ai-hub-r2-admin-ui:r2 Built 
+ Image ai-hub-r2-atlas:r2 Built 
+ Image ai-hub-r2-orbita:r2 Built 
+ Image ai-hub-r2-cometa:r2 Built 
+ Image ai-hub-r2-pulsar:r2 Built 
+ Image ai-hub-r2-libra:r2 Built 

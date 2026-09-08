@@ -1,0 +1,17 @@
+{
+  "iss": "http://localhost:18085/realms/ai-hub-r2",
+  "aud": "ai-hub",
+  "tenant_id": "acme",
+  "application_id": "app-acme",
+  "cell_id": "r2-cell-a",
+  "scope": "integrations:write profile files:read catalog:write email deliveries:write deliveries:read sla:read protocols:write finance:write catalog:publish catalog:read integrations:read files:write finance:approve protocols:read finance:read",
+  "amr": [
+    "pwd",
+    "otp"
+  ],
+  "realm_access": {
+    "roles": [
+      "hub_admin"
+    ]
+  }
+}

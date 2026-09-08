@@ -1,0 +1,4 @@
+{"time":"2026-09-08T06:36:49.216845106-03:00","level":"INFO","msg":"http server starting","component":"orbita","addr":"127.0.0.1:28080"}
+{"time":"2026-09-08T06:36:49.222100045-03:00","level":"INFO","msg":"http_request","component":"orbita","method":"GET","route":"/healthz/ready","trace_id":"4be86fb64178bc66cf16d99cf22c6496","status":200,"duration_ms":0}
+{"time":"2026-09-08T06:36:49.222508009-03:00","level":"ERROR","msg":"falha ao localizar fila de comandos do Cometa","component":"orbita","error":"queue: criar fila r2-offline-test-cometa-commands: operation error SQS: CreateQueue, request canceled, context canceled"}
+{"time":"2026-09-08T06:36:49.22253512-03:00","level":"WARN","msg":"broker bootstrap unavailable; durable obligations retained","component":"orbita"}

@@ -1,0 +1,28 @@
+=== RUN   TestDAGContract
+--- PASS: TestDAGContract (0.00s)
+=== RUN   TestTechnicalProjection
+--- PASS: TestTechnicalProjection (0.00s)
+=== RUN   TestImportSecretSanitization
+--- PASS: TestImportSecretSanitization (0.00s)
+=== RUN   TestCatalogValidation
+--- PASS: TestCatalogValidation (0.00s)
+=== RUN   TestCatalogPostgresConcurrencyPublicationAndIsolation
+--- PASS: TestCatalogPostgresConcurrencyPublicationAndIsolation (0.28s)
+=== RUN   TestCatalogPostgresPaginationAndStaging
+--- PASS: TestCatalogPostgresPaginationAndStaging (0.35s)
+=== RUN   TestValidateService
+=== RUN   TestValidateService/valido
+=== RUN   TestValidateService/sem_codigo
+=== RUN   TestValidateService/modo_invalido
+=== RUN   TestValidateService/sla_invalido
+=== RUN   TestValidateService/modo_duplicado
+--- PASS: TestValidateService (0.00s)
+    --- PASS: TestValidateService/valido (0.00s)
+    --- PASS: TestValidateService/sem_codigo (0.00s)
+    --- PASS: TestValidateService/modo_invalido (0.00s)
+    --- PASS: TestValidateService/sla_invalido (0.00s)
+    --- PASS: TestValidateService/modo_duplicado (0.00s)
+=== RUN   TestValidateProviderAccount
+--- PASS: TestValidateProviderAccount (0.00s)
+PASS
+ok  	ai-hub/hub/internal/atlas	0.626s

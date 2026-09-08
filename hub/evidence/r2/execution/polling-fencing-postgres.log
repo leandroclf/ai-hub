@@ -1,0 +1,31 @@
+=== RUN   TestPostgresPendingCustodyAtomic
+    custody_test.go:162: real PostgreSQL: failed polling budget rolls back state and receipt; valid acceptance conserves correlation, receipt, schedule, result and outbox
+--- PASS: TestPostgresPendingCustodyAtomic (0.09s)
+=== RUN   TestPostgresOperationResourceScope
+=== RUN   TestPostgresOperationResourceScope/authorized
+=== RUN   TestPostgresOperationResourceScope/other_tenant
+=== RUN   TestPostgresOperationResourceScope/other_application
+=== RUN   TestPostgresOperationResourceScope/other_cell
+=== RUN   TestPostgresOperationResourceScope/human_token
+=== RUN   TestPostgresOperationResourceScope/missing_scope
+=== NAME  TestPostgresOperationResourceScope
+    handlers_test.go:69: real PostgreSQL + HTTP handler: workload resource scope enforced for tenant/application/cell; humans denied; binding references omitted
+--- PASS: TestPostgresOperationResourceScope (0.03s)
+    --- PASS: TestPostgresOperationResourceScope/authorized (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/other_tenant (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/other_application (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/other_cell (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/human_token (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/missing_scope (0.00s)
+=== RUN   TestPostgresPollingClaimsFenceAndAbsoluteDeadline
+    polling_custody_test.go:68: published polling policy required
+--- FAIL: TestPostgresPollingClaimsFenceAndAbsoluteDeadline (0.03s)
+=== RUN   TestPostgresPollingCallbackConflictRetainsBoth
+    polling_custody_test.go:144: published polling policy required
+--- FAIL: TestPostgresPollingCallbackConflictRetainsBoth (0.04s)
+=== RUN   TestPostgresPollingAuthenticatedHTTP
+    polling_custody_test.go:252: Actual local HTTP GET used dedicated decrypted Basic secret, workload-authenticated current binding and pinned egress; revoked binding prevented next provider call; terminal receipt persisted
+--- PASS: TestPostgresPollingAuthenticatedHTTP (0.08s)
+FAIL
+FAIL	ai-hub/hub/internal/cometa	0.284s
+FAIL

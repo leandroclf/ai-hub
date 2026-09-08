@@ -1,0 +1,11 @@
+=== RUN   TestOperationFactPostgresCustody
+    factconsumer_test.go:119: real PostgreSQL: failed final persistence forbids ACK; receipt survives; 12 redeliveries produce one final/outbox; unknown kind, application mismatch and identity conflict quarantined
+--- PASS: TestOperationFactPostgresCustody (0.10s)
+=== RUN   TestOperationFactPostgresCustody
+    factconsumer_test.go:119: real PostgreSQL: failed final persistence forbids ACK; receipt survives; 12 redeliveries produce one final/outbox; unknown kind, application mismatch and identity conflict quarantined
+--- PASS: TestOperationFactPostgresCustody (0.11s)
+=== RUN   TestOperationFactPostgresCustody
+    factconsumer_test.go:119: real PostgreSQL: failed final persistence forbids ACK; receipt survives; 12 redeliveries produce one final/outbox; unknown kind, application mismatch and identity conflict quarantined
+--- PASS: TestOperationFactPostgresCustody (0.12s)
+PASS
+ok  	ai-hub/hub/internal/orbita	1.351s

@@ -1,0 +1,5 @@
+=== RUN   TestPostgresSubmissionAndObservationCustody
+    custody_test.go:101: 24 submit contenders: one owner and prewritten attempt; 12 observations: one terminal fact; actual response retained; tenant conflict denied; late UNKNOWN preserved as receipt
+--- PASS: TestPostgresSubmissionAndObservationCustody (0.10s)
+PASS
+ok  	ai-hub/hub/internal/cometa	0.101s

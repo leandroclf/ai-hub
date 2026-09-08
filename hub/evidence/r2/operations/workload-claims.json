@@ -1,0 +1,9 @@
+{
+  "aud": [
+    "ai-hub",
+    "account"
+  ],
+  "cell_id": "r2-cell-a",
+  "scope": "profile email cometa:execute finance:reserve catalog:read integrations:read protocols:read",
+  "workload": true
+}

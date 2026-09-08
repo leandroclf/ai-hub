@@ -1,0 +1,32 @@
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.10s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.10s)
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:126: two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed
+--- PASS: TestPostgresVersionedWebhookCustody (0.09s)
+PASS
+ok  	ai-hub/hub/internal/pulsar	1.953s

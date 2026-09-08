@@ -1,0 +1,12 @@
+=== RUN   TestPostgresPollingClaimsFenceAndAbsoluteDeadline
+    polling_custody_test.go:133: policy interval=2 delay=4.996617 deadline=2026-09-08 22:42:47.898122 +0000 UTC
+--- FAIL: TestPostgresPollingClaimsFenceAndAbsoluteDeadline (0.11s)
+=== RUN   TestPostgresPollingCallbackConflictRetainsBoth
+    polling_custody_test.go:174: Conflicting poll/callback conserved both observations and produced exactly one terminal outbox fact
+--- PASS: TestPostgresPollingCallbackConflictRetainsBoth (0.07s)
+=== RUN   TestPostgresPollingAuthenticatedHTTP
+    polling_custody_test.go:253: Actual local HTTP GET used dedicated decrypted Basic secret, workload-authenticated current binding and pinned egress; revoked binding prevented next provider call; terminal receipt persisted
+--- PASS: TestPostgresPollingAuthenticatedHTTP (0.07s)
+FAIL
+FAIL	ai-hub/hub/internal/cometa	0.272s
+FAIL

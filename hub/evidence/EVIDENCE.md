@@ -234,6 +234,11 @@ vínculo compartilhado. Os registros de teste do plano de controle foram removid
 protocolos e operações históricas em `hub_core` foram preservados. A saída da consulta
 está em `db/hiveplace_catalog_import.txt`.
 
+O request principal de `hiveplace-06-antispoofing` foi corrigido para usar a imagem JPEG
+Base64 válida do cenário `POST RAND` e Bearer `{{access_token}}`. A execução no sandbox
+retornou HTTP 200, score 98 e status `Concluido`; saída em
+`hiveplace_antispoofing_output.txt`.
+
 ## Achados desta sessão (novos, além dos 5 já registrados na auditoria anterior)
 
 1. **Tabela `inbox` confirmada vazia** (0 linhas) — nenhum consumidor a usa; dedup

@@ -1,0 +1,26 @@
+=== RUN   TestPostgresSubmissionAndObservationCustody
+    custody_test.go:101: 24 submit contenders: one owner and prewritten attempt; 12 observations: one terminal fact; actual response retained; tenant conflict denied; late UNKNOWN preserved as receipt
+--- PASS: TestPostgresSubmissionAndObservationCustody (0.12s)
+=== RUN   TestPostgresPendingCustodyAtomic
+    custody_test.go:161: real PostgreSQL: failed polling budget rolls back state and receipt; valid acceptance conserves correlation, receipt, schedule, result and outbox
+--- PASS: TestPostgresPendingCustodyAtomic (0.05s)
+=== RUN   TestPostgresOperationResourceScope
+=== RUN   TestPostgresOperationResourceScope/authorized
+    handlers_test.go:62: status=503 want=200 body={"error":"operation_authority_unavailable","message":"Service Unavailable"}
+=== RUN   TestPostgresOperationResourceScope/other_tenant
+=== RUN   TestPostgresOperationResourceScope/other_application
+=== RUN   TestPostgresOperationResourceScope/other_cell
+=== RUN   TestPostgresOperationResourceScope/human_token
+=== RUN   TestPostgresOperationResourceScope/missing_scope
+=== NAME  TestPostgresOperationResourceScope
+    handlers_test.go:69: real PostgreSQL + HTTP handler: workload resource scope enforced for tenant/application/cell; humans denied; binding references omitted
+--- FAIL: TestPostgresOperationResourceScope (0.03s)
+    --- FAIL: TestPostgresOperationResourceScope/authorized (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/other_tenant (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/other_application (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/other_cell (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/human_token (0.00s)
+    --- PASS: TestPostgresOperationResourceScope/missing_scope (0.00s)
+FAIL
+FAIL	ai-hub/hub/internal/cometa	0.216s
+FAIL

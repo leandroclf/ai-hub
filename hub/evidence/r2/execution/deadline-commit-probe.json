@@ -1,0 +1,52 @@
+{
+  "cases": {
+    "early_candidate_ack": {
+      "deadline": "2026-09-08T16:28:17.762216+00:00",
+      "candidate_id": 2,
+      "ack_upper_bound": "2026-09-08T16:28:17.613686+00:00",
+      "ack_upper_bound_before_deadline": true
+    },
+    "uncertainty_interval": {
+      "sample_ms": 95,
+      "deadline_ms": 100,
+      "uncertainty_ms": 10,
+      "equality_accepts": false,
+      "point_comparison_accepts": true,
+      "unknown_uncertainty_accepts": false,
+      "conservative_upper_bound_accepts": false
+    },
+    "late_promotion_counterexample": {
+      "promotion_after_deadline": true,
+      "candidate_ack_before_deadline": true,
+      "would_be_first_public_availability_after_deadline": true
+    },
+    "precommit_check_counterexample": {
+      "deadline": "2026-09-08T16:28:17.35148+00:00",
+      "checked_at": "2026-09-08T16:28:17.20148+00:00",
+      "candidate_visible": true,
+      "postcommit_observed_at": "2026-09-08T16:28:17.609117+00:00",
+      "check_was_before_deadline": true,
+      "postcommit_observation_after_deadline": true,
+      "unsafe_algorithm_would_publish_success": true
+    }
+  },
+  "fsync": "on",
+  "postgres": "PostgreSQL 16.15 on x86_64-pc-linux-musl, compiled by gcc (Alpine 15.2.0) 15.2.0, 64-bit",
+  "wal_level": "replica",
+  "synchronous_commit": "on",
+  "date_utc": "2026-09-08T16:28:17.895406+00:00",
+  "head": "a39d394b0d87185ed4cc3861c12ec45f2c302d9e",
+  "worktree_has_uncommitted_changes": true,
+  "requirements": [
+    "EXE-11",
+    "R2-EXE-06",
+    "T-R2-01",
+    "IT-08"
+  ],
+  "status": "COUNTEREXAMPLES_REPRODUCED_NOT_REQUIREMENT_PASS",
+  "limitations": [
+    "Deferred trigger delays COMMIT processing, not physical disk fsync.",
+    "Clock uncertainty is an explicit synthetic interval, not host clock qualification.",
+    "No runtime domain code is exercised by this isolated SQL experiment."
+  ]
+}

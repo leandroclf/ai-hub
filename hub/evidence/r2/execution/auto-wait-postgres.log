@@ -1,0 +1,12 @@
+=== RUN   TestAutoPostgresBoundedWait
+=== RUN   TestAutoPostgresBoundedWait/quick_local_final
+=== RUN   TestAutoPostgresBoundedWait/slow_returns_accepted_and_retry_does_not_renew_wait
+=== RUN   TestAutoPostgresBoundedWait/disconnect_conserves_intent
+=== NAME  TestAutoPostgresBoundedWait
+    auto_test.go:102: PostgreSQL + HTTP handler: fast local FAILED final uses persisted bytes; slow AUTO returns 202 after configured wait; retry does not renew wait; disconnect preserves QUEUED obligation. No broker/provider end-to-end or success deadline qualification.
+--- PASS: TestAutoPostgresBoundedWait (1.21s)
+    --- PASS: TestAutoPostgresBoundedWait/quick_local_final (0.20s)
+    --- PASS: TestAutoPostgresBoundedWait/slow_returns_accepted_and_retry_does_not_renew_wait (1.00s)
+    --- PASS: TestAutoPostgresBoundedWait/disconnect_conserves_intent (0.01s)
+PASS
+ok  	ai-hub/hub/internal/orbita	2.231s

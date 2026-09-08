@@ -1,0 +1,182 @@
+ Image postgres:16-alpine Pulling 
+ Image postgres:16-alpine Pulled 
+ Container ai-hub-r2-postgres-1 Starting 
+ Container ai-hub-r2-postgres-1 Started 
+ Container ai-hub-r2-postgres-1 Waiting 
+ Container ai-hub-r2-postgres-1 Healthy 
+ Container ai-hub-r2-migrate-run-e3c45ebb3cba Creating 
+ Container ai-hub-r2-migrate-run-e3c45ebb3cba Created 
+CREATE TABLE
+NOTICE:  relation "schema_migrations" already exists, skipping
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0001_init.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0002_provider_auth.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0003_provider_api_catalog.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0020_catalog_versions.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0021_catalog_qualification_capacity.sql already applied
+COMMIT
+NOTICE:  relation "schema_migrations" already exists, skipping
+CREATE TABLE
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0001_init.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0010_durable_admission.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0011_operation_custody.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0012_message_quarantine.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0013_stable_outbox.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0014_admin_access_audit.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0015_versioned_deliveries.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0016_operation_fact_inbox.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0017_polling_custody.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0018_capacity_authority.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+psql:/migrations/core/0019_polling_attempt_fencing.sql:3: NOTICE:  column "epoch" of relation "polling_schedule" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:4: NOTICE:  column "timeout_seconds" of relation "polling_schedule" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:5: NOTICE:  column "jitter_percent" of relation "polling_schedule" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:6: NOTICE:  column "max_attempts" of relation "polling_schedule" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:7: NOTICE:  column "owner" of relation "attempts" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:8: NOTICE:  column "epoch" of relation "attempts" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:9: NOTICE:  column "prepared_at" of relation "attempts" already exists, skipping
+ALTER TABLE
+psql:/migrations/core/0019_polling_attempt_fencing.sql:10: NOTICE:  relation "polling_due_lease" already exists, skipping
+CREATE INDEX
+INSERT 0 1
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0030_objects_retention.sql already applied
+COMMIT
+NOTICE:  relation "schema_migrations" already exists, skipping
+CREATE TABLE
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration finance/0001_init.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration finance/0030_auditable_finance.sql already applied
+COMMIT

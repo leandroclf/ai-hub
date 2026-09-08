@@ -1,0 +1,86 @@
+{
+  "items": [
+    {
+      "id": "r2-01-identidade-e-isolamento",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 50
+    },
+    {
+      "id": "r2-02-execucao-duravel-e-resultados",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 48
+    },
+    {
+      "id": "r2-03-integracoes-credenciais-e-pressao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 49
+    },
+    {
+      "id": "r2-04-catalogo-produtos-e-contratos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 49
+    },
+    {
+      "id": "r2-05-console-administrativo",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 49
+    },
+    {
+      "id": "r2-06-financeiro-auditavel",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 49
+    },
+    {
+      "id": "r2-07-objetos-dados-e-retencao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    },
+    {
+      "id": "r2-08-operacao-elastica-e-observavel",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    },
+    {
+      "id": "r2-09-qualificacao-e-rastreabilidade",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 9,
+      "passed": 9,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 9,
+        "passed": 9,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/workspace/scratch/30287dd6a4c3/AI_HUB_OPENSPEC_R2",
+    "source": "nearest"
+  }
+}

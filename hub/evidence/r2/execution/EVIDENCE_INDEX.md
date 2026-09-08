@@ -1,0 +1,37 @@
+# Evidências da retomada R2 — execução em andamento
+
+Origem: HEAD `a39d394b0d87185ed4cc3861c12ec45f2c302d9e`, branch `r2-implementation`, alterações não commitadas. Ambiente: laboratório isolado `ai-hub-r2`, PostgreSQL16, LocalStack3.8, Keycloak26.7.3; dados sintéticos. Coleta em 07–08/09/2026. A existência de teste com nome de cenário não encerra requisito sem revisar seu oráculo e a integração.
+
+| Artefato | Procedimento e resultado | Limite |
+|---|---|---|
+| admission-postgres.log | `R2_CORE_TEST_DSN=<fixture hub_core> go test -v ./internal/orbita -run TestAdmissionPostgresAtomicIdempotency -count=1`: PASS | DB real, 24 concorrentes, intent lease/takeover; não testa crash de processo ou broker |
+| cometa-custody-postgres.log | `R2_CORE_TEST_DSN=<fixture hub_core> go test -v ./internal/cometa -run TestPostgresSubmissionAndObservationCustody -count=1`: PASS | DB real, posse/tentativa/resposta/outbox; não homologa adapter remoto |
+| atlas-postgres.log | `ATLAS_TEST_DSN=<fixture hub_control> go test -v ./internal/atlas -count=1`: PASS | Publicação/paginação/staging em schemas descartáveis; DAG apenas validado, não executado |
+| finance-postgres.log | `R2_FINANCE_DSN=<fixture hub_finance> go test -v ./internal/libra -count=1`: PASS | Fixtures de eventos no domínio; produtor de snapshot econômico ainda não integrado |
+| provider-auth-unit.log | `go test -v ./internal/providerauth`: PASS nos casos Basic/OAuth sem Redis | Resolver sintético; não comprova cofre neste arquivo |
+| provider-vault-localstack.log | `go test -v ./internal/providerauth -run TestAWSVaultLocalStackVersion -count=1`, AWSVault contra LocalStack: PASS | SigV4, valor decifrado e versão exata; mTLS e provedor real não testados |
+| compose-bootstrap.log | `bash hub/deploy/r2/scripts/bootstrap.sh`: exit 0 | Subida local completa; não comprova recuperação/elasticidade |
+| http-auth-smoke.json | HTTP em portas18080–18084: probes200, sem token401; `/admin/v1/me` e serviços200 com token real da fixture | Não substitui matriz de autorização/isolamento |
+| browser-layout-investigation.log | Chromium153/Playwright1.63, OIDC senha+OTP e navegação: PASS; largura390px: FAIL | Causa: `.app-shell` herdava flex-direction row; alteração isolada para column confirmou hipótese |
+| browser-smoke.json | Execução mais recente do script `hub/deploy/r2/tests/browser-smoke.mjs` | Consultar resultado atual; logout é apenas observado, revogação não comprovada |
+| go-suite-current.log / go-vet-current.log | `go test ./...` e `go vet ./...`: exit0 no estado da coleta | Testes condicionais de integração podem estar SKIP; logs específicos acima são a prova com serviços reais |
+
+As migrations0010–0013 foram executadas via runner com checksum;0014 administrativa ainda requer aplicação. T-R2-01 continua aberto: comparar clock_timestamp antes do commit rejeita resultado já atrasado, mas NÃO prova commit estritamente anterior ao limite.
+
+## Evidências adicionadas na retomada de 08/09/2026
+
+| Artefato | Procedimento e resultado | Limite |
+|---|---|---|
+| `orbita-fact-custody-postgres.log` | PostgreSQL real, `go test -race ./internal/orbita -run TestOperationFactPostgresCustody -count=3`: PASS; persistência final indisponível não permite ACK, 12 redeliveries convergem para um final/outbox, escopos inválidos e identidade conflitante vão para quarentena | Não qualifica broker real nem deadline estrito |
+| `cometa-pending-custody-postgres.log` | PostgreSQL real, custódia `PENDING` atômica: falha no orçamento de polling faz rollback; aceitação válida grava correlação, recibo, agenda, resultado e outbox | Não qualifica provedor comercial |
+| `cometa-scope-null-result-failure.log` / `resume-custody-and-scope-postgres.log` | Falha inicial de leitura de resultado `NULL` registrada; correção validada com isolamento tenant/aplicação/célula e sem exposição de binding; suíte passou | Não substitui matriz completa de autorização |
+| `auto-wait-postgres.log` | PostgreSQL real: AUTO rápido devolve representação persistida; AUTO lento devolve 202 após espera configurada; retry não renova espera; cancelamento conserva intenção | Não prova execução SYNC/AUTO ponta a ponta |
+| `polling-fencing-postgres-v3.log` | PostgreSQL real + `-race`: 24 claims/um dono, takeover epoch, stale fenced, deadline e backoff preservados, callback/poll concorrentes, autenticação Basic e binding revogado | Não mede carga prolongada ou disponibilidade externa |
+| `capacity-authority-postgres.log` | PostgreSQL real + `-race`: 60 concorrentes em 3 identidades/2 células, limites agregados, fairness por tenant, rate rolling, UNKNOWN pendente e AIMD | Integração com executor ainda não conectada; políticas são fixtures |
+| `migrations-0019.log` | Runner aditivo com advisory lock/checksum após 0017/0018 | Não é prova de restore ou migração em banco histórico distinto |
+
+Mensageria foi endurecida para descoberta somente leitura fora de `ENVIRONMENT=local`: `EnsureQueue` usa `GetQueueUrl` e `EnsureTopic` descobre ARN declarado; criação implícita permanece restrita ao laboratório. `go test ./internal/queue ./cmd/...` passou. Não há ensaio AWS remoto.
+
+`product-build-current.log` registra a construção das imagens atuais de Atlas, Órbita, Cometa, Pulsar e Libra; `product-up-current.log` registra migrations e subida. `healthz/ready` retornou 200 em 18080–18084. `http-current-unauthenticated.log` comprova 401 nas rotas protegidas existentes; `http-current-auth-me.json` permanece 401 porque o volume Keycloak recusou a fixture até o diagnóstico de credencial persistente, portanto não é prova de login atual.
+
+Os contratos OpenAPI/AsyncAPI foram alinhados ao principal OIDC e à identidade de aplicação/célula; headers arbitrários não são fonte de tenant.

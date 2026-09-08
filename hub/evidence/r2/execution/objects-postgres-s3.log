@@ -1,0 +1,6 @@
+=== RUN   TestPostgresS3MultipartFileRef
+SDK 2026/09/08 06:54:32 WARN Response has no supported checksum. Not validating response payload.
+    catalog_test.go:162: direct multipart upload and streaming verify/download: 16777344 bytes, 3 parts; pinned immutable version, SHA256 and tenant authorization verified against PostgreSQL+LocalStack; retention pin excludes purge
+--- PASS: TestPostgresS3MultipartFileRef (0.77s)
+PASS
+ok  	ai-hub/hub/internal/objectstore	0.778s

@@ -1,0 +1,2 @@
+{"time":"2026-09-08T06:36:49.233925096-03:00","level":"INFO","msg":"http server starting","component":"cometa","addr":"127.0.0.1:28082"}
+{"time":"2026-09-08T06:36:49.325353276-03:00","level":"INFO","msg":"http_request","component":"cometa","method":"GET","route":"/healthz/ready","trace_id":"41f15fb159ee42f255112c140cde74c4","status":200,"duration_ms":0}
