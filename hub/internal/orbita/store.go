@@ -5,10 +5,13 @@ package orbita
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -19,6 +22,8 @@ var ErrIdempotencyConflict = errors.New("orbita: idempotency-key reutilizada com
 // ErrProtocolNotFound e retornado quando o protocolo nao existe ou
 // pertence a outro tenant (EXE-16: GET valida o tenant).
 var ErrProtocolNotFound = errors.New("orbita: protocolo nao encontrado")
+
+var ErrResultLate = errors.New("orbita: result reached authority after deadline")
 
 // Status e o estado normativo do protocolo (EXE-03).
 type Status string
@@ -45,23 +50,26 @@ func IsTerminal(s Status) bool { return terminalStatuses[s] }
 
 // Protocol e a projecao persistida do protocolo (DAD-02).
 type Protocol struct {
-	ProtocolID       string
-	TenantID         string
-	IdempotencyKey   string
-	RequestHash      string
-	RequestBody      json.RawMessage
-	Mode             string
-	DispatchMode     string
-	CommandID        string
-	Status           Status
-	ResultVersion    int
-	FinalBody        json.RawMessage
-	FinalEventID     sql.NullString
-	TerminalReason   sql.NullString
-	AcceptedAt       time.Time
-	ClientDeadlineAt time.Time
-	FinalizedAt      sql.NullTime
-	Version          int
+	ApplicationID       string
+	CellID              string
+	ProtocolID          string
+	TenantID            string
+	IdempotencyKey      string
+	RequestHash         string
+	RequestBody         json.RawMessage
+	Mode                string
+	DispatchMode        string
+	CommandID           string
+	Status              Status
+	ResultVersion       int
+	FinalBody           json.RawMessage
+	FinalRepresentation []byte
+	FinalEventID        sql.NullString
+	TerminalReason      sql.NullString
+	AcceptedAt          time.Time
+	ClientDeadlineAt    time.Time
+	FinalizedAt         sql.NullTime
+	Version             int
 }
 
 // Store encapsula o acesso a tabela protocols em hub_core.
@@ -95,10 +103,10 @@ func (s *Store) FindByIdempotencyKey(ctx context.Context, tenantID, key, request
 func (s *Store) getByIdempotencyKey(ctx context.Context, tenantID, key string) (Protocol, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
-		       command_id, status, result_version, final_body, final_event_id, terminal_reason,
+		       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
 		       accepted_at, client_deadline_at, finalized_at, version
-		FROM protocols WHERE tenant_id = $1 AND idempotency_key = $2
-	`, tenantID, key)
+		FROM protocols WHERE tenant_id = $1 AND idempotency_key = $2 AND application_id = $3
+	`, tenantID, key, applicationFromContext(ctx))
 	return scanProtocol(row)
 }
 
@@ -127,7 +135,7 @@ func (s *Store) Create(ctx context.Context, p Protocol) error {
 func (s *Store) Get(ctx context.Context, tenantID, protocolID string) (Protocol, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
-		       command_id, status, result_version, final_body, final_event_id, terminal_reason,
+		       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
 		       accepted_at, client_deadline_at, finalized_at, version
 		FROM protocols WHERE protocol_id = $1 AND tenant_id = $2
 	`, protocolID, tenantID)
@@ -144,7 +152,7 @@ func (s *Store) Get(ctx context.Context, tenantID, protocolID string) (Protocol,
 func (s *Store) GetByID(ctx context.Context, protocolID string) (Protocol, error) {
 	row := s.db.QueryRowContext(ctx, `
 		SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
-		       command_id, status, result_version, final_body, final_event_id, terminal_reason,
+		       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
 		       accepted_at, client_deadline_at, finalized_at, version
 		FROM protocols WHERE protocol_id = $1
 	`, protocolID)
@@ -161,7 +169,7 @@ func scanProtocol(row *sql.Row) (Protocol, error) {
 	var finalBody []byte
 	err := row.Scan(&p.ProtocolID, &p.TenantID, &p.IdempotencyKey, &p.RequestHash, &p.RequestBody, &p.Mode,
 		&p.DispatchMode, &p.CommandID, &status, &p.ResultVersion, &finalBody, &p.FinalEventID, &p.TerminalReason,
-		&p.AcceptedAt, &p.ClientDeadlineAt, &p.FinalizedAt, &p.Version)
+		&p.ApplicationID, &p.CellID, &p.FinalRepresentation, &p.AcceptedAt, &p.ClientDeadlineAt, &p.FinalizedAt, &p.Version)
 	if err != nil {
 		return Protocol{}, err
 	}
@@ -177,12 +185,12 @@ func scanProtocol(row *sql.Row) (Protocol, error) {
 // referencias; persistir atomicamente estado, versao final, decisao
 // de prazo, historico e evento final").
 type FinalizeParams struct {
-	ProtocolID     string
+	ProtocolID      string
 	ExpectedVersion int
-	Status         Status
-	FinalBody      any
-	TerminalReason string
-	FinalEventID   string
+	Status          Status
+	FinalBody       any
+	TerminalReason  string
+	FinalEventID    string
 }
 
 // Finalize aplica uma unica transicao terminal serializavel (EXE-11):
@@ -201,12 +209,37 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 	}
 	defer tx.Rollback()
 
+	var mode string
+	var deadline, observed time.Time
+	if err = tx.QueryRowContext(ctx, "SELECT mode,client_deadline_at FROM protocols WHERE protocol_id=$1 FOR UPDATE", p.ProtocolID).Scan(&mode, &deadline); err != nil {
+		return false, err
+	}
+	if err = tx.QueryRowContext(ctx, "SELECT clock_timestamp()").Scan(&observed); err != nil {
+		return false, err
+	}
+	// This rejects already late results independently of the timer. It is NOT
+	// proof that a subsequent commit cannot cross the deadline (T-R2-01).
+	if (p.Status == StatusSucceeded || p.Status == StatusPartiallySucceeded) && !observed.Before(deadline) {
+		return false, ErrResultLate
+	}
+	representation, err := json.Marshal(struct {
+		ProtocolID    string          `json:"protocol_id"`
+		Status        Status          `json:"status"`
+		ResultVersion int             `json:"result_version"`
+		Mode          string          `json:"mode"`
+		FinalBody     json.RawMessage `json:"final_body"`
+	}{p.ProtocolID, p.Status, 1, mode, body})
+	if err != nil {
+		return false, err
+	}
+	sum := sha256.Sum256(representation)
+
 	res, err := tx.ExecContext(ctx, `
 		UPDATE protocols
 		SET status = $1, final_body = $2, terminal_reason = NULLIF($3, ''), final_event_id = $4,
-		    finalized_at = now(), result_version = result_version + 1, version = version + 1, updated_at = now()
+		    final_representation=$7, final_sha256=$8, final_media_type='application/json', finalized_at = now(), result_version = result_version + 1, version = version + 1, updated_at = now()
 		WHERE protocol_id = $5 AND version = $6 AND status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
-	`, string(p.Status), body, p.TerminalReason, p.FinalEventID, p.ProtocolID, p.ExpectedVersion)
+	`, string(p.Status), body, p.TerminalReason, p.FinalEventID, p.ProtocolID, p.ExpectedVersion, representation, hex.EncodeToString(sum[:]))
 	if err != nil {
 		return false, fmt.Errorf("orbita: finalizar protocolo: %w", err)
 	}
@@ -220,7 +253,7 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 		return false, nil
 	}
 	if publish != nil {
-		if err := publish(&sqlTx{tx: tx}); err != nil {
+		if err := publish(&sqlTx{tx: tx, Representation: representation}); err != nil {
 			return false, err
 		}
 	}
@@ -233,7 +266,10 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 // sqlTx encapsula *sql.Tx para o chamador de Finalize sem expor o
 // pacote database/sql diretamente na assinatura publica (mantendo o
 // pacote outbox como unico ponto de insercao na outbox).
-type sqlTx struct{ tx *sql.Tx }
+type sqlTx struct {
+	tx             *sql.Tx
+	Representation []byte
+}
 
 // Tx expoe a transacao subjacente para o pacote outbox.
 func (t *sqlTx) Tx() *sql.Tx { return t.tx }
@@ -249,10 +285,10 @@ type OpenProtocol struct {
 func (s *Store) DueDeadlines(ctx context.Context, now time.Time, limit int) ([]OpenProtocol, error) {
 	rows, err := s.db.QueryContext(ctx, `
 		SELECT protocol_id, tenant_id, version FROM protocols
-		WHERE client_deadline_at <= $1 AND status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		WHERE cell_id=$3 AND client_deadline_at <= $1 AND status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
 		ORDER BY client_deadline_at
 		LIMIT $2
-	`, now, limit)
+	`, now, limit, os.Getenv("CELL_ID"))
 	if err != nil {
 		return nil, fmt.Errorf("orbita: buscar deadlines vencidos: %w", err)
 	}

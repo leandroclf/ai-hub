@@ -7,13 +7,17 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/libraclient"
+	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/orbita"
 	"ai-hub/hub/internal/outbox"
+	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/config"
 	"ai-hub/hub/internal/platform/httpserver"
 	"ai-hub/hub/internal/platform/logging"
@@ -43,7 +47,7 @@ func main() {
 	libra := libraclient.New(libraURL)
 	finalizer := orbita.NewFinalizer(store, log)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	q, err := queue.New(ctx, queueEndpoint, queueRegion)
@@ -51,74 +55,100 @@ func main() {
 		log.Error("falha ao conectar ao broker", "error", err)
 		panic(err)
 	}
-	commandsQueueURL, err := q.EnsureQueue(ctx, "cometa-commands")
-	if err != nil {
-		log.Error("falha ao localizar fila de comandos do Cometa", "error", err)
-		panic(err)
-	}
-	operationFactsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
-	if err != nil {
-		log.Error("falha ao localizar topico de fatos de operacao", "error", err)
-		panic(err)
-	}
-	operationFactsQueueURL, err := q.EnsureQueue(ctx, "orbita-operation-facts")
-	if err != nil {
-		log.Error("falha ao criar fila de fatos de operacao", "error", err)
-		panic(err)
-	}
-	operationFactsQueueARN, err := q.QueueARN(ctx, operationFactsQueueURL)
-	if err != nil {
-		log.Error("falha ao obter ARN da fila de fatos de operacao", "error", err)
-		panic(err)
-	}
-	_ = q.AllowSNSDelivery(ctx, operationFactsQueueURL, operationFactsQueueARN)
-	_ = q.Subscribe(ctx, operationFactsTopicARN, operationFactsQueueARN)
-
-	protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
-	if err != nil {
-		log.Error("falha ao criar topico de fatos de protocolo", "error", err)
-		panic(err)
-	}
-
-	dispatcher := orbita.NewDispatcher(cometaURL, q, commandsQueueURL)
+	dispatcher := orbita.NewDispatcher(cometaURL, q, "")
 	handlers := orbita.NewHandlers(store, atlas, libra, dispatcher, finalizer, log)
-
-	// Relay da outbox (COM-03): publica "protocol.finalized" no SNS
-	// para Pulsar (webhook) e Libra (receita), fora do caminho
-	// obrigatorio de resposta ao cliente (DAD-09).
-	go outbox.RunRelay(ctx, db, "protocol", func(ctx context.Context, row outbox.Row) error {
-		var meta struct {
-			TenantID string `json:"tenant_id"`
+	go queue.RunBootstrap(ctx, func() error {
+		commandsQueueURL, err := q.EnsureQueue(ctx, "cometa-commands")
+		if err != nil {
+			log.Error("falha ao localizar fila de comandos do Cometa", "error", err)
+			return err
 		}
-		_ = json.Unmarshal(row.Payload, &meta)
-		return q.PublishFact(ctx, protocolFactsTopicARN, queue.Envelope{
-			EventID:          "protocol-fact-" + strconv.FormatInt(row.ID, 10),
-			Type:             row.EventType,
-			SchemaVersion:    1,
-			Producer:         "orbita",
-			TenantID:         meta.TenantID,
-			ProtocolID:       row.AggregateID,
-			OccurredAt:       time.Now().UTC(),
-			RecordedAt:       time.Now().UTC(),
-			AggregateVersion: 1,
-			Payload:          row.Payload,
-		})
-	}, 1*time.Second, log)
+		operationFactsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
+		if err != nil {
+			log.Error("falha ao localizar topico de fatos de operacao", "error", err)
+			return err
+		}
+		operationFactsQueueURL, err := q.EnsureQueue(ctx, "orbita-operation-facts")
+		if err != nil {
+			log.Error("falha ao criar fila de fatos de operacao", "error", err)
+			return err
+		}
+		operationFactsQueueARN, err := q.QueueARN(ctx, operationFactsQueueURL)
+		if err != nil {
+			log.Error("falha ao obter ARN da fila de fatos de operacao", "error", err)
+			return err
+		}
+		if err := q.AllowSNSDelivery(ctx, operationFactsQueueURL, operationFactsQueueARN, operationFactsTopicARN); err != nil {
+			return err
+		}
+		if err := q.Subscribe(ctx, operationFactsTopicARN, operationFactsQueueARN); err != nil {
+			return err
+		}
 
-	// Consumidor dos fatos de operacao (ASYNC/AUTO): finaliza o
-	// protocolo quando Cometa observa o final externo.
-	go orbita.RunOperationFactConsumer(ctx, q, operationFactsQueueURL, store, finalizer, log)
+		protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
+		if err != nil {
+			log.Error("falha ao criar topico de fatos de protocolo", "error", err)
+			return err
+		}
+
+		dispatcher.SetQueueURL(commandsQueueURL)
+
+		// Relay da outbox (COM-03): publica "protocol.finalized" no SNS
+		// para Pulsar (webhook) e Libra (receita), fora do caminho
+		// obrigatorio de resposta ao cliente (DAD-09).
+		go outbox.RunRelay(ctx, db, "protocol", func(ctx context.Context, row outbox.Row) error {
+			var meta struct {
+				TenantID string `json:"tenant_id"`
+			}
+			_ = json.Unmarshal(row.Payload, &meta)
+			return q.PublishFact(ctx, protocolFactsTopicARN, queue.Envelope{
+				EventID:          row.EventID,
+				Type:             row.EventType,
+				SchemaVersion:    1,
+				Producer:         "orbita",
+				TenantID:         meta.TenantID,
+				ProtocolID:       row.AggregateID,
+				OccurredAt:       row.OccurredAt,
+				RecordedAt:       row.RecordedAt,
+				AggregateVersion: 1,
+				Payload:          row.Payload,
+			})
+		}, 1*time.Second, log)
+
+		// Consumidor dos fatos de operacao (ASYNC/AUTO): finaliza o
+		// protocolo quando Cometa observa o final externo.
+		go orbita.RunOperationFactConsumer(ctx, q, operationFactsQueueURL, store, finalizer, log)
+
+		return nil
+	}, log)
 
 	// Temporizador de deadline (EXE-11).
 	go orbita.RunDeadlineTimer(ctx, store, finalizer, 1*time.Second, log)
+	go orbita.RunIntentPublisher(ctx, store, dispatcher, config.Env("CELL_ID", ""), log)
+	go orbita.RunDirectRecovery(ctx, store, dispatcher, finalizer, config.Env("CELL_ID", ""), log)
+	go orbita.RunReservationRecovery(ctx, store, libra, config.Env("CELL_ID", ""), log)
 
 	readiness := func(ctx context.Context) error { return store.Ping(ctx) }
 	srv := httpserver.New(log, readiness, readiness, nil)
+	srv.AuthMiddleware = auth.FromEnv().Middleware
 	mux := http.NewServeMux()
 	handlers.Register(mux)
+	objects, objectErr := objectstore.New(ctx, config.Env("S3_ENDPOINT", ""), queueRegion, config.Env("S3_BUCKET", "r2-custody"))
+	if objectErr != nil {
+		log.Error("object client unavailable")
+	} else {
+		fileCatalog := objectstore.NewCatalog(db, objects)
+		handlers.SetFileCatalog(fileCatalog)
+		objectstore.NewHandlers(fileCatalog).Register(mux)
+		if config.Env("ENVIRONMENT", "") == "local" {
+			go queue.RunBootstrap(ctx, func() error { return objects.EnsureBucket(ctx) }, log)
+		}
+	}
 	handlers.RegisterInternal(mux)
+	handlers.RegisterAdmin(mux)
 	srv.Handle("/v1/", mux)
 	srv.Handle("/internal/", mux)
+	srv.Handle("/admin/v1/", mux)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

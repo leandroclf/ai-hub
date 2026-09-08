@@ -1,12 +1,14 @@
 package atlas
 
 import (
+	"ai-hub/hub/internal/platform/auth"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Handlers expoe a API HTTP administrativa minima do Atlas (CFG-01).
@@ -20,14 +22,78 @@ func NewHandlers(store *Store) *Handlers { return &Handlers{store: store} }
 
 // Register registra as rotas do Atlas num ServeMux.
 func (h *Handlers) Register(mux *http.ServeMux) {
-	mux.HandleFunc("/v1/services", h.handleServices)
-	mux.HandleFunc("/v1/services/", h.handleGetService)
-	mux.HandleFunc("/v1/provider-accounts", h.handleProviderAccounts)
-	mux.HandleFunc("/v1/provider-accounts/", h.handleGetProviderAccount)
-	mux.HandleFunc("/v1/credential-bindings", h.handleCredentialBindings)
-	mux.HandleFunc("/v1/credentials/resolve", h.handleResolveCredential)
-	mux.HandleFunc("/v1/contracts", h.handleContracts)
-	mux.HandleFunc("/v1/contracts/", h.handleGetContract)
+	h.registerCatalog(mux)
+	retired := func(w http.ResponseWriter, r *http.Request) { auth.Error(w, 410, "use_versioned_catalog") }
+	mux.HandleFunc("/v1/services", retired)
+	mux.HandleFunc("/v1/provider-accounts", retired)
+	mux.HandleFunc("/v1/credential-bindings", retired)
+	mux.HandleFunc("/v1/contracts", retired)
+	mux.HandleFunc("/v1/services/", h.workloadRead("catalog:read", h.handleGetService))
+	mux.HandleFunc("/v1/provider-accounts/", h.workloadRead("integrations:read", h.handleGetProviderAccount))
+	mux.HandleFunc("/v1/credentials/resolve", h.workloadRead("integrations:read", h.handleResolveCredential))
+	mux.HandleFunc("/v1/credentials/binding/", h.workloadRead("integrations:read", h.handleBoundCredential))
+	mux.HandleFunc("/v1/contracts/", h.workloadRead("catalog:read", h.handleGetContract))
+}
+
+func (h *Handlers) handleBoundCredential(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/v1/credentials/binding/"), "/")
+	if len(parts) != 2 {
+		auth.Error(w, 400, "invalid_binding_version")
+		return
+	}
+	version, err := strconv.Atoi(parts[1])
+	if err != nil {
+		auth.Error(w, 400, "invalid_binding_version")
+		return
+	}
+	tenant := r.URL.Query().Get("tenant_id")
+	resource, err := h.store.GetResource(r.Context(), "credential-bindings", parts[0], version)
+	if err != nil || tenant == "" || resource.State != "PUBLISHED" || (resource.TenantID != "" && resource.TenantID != tenant) {
+		auth.Error(w, 409, "binding_unavailable")
+		return
+	}
+	data, err := DecodeCatalogData(resource)
+	if err != nil {
+		auth.Error(w, 409, "binding_unavailable")
+		return
+	}
+	if data.CredentialMode == "TENANT_DEDICATED" && resource.TenantID != tenant {
+		auth.Error(w, 409, "binding_unavailable")
+		return
+	}
+	now := time.Now()
+	if (data.ValidFrom != nil && now.Before(*data.ValidFrom)) || (data.ValidUntil != nil && !now.Before(*data.ValidUntil)) {
+		auth.Error(w, 409, "binding_unavailable")
+		return
+	}
+	writeJSON(w, 200, map[string]any{"binding_id": resource.ID, "tenant_id": resource.TenantID, "provider_account_id": data.ProviderAccountID, "credential_mode": data.CredentialMode, "secret_ref": data.SecretRef, "secret_version": data.SecretVersion, "settlement_party": data.SettlementParty, "state": resource.State})
+}
+
+func (h *Handlers) workloadRead(scope string, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		p, ok := auth.FromContext(r.Context())
+		if !ok || !p.Workload || !auth.Authorize(r.Context(), scope, "") {
+			auth.Error(w, 403, "forbidden")
+			return
+		}
+		if r.Method != http.MethodGet {
+			auth.Error(w, 405, "method_not_allowed")
+			return
+		}
+		tenant := r.URL.Query().Get("tenant_id")
+		if strings.HasPrefix(r.URL.Path, "/v1/contracts/") {
+			tenant = strings.TrimPrefix(r.URL.Path, "/v1/contracts/")
+		}
+		if tenant != "" {
+			var cell string
+			err := h.store.db.QueryRowContext(r.Context(), "SELECT cell_id FROM placements WHERE tenant_id=$1", tenant).Scan(&cell)
+			if err != nil || cell != p.CellID {
+				auth.Error(w, 403, "tenant_outside_cell")
+				return
+			}
+		}
+		next(w, r)
+	}
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"ai-hub/hub/internal/atlas"
+	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/config"
 	"ai-hub/hub/internal/platform/httpserver"
 	"ai-hub/hub/internal/platform/logging"
@@ -30,9 +31,12 @@ func main() {
 
 	readiness := func(ctx context.Context) error { return store.Ping(ctx) }
 	srv := httpserver.New(log, readiness, readiness, nil)
+	srv.AuthMiddleware = auth.FromEnv().Middleware
 	mux := http.NewServeMux()
 	handlers.Register(mux)
 	srv.Handle("/v1/", mux)
+	srv.Handle("/admin/v1/", mux)
+	srv.HandleFunc("/admin/v1/me", auth.Me)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

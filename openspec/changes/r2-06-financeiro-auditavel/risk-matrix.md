@@ -1,0 +1,11 @@
+# Riscos: Medição, saldo estrito, ledger e fechamento
+
+Estado de todos os riscos: **aberto; mitigação especificada, não implementada/qualificada nesta revisão**. P0 bloqueia exposição/ativação do fluxo afetado; P1 bloqueia completude da capacidade; P2 qualifica usabilidade/governança. Classificação está vinculada ao código e ao uso proposto, sem afirmar exploração em ambiente remoto.
+
+| ID/prioridade | Risco e impacto | Mitigação/prova exigida | Responsável | Evidência |
+|---|---|---|---|---|
+| F-23 / P0 | Troca de tarifa antes de consumir evento muda cobrança passada; CLIENT_DIRECT pode gerar custo do Hub; produto composto teria custo incorreto. | Snapshot de compra/venda no aceite; custos por unidade elegível e responsabilidade; mudança de preço, falha, parcialidade e resultado tardio reconciliam conforme exemplos. | Financeiro, Comercial e Engenharia Libra | [hub/internal/libra/consumers.go:17](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/libra/consumers.go#L17) |
+| F-24 / P0 | Consumo sequencial pode ultrapassar teto e uma reserva pode ser liberada enquanto o provedor ainda produzir custo. | Limite ausente nega oferta estrita; saldo considera liquidações, reservas e retenções incertas; captura repetida é idempotente; EXPIRED+UNKNOWN mantém retenção até reconciliação. | Financeiro, Comercial e Engenharia Libra | [hub/internal/libra/store.go:73](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/libra/store.go#L73) |
+| F-25 / P1 | Auditoria contábil não consegue explicar saldo; custos de passos distintos podem colidir e arredondamento não é governado. | Decimal exato fim a fim; identidade econômica por obrigação; lotes balanceados por moeda; ajustes compensatórios e fechamento/exportação idempotente com completude comprovada. | Financeiro, Comercial e Engenharia Libra | [hub/internal/libra/store.go:27](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/libra/store.go#L27) |
+
+Risco de integração: dependências r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados, r2-04-catalogo-produtos-e-contratos. Ver também riscos transversais de identidade, custódia e rollback no design.

@@ -1,19 +1,23 @@
 package cometa
 
 import (
+	"ai-hub/hub/internal/atlas"
+	"ai-hub/hub/internal/platform/egress"
 	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
-	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/providersim"
 )
@@ -65,30 +69,33 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	operationID := cmd.CommandID
 	e.log.Debug("comando recebido para execucao", "trace_id", cmd.TraceID, "protocol_id", cmd.ProtocolID,
 		"operation_id", operationID, "dispatch_mode", cmd.DispatchMode, "provider_account_id", cmd.ProviderAccountID)
-	if existing, err := e.store.Get(ctx, operationID); err == nil {
-		switch existing.State {
-		case StateSucceeded, StateFailed:
-			e.log.Info("comando repetido: devolvendo operacao ja concluida", "operation_id", operationID)
-			return dispatch.Result{
-				CommandID: cmd.CommandID, OperationID: operationID,
-				ProviderRequestID: existing.ProviderRequestID.String,
-				Kind:              factKindFor(existing.State),
-			}
-		default:
-			e.log.Info("comando repetido: operacao ja em andamento, sem novo envio", "operation_id", operationID, "state", existing.State)
-			return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown}
+	if cmd.CellID != os.Getenv("CELL_ID") || cmd.TenantID == "" || cmd.CommandID == "" || cmd.StepDeadline.IsZero() {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "invalid_command"}
+	}
+	if _, err := e.store.Get(ctx, operationID); err == nil {
+		result, err := e.store.DurableResult(ctx, cmd)
+		if err == nil {
+			return result
 		}
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "custody_unavailable"}
+	} else if !errors.Is(err, ErrOperationNotFound) {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "persistence_unavailable"}
+	}
+	var snapshot atlas.OfferSnapshot
+	if json.Unmarshal(cmd.ConfigSnapshot, &snapshot) != nil || snapshot.Binding.ID == "" {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "invalid_snapshot"}
+	}
+	target, err := atlas.DecodeCatalogData(snapshot.Target)
+	if err != nil || target.AdapterID != "synthetic-provider" {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "adapter_not_qualified"}
 	}
 
-	cred, err := e.atlas.ResolveCredential(ctx, cmd.TenantID, cmd.ProviderAccountID)
+	cred, err := e.atlas.BoundCredential(ctx, cmd.TenantID, snapshot.Binding.ID, snapshot.Binding.Version)
 	if err != nil {
 		// SEG-05: sem fallback implicito. Recusa antes do envio.
 		e.log.Warn("credencial indisponivel, recusando antes do envio (SEG-05)", "trace_id", cmd.TraceID,
 			"tenant_id", cmd.TenantID, "provider_account_id", cmd.ProviderAccountID, "error", err)
-		_ = e.store.CreateOperation(ctx, Operation{
-			OperationID: operationID, ProtocolID: cmd.ProtocolID,
-			ProviderAccountID: cmd.ProviderAccountID, State: StateFailed,
-		})
+
 		return dispatch.Result{
 			CommandID: cmd.CommandID, OperationID: operationID,
 			Kind: dispatch.FactRejected, ErrorCode: "credential_unavailable", ErrorMessage: err.Error(),
@@ -97,25 +104,34 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	e.log.Debug("credencial resolvida (SEG-05)", "trace_id", cmd.TraceID, "binding_id", cred.BindingID,
 		"credential_mode", cred.CredentialMode, "settlement_party", cred.SettlementParty)
 
-	if err := e.store.CreateOperation(ctx, Operation{
-		OperationID:         operationID,
-		ProtocolID:          cmd.ProtocolID,
-		ProviderAccountID:   cmd.ProviderAccountID,
-		CredentialBindingID: nullable(cred.BindingID),
-		State:               StatePrepared,
-	}); err != nil {
-		e.log.Error("falha ao persistir operacao antes do envio", "error", err)
-		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorMessage: "falha ao persistir operacao"}
+	if cred.BindingID != snapshot.Binding.ID {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "binding_changed"}
 	}
 
-	pa, err := e.atlas.ProviderAccount(ctx, cmd.ProviderAccountID)
+	var pa atlasclient.ProviderAccount
+	if json.Unmarshal(snapshot.Account.Data, &pa) != nil || snapshot.Account.ID != cmd.ProviderAccountID {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "account_snapshot_invalid"}
+	}
+	pa.ProviderAccountID = snapshot.Account.ID
+
+	binding, _ := atlas.DecodeCatalogData(snapshot.Binding)
+	claim, owned, err := e.store.PrepareSubmission(ctx, cmd, cred.BindingID, binding.SecretVersion)
 	if err != nil {
-		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorMessage: "conta de provedor nao resolvida"}
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "preparation_unavailable"}
 	}
-
-	attemptID := idgen.New()
+	if !owned {
+		r, err := e.store.DurableResult(ctx, cmd)
+		if err == nil {
+			return r
+		}
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown}
+	}
+	attemptID := claim.AttemptID
 	sentAt := time.Now()
-	_ = e.store.UpdateState(ctx, operationID, StateSubmitting, "")
+	client, err := egress.NewClient(pa.BaseURL, 15*time.Second)
+	if err != nil {
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
+	}
 
 	fail := shouldFail(cmd.RequestBody)
 	delayMs := requestedDelayMs(cmd.RequestBody)
@@ -139,16 +155,17 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
-	if err := e.tokenCache.Apply(ctx, e.client, pa.ProviderAccountID, providerauth.Config{
-		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: pa.AuthSecretRef,
+	if err := e.tokenCache.Apply(ctx, client, pa.ProviderAccountID, providerauth.Config{
+		BindingID: cred.BindingID, TenantID: cmd.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion,
+		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef,
 		TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID,
-		ClientSecretRef: pa.OAuthClientSecretRef, MTLSCertificateRef: pa.MTLSCertificateRef,
+		ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef,
 		TokenTTLSeconds: pa.TokenTTLSeconds,
 	}, httpReq); err != nil {
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", err)
 	}
 
-	resp, err := e.client.Do(httpReq)
+	resp, err := client.Do(httpReq)
 	if err != nil {
 		// Falha de comunicacao: efeito possivelmente enviado e
 		// desconhecido (EXE-09/EXE-04) — nao inventar resposta final.
@@ -158,62 +175,86 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 
 	receivedAt := time.Now()
 	var result providersim.OperationResult
-	_ = json.NewDecoder(resp.Body).Decode(&result)
-	_ = e.store.RecordAttempt(ctx, attemptID, operationID, "SUBMIT", &sentAt, &receivedAt, "")
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&result); err != nil || result.ProviderRequestID == "" || (result.Status != "SUCCEEDED" && result.Status != "FAILED" && result.Status != "PENDING") {
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_provider_response", fmt.Errorf("invalid provider response"))
+	}
+	if _, err := e.store.db.ExecContext(ctx, "UPDATE attempts SET sent_at=$2,received_at=$3 WHERE attempt_id=$1", attemptID, sentAt, receivedAt); err != nil {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "receipt_unavailable"}
+	}
 
 	switch resp.StatusCode {
-	case http.StatusOK: // provedor sincrono: fato final ja conhecido
+	case http.StatusOK: // Provider final must have explicit terminal semantics.
+		if result.Status == "PENDING" {
+			return e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_final", fmt.Errorf("pending result on final response"))
+		}
 		return e.finalize(ctx, cmd, operationID, result)
 	case http.StatusAccepted: // provedor assincrono: pendente
-		_ = e.store.UpdateState(ctx, operationID, StateAcceptedExternal, result.ProviderRequestID)
-		if pa.ProviderMode == string(providersim.ModeAsyncPoll) {
-			deadline := cmd.StepDeadline
-			_ = e.store.SchedulePolling(ctx, operationID, time.Now().Add(2*time.Second), deadline, 2)
+		if result.Status != "PENDING" {
+			return e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_acceptance", fmt.Errorf("terminal result on pending response"))
 		}
-		return dispatch.Result{
-			CommandID: cmd.CommandID, OperationID: operationID,
-			ProviderRequestID: result.ProviderRequestID, Kind: dispatch.FactUnknown,
+		saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+		defer cancel()
+		durable, err := e.store.ConserveAcceptance(saveCtx, cmd, result.ProviderRequestID, pa.ProviderMode == string(providersim.ModeAsyncPoll))
+		if err != nil {
+			return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "acceptance_custody_unavailable"}
 		}
+		return durable
 	default:
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado"))
 	}
 }
 
-func (e *Executor) communicationFailure(ctx context.Context, operationID, attemptID string, sentAt time.Time, code string, err error) dispatch.Result {
-	now := time.Now()
-	_ = e.store.RecordAttempt(ctx, attemptID, operationID, "SUBMIT", &sentAt, &now, code)
-	_ = e.store.UpdateState(ctx, operationID, StateUnknown, "")
-	e.log.Warn("comunicacao com provedor falhou; estado permanece UNKNOWN", "operation_id", operationID, "error", err)
-	return dispatch.Result{CommandID: "", OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: code, ErrorMessage: err.Error()}
+func (e *Executor) communicationFailure(ctx context.Context, operationID, attemptID string, sentAt time.Time, code string, cause error) dispatch.Result {
+	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+	var cmd dispatch.Command
+	var raw []byte
+	if err := e.store.db.QueryRowContext(saveCtx, "SELECT command FROM operations WHERE operation_id=$1", operationID).Scan(&raw); err == nil {
+		_ = json.Unmarshal(raw, &cmd)
+	}
+	result := dispatch.Result{CommandID: operationID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: code}
+	if cmd.CommandID == "" {
+		return result
+	}
+	if _, err := e.store.db.ExecContext(saveCtx, "UPDATE attempts SET received_at=clock_timestamp(),error_code=$2 WHERE attempt_id=$1", attemptID, code); err != nil {
+		return result
+	}
+	durable, err := e.store.ConserveObservation(saveCtx, cmd, result, "SUBMIT")
+	if err != nil {
+		return result
+	}
+	return durable
 }
 
 // finalize aplica um resultado conhecido (SUCCEEDED/FAILED), persiste
 // o estado e publica o fato na outbox (COM-03) para Orbita/Libra.
 func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operationID string, result providersim.OperationResult) dispatch.Result {
-	state := StateSucceeded
+	var snapshot atlas.OfferSnapshot
+	if json.Unmarshal(cmd.ConfigSnapshot, &snapshot) != nil {
+		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "snapshot_unavailable"}
+	}
+	target, err := atlas.DecodeCatalogData(snapshot.Target)
+	raw, _ := json.Marshal(result)
+	if err == nil {
+		_, err = atlas.TransformJSON(raw, nil, target.OutputSchema)
+	}
+	if err != nil {
+		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "provider_output_contract_failed"}
+	}
 	kind := dispatch.FactSucceeded
 	if result.Status == "FAILED" {
-		state = StateFailed
 		kind = dispatch.FactFailed
+	} else if result.Status != "SUCCEEDED" {
+		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown}
 	}
-	_ = e.store.UpdateState(ctx, operationID, state, result.ProviderRequestID)
-	_ = e.store.ClearPolling(ctx, operationID)
-
-	fact := OperationFact{
-		ProtocolID: cmd.ProtocolID, TraceID: cmd.TraceID, OperationID: operationID,
-		ProviderAccountID: cmd.ProviderAccountID, ProviderRequestID: result.ProviderRequestID,
-		Kind: string(kind), ResponseBody: cmd.RequestBody, ErrorMessage: result.Detail,
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: result}
+	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+	durable, err := e.store.ConserveObservation(saveCtx, cmd, response, "PROVIDER")
+	if err != nil {
+		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "custody_unavailable"}
 	}
-	e.log.Info("operacao finalizada", "trace_id", cmd.TraceID, "protocol_id", cmd.ProtocolID,
-		"operation_id", operationID, "kind", kind)
-	if err := e.publishOperationFact(ctx, operationID, fact); err != nil {
-		e.log.Error("falha ao publicar fato de operacao na outbox", "trace_id", cmd.TraceID, "error", err)
-	}
-
-	return dispatch.Result{
-		CommandID: cmd.CommandID, OperationID: operationID,
-		ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: cmd.RequestBody,
-	}
+	return durable
 }
 
 func (e *Executor) publishOperationFact(ctx context.Context, operationID string, fact OperationFact) error {
@@ -236,7 +277,7 @@ func (e *Executor) callbackURLFor(operationID string) string {
 // payload de entrada (QUA-01: "falhas injetadas"), lendo um campo
 // opcional "force_fail" quando o corpo chega como map[string]any.
 func shouldFail(body any) bool {
-	m, ok := body.(map[string]any)
+	m, ok := inputObject(body)
 	if !ok {
 		return false
 	}
@@ -247,7 +288,7 @@ func shouldFail(body any) bool {
 // requestedDelayMs le um campo opcional "delay_ms" do corpo de
 // entrada, usado para ensaiar deadlines e TTL de retry (EXE-10/EXE-11).
 func requestedDelayMs(body any) int {
-	m, ok := body.(map[string]any)
+	m, ok := inputObject(body)
 	if !ok {
 		return 0
 	}
@@ -259,6 +300,16 @@ func requestedDelayMs(body any) int {
 	default:
 		return 0
 	}
+}
+
+func inputObject(body any) (map[string]any, bool) {
+	raw, err := json.Marshal(body)
+	if err != nil {
+		return nil, false
+	}
+	var m map[string]any
+	err = json.Unmarshal(raw, &m)
+	return m, err == nil && m != nil
 }
 
 // ApplyExternalObservation aplica uma observacao recebida por callback
@@ -277,7 +328,15 @@ func (e *Executor) ApplyExternalObservation(ctx context.Context, cmdCtx dispatch
 	if result.Status == "PENDING" {
 		return
 	}
-	e.finalize(ctx, dispatch.Command{ProtocolID: op.ProtocolID, ProviderAccountID: op.ProviderAccountID}, operationID, result)
+	var raw []byte
+	if err = e.store.db.QueryRowContext(ctx, "SELECT command FROM operations WHERE operation_id=$1", operationID).Scan(&raw); err != nil {
+		return
+	}
+	var command dispatch.Command
+	if json.Unmarshal(raw, &command) != nil {
+		return
+	}
+	e.finalize(ctx, command, operationID, result)
 }
 
 func factKindFor(state State) dispatch.FactKind {

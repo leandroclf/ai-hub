@@ -5,10 +5,9 @@ info:
   description: >
     Contrato HTTP público de admissão e consulta (EXE-01, EXE-02, EXE-07,
     EXE-14, COM-05). Formaliza a API já implementada e testada em
-    `hub/internal/orbita/handlers.go`. tenant_id é resolvido pela borda
-    confiável (SEG-01); nesta referência local, sem OAuth2/OIDC real, é
-    aceito diretamente via header `X-Tenant-Id` — placeholder de
-    autenticação documentado em `IMPLEMENTATION_AUDIT.md`.
+    `hub/internal/orbita/handlers.go`. tenant e aplicação são derivados do
+    principal OIDC autenticado; cabeçalhos fornecidos pelo cliente não
+    concedem identidade (SEG-01).
 servers:
   - url: http://localhost:8080
     description: Órbita local (docker compose)
@@ -19,11 +18,6 @@ paths:
       summary: Admissão durável de um protocolo (EXE-01, EXE-02, EXE-14)
       operationId: createProtocol
       parameters:
-        - name: X-Tenant-Id
-          in: header
-          required: true
-          schema: { type: string }
-          description: Identidade do tenant, injetada pela borda confiável (placeholder nesta referência).
         - name: Idempotency-Key
           in: header
           required: true
@@ -50,7 +44,7 @@ paths:
         "400":
           description: Corpo inválido, mode inválido ou Idempotency-Key ausente.
         "401":
-          description: X-Tenant-Id ausente.
+          description: Principal OIDC ausente ou inválido.
         "402":
           description: Reserva financeira estrita indisponível ou limite excedido (FIN-06).
         "403":
@@ -67,10 +61,6 @@ paths:
       summary: Consulta unificada de estado/resultado (EXE-07, COM-05)
       operationId: getProtocol
       parameters:
-        - name: X-Tenant-Id
-          in: header
-          required: true
-          schema: { type: string }
         - name: protocolId
           in: path
           required: true
@@ -84,7 +74,7 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/ProtocolResponse' }
         "401":
-          description: X-Tenant-Id ausente.
+          description: Principal OIDC ausente ou inválido.
         "404":
           description: Protocolo inexistente ou pertencente a outro tenant (mesma resposta, sem revelar existência — SEG-04).
 

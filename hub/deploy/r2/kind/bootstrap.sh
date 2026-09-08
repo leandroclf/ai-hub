@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+tool_dir=${R2_TOOL_DIR:-/tmp/ai-hub-r2-tools}
+mkdir -p "$tool_dir"
+kind_bin=${KIND_BIN:-$tool_dir/kind}
+kubeconfig="$tool_dir/kubeconfig"
+if [[ ! -x "$kind_bin" ]]; then
+  curl -fsSL https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64 -o "$kind_bin"
+  curl -fsSL https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64.sha256sum -o "$tool_dir/kind.sha256sum"
+  python3 - "$kind_bin" "$tool_dir/kind.sha256sum" <<'PY'
+import hashlib,pathlib,sys
+assert hashlib.sha256(pathlib.Path(sys.argv[1]).read_bytes()).hexdigest()==pathlib.Path(sys.argv[2]).read_text().split()[0]
+PY
+  chmod +x "$kind_bin"
+fi
+if ! "$kind_bin" get clusters | rg -qx 'ai-hub-r2'; then
+  "$kind_bin" create cluster --name ai-hub-r2 --image kindest/node:v1.32.2 --config "$root/kind/cluster.yaml" --kubeconfig "$kubeconfig" --wait 90s
+fi
+for node in $("$kind_bin" get nodes --name ai-hub-r2); do
+  if ! docker inspect "$node" --format '{{json .NetworkSettings.Networks}}' | jq -e 'has("ai-hub-r2_default")' >/dev/null; then docker network connect ai-hub-r2_default "$node"; fi
+done
+curl -fsSL https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml -o "$tool_dir/metrics-server.yaml"
+curl -fsSL https://github.com/kedacore/keda/releases/download/v2.17.2/keda-2.17.2.yaml -o "$tool_dir/keda.yaml"
+kubectl --kubeconfig "$kubeconfig" apply -f "$tool_dir/metrics-server.yaml"
+# Certificados kubelet autoassinados apenas neste laboratório kind.
+kubectl --kubeconfig "$kubeconfig" -n kube-system patch deployment metrics-server --type=strategic -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname","--kubelet-use-node-status-port","--metric-resolution=15s","--kubelet-insecure-tls"]}]}}}}'
+kubectl --kubeconfig "$kubeconfig" apply --server-side -f "$tool_dir/keda.yaml"
+for service in atlas orbita cometa pulsar libra; do "$kind_bin" load docker-image "ai-hub-r2-$service:r2" --name ai-hub-r2; done
+for domain in control core finance; do
+  docker compose -f "$root/compose.yaml" exec -T postgres psql -U hub -d postgres -v ON_ERROR_STOP=1 <<SQL
+SELECT 'CREATE DATABASE hub_${domain}_kind' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname='hub_${domain}_kind')\gexec
+SQL
+done
+docker compose -f "$root/compose.yaml" run --rm -e MIGRATION_DB_SUFFIX=_kind migrate
+python3 "$root/kind/render-runtime.py" > "$tool_dir/runtime.yaml"
+kubectl --kubeconfig "$kubeconfig" apply -f "$tool_dir/runtime.yaml"
+kubectl --kubeconfig "$kubeconfig" apply -k "$root/k8s/overlays/local-kind"
+kubectl --kubeconfig "$kubeconfig" -n ai-hub-local-kind wait --for=condition=available deployment --all --timeout=60s

@@ -1,0 +1,49 @@
+logging {
+  level = "info"
+  format = "json"
+}
+discovery.docker "r2" {
+  host = "unix:///var/run/docker.sock"
+  filter {
+    name = "label"
+    values = ["com.docker.compose.project=ai-hub-r2"]
+  }
+}
+discovery.relabel "r2" {
+  targets = discovery.docker.r2.targets
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label = "component"
+  }
+  rule {
+    target_label = "environment"
+    replacement = "local"
+  }
+}
+loki.source.docker "r2" {
+  host = "unix:///var/run/docker.sock"
+  targets = discovery.relabel.r2.output
+  forward_to = [loki.write.local.receiver]
+}
+loki.write "local" {
+  endpoint { url = "http://loki:3100/loki/api/v1/push" }
+}
+otelcol.receiver.otlp "hub" {
+  grpc { endpoint = "0.0.0.0:4317" }
+  http { endpoint = "0.0.0.0:4318" }
+  output { traces = [otelcol.processor.batch.hub.input] }
+}
+otelcol.processor.batch "hub" {
+  send_batch_size = 128
+  send_batch_max_size = 256
+  timeout = "2s"
+  output { traces = [otelcol.exporter.otlp.tempo.input] }
+}
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls { insecure = true }
+  }
+  sending_queue { queue_size = 128 }
+  retry_on_failure { max_elapsed_time = "10s" }
+}

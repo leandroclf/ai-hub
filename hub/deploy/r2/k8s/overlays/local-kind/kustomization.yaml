@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: ai-hub-local-kind
+resources:
+- ../../base
+replicas:
+- name: atlas
+  count: 1
+- name: orbita
+  count: 1
+- name: cometa
+  count: 1
+- name: pulsar
+  count: 1
+- name: libra
+  count: 1
+patches:
+- target:
+    kind: HorizontalPodAutoscaler
+    name: atlas
+  patch: "- op: replace\n  path: /spec/minReplicas\n  value: 1\n- op: replace\n  path:\
+    \ /spec/maxReplicas\n  value: 2\n"
+- target:
+    kind: HorizontalPodAutoscaler
+    name: orbita
+  patch: "- op: replace\n  path: /spec/minReplicas\n  value: 1\n- op: replace\n  path:\
+    \ /spec/maxReplicas\n  value: 2\n"
+- target:
+    kind: HorizontalPodAutoscaler
+    name: cometa
+  patch: "- op: replace\n  path: /spec/minReplicas\n  value: 1\n- op: replace\n  path:\
+    \ /spec/maxReplicas\n  value: 2\n"
+- target:
+    kind: HorizontalPodAutoscaler
+    name: libra
+  patch: "- op: replace\n  path: /spec/minReplicas\n  value: 1\n- op: replace\n  path:\
+    \ /spec/maxReplicas\n  value: 2\n"
+- target:
+    kind: ScaledObject
+    name: pulsar
+  patch: "- op: replace\n  path: /spec/minReplicaCount\n  value: 1\n- op: replace\n\
+    \  path: /spec/maxReplicaCount\n  value: 2\n"

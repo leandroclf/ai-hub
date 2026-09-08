@@ -8,6 +8,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -32,12 +33,12 @@ const (
 // Operation e a projecao persistida de uma operacao externa (DAD-02).
 type Operation struct {
 	OperationID         string
-	ProtocolID           string
-	ProviderAccountID    string
-	ProviderRequestID    sql.NullString
-	CredentialBindingID  sql.NullString
-	SecretVersionID       sql.NullString
-	State                State
+	ProtocolID          string
+	ProviderAccountID   string
+	ProviderRequestID   sql.NullString
+	CredentialBindingID sql.NullString
+	SecretVersionID     sql.NullString
+	State               State
 }
 
 // Store encapsula o acesso as tabelas de dominio do Cometa em hub_core:
@@ -160,13 +161,13 @@ func (s *Store) SchedulePolling(ctx context.Context, operationID string, nextRun
 // DuePolling retorna operacoes cuja proxima consulta ja venceu e o
 // prazo de polling ainda nao expirou.
 type DuePoll struct {
-	OperationID       string
-	ProtocolID        string
-	ProviderAccountID string
-	ProviderRequestID string
-	IntervalSeconds   int
+	OperationID        string
+	ProtocolID         string
+	ProviderAccountID  string
+	ProviderRequestID  string
+	IntervalSeconds    int
 	MaxIntervalSeconds int
-	AttemptsCount     int
+	AttemptsCount      int
 }
 
 func (s *Store) DuePolling(ctx context.Context, now time.Time, limit int) ([]DuePoll, error) {
@@ -175,10 +176,10 @@ func (s *Store) DuePolling(ctx context.Context, now time.Time, limit int) ([]Due
 		       ps.interval_seconds, ps.max_interval_seconds, ps.attempts_count
 		FROM polling_schedule ps
 		JOIN operations o ON o.operation_id = ps.operation_id
-		WHERE ps.next_run_at <= $1 AND ps.deadline_at > $1 AND o.state = 'ACCEPTED_EXTERNAL'
+		WHERE o.cell_id=$3 AND ps.next_run_at <= $1 AND ps.deadline_at > $1 AND o.state = 'ACCEPTED_EXTERNAL'
 		ORDER BY ps.next_run_at
 		LIMIT $2
-	`, now, limit)
+	`, now, limit, os.Getenv("CELL_ID"))
 	if err != nil {
 		return nil, fmt.Errorf("cometa: buscar polling devido: %w", err)
 	}

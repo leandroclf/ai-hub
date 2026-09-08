@@ -7,14 +7,19 @@
 package outbox
 
 import (
+	"ai-hub/hub/internal/platform/idgen"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // Row e uma linha pendente/publicada da tabela outbox.
 type Row struct {
+	EventID       string
+	OccurredAt    time.Time
+	RecordedAt    time.Time
 	ID            int64
 	AggregateType string
 	AggregateID   string
@@ -31,9 +36,9 @@ func Enqueue(ctx context.Context, tx *sql.Tx, aggregateType, aggregateID, eventT
 		return fmt.Errorf("outbox: serializar payload: %w", err)
 	}
 	_, err = tx.ExecContext(ctx, `
-		INSERT INTO outbox (aggregate_type, aggregate_id, event_type, payload, published)
-		VALUES ($1, $2, $3, $4, FALSE)
-	`, aggregateType, aggregateID, eventType, body)
+		INSERT INTO outbox (aggregate_type, aggregate_id, event_type, payload, published,event_id,occurred_at)
+		VALUES ($1, $2, $3, $4, FALSE,$5,clock_timestamp())
+	`, aggregateType, aggregateID, eventType, body, idgen.New())
 	if err != nil {
 		return fmt.Errorf("outbox: inserir evento: %w", err)
 	}
@@ -44,7 +49,7 @@ func Enqueue(ctx context.Context, tx *sql.Tx, aggregateType, aggregateID, eventT
 // aggregate_type especifico, em ordem de insercao.
 func FetchPending(ctx context.Context, db *sql.DB, aggregateType string, limit int) ([]Row, error) {
 	rows, err := db.QueryContext(ctx, `
-		SELECT id, aggregate_type, aggregate_id, event_type, payload
+		SELECT id, aggregate_type, aggregate_id, event_type, payload,COALESCE(event_id,'legacy-outbox-'||id::text),COALESCE(occurred_at,created_at),created_at
 		FROM outbox
 		WHERE published = FALSE AND aggregate_type = $1
 		ORDER BY id
@@ -58,7 +63,7 @@ func FetchPending(ctx context.Context, db *sql.DB, aggregateType string, limit i
 	var out []Row
 	for rows.Next() {
 		var r Row
-		if err := rows.Scan(&r.ID, &r.AggregateType, &r.AggregateID, &r.EventType, &r.Payload); err != nil {
+		if err := rows.Scan(&r.ID, &r.AggregateType, &r.AggregateID, &r.EventType, &r.Payload, &r.EventID, &r.OccurredAt, &r.RecordedAt); err != nil {
 			return nil, fmt.Errorf("outbox: ler linha pendente: %w", err)
 		}
 		out = append(out, r)

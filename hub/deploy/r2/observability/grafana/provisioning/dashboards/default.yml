@@ -1,0 +1,6 @@
+apiVersion: 1
+providers:
+  - name: Hub R2
+    folder: Hub R2
+    type: file
+    options: {path: /var/lib/grafana/dashboards}
