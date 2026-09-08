@@ -1,0 +1,5 @@
+=== RUN   TestAdmissionPostgresAtomicIdempotency
+    admission_test.go:150: 24 simultaneous requests: one protocol+intent; conflicting payload refused; application keys independent; reservation not released; failed intent insertion rolls back protocol
+--- PASS: TestAdmissionPostgresAtomicIdempotency (0.14s)
+PASS
+ok  	ai-hub/hub/internal/orbita	0.149s

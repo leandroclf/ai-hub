@@ -35,6 +35,8 @@ paths:
       operationId: getOperation
       parameters:
         - { name: operationId, in: path, required: true, schema: { type: string } }
+        - { name: tenant_id, in: query, required: true, schema: { type: string } }
+        - { name: application_id, in: query, required: true, schema: { type: string } }
       responses:
         "200": { description: Estado conhecido da operação em Cometa }
         "404": { description: Operação não encontrada }

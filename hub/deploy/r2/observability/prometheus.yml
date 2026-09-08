@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  external_labels: {environment: local, cell: r2-cell-a}
+rule_files: [/etc/prometheus/alerts.yml]
+scrape_configs:
+  - job_name: hub
+    static_configs:
+      - targets: [atlas:8081, orbita:8080, cometa:8082, pulsar:8083, libra:8084]
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: '(.*):.*'
+        target_label: component
+        replacement: '$1'
+  - job_name: telemetry
+    static_configs:
+      - targets: [alloy:12345, loki:3100, tempo:3200, prometheus:9090]

@@ -1,0 +1,1029 @@
+{
+  "realm": "ai-hub-r2",
+  "enabled": true,
+  "displayName": "AI Hub — laboratório R2",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": false,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 900,
+  "clients": [
+    {
+      "clientId": "ai-hub-admin",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": [
+        "http://localhost:13000/*",
+        "http://127.0.0.1:13000/*"
+      ],
+      "webOrigins": [
+        "http://localhost:13000",
+        "http://127.0.0.1:13000"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:13000/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "application_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "user.attribute": "application_id",
+            "claim.name": "application_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "cell_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "user.attribute": "cell_id",
+            "claim.name": "cell_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "verified-amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "catalog:publish",
+        "catalog:read",
+        "catalog:write",
+        "cometa:execute",
+        "deliveries:read",
+        "deliveries:write",
+        "files:read",
+        "files:write",
+        "finance:approve",
+        "finance:read",
+        "finance:reserve",
+        "finance:write",
+        "integrations:read",
+        "integrations:write",
+        "protocols:read",
+        "protocols:write",
+        "sla:read"
+      ]
+    },
+    {
+      "clientId": "ai-hub-fixture",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "application_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "user.attribute": "application_id",
+            "claim.name": "application_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "cell_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "user.attribute": "cell_id",
+            "claim.name": "cell_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "verified-amr",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-amr-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        },
+        {
+          "name": "realm-roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "catalog:publish",
+        "catalog:read",
+        "catalog:write",
+        "cometa:execute",
+        "deliveries:read",
+        "deliveries:write",
+        "files:read",
+        "files:write",
+        "finance:approve",
+        "finance:read",
+        "finance:reserve",
+        "finance:write",
+        "integrations:read",
+        "integrations:write",
+        "protocols:read",
+        "protocols:write",
+        "sla:read"
+      ]
+    },
+    {
+      "clientId": "hub-orbita",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "r2-fixture-orbita-workload",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "cell",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "cell_id",
+            "claim.value": "r2-cell-a",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "workload",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "workload",
+            "claim.value": "true",
+            "jsonType.label": "boolean",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "catalog:read",
+        "integrations:read",
+        "cometa:execute",
+        "finance:reserve",
+        "protocols:read"
+      ]
+    },
+    {
+      "clientId": "hub-cometa",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "r2-fixture-cometa-workload",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "cell",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "cell_id",
+            "claim.value": "r2-cell-a",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "workload",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "workload",
+            "claim.value": "true",
+            "jsonType.label": "boolean",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "catalog:read",
+        "integrations:read"
+      ]
+    },
+    {
+      "clientId": "hub-pulsar",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "r2-fixture-pulsar-workload",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "cell",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "cell_id",
+            "claim.value": "r2-cell-a",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "workload",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "workload",
+            "claim.value": "true",
+            "jsonType.label": "boolean",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "protocols:read"
+      ]
+    },
+    {
+      "clientId": "hub-libra",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "r2-fixture-libra-workload",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "cell",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "cell_id",
+            "claim.value": "r2-cell-a",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "workload",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "workload",
+            "claim.value": "true",
+            "jsonType.label": "boolean",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": [
+        "catalog:read"
+      ]
+    },
+    {
+      "clientId": "hub-atlas",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "clientAuthenticatorType": "client-secret",
+      "secret": "r2-fixture-atlas-workload",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "ai-hub-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "included.custom.audience": "ai-hub"
+          }
+        },
+        {
+          "name": "cell",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "claim.name": "cell_id",
+            "claim.value": "r2-cell-a",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "workload",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "workload",
+            "claim.value": "true",
+            "jsonType.label": "boolean",
+            "access.token.claim": "true",
+            "id.token.claim": "true"
+          }
+        }
+      ],
+      "defaultClientScopes": []
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "hub_admin"
+      },
+      {
+        "name": "hub_protocol_reader"
+      },
+      {
+        "name": "tenant_reader"
+      },
+      {
+        "name": "tenant_operator"
+      },
+      {
+        "name": "workload_orbita"
+      },
+      {
+        "name": "workload_cometa"
+      },
+      {
+        "name": "workload_pulsar"
+      },
+      {
+        "name": "workload_libra"
+      },
+      {
+        "name": "workload_atlas"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "operadora-a",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "operadora-a",
+      "lastName": "Fixture R2",
+      "email": "operadora-a@r2.invalid",
+      "attributes": {
+        "tenant_id": [
+          "acme"
+        ],
+        "application_id": [
+          "app-acme"
+        ],
+        "cell_id": [
+          "r2-cell-a"
+        ]
+      },
+      "realmRoles": [
+        "hub_admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "R2-fixture-password!",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "R2 synthetic TOTP",
+          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "leitor-a",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "leitor-a",
+      "lastName": "Fixture R2",
+      "email": "leitor-a@r2.invalid",
+      "attributes": {
+        "tenant_id": [
+          "acme"
+        ],
+        "application_id": [
+          "app-acme"
+        ],
+        "cell_id": [
+          "r2-cell-a"
+        ]
+      },
+      "realmRoles": [
+        "tenant_reader"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "R2-fixture-password!",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "R2 synthetic TOTP",
+          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "operador-b",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "operador-b",
+      "lastName": "Fixture R2",
+      "email": "operador-b@r2.invalid",
+      "attributes": {
+        "tenant_id": [
+          "beta"
+        ],
+        "application_id": [
+          "app-beta"
+        ],
+        "cell_id": [
+          "r2-cell-a"
+        ]
+      },
+      "realmRoles": [
+        "tenant_operator"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "R2-fixture-password!",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "R2 synthetic TOTP",
+          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "auditor-global",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "auditor-global",
+      "lastName": "Fixture R2",
+      "email": "auditor-global@r2.invalid",
+      "attributes": {
+        "tenant_id": [
+          ""
+        ],
+        "application_id": [
+          "app-"
+        ],
+        "cell_id": [
+          "r2-cell-a"
+        ]
+      },
+      "realmRoles": [
+        "hub_protocol_reader"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "R2-fixture-password!",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "R2 synthetic TOTP",
+          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
+      "username": "service-account-hub-orbita",
+      "enabled": true,
+      "serviceAccountClientId": "hub-orbita",
+      "realmRoles": [
+        "workload_orbita"
+      ]
+    },
+    {
+      "username": "service-account-hub-cometa",
+      "enabled": true,
+      "serviceAccountClientId": "hub-cometa",
+      "realmRoles": [
+        "workload_cometa"
+      ]
+    },
+    {
+      "username": "service-account-hub-pulsar",
+      "enabled": true,
+      "serviceAccountClientId": "hub-pulsar",
+      "realmRoles": [
+        "workload_pulsar"
+      ]
+    },
+    {
+      "username": "service-account-hub-libra",
+      "enabled": true,
+      "serviceAccountClientId": "hub-libra",
+      "realmRoles": [
+        "workload_libra"
+      ]
+    },
+    {
+      "username": "service-account-hub-atlas",
+      "enabled": true,
+      "serviceAccountClientId": "hub-atlas",
+      "realmRoles": [
+        "workload_atlas"
+      ]
+    }
+  ],
+  "browserFlow": "r2-browser-mfa",
+  "directGrantFlow": "r2-fixture-mfa",
+  "authenticatorConfig": [
+    {
+      "alias": "r2-otp-amr",
+      "config": {
+        "default.reference.value": "otp",
+        "default.reference.maxAge": "900"
+      }
+    },
+    {
+      "alias": "r2-password-amr",
+      "config": {
+        "default.reference.value": "pwd",
+        "default.reference.maxAge": "900"
+      }
+    }
+  ],
+  "authenticationFlows": [
+    {
+      "alias": "r2-browser-mfa",
+      "description": "Mandatory password and OTP in isolated laboratory",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "r2-password-amr"
+        },
+        {
+          "authenticator": "auth-otp-form",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "r2-otp-amr"
+        }
+      ]
+    },
+    {
+      "alias": "r2-fixture-mfa",
+      "description": "Synthetic CLI tests only, not a production login flow",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "direct-grant-validate-username",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "direct-grant-validate-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "r2-password-amr"
+        },
+        {
+          "authenticator": "direct-grant-validate-otp",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false,
+          "authenticatorConfig": "r2-otp-amr"
+        }
+      ]
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "catalog:publish",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "catalog:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "catalog:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "cometa:execute",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "deliveries:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "deliveries:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "files:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "files:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "finance:approve",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "finance:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "finance:reserve",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "finance:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "integrations:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "integrations:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "protocols:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "protocols:write",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
+      "name": "sla:read",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    }
+  ],
+  "scopeMappings": [
+    {
+      "clientScope": "catalog:publish",
+      "roles": [
+        "hub_admin"
+      ]
+    },
+    {
+      "clientScope": "catalog:read",
+      "roles": [
+        "workload_orbita",
+        "workload_cometa",
+        "workload_libra",
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "catalog:write",
+      "roles": [
+        "hub_admin",
+        "tenant_operator"
+      ]
+    },
+    {
+      "clientScope": "cometa:execute",
+      "roles": [
+        "workload_orbita"
+      ]
+    },
+    {
+      "clientScope": "deliveries:read",
+      "roles": [
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "deliveries:write",
+      "roles": [
+        "hub_admin",
+        "tenant_operator"
+      ]
+    },
+    {
+      "clientScope": "files:read",
+      "roles": [
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "files:write",
+      "roles": [
+        "hub_admin",
+        "tenant_operator"
+      ]
+    },
+    {
+      "clientScope": "finance:approve",
+      "roles": [
+        "hub_admin"
+      ]
+    },
+    {
+      "clientScope": "finance:read",
+      "roles": [
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "finance:reserve",
+      "roles": [
+        "workload_orbita"
+      ]
+    },
+    {
+      "clientScope": "finance:write",
+      "roles": [
+        "hub_admin"
+      ]
+    },
+    {
+      "clientScope": "integrations:read",
+      "roles": [
+        "workload_orbita",
+        "workload_cometa",
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "integrations:write",
+      "roles": [
+        "hub_admin",
+        "tenant_operator"
+      ]
+    },
+    {
+      "clientScope": "protocols:read",
+      "roles": [
+        "workload_orbita",
+        "workload_pulsar",
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "protocols:write",
+      "roles": [
+        "hub_admin",
+        "tenant_operator"
+      ]
+    },
+    {
+      "clientScope": "sla:read",
+      "roles": [
+        "hub_admin",
+        "tenant_reader",
+        "tenant_operator",
+        "hub_protocol_reader"
+      ]
+    }
+  ]
+}

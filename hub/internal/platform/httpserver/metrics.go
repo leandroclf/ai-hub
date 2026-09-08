@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strconv"
 	"sync"
 )
 
@@ -16,6 +17,30 @@ import (
 type Registry struct {
 	mu       sync.Mutex
 	counters map[string]float64
+}
+
+// Observe exports cumulative buckets and count/sum for bounded route dimensions.
+func (r *Registry) Observe(name string, labels map[string]string, value float64) {
+	bounds := []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 30}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	bucketLabels := make(map[string]string, len(labels)+1)
+	for k, v := range labels {
+		bucketLabels[k] = v
+	}
+	for _, bound := range bounds {
+		bucketLabels["le"] = strconv.FormatFloat(bound, 'g', -1, 64)
+		bucketKey := key(name+"_bucket", bucketLabels)
+		if value <= bound {
+			r.counters[bucketKey]++
+		} else {
+			r.counters[bucketKey] += 0
+		}
+	}
+	bucketLabels["le"] = "+Inf"
+	r.counters[key(name+"_bucket", bucketLabels)]++
+	r.counters[key(name+"_count", labels)]++
+	r.counters[key(name+"_sum", labels)] += value
 }
 
 // NewRegistry cria um registry vazio.

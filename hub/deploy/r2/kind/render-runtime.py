@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+"""Renderiza fixture local-kind com dependências reais do Compose R2.
+O manifesto gerado contém exclusivamente senhas de ensaio; não usar em nuvem.
+"""
+import json, subprocess, pathlib, yaml
+root=pathlib.Path(__file__).resolve().parents[1];namespace='ai-hub-local-kind';docs=[{'apiVersion':'v1','kind':'Namespace','metadata':{'name':namespace}}]
+for name,port in [('postgres',5432),('localstack',4566),('identity',8080),('alloy',4318),('provider-sim',8090),('webhook-sink',8091)]:
+ result=json.loads(subprocess.check_output(['docker','inspect','ai-hub-r2-'+name+'-1']))[0]
+ address=result['NetworkSettings']['Networks']['ai-hub-r2_default']['IPAddress']
+ docs.extend([{'apiVersion':'v1','kind':'Service','metadata':{'name':name,'namespace':namespace},'spec':{'ports':[{'name':'http','port':port,'targetPort':port}]}},{'apiVersion':'v1','kind':'Endpoints','metadata':{'name':name,'namespace':namespace},'subsets':[{'addresses':[{'ip':address}],'ports':[{'name':'http','port':port}]}]}])
+data={'ENVIRONMENT':'local','CELL_ID':'r2-cell-a','OIDC_ISSUER':'http://localhost:18085/realms/ai-hub-r2','OIDC_JWKS_URL':'http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/certs','OIDC_AUDIENCE':'ai-hub','OIDC_TOKEN_URL':'http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/token','ATLAS_URL':'http://atlas:8081','ORBITA_URL':'http://orbita:8080','COMETA_URL':'http://cometa:8082','LIBRA_URL':'http://libra:8084','QUEUE_ENDPOINT':'http://localstack:4566','QUEUE_REGION':'us-east-1','QUEUE_NAMESPACE':'r2-kind-cell-a','AWS_ACCESS_KEY_ID':'local','AWS_SECRET_ACCESS_KEY':'local','AWS_REGION':'us-east-1','AWS_ENDPOINT_URL':'http://localstack:4566','REDIS_ADDR':'','OTEL_EXPORTER_OTLP_ENDPOINT':'http://alloy:4318','LOG_LEVEL':'info'}
+data['EGRESS_HTTP_ORIGINS']='http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080'
+data['EGRESS_PRIVATE_RULES']='provider-sim:8090=10.96.0.0/12;webhook-sink:8091=10.96.0.0/12;identity:8080=10.96.0.0/12'
+docs.append({'apiVersion':'v1','kind':'ConfigMap','metadata':{'name':'hub-runtime','namespace':namespace},'data':data})
+docs.append({'apiVersion':'v1','kind':'Secret','metadata':{'name':'hub-runtime','namespace':namespace},'stringData':{domain.upper()+'_DSN':f'postgres://hub:r2-local-fixture@postgres:5432/hub_{domain}_kind?sslmode=disable' for domain in ['control','core','finance']}})
+for name in ['atlas','orbita','cometa','pulsar','libra']:
+ docs.append({'apiVersion':'v1','kind':'Secret','metadata':{'name':name+'-workload','namespace':namespace},'stringData':{'client-secret':(root/'identity'/f'{name}-secret.txt').read_text().strip()}})
+print(yaml.safe_dump_all(docs,sort_keys=False))

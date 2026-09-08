@@ -1,0 +1,5 @@
+=== RUN   TestAWSVaultLocalStackVersion
+    vault_test.go:32: AWS SigV4 GetSecretValue against isolated LocalStack: decrypted synthetic value, pinned version, missing version denied; secret omitted from evidence
+--- PASS: TestAWSVaultLocalStackVersion (0.01s)
+PASS
+ok  	ai-hub/hub/internal/providerauth	0.018s

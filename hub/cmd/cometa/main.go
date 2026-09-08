@@ -7,12 +7,15 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strconv"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/cometa"
 	"ai-hub/hub/internal/outbox"
+	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/config"
 	"ai-hub/hub/internal/platform/httpserver"
 	"ai-hub/hub/internal/platform/logging"
@@ -41,15 +44,11 @@ func main() {
 	store := cometa.NewStore(db)
 	atlas := atlasclient.New(atlasURL, 30*time.Second)
 	tokenCache := providerauth.NewTokenCache(redisAddr)
-	if err := tokenCache.Ping(context.Background()); err != nil {
-		log.Error("nao foi possivel conectar ao Redis de tokens", "error", err)
-		panic(err)
-	}
 	defer tokenCache.Close()
 	exec := cometa.NewExecutor(store, atlas, log, selfURL, tokenCache)
 	handlers := cometa.NewHandlers(exec, store)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	q, err := queue.New(ctx, queueEndpoint, queueRegion)
@@ -57,45 +56,52 @@ func main() {
 		log.Error("falha ao conectar ao broker", "error", err)
 		panic(err)
 	}
-	commandsQueueURL, err := q.EnsureQueue(ctx, "cometa-commands")
-	if err != nil {
-		log.Error("falha ao criar fila de comandos", "error", err)
-		panic(err)
-	}
-	factsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
-	if err != nil {
-		log.Error("falha ao criar topico de fatos", "error", err)
-		panic(err)
-	}
-
-	// Relay da outbox (COM-03): publica fatos de operacao no SNS
-	// somente apos o commit local ja realizado pelo Executor.
-	go outbox.RunRelay(ctx, db, "operation", func(ctx context.Context, row outbox.Row) error {
-		var meta struct {
-			ProtocolID string `json:"protocol_id"`
+	go queue.RunBootstrap(ctx, func() error {
+		commandsQueueURL, err := q.EnsureQueue(ctx, "cometa-commands")
+		if err != nil {
+			log.Error("falha ao criar fila de comandos", "error", err)
+			return err
 		}
-		_ = json.Unmarshal(row.Payload, &meta)
-		return q.PublishFact(ctx, factsTopicARN, queue.Envelope{
-			EventID:          rowEventID(row),
-			Type:             row.EventType,
-			SchemaVersion:    1,
-			Producer:         "cometa",
-			ProtocolID:       meta.ProtocolID,
-			OccurredAt:       time.Now().UTC(),
-			RecordedAt:       time.Now().UTC(),
-			AggregateVersion: 1,
-			Payload:          row.Payload,
-		})
-	}, 1*time.Second, log)
+		factsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
+		if err != nil {
+			log.Error("falha ao criar topico de fatos", "error", err)
+			return err
+		}
 
-	// Worker ASYNC/AUTO: consome comandos QUEUED da fila dedicada.
-	go cometa.RunCommandWorker(ctx, q, commandsQueueURL, exec, log)
+		// Relay da outbox (COM-03): publica fatos de operacao no SNS
+		// somente apos o commit local ja realizado pelo Executor.
+		go outbox.RunRelay(ctx, db, "operation", func(ctx context.Context, row outbox.Row) error {
+			var meta struct {
+				ProtocolID string `json:"protocol_id"`
+				TenantID   string `json:"tenant_id"`
+			}
+			_ = json.Unmarshal(row.Payload, &meta)
+			return q.PublishFact(ctx, factsTopicARN, queue.Envelope{
+				EventID:          row.EventID,
+				Type:             row.EventType,
+				SchemaVersion:    1,
+				Producer:         "cometa",
+				ProtocolID:       meta.ProtocolID,
+				TenantID:         meta.TenantID,
+				OccurredAt:       row.OccurredAt,
+				RecordedAt:       row.RecordedAt,
+				AggregateVersion: 1,
+				Payload:          row.Payload,
+			})
+		}, 1*time.Second, log)
+
+		// Worker ASYNC/AUTO: consome comandos QUEUED da fila dedicada.
+		go cometa.RunCommandWorker(ctx, q, commandsQueueURL, exec, log)
+
+		return nil
+	}, log)
 
 	// Scheduler de polling (EXE-05).
 	go cometa.RunPoller(ctx, store, exec, atlas, 2*time.Second, log)
 
 	readiness := func(ctx context.Context) error { return store.Ping(ctx) }
 	srv := httpserver.New(log, readiness, readiness, nil)
+	srv.AuthMiddleware = auth.FromEnv().Middleware
 	mux := http.NewServeMux()
 	handlers.Register(mux)
 	srv.Handle("/internal/", mux)
@@ -103,8 +109,4 @@ func main() {
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)
 	}
-}
-
-func rowEventID(row outbox.Row) string {
-	return "operation-fact-" + strconv.FormatInt(row.ID, 10)
 }

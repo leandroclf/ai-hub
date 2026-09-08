@@ -1,0 +1,119 @@
+ Container ai-hub-r2-postgres-1 Running 
+ Container ai-hub-r2-postgres-1 Waiting 
+ Container ai-hub-r2-postgres-1 Healthy 
+ Container ai-hub-r2-migrate-run-1c3634815bdd Creating 
+ Container ai-hub-r2-migrate-run-1c3634815bdd Created 
+CREATE TABLE
+NOTICE:  relation "schema_migrations" already exists, skipping
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0001_init.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0002_provider_auth.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0003_provider_api_catalog.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0020_catalog_versions.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration control/0021_catalog_qualification_capacity.sql already applied
+COMMIT
+CREATE TABLE
+NOTICE:  relation "schema_migrations" already exists, skipping
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0001_init.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0010_durable_admission.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0011_operation_custody.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+INSERT 0 1
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+INSERT 0 1
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration core/0030_objects_retention.sql already applied
+COMMIT
+NOTICE:  relation "schema_migrations" already exists, skipping
+CREATE TABLE
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration finance/0001_init.sql already applied
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+migration finance/0030_auditable_finance.sql already applied
+COMMIT

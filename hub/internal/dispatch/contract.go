@@ -4,7 +4,11 @@
 // (mesmo conteudo logico), em ASYNC/AUTO.
 package dispatch
 
-import "time"
+import (
+	"ai-hub/hub/internal/contracts/files"
+	"encoding/json"
+	"time"
+)
 
 // Mode e o modo de atendimento escolhido pelo cliente (EXE-02).
 type Mode string
@@ -28,10 +32,17 @@ const (
 // claro. Tem identidade estavel entre timeout, retry de transporte,
 // evento de recuperacao e consulta interna.
 type Command struct {
-	TenantID          string       `json:"tenant_id"`
-	ProtocolID        string       `json:"protocol_id"`
-	StepID            string       `json:"step_id"`
-	CommandID         string       `json:"command_id"`
+	FileRefs         []files.Reference `json:"file_refs,omitempty"`
+	ApplicationID    string            `json:"application_id"`
+	CellID           string            `json:"cell_id"`
+	ConfigSnapshot   json.RawMessage   `json:"config_snapshot"`
+	EconomicSnapshot json.RawMessage   `json:"economic_snapshot,omitempty"`
+	AcceptedAt       time.Time         `json:"accepted_at"`
+	RetryDeadline    time.Time         `json:"retry_deadline"`
+	TenantID         string            `json:"tenant_id"`
+	ProtocolID       string            `json:"protocol_id"`
+	StepID           string            `json:"step_id"`
+	CommandID        string            `json:"command_id"`
 	// TraceID correlaciona esta chamada ponta a ponta nos logs de
 	// Orbita/Cometa/Libra/Pulsar (nao e um span de tracing distribuido
 	// real — ver internal/platform/logging).
@@ -63,6 +74,8 @@ const (
 // adaptador sem fato conservado nao e final valido: por isso o
 // resultado sempre carrega Kind e a evidencia de persistencia.
 type Result struct {
+	Durable           bool     `json:"durable"`
+	EvidenceID        string   `json:"evidence_id,omitempty"`
 	CommandID         string   `json:"command_id"`
 	OperationID       string   `json:"operation_id"`
 	ProviderRequestID string   `json:"provider_request_id,omitempty"`

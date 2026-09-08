@@ -1,0 +1,23 @@
+groups:
+  - name: hub-custody
+    rules:
+      - alert: HubWorkloadUnavailable
+        expr: up{job="hub"} == 0
+        for: 30s
+        labels: {severity: warning}
+        annotations:
+          summary: 'Capacidade {{ $labels.component }} sem coleta'
+          runbook_url: 'hub/deploy/r2/RUNBOOKS.md#capacidade-indisponivel'
+      - alert: HubOutboxDelayed
+        expr: hub_obligation_age_seconds{kind="outbox"} > 30
+        for: 30s
+        labels: {severity: warning}
+        annotations:
+          summary: 'Outbox envelhecida em {{ $labels.component }}'
+          runbook_url: 'hub/deploy/r2/RUNBOOKS.md#outbox-e-quarentena'
+      - alert: HubTelemetryDropped
+        expr: increase(hub_telemetry_dropped_total[5m]) > 0
+        labels: {severity: warning}
+        annotations:
+          summary: 'Exportação de telemetria limitada; negócio mantém custódia própria'
+          runbook_url: 'hub/deploy/r2/RUNBOOKS.md#telemetria'

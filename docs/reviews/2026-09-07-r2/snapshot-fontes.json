@@ -1,0 +1,572 @@
+{
+  "repository": "https://github.com/leandroclf/ai-hub",
+  "commit": "a39d394b0d87185ed4cc3861c12ec45f2c302d9e",
+  "review_completed": "2026-09-08",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "41e6c4dd444b339ce54d55197522ae53f53789a50d3457f800d3c3441e645143",
+      "bytes": 501
+    },
+    {
+      "path": "IMPLEMENTATION_AUDIT.md",
+      "sha256": "d6446938b3969d0f2a59e080787908f0a773e4fd19d296b8aa628b64e4292013",
+      "bytes": 22159
+    },
+    {
+      "path": "docs/openspec-docs/01-prompt-final-completo.md",
+      "sha256": "3f8756bdaf5338e748abc93bcf55d38344e2252f879ee0616f71a374e9ddc348",
+      "bytes": 20887
+    },
+    {
+      "path": "docs/openspec-docs/02-prompt-curto.md",
+      "sha256": "edcbfb9dcd7c265c3be48331b2b2de04d551f452f88dbe40a7f09d1d7958efea",
+      "bytes": 1392
+    },
+    {
+      "path": "docs/openspec-docs/03-template-openspec-change.md",
+      "sha256": "1c61255d1256a87fb05b5ce79ff2a63158df083852ad7b20ed81e85210a694d6",
+      "bytes": 4076
+    },
+    {
+      "path": "docs/openspec-docs/04-checklist-avaliador.md",
+      "sha256": "f3799995f613d22c7a97ff883a2fa56c63521767717f53e7cdbeb578f07c0939",
+      "bytes": 5222
+    },
+    {
+      "path": "docs/openspec-docs/05-referencias-metodologia.md",
+      "sha256": "f1d156a0d633ad56f4c4bc6e3772e62f971f1de53b2b30252815f968e26af142",
+      "bytes": 3561
+    },
+    {
+      "path": "docs/openspec-docs/README.md",
+      "sha256": "4b25d618a685f9d78931aaef3a9c387010ba8a6aaa72ebd63882d6cd326146ee",
+      "bytes": 1960
+    },
+    {
+      "path": "hub/admin-ui/package.json",
+      "sha256": "0e697bc20ae9b2a703c90a8489a9f0ced506c7ae53295e154f936846656175b7",
+      "bytes": 582
+    },
+    {
+      "path": "hub/admin-ui/src/App.tsx",
+      "sha256": "6a9876bd5da72c5d2e069ee1f23bfa4bfe791a8683a1f0f7182fbc47c6949573",
+      "bytes": 1997
+    },
+    {
+      "path": "hub/admin-ui/src/api/atlasClient.ts",
+      "sha256": "b07c427caba9a8e10c9fefc606cb968a3e9068c369a3a25ec56bc5afd3c2043d",
+      "bytes": 6176
+    },
+    {
+      "path": "hub/admin-ui/src/index.css",
+      "sha256": "26079424b7ce9897285033973d22798e3c0ad197788070a14419cf24fac37193",
+      "bytes": 2993
+    },
+    {
+      "path": "hub/admin-ui/src/main.tsx",
+      "sha256": "60ac020ca32ccb437bc81350bcc3be0e59eaddb83d722ab56376d6e18763ef00",
+      "bytes": 251
+    },
+    {
+      "path": "hub/admin-ui/src/pages/ContractsPage.tsx",
+      "sha256": "b0653374023bff085596f8f21b8086976a620e7a7d58e9e39114cbfd193bd0a1",
+      "bytes": 5878
+    },
+    {
+      "path": "hub/admin-ui/src/pages/CredentialBindingsPage.tsx",
+      "sha256": "cbd7c29da5d5ce5791c19cb545f5c7bf640daa0f57a71422a4e4af04d8e519b5",
+      "bytes": 8870
+    },
+    {
+      "path": "hub/admin-ui/src/pages/ProviderAccountsPage.tsx",
+      "sha256": "d01dff3797915d9789fe61bbcf7ca28123c8b1478afcf58a2ab4ac150105bd09",
+      "bytes": 7656
+    },
+    {
+      "path": "hub/admin-ui/src/pages/ServicesPage.tsx",
+      "sha256": "a5ead3bfc0cb621db08f25f11dac901a5d4d23d6a84f241fe83e4c3202110316",
+      "bytes": 7098
+    },
+    {
+      "path": "hub/admin-ui/src/pages/shared.ts",
+      "sha256": "feb014a2259eddca07b3a7e49bf8d700bef6c47b074073085c5d839a561b7be4",
+      "bytes": 383
+    },
+    {
+      "path": "hub/admin-ui/src/vite-env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5",
+      "bytes": 38
+    },
+    {
+      "path": "hub/api/asyncapi.yaml",
+      "sha256": "3eb030987b99b4f26311c309ce871636fe491462b7bdb9bf0351479ab06a625d",
+      "bytes": 3987
+    },
+    {
+      "path": "hub/api/openapi-internal.yaml",
+      "sha256": "b94808cb39699ccb9635f1737ab0d404c4f691aafabe44e531acc4b302f91f83",
+      "bytes": 3704
+    },
+    {
+      "path": "hub/api/openapi.yaml",
+      "sha256": "8ce072b54f65980efbbd3fee0aac10955fd0aa3cf1ed8e42554fe043a462aecd",
+      "bytes": 4863
+    },
+    {
+      "path": "hub/cmd/atlas/main.go",
+      "sha256": "0bd8334448393eeaf91401717b987ed866ad89170da17cd2074621a37c2ea77b",
+      "bytes": 1088
+    },
+    {
+      "path": "hub/cmd/cometa/main.go",
+      "sha256": "c79df101674efbd2dd1126caaeacb5b40d08be57c84adc19a8f72ae05d374325",
+      "bytes": 3556
+    },
+    {
+      "path": "hub/cmd/libra/main.go",
+      "sha256": "6865cbe92515d47d6bf5aa3e91c99e66b874babfc77d37a2156a035e29eef2aa",
+      "bytes": 2988
+    },
+    {
+      "path": "hub/cmd/orbita/main.go",
+      "sha256": "8eb67dd1b64e3d11de72ac5ded4eb4a196e8204fccac1dadfed99a128354a0f5",
+      "bytes": 4324
+    },
+    {
+      "path": "hub/cmd/provider-sim/main.go",
+      "sha256": "999f96f4c0d40ee494afbf47eb0e5e24784e80dc5e32cd563999050220995bb4",
+      "bytes": 747
+    },
+    {
+      "path": "hub/cmd/pulsar/main.go",
+      "sha256": "4713f36edae69d0508280a3335c91ebdf9226de43945fceba8af172bc7536541",
+      "bytes": 2296
+    },
+    {
+      "path": "hub/cmd/webhook-sink/main.go",
+      "sha256": "267be188240774956302db0120bd74567dfd2df0145f233223559311f67127cc",
+      "bytes": 1731
+    },
+    {
+      "path": "hub/deploy/Dockerfile",
+      "sha256": "9e529dd059b9bdb50d843dc5dd040b2a18fc2b6fd3112c0292c2acb223896f9c",
+      "bytes": 486
+    },
+    {
+      "path": "hub/deploy/docker-compose.yml",
+      "sha256": "bad3d6d807b0dd3f6215e7d6eb6ffaeb42f5413d4aa31936a8a856e96339b48b",
+      "bytes": 5417
+    },
+    {
+      "path": "hub/deploy/import_hiveplace_collection.sh",
+      "sha256": "accbcf5c466dc9d6948dbcf68174c238d404fa8cf0a147f7bd032e7a733b61cc",
+      "bytes": 5258
+    },
+    {
+      "path": "hub/deploy/k8s/README.md",
+      "sha256": "9686ab938b2225780957bc331cb05f89c2f6aa8d2ae108b428525e1adcb9b382",
+      "bytes": 6170
+    },
+    {
+      "path": "hub/deploy/k8s/atlas.yaml",
+      "sha256": "57087c8a3a33bfb2569b2f7e9c8eb6d06a9932f3ebd15acd1aafc0b0273a1425",
+      "bytes": 7604
+    },
+    {
+      "path": "hub/deploy/k8s/cometa.yaml",
+      "sha256": "e45e71d6fc55107e1a0252965b7a28e192c5643dfa718d6526db9c68b0455c7b",
+      "bytes": 5184
+    },
+    {
+      "path": "hub/deploy/k8s/kustomization.yaml",
+      "sha256": "5bc77abaedc9b29dd32500691043e931c8f1dd0539e6ca31ba7a8501f18dce1b",
+      "bytes": 699
+    },
+    {
+      "path": "hub/deploy/k8s/libra.yaml",
+      "sha256": "d3d63e12ad98b329f270ab3f1f07c88751ceae0a62f1a5b2117627d8a9d0f65c",
+      "bytes": 4823
+    },
+    {
+      "path": "hub/deploy/k8s/orbita.yaml",
+      "sha256": "c123c6cc8900c9c56206250c0e3ea6c93724a2e1105dc661988b55fc31cb4851",
+      "bytes": 5667
+    },
+    {
+      "path": "hub/deploy/k8s/pulsar.yaml",
+      "sha256": "dc59d86c0c4db98e777b439a71d1e8636910316727cc985dd39dc0b813f5192b",
+      "bytes": 6790
+    },
+    {
+      "path": "hub/deploy/kong/kong.yml",
+      "sha256": "0e2a5bdc69c34fca8692d74b11ebd0da05302798a997b3e22a2f611b8a612076",
+      "bytes": 872
+    },
+    {
+      "path": "hub/deploy/postgres-init/01-init.sh",
+      "sha256": "6d4f019809339a217237c83e08ec4c47903fc8bc882b051fe396d9d90bddebb0",
+      "bytes": 991
+    },
+    {
+      "path": "hub/deploy/seed/seed.sh",
+      "sha256": "75485d9f686b894b024e0ca149e528c2cc4bc29e3c82559b8604979becbbb45e",
+      "bytes": 427
+    },
+    {
+      "path": "hub/deploy/terraform/.gitignore",
+      "sha256": "2b6d1d8b52e8ed1b9d8ec70c5948b4013cc5f279abb7861febad62878c14d344",
+      "bytes": 368
+    },
+    {
+      "path": "hub/deploy/terraform/.terraform.lock.hcl",
+      "sha256": "e3c8e263724affb4a835015e2365bcc5152158e7a16b11d07b54f8cdbfc0009b",
+      "bytes": 3707
+    },
+    {
+      "path": "hub/deploy/terraform/README.md",
+      "sha256": "da50693cd689c4afadef5276b1de4c3ca860cd6ae51d1495eea350baa301b684",
+      "bytes": 8179
+    },
+    {
+      "path": "hub/deploy/terraform/crossplane/claim-example.yaml",
+      "sha256": "bb71b97045b9f1e630ed21a2ce18ab9da953ac6c5fe4029a2a361e825feb415a",
+      "bytes": 1089
+    },
+    {
+      "path": "hub/deploy/terraform/crossplane/composition.yaml",
+      "sha256": "0ee6a7aac13d5bbdb3066b2bc75aa1e480e507d49a8fa4b8dae66b14519f13ea",
+      "bytes": 11486
+    },
+    {
+      "path": "hub/deploy/terraform/crossplane/xrd.yaml",
+      "sha256": "25b25212d15a29ef483495ef2c14e426793d2ae51fa604bc9c68e7269217f1ae",
+      "bytes": 4233
+    },
+    {
+      "path": "hub/deploy/terraform/main.tf",
+      "sha256": "9c518ee2b09ee070affcd7ebf505e014de93270b4eebda47303e22946756ca05",
+      "bytes": 29460
+    },
+    {
+      "path": "hub/deploy/terraform/outputs.tf",
+      "sha256": "286396f5a53bb5eb6c9837bc8404c0488eaf80dfc99e1c0842576cf3c060b932",
+      "bytes": 3190
+    },
+    {
+      "path": "hub/deploy/terraform/providers.tf",
+      "sha256": "04e0bc7d16f2ae6f0530abe396216071f7555a8bc882e31df2d7bad15d7fd1be",
+      "bytes": 2280
+    },
+    {
+      "path": "hub/deploy/terraform/variables.tf",
+      "sha256": "12ee246bf9bcb45bed4af68c795f674958fae7b5ca071de2fd5980b1b8a0003a",
+      "bytes": 6138
+    },
+    {
+      "path": "hub/go.mod",
+      "sha256": "3bb27252b010a72b075ecf241f373c6c65771cc55edacb2993e4adeb67021e09",
+      "bytes": 1525
+    },
+    {
+      "path": "hub/internal/atlas/handlers.go",
+      "sha256": "52583a1778e4ba2d4b3a9fa6b4ebce8a236f324a00bab0ebf27f5089104a4eda",
+      "bytes": 9284
+    },
+    {
+      "path": "hub/internal/atlas/handlers_test.go",
+      "sha256": "2dcd9460e09b849ccd50afb6c8944549737183e98fe321c55772f6b5c54faaf8",
+      "bytes": 2560
+    },
+    {
+      "path": "hub/internal/atlas/store.go",
+      "sha256": "e05ca905d2c0f7d4d9f8bcdf94c80f8739d0da158877670bd6778cc50a410418",
+      "bytes": 11678
+    },
+    {
+      "path": "hub/internal/atlasclient/client.go",
+      "sha256": "148ac64ea28ad4e48c7a695ae56c263be58bf646e567ac084c150ed4b4003442",
+      "bytes": 5553
+    },
+    {
+      "path": "hub/internal/cometa/deadline.go",
+      "sha256": "f77d485530121c32ed2d3efefee1b19d6a907a57efc12e66b5a7bc8658c5f9ec",
+      "bytes": 408
+    },
+    {
+      "path": "hub/internal/cometa/executor.go",
+      "sha256": "576dfba6afe75cf9aded742763fbf85272a50aff7fc0aafc95c70fe799e801a1",
+      "bytes": 12048
+    },
+    {
+      "path": "hub/internal/cometa/handlers.go",
+      "sha256": "842769d650ae33c07ae6f0f00d5fca08f4736250dbd56e0155e6e7c5f58f2fdd",
+      "bytes": 2856
+    },
+    {
+      "path": "hub/internal/cometa/poller.go",
+      "sha256": "12e0b19d293b4f184545a9331a1496d562585710056a00f6c5781b8103cd0a54",
+      "bytes": 2629
+    },
+    {
+      "path": "hub/internal/cometa/store.go",
+      "sha256": "a8953bafb10d156a4ec1c53c38d7c65fb9798b26d02772511f27643415b6a2d6",
+      "bytes": 8564
+    },
+    {
+      "path": "hub/internal/cometa/worker.go",
+      "sha256": "a162f4b64fd68d5c2fcb90b1bbad079d8bf5913f86eb8b6df374cc7f297f0a1a",
+      "bytes": 1911
+    },
+    {
+      "path": "hub/internal/dispatch/contract.go",
+      "sha256": "c9a602fef54fa08724cd3692a70f1b7d4138a00567e90a6085797751967eef9a",
+      "bytes": 2955
+    },
+    {
+      "path": "hub/internal/libra/consumers.go",
+      "sha256": "0bb7125f3b8842c5241e578da4ca9c04985621c34cbfbed6ad806dfd5eb9ec4d",
+      "bytes": 4125
+    },
+    {
+      "path": "hub/internal/libra/handlers.go",
+      "sha256": "a6185b4cd30630015b4cbc26cb751ca5fb93a49ef5f6660c0a0c589e0ee8dbb6",
+      "bytes": 2115
+    },
+    {
+      "path": "hub/internal/libra/store.go",
+      "sha256": "3461e8e8f4fa5c154476d76af3562a106038942552f91703c2bb57792004cdc6",
+      "bytes": 4685
+    },
+    {
+      "path": "hub/internal/libraclient/client.go",
+      "sha256": "56b7993ae175b7d2a76d3cfd987c7e16e7cd371e73c81b9a8980845c63904ef5",
+      "bytes": 1708
+    },
+    {
+      "path": "hub/internal/objectstore/objectstore.go",
+      "sha256": "64c8db45995bbae270ee84aebbfb1482e7c8b34df3cfb2d618ab127e58d74ca8",
+      "bytes": 2624
+    },
+    {
+      "path": "hub/internal/objectstore/objectstore_test.go",
+      "sha256": "16dbcc96d577f16c278dca5f17ef7f0ec4c747677ba651149dc538c6c329c8de",
+      "bytes": 1166
+    },
+    {
+      "path": "hub/internal/orbita/deadline_timer.go",
+      "sha256": "a29a201d2fc2a3811a4d1c3b97744f78560dc506889ac9188fcf23a835112bbe",
+      "bytes": 1415
+    },
+    {
+      "path": "hub/internal/orbita/dispatcher.go",
+      "sha256": "8bb4bf6881629e181413edf6c74af80eebfee43db8c33635e4c5e99c5b9696ad",
+      "bytes": 2764
+    },
+    {
+      "path": "hub/internal/orbita/factconsumer.go",
+      "sha256": "32379f710f5cdff35df1eb944b1b9a7cfd2ec6a86da26c8a2c80058c841b6d78",
+      "bytes": 2770
+    },
+    {
+      "path": "hub/internal/orbita/finalize.go",
+      "sha256": "77699fad856aa796cd193e13ef2c390aabd82b394af9be5b6548b54b24b55647",
+      "bytes": 2678
+    },
+    {
+      "path": "hub/internal/orbita/handlers.go",
+      "sha256": "5f3eba478ebc23a79ee7919f16f529bc72bca5dcb45c93b59b670c50d32e3392",
+      "bytes": 11982
+    },
+    {
+      "path": "hub/internal/orbita/store.go",
+      "sha256": "30bd3a00b1c8202c754741324085bd278907de7cdcfcf78851e66bf2ff4b4923",
+      "bytes": 9768
+    },
+    {
+      "path": "hub/internal/outbox/outbox.go",
+      "sha256": "99b59360f289553f7badc1b08f50affd964ee1bb8ea3431c7e67b70462e6c0c4",
+      "bytes": 2519
+    },
+    {
+      "path": "hub/internal/outbox/relay.go",
+      "sha256": "885c13a88157edc1e37e1686ad77c0fa3f4d129cea62cce2557fb6265be7cada",
+      "bytes": 1343
+    },
+    {
+      "path": "hub/internal/platform/config/config.go",
+      "sha256": "d379b9de3b09a10ba72b13e02a1269096482fa136c6c64cd664074e250c100c7",
+      "bytes": 1119
+    },
+    {
+      "path": "hub/internal/platform/httpserver/httpserver.go",
+      "sha256": "c779d5502b80bca62bfed2b463cafe54910f4749d4668180a7bb2cab434e7f14",
+      "bytes": 4269
+    },
+    {
+      "path": "hub/internal/platform/httpserver/metrics.go",
+      "sha256": "5645774f4b5dcb1885bcc9e96f602a72b234d6b588d8dc53519445cc2174123d",
+      "bytes": 1801
+    },
+    {
+      "path": "hub/internal/platform/idgen/uuidv7.go",
+      "sha256": "c88f94afa3238b7c22b5d8410da595d4b39e54881056ee6005bd747083ee9c3f",
+      "bytes": 792
+    },
+    {
+      "path": "hub/internal/platform/idgen/uuidv7_test.go",
+      "sha256": "f2876452e62480ef6021f4960a2548fbe26b2b4e9144c5fa8753104e4097b0f4",
+      "bytes": 845
+    },
+    {
+      "path": "hub/internal/platform/logging/logging.go",
+      "sha256": "6e1a43c855189f40badc4c081bf45a77a60d25fa7a7b35ac8dd7665a0c78744d",
+      "bytes": 1625
+    },
+    {
+      "path": "hub/internal/platform/pg/pg.go",
+      "sha256": "711e7cddaf6b922fc70442bf91b853c5fc9cea7abe2987863a30b62410e02da8",
+      "bytes": 2140
+    },
+    {
+      "path": "hub/internal/providerauth/client.go",
+      "sha256": "fc4f2c4655c807d0e32b1ddba86598661c423b86251da8c39fd295f9fb346d08",
+      "bytes": 3932
+    },
+    {
+      "path": "hub/internal/providersim/providersim.go",
+      "sha256": "bd5cbe54915edac90b4d3590f8e0251c2df349a6dac21f4fdd315fcd203d0658",
+      "bytes": 6669
+    },
+    {
+      "path": "hub/internal/pulsar/consumer.go",
+      "sha256": "cc18d89bf44b3236720cf25d01ca8dcf83d4cd7952ba2a72e4297fcb0e3a4ed3",
+      "bytes": 2077
+    },
+    {
+      "path": "hub/internal/pulsar/handlers.go",
+      "sha256": "957a3b838fc92f73da3f29787d6a12279594fc3472d3977efa5c01e5edcd4a25",
+      "bytes": 1947
+    },
+    {
+      "path": "hub/internal/pulsar/store.go",
+      "sha256": "a49da56a7561b7807e127ccd8cdb07b7bde974370055c73055a566ab6c066b69",
+      "bytes": 5563
+    },
+    {
+      "path": "hub/internal/pulsar/worker.go",
+      "sha256": "625a31f872695ac3762873bb396aefe6aeb3d1230d9a718bfe739eca80d8a5c1",
+      "bytes": 3615
+    },
+    {
+      "path": "hub/internal/queue/queue.go",
+      "sha256": "a5b6794beb72266c18965430aaff3684a0f7942face9c64838bd2191f84fb9ba",
+      "bytes": 8823
+    },
+    {
+      "path": "hub/migrations/control/0001_init.sql",
+      "sha256": "3ad171d33131c48677189658dbef7897c15594a86b79ec998a2d6afee987c9f1",
+      "bytes": 3312
+    },
+    {
+      "path": "hub/migrations/control/0002_provider_auth.sql",
+      "sha256": "37241e604376471efd7de394e9394673feaec0a32476a517c38363890dad1541",
+      "bytes": 874
+    },
+    {
+      "path": "hub/migrations/control/0003_provider_api_catalog.sql",
+      "sha256": "6ac1a04fc32c1bc0c4484d61b6778adf99fd689ba79ac64e38df7711d0f4f6b1",
+      "bytes": 1889
+    },
+    {
+      "path": "hub/migrations/core/0001_init.sql",
+      "sha256": "6b920aaed6310cbc781b7e1a014cf100c05beb46a4426ddf2a7cd4466cefba61",
+      "bytes": 5579
+    },
+    {
+      "path": "hub/migrations/finance/0001_init.sql",
+      "sha256": "816a0ca17a250a226c4a4700ec4e8c31ee624ce2e6ab8f507aae66edcb8cc7d4",
+      "bytes": 2313
+    },
+    {
+      "path": "hub/test/e2e/e2e_test.go",
+      "sha256": "05cd76aeb5da9a7463811a8a2683ce38b743a7d67418cc8cf3cc87afdb3cb5ee",
+      "bytes": 9348
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/TRACEABILITY.md",
+      "sha256": "1542db5462e5f24e7860ef40c635ada82e1927684b3662e7df2c57769fc5a022",
+      "bytes": 21545
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/design.md",
+      "sha256": "db11525f539b5437bf66d39493df3c885c390a77d74ffc403f7af2b696ab3725",
+      "bytes": 20933
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/evaluator-checklist.md",
+      "sha256": "f1b05bb8667807800d98e94aec9a68c51ed425c5d96f4b229320ff345a027346",
+      "bytes": 8066
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/proposal.md",
+      "sha256": "de545e709702511ffdc69c9c7156b49c4986b74109b6927bec2f8f0a2f9ddc43",
+      "bytes": 17526
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/risk-matrix.md",
+      "sha256": "a8df9ac0c894a6a7af421ad57d456fa0e309787bb5171af89d9e659e27efd79e",
+      "bytes": 7192
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md",
+      "sha256": "e630efdfa2c6e92812d1a7dec6efc95a973091b819a39fa646d06f1121bb6a7e",
+      "bytes": 29660
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md",
+      "sha256": "fdb68568e124918e01db483588b7e1d2c55263972dbc96d4cf575cf431a95857",
+      "bytes": 24196
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md",
+      "sha256": "8b4b82fb1cfb92e2d416f854c1c1a92cc5d472778558405b840f86c150d5ec6e",
+      "bytes": 31975
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md",
+      "sha256": "679a68e9472213b5e81f25732414cbe74aef95299a8a69278bce6d608a2eb6d4",
+      "bytes": 42435
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/decisoes-e-governanca/spec.md",
+      "sha256": "6c979b48c1fd09e2fa9769713767765d56f00b8e21181d5d2927d7f2adc04991",
+      "bytes": 16649
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md",
+      "sha256": "3d6492624df2ff81833c49221d44973247355f167af0504e2815411f0804e42c",
+      "bytes": 37097
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md",
+      "sha256": "061764ffacb09801714f2b3aa486eb490c23f494f5b31c32795e48d7cdf21cb5",
+      "bytes": 57843
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md",
+      "sha256": "6924a7aacfcfe098fa1f091d477977abfdbf3c4731e71dead9754f64001a22d1",
+      "bytes": 31955
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md",
+      "sha256": "cc6ef9d0c05d0fd7ff379cc18c2acf567b2788eba63e17bc82102128e97b2ebd",
+      "bytes": 28402
+    },
+    {
+      "path": "openspec/changes/hub-interoperabilidade-v4/tasks.md",
+      "sha256": "ef0418fc4945d27608254c0533f8740c3820e7bef7ad810a70e8dceea5b709d7",
+      "bytes": 17257
+    }
+  ]
+}

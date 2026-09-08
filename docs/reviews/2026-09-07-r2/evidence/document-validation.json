@@ -1,0 +1,16 @@
+{
+  "snapshot": "a39d394b0d87185ed4cc3861c12ec45f2c302d9e",
+  "date": "2026-09-08",
+  "openspec_changes_valid": 9,
+  "requirements_unique": 66,
+  "scenarios_unique": 205,
+  "tasks_open": 186,
+  "baseline_ids_covered": 98,
+  "source_file_line_pairs_valid": 142,
+  "local_markdown_links_valid": 199,
+  "checkout_clean": true,
+  "implementation_scenarios_executed": false,
+  "html_sections": 87,
+  "html_anchor_validation": true,
+  "html_remote_assets": 0
+}

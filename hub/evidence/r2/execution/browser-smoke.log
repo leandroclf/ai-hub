@@ -1,0 +1,57 @@
+[
+  {
+    "check": "OIDC Authorization Code PKCE + password + OTP in Chromium",
+    "status": "PASS"
+  },
+  {
+    "check": "URL navigation and real authenticated provider list",
+    "status": "PASS"
+  },
+  {
+    "check": "No persistent token and PKCE transaction removed",
+    "status": "PASS",
+    "storageKeys": {
+      "local": [],
+      "session": []
+    }
+  },
+  {
+    "check": "390px viewport has no page overflow",
+    "status": "PASS",
+    "dimensions": [
+      {
+        "element": "app-shell",
+        "width": 390,
+        "right": 390,
+        "display": "flex",
+        "direction": "column"
+      },
+      {
+        "element": "app-header",
+        "width": 390,
+        "right": 390,
+        "display": "block",
+        "direction": "row"
+      },
+      {
+        "element": "app-nav",
+        "width": 390,
+        "right": 390,
+        "display": "flex",
+        "direction": "row"
+      },
+      {
+        "element": "app-main",
+        "width": 390,
+        "right": 390,
+        "display": "block",
+        "direction": "row"
+      }
+    ]
+  },
+  {
+    "check": "Logout navigation",
+    "status": "OBSERVED",
+    "origin": "http://localhost:18085"
+  }
+]

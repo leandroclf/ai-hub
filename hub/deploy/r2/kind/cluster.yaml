@@ -1,0 +1,10 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: ai-hub-r2
+nodes:
+  - role: control-plane
+    labels: {topology.kubernetes.io/zone: simulated-a}
+  - role: worker
+    labels: {topology.kubernetes.io/zone: simulated-b}
+  - role: worker
+    labels: {topology.kubernetes.io/zone: simulated-c}

@@ -6,6 +6,8 @@
 package atlasclient
 
 import (
+	"ai-hub/hub/internal/atlas"
+	"ai-hub/hub/internal/platform/auth"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,6 +16,18 @@ import (
 	"sync"
 	"time"
 )
+
+// Offer resolves a published, tenant/application scoped snapshot. Authorization
+// decisions are never served past the validity returned by its owner.
+func (c *Client) Offer(ctx context.Context, tenant, application, service, account string) (atlas.OfferSnapshot, error) {
+	q := url.Values{"tenant_id": {tenant}, "application_id": {application}, "service_code": {service}, "provider_account_id": {account}}
+	var out atlas.OfferSnapshot
+	_, err := c.getJSON(ctx, "/v1/offers/resolve?"+q.Encode(), &out)
+	if err == nil && (!time.Now().Before(out.ValidUntil) || out.Hash == "") {
+		err = fmt.Errorf("atlasclient: snapshot expired or invalid")
+	}
+	return out, err
+}
 
 // Client e o cliente HTTP do Atlas com cache local.
 type Client struct {
@@ -37,7 +51,7 @@ func New(baseURL string, ttl time.Duration) *Client {
 	}
 	return &Client{
 		baseURL: baseURL,
-		http:    &http.Client{Timeout: 3 * time.Second},
+		http:    auth.WorkloadClient(baseURL, 3*time.Second),
 		cache:   make(map[string]cacheEntry),
 		ttl:     ttl,
 	}
@@ -72,6 +86,7 @@ type ProviderAccount struct {
 // CredentialBinding e a projecao local de um vinculo de credencial
 // resolvido (nunca contem o segredo em si).
 type CredentialBinding struct {
+	SecretVersion     string `json:"secret_version"`
 	BindingID         string `json:"binding_id"`
 	CredentialMode    string `json:"credential_mode"`
 	TenantID          string `json:"tenant_id"`
@@ -165,4 +180,10 @@ func (c *Client) ResolveCredential(ctx context.Context, tenantID, providerAccoun
 		return CredentialBinding{}, err
 	}
 	return out, nil
+}
+
+func (c *Client) BoundCredential(ctx context.Context, tenant, binding string, version int) (CredentialBinding, error) {
+	var out CredentialBinding
+	_, err := c.getJSON(ctx, fmt.Sprintf("/v1/credentials/binding/%s/%d?tenant_id=%s", url.PathEscape(binding), version, url.QueryEscape(tenant)), &out)
+	return out, err
 }

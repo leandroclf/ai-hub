@@ -1,0 +1,18 @@
+[
+  {
+    "service": "orbita",
+    "broker_endpoint": "closed localhost port",
+    "redis_endpoint": "closed localhost port",
+    "ready": true,
+    "startup_seconds": 0.016,
+    "status": "PASS"
+  },
+  {
+    "service": "cometa",
+    "broker_endpoint": "closed localhost port",
+    "redis_endpoint": "closed localhost port",
+    "ready": true,
+    "startup_seconds": 0.102,
+    "status": "PASS"
+  }
+]

@@ -1,0 +1,11 @@
+# Riscos: Catálogo operável, produtos compostos e contratos por cliente
+
+Estado de todos os riscos: **aberto; mitigação especificada, não implementada/qualificada nesta revisão**. P0 bloqueia exposição/ativação do fluxo afetado; P1 bloqueia completude da capacidade; P2 qualifica usabilidade/governança. Classificação está vinculada ao código e ao uso proposto, sem afirmar exploração em ambiente remoto.
+
+| ID/prioridade | Risco e impacto | Mitigação/prova exigida | Responsável | Evidência |
+|---|---|---|---|---|
+| F-17 / P1 | Mudança retroativa pode alterar significado de pedidos; serviço inexistente ou não contratado pode alcançar um provedor indicado pelo cliente. | Publicado é imutável, rascunho exige controle de concorrência; oferta inexistente/inativa/incompatível é negada antes de efeitos e snapshot fixa execução. | Produto, Atlas e Engenharia de Core | [hub/internal/atlas/store.go:48](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/atlas/store.go#L48) |
+| F-18 / P1 | O núcleo de agregação/composição e interoperabilidade legada não é coberto pelo scaffold. | Produto A+B paralelo e C dependente, versão fixa, erro obrigatório/opcional, compensação e dois perfis de contrato são executados com resultados e custos reconciliáveis. | Produto, Atlas e Engenharia de Core | [hub/internal/orbita/handlers.go:23](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/orbita/handlers.go#L23) |
+| F-19 / P1 | Histórico pode perder contexto de controle e reinicialização não é reprodutível. Contagem de endpoints não equivale a integração homologada. | Importação em staging com diff e IDs estáveis, sem delete global; credenciais sanitizadas; nenhum endpoint se publica sem mapeamento, contrato e teste real/sandbox homologado. | Produto, Atlas e Engenharia de Core | [hub/deploy/import_hiveplace_collection.sh:38](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/deploy/import_hiveplace_collection.sh#L38) |
+
+Risco de integração: dependências r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados. Ver também riscos transversais de identidade, custódia e rollback no design.

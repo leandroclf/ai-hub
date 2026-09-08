@@ -12,6 +12,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -25,8 +28,16 @@ import (
 // Client agrupa os dois clientes AWS necessarios ao dominio de
 // mensageria do hub.
 type Client struct {
-	SQS *sqs.Client
-	SNS *sns.Client
+	SQS       *sqs.Client
+	SNS       *sns.Client
+	namespace string
+}
+
+func (c *Client) resourceName(name string) string {
+	if c.namespace == "" {
+		return name
+	}
+	return c.namespace + "-" + name
 }
 
 // Envelope e o envelope obrigatorio de mensagem (COM-03): event_id,
@@ -34,48 +45,70 @@ type Client struct {
 // causation_id e versoes de configuracao. step_id/operation_id/
 // attempt_id sao incluidos quando pertinentes.
 type Envelope struct {
-	EventID           string          `json:"event_id"`
-	Type              string          `json:"type"`
-	SchemaVersion     int             `json:"schema_version"`
-	Producer          string          `json:"producer"`
-	TenantID          string          `json:"tenant_id"`
-	ProtocolID        string          `json:"protocol_id"`
-	StepID            string          `json:"step_id,omitempty"`
-	OperationID       string          `json:"operation_id,omitempty"`
-	AttemptID         string          `json:"attempt_id,omitempty"`
-	OccurredAt        time.Time       `json:"occurred_at"`
-	RecordedAt        time.Time       `json:"recorded_at"`
-	CausationID       string          `json:"causation_id,omitempty"`
-	TraceID           string          `json:"trace_id,omitempty"`
-	AggregateVersion  int             `json:"aggregate_version"`
-	ConfigVersions     map[string]string `json:"config_versions,omitempty"`
-	Payload           json.RawMessage `json:"payload"`
+	EventID          string            `json:"event_id"`
+	Type             string            `json:"type"`
+	SchemaVersion    int               `json:"schema_version"`
+	Producer         string            `json:"producer"`
+	TenantID         string            `json:"tenant_id"`
+	ProtocolID       string            `json:"protocol_id"`
+	StepID           string            `json:"step_id,omitempty"`
+	OperationID      string            `json:"operation_id,omitempty"`
+	AttemptID        string            `json:"attempt_id,omitempty"`
+	OccurredAt       time.Time         `json:"occurred_at"`
+	RecordedAt       time.Time         `json:"recorded_at"`
+	CausationID      string            `json:"causation_id,omitempty"`
+	TraceID          string            `json:"trace_id,omitempty"`
+	AggregateVersion int               `json:"aggregate_version"`
+	ConfigVersions   map[string]string `json:"config_versions,omitempty"`
+	Payload          json.RawMessage   `json:"payload"`
 }
 
 // New conecta ao endpoint informado (LocalStack em local/dev) usando
 // credenciais estaticas de desenvolvimento — nunca usar em prd, onde a
 // identidade de workload (SEG-01) resolveria as credenciais reais.
 func New(ctx context.Context, endpoint, region string) (*Client, error) {
-	cfg, err := awsconfig.LoadDefaultConfig(ctx,
-		awsconfig.WithRegion(region),
-		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("local", "local", "")),
-	)
+	namespace := os.Getenv("QUEUE_NAMESPACE")
+	if namespace != "" && !regexp.MustCompile(`^[a-zA-Z0-9_-]{1,40}$`).MatchString(namespace) {
+		return nil, fmt.Errorf("queue: namespace invalido")
+	}
+	options := []func(*awsconfig.LoadOptions) error{awsconfig.WithRegion(region)}
+	if os.Getenv("ENVIRONMENT") == "local" {
+		options = append(options, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("local", "local", "")))
+	}
+	cfg, err := awsconfig.LoadDefaultConfig(ctx, options...)
 	if err != nil {
 		return nil, fmt.Errorf("queue: carregar config aws: %w", err)
 	}
 
-	resolver := func(o *sqs.Options) { o.BaseEndpoint = aws.String(endpoint) }
-	snsResolver := func(o *sns.Options) { o.BaseEndpoint = aws.String(endpoint) }
+	resolver := func(o *sqs.Options) {
+		if endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
+	}
+	snsResolver := func(o *sns.Options) {
+		if endpoint != "" {
+			o.BaseEndpoint = aws.String(endpoint)
+		}
+	}
 
 	return &Client{
-		SQS: sqs.NewFromConfig(cfg, resolver),
-		SNS: sns.NewFromConfig(cfg, snsResolver),
+		SQS:       sqs.NewFromConfig(cfg, resolver),
+		SNS:       sns.NewFromConfig(cfg, snsResolver),
+		namespace: namespace,
 	}, nil
 }
 
 // EnsureQueue cria a fila se ainda nao existir (idempotente o
 // suficiente para bootstrap local/dev) e retorna sua URL.
 func (c *Client) EnsureQueue(ctx context.Context, name string) (string, error) {
+	name = c.resourceName(name)
+	if os.Getenv("ENVIRONMENT") != "local" {
+		out, err := c.SQS.GetQueueUrl(ctx, &sqs.GetQueueUrlInput{QueueName: aws.String(name)})
+		if err != nil {
+			return "", fmt.Errorf("queue: fila declarada indisponível %s: %w", name, err)
+		}
+		return aws.ToString(out.QueueUrl), nil
+	}
 	out, err := c.SQS.CreateQueue(ctx, &sqs.CreateQueueInput{QueueName: aws.String(name)})
 	if err != nil {
 		return "", fmt.Errorf("queue: criar fila %s: %w", name, err)
@@ -98,6 +131,21 @@ func (c *Client) QueueARN(ctx context.Context, queueURL string) (string, error) 
 
 // EnsureTopic cria o topico SNS se ainda nao existir e retorna seu ARN.
 func (c *Client) EnsureTopic(ctx context.Context, name string) (string, error) {
+	name = c.resourceName(name)
+	if os.Getenv("ENVIRONMENT") != "local" {
+		// Topic discovery is read-only outside the local bootstrap fixture;
+		// runtime workloads must not create infrastructure implicitly.
+		out, err := c.SNS.ListTopics(ctx, &sns.ListTopicsInput{})
+		if err != nil {
+			return "", fmt.Errorf("queue: descobrir tópico declarado %s: %w", name, err)
+		}
+		for _, arn := range out.Topics {
+			if strings.HasSuffix(aws.ToString(arn.TopicArn), ":"+name) {
+				return aws.ToString(arn.TopicArn), nil
+			}
+		}
+		return "", fmt.Errorf("queue: tópico declarado ausente %s", name)
+	}
 	out, err := c.SNS.CreateTopic(ctx, &sns.CreateTopicInput{Name: aws.String(name)})
 	if err != nil {
 		return "", fmt.Errorf("queue: criar topico %s: %w", name, err)
@@ -119,20 +167,13 @@ func (c *Client) Subscribe(ctx context.Context, topicARN, queueARN string) error
 	return nil
 }
 
-// AllowSNSDelivery autoriza qualquer topico SNS a entregar mensagens
-// nesta fila. So aceitavel na referencia local/dev (LocalStack); em
-// prd a policy da fila restringiria a origem ao(s) ARN(s) de topico
-// especifico(s) — placeholder de seguranca, ver auditoria.
-func (c *Client) AllowSNSDelivery(ctx context.Context, queueURL, queueARN string) error {
-	policy := fmt.Sprintf(`{
-		"Version": "2012-10-17",
-		"Statement": [{
-			"Effect": "Allow",
-			"Principal": "*",
-			"Action": "sqs:SendMessage",
-			"Resource": %q
-		}]
-	}`, queueARN)
+// AllowSNSDelivery binds this queue to the exact domain topic and AWS service.
+func (c *Client) AllowSNSDelivery(ctx context.Context, queueURL, queueARN, topicARN string) error {
+	if topicARN == "" {
+		return fmt.Errorf("queue: source topic required")
+	}
+	policy := fmt.Sprintf(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"sns.amazonaws.com"},"Action":"sqs:SendMessage","Resource":%q,"Condition":{"ArnEquals":{"aws:SourceArn":%q}}}]}`, queueARN, topicARN)
+
 	_, err := c.SQS.SetQueueAttributes(ctx, &sqs.SetQueueAttributesInput{
 		QueueUrl:   aws.String(queueURL),
 		Attributes: map[string]string{string(sqstypes.QueueAttributeNamePolicy): policy},
@@ -182,6 +223,7 @@ func (c *Client) PublishFact(ctx context.Context, topicARN string, env Envelope)
 // para ser confirmada (ack) somente apos o commit do efeito/intencao
 // local (COM-03: inbox antes do ack).
 type ReceivedMessage struct {
+	RawBody       []byte
 	ReceiptHandle string
 	Envelope      Envelope
 	SNSWrapped    bool
@@ -219,6 +261,7 @@ func (c *Client) Receive(ctx context.Context, queueURL string, max int32, waitSe
 			}
 		}
 		result = append(result, ReceivedMessage{
+			RawBody:       []byte(body),
 			ReceiptHandle: aws.ToString(m.ReceiptHandle),
 			Envelope:      env,
 			SNSWrapped:    wrapped,

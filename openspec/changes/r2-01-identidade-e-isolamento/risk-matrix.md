@@ -1,0 +1,11 @@
+# Riscos: Identidade, isolamento de tenants e administração segura
+
+Estado de todos os riscos: **aberto; mitigação especificada, não implementada/qualificada nesta revisão**. P0 bloqueia exposição/ativação do fluxo afetado; P1 bloqueia completude da capacidade; P2 qualifica usabilidade/governança. Classificação está vinculada ao código e ao uso proposto, sem afirmar exploração em ambiente remoto.
+
+| ID/prioridade | Risco e impacto | Mitigação/prova exigida | Responsável | Evidência |
+|---|---|---|---|---|
+| F-01 / P0 | Um chamador que indique outro tenant pode atravessar a barreira de autorização; UUID não é controle de acesso. | Token do cliente A com header, corpo, URL ou cursor do cliente B não permite consultar nem executar em nome de B; chamadas sem identidade são negadas. | Segurança e Engenharia de Plataforma | [hub/internal/orbita/handlers.go:95](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/orbita/handlers.go#L95) |
+| F-02 / P0 | Acesso à rede equivale a poderes sobre configuração, resultados e financeiro. Não há o perfil administrativo individual solicitado. | Identidades de workload com audience/escopo; APIs administrativas com OIDC/MFA e RBAC; hub_protocol_reader lê entre tenants pela rota administrativa auditada e não escreve. | Segurança e Engenharia de Plataforma | [hub/internal/orbita/handlers.go:53](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/orbita/handlers.go#L53) |
+| F-41 / P1 | Cadastro privilegiado ou destino comprometido pode acessar serviços internos/metadados ou desviar credenciais. Exposição pública depende do ambiente, não foi explorada nesta revisão. | Validar cadastro e conexão efetiva, destinos privados só por perfil aprovado, impedir rebinding/redirect não autorizado e não propagar Authorization para outra origem. | Segurança e Engenharia de Plataforma | [hub/internal/atlas/handlers.go:100](https://github.com/leandroclf/ai-hub/blob/a39d394b0d87185ed4cc3861c12ec45f2c302d9e/hub/internal/atlas/handlers.go#L100) |
+
+Risco de integração: dependências Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.. Ver também riscos transversais de identidade, custódia e rollback no design.

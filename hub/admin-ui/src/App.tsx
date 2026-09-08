@@ -1,54 +1,18 @@
-import { useState } from "react";
-import ServicesPage from "./pages/ServicesPage";
-import ProviderAccountsPage from "./pages/ProviderAccountsPage";
-import CredentialBindingsPage from "./pages/CredentialBindingsPage";
-import ContractsPage from "./pages/ContractsPage";
-
-type Tab = "services" | "provider-accounts" | "credential-bindings" | "contracts";
-
-const TABS: { id: Tab; label: string }[] = [
-  { id: "services", label: "Catálogo de serviços" },
-  { id: "provider-accounts", label: "Contas de provedor" },
-  { id: "credential-bindings", label: "Vínculos de credencial" },
-  { id: "contracts", label: "Contratos" },
-];
-
-export default function App() {
-  const [tab, setTab] = useState<Tab>("services");
-
-  return (
-    <div>
-      <header className="app-header">
-        <h1>Atlas — Console administrativo</h1>
-        <p className="subtitle">
-          Plano de controle do Hub de Interoperabilidade (ARQ-04) — catálogo,
-          contas de provedor, vínculos de credencial e contratos.
-        </p>
-      </header>
-      <nav className="app-nav">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={tab === t.id ? "active" : ""}
-            onClick={() => setTab(t.id)}
-            type="button"
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-      <main className="app-main">
-        <div className="banner-warning">
-          Autenticação real (SEG-01, OIDC) NÃO está implementada nesta
-          interface — este é apenas um placeholder de scaffold administrativo
-          local. Não exponha esta UI fora de um ambiente de desenvolvimento
-          confiável sem antes resolver SEG-01. Veja o README para detalhes.
-        </div>
-        {tab === "services" && <ServicesPage />}
-        {tab === "provider-accounts" && <ProviderAccountsPage />}
-        {tab === "credential-bindings" && <CredentialBindingsPage />}
-        {tab === "contracts" && <ContractsPage />}
-      </main>
-    </div>
-  );
+import {useEffect,useState} from 'react';
+import {api,Principal} from './api/admin';
+import {acceptSession,login,logout} from './api/session';
+import {useRoute,navigate} from './navigation';
+import CatalogPage from './pages/CatalogPage';
+import OperationsPage from './pages/OperationsPage';
+import ImportsPage from './pages/ImportsPage';
+import FinancePage from './pages/FinancePage';
+const menus=[['clients','Clientes','catalog:read'],['applications','Aplicações','catalog:read'],['services','Serviços','catalog:read'],['products','Produtos','catalog:read'],['offers','Ofertas','catalog:read'],['imports','Importações','catalog:read'],['providers','Provedores','integrations:read'],['provider-accounts','Contas externas','integrations:read'],['credential-bindings','Vínculos','integrations:read'],['technical-profiles','Perfis técnicos','catalog:read'],['policies','Prazos e políticas','catalog:read'],['contracts','Contratos comerciais','finance:read'],['protocols','Protocolos','protocols:read'],['deliveries','Entregas','deliveries:read'],['sla-reports','SLA bilateral','protocols:read'],['finance','Financeiro','finance:read']];
+export default function App(){
+ const route=useRoute();const [principal,setPrincipal]=useState<Principal|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState('');const [tenant,setTenant]=useState('');
+ useEffect(()=>{let active=true;const expired=()=>{setPrincipal(null);setTenant('');setError('Sessão expirada. Entre novamente.');};addEventListener('session-expired',expired);(async()=>{try{if(await acceptSession()){const p=await api<Principal>('/admin/v1/me');if(active){setPrincipal(p);setTenant(p.tenant_id);navigate(location.pathname+location.search)}}}catch(e){if(active)setError(String(e))}finally{if(active)setLoading(false)}})();return()=>{active=false;removeEventListener('session-expired',expired)}},[]);
+ const kind=route.split(/[/?]/)[1]||'services';const permitted=menus.filter(m=>principal?.scopes.includes(m[2])||m[0]==='protocols'&&principal?.roles.includes('hub_protocol_reader'));
+ return <div className="app-shell"><a className="skip-link" href="#main">Ir ao conteúdo</a><header className="app-header"><h1>Constelação · Administração</h1>{principal&&<div className="session-context"><span>Ambiente: <strong>{principal.environment}</strong></span><span>Operador: {principal.subject}</span><label>Cliente em consulta {principal.scopes.includes('admin:cross_tenant')&&principal.mfa?<input aria-label="Cliente em consulta" value={tenant} onChange={e=>setTenant(e.target.value)}/>:<strong>{tenant}</strong>}</label><button onClick={()=>{setPrincipal(null);setTenant('');void logout()}}>Sair</button></div>}</header>
+ {!principal?<main id="main" className="login-card"><h2>Entre com sua identidade individual</h2><p>O acesso depende das permissões e do ambiente concedidos à sua sessão.</p>{loading?<p role="status">Verificando sessão…</p>:<button onClick={()=>{setError('');void login().catch(e=>setError(String(e)))}}>Entrar</button>}{error&&<p role="alert">{error}</p>}</main>:<><nav className="app-nav" aria-label="Administração">{permitted.map(([id,label])=><a key={id} href={`/${id}`} aria-current={kind===id?'page':undefined} onClick={e=>{e.preventDefault();navigate(`/${id}`)}}>{label}</a>)}</nav><main id="main" className="app-main" key={`${principal.subject}:${tenant}`}>
+ {!permitted.some(m=>m[0]===kind)?<p role="alert">Acesso negado. Seu perfil não possui permissão para esta jornada.</p>:kind==='imports'?<ImportsPage tenant={tenant}/>:kind==='finance'?<FinancePage tenant={tenant} principal={principal}/>:['protocols','deliveries','sla-reports'].includes(kind)?<OperationsPage kind={kind} tenant={tenant} principal={principal}/>:<CatalogPage key={kind} kind={kind} tenant={tenant} principal={principal} route={route}/>}</main></>}
+ </div>
 }

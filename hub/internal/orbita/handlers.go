@@ -1,6 +1,9 @@
 package orbita
 
 import (
+	"ai-hub/hub/internal/atlas"
+	"ai-hub/hub/internal/contracts/economics"
+	"ai-hub/hub/internal/platform/auth"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -10,27 +13,32 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"slices"
 	"strings"
 	"time"
 
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/libraclient"
+	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/platform/idgen"
 )
 
 // CreateRequest e o corpo de admissao (EXE-01/EXE-02).
 type CreateRequest struct {
-	Mode              string `json:"mode"` // SYNC | ASYNC | AUTO
-	ProviderAccountID string `json:"provider_account_id"`
-	ServiceCode       string `json:"service_code"`
-	ServiceVersion    int    `json:"service_version"`
-	Input             any    `json:"input"`
+	FileRefs          []string `json:"file_refs,omitempty"`
+	Mode              string   `json:"mode"` // SYNC | ASYNC | AUTO
+	ProviderAccountID string   `json:"provider_account_id"`
+	ServiceCode       string   `json:"service_code"`
+	ServiceVersion    int      `json:"service_version"`
+	Input             any      `json:"input"`
 }
 
 // Handlers expoe a API publica da Orbita: admissao e consulta
 // unificada (EXE-01/EXE-07).
 type Handlers struct {
+	files      *objectstore.Catalog
 	store      *Store
 	atlas      *atlasclient.Client
 	libra      *libraclient.Client
@@ -38,6 +46,8 @@ type Handlers struct {
 	finalizer  *Finalizer
 	log        *slog.Logger
 }
+
+func (h *Handlers) SetFileCatalog(c *objectstore.Catalog) { h.files = c }
 
 // NewHandlers cria os handlers HTTP da Orbita.
 func NewHandlers(store *Store, atlas *atlasclient.Client, libra *libraclient.Client, dispatcher *Dispatcher, finalizer *Finalizer, log *slog.Logger) *Handlers {
@@ -59,6 +69,15 @@ func (h *Handlers) RegisterInternal(mux *http.ServeMux) {
 }
 
 func (h *Handlers) handleGetInternal(w http.ResponseWriter, r *http.Request) {
+	principal, ok := auth.FromContext(r.Context())
+	if !ok || !principal.Workload || !auth.Authorize(r.Context(), "protocols:read", "") {
+		auth.Error(w, 403, "forbidden")
+		return
+	}
+	if r.Method != http.MethodGet {
+		auth.Error(w, 405, "method_not_allowed")
+		return
+	}
 	protocolID := strings.TrimPrefix(r.URL.Path, "/internal/protocols/")
 	p, err := h.store.GetByID(r.Context(), protocolID)
 	if errors.Is(err, ErrProtocolNotFound) {
@@ -67,6 +86,10 @@ func (h *Handlers) handleGetInternal(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		return
+	}
+	if p.CellID != principal.CellID {
+		auth.Error(w, 404, "not_found")
 		return
 	}
 	h.respondWithProtocol(w, p, http.StatusOK)
@@ -92,13 +115,13 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusMethodNotAllowed, "method_not_allowed", "use POST")
 		return
 	}
-	tenantID := r.Header.Get("X-Tenant-Id")
+	tenantID, authorized := auth.PublicTenant(r.Context(), "protocols:write")
 	idempotencyKey := r.Header.Get("Idempotency-Key")
-	if tenantID == "" {
-		writeErr(w, http.StatusUnauthorized, "missing_tenant", "X-Tenant-Id e obrigatorio")
+	if !authorized {
+		writeErr(w, http.StatusUnauthorized, "forbidden", "identidade com permissão de criação necessária")
 		return
 	}
-	if idempotencyKey == "" {
+	if idempotencyKey == "" || len(idempotencyKey) > 200 {
 		writeErr(w, http.StatusBadRequest, "missing_idempotency_key", "Idempotency-Key e obrigatoria na criacao (EXE-01)")
 		return
 	}
@@ -111,7 +134,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 	h.log.Info("admissao recebida", "trace_id", traceID, "tenant_id", tenantID, "idempotency_key", idempotencyKey)
 
 	var req CreateRequest
-	rawBody, err := io.ReadAll(r.Body)
+	rawBody, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 256*1024))
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, "invalid_body", err.Error())
 		return
@@ -125,6 +148,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "invalid_mode", "mode deve ser SYNC, ASYNC ou AUTO")
 		return
 	}
+	req.Mode = mode
 
 	// Hash semantico de idempotencia (EXE-01): nao inclui
 	// timestamps de trace ou URLs temporarias — aqui, apenas o corpo
@@ -139,7 +163,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if existing, err := h.store.FindByIdempotencyKey(ctx, tenantID, idempotencyKey, requestHash); err == nil {
 		// EXE-01: mesma chave e mesmo hash retornam protocolo e estado
 		// existentes — sem nova operacao.
-		h.respondWithProtocol(w, existing, http.StatusOK)
+		h.respondExistingAdmission(w, r, existing)
 		return
 	} else if errors.Is(err, ErrIdempotencyConflict) {
 		writeErr(w, http.StatusConflict, "idempotency_conflict", "Idempotency-Key reutilizada com payload diferente")
@@ -154,16 +178,65 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contract, err := h.atlas.Contract(ctx, tenantID)
+	principal, _ := auth.FromContext(ctx)
+	if len(req.FileRefs) > 10 {
+		writeErr(w, 422, "too_many_files", "máximo de dez referências por protocolo")
+		return
+	}
+	var fileRefs []objectstore.FileRef
+	for _, id := range req.FileRefs {
+		if h.files == nil {
+			writeErr(w, 503, "file_custody_unavailable", "catálogo de arquivos indisponível")
+			return
+		}
+		ref, err := h.files.Resolve(ctx, tenantID, id)
+		if err != nil {
+			writeErr(w, 422, "file_not_eligible", "referência de arquivo não elegível")
+			return
+		}
+		fileRefs = append(fileRefs, ref)
+	}
+	snapshot, err := h.atlas.Offer(ctx, tenantID, principal.ApplicationID, req.ServiceCode, req.ProviderAccountID)
 	if err != nil {
-		writeErr(w, http.StatusForbidden, "contract_not_found", "tenant sem contrato elegivel")
+		writeErr(w, 403, "offer_not_eligible", "oferta publicada indisponível para aplicação e serviço")
+		return
+	}
+	target, err := atlas.DecodeCatalogData(snapshot.Target)
+	if err != nil || !slices.Contains(target.Modes, mode) || target.ClientSLASeconds <= 0 {
+		writeErr(w, 422, "mode_not_eligible", "modo não elegível no contrato publicado")
+		return
+	}
+	profile, err := atlas.DecodeCatalogData(snapshot.TechnicalProfile)
+	if err != nil {
+		writeErr(w, 503, "profile_unavailable", "perfil indisponível")
+		return
+	}
+	input, _ := json.Marshal(req.Input)
+	transformed, err := atlas.TransformJSON(input, profile.InputMapping, target.InputSchema)
+	if err != nil {
+		writeErr(w, 422, "invalid_input", err.Error())
+		return
+	}
+	snapshotBytes, err := json.Marshal(snapshot)
+	if err != nil {
+		writeErr(w, 503, "snapshot_unavailable", "snapshot indisponível")
+		return
+	}
+	economic, sale, err := economics.Freeze(snapshot.PurchaseContract.ID, snapshot.PurchaseContract.Version, snapshot.PurchaseContract.Data, snapshot.SaleContract.ID, snapshot.SaleContract.Version, snapshot.SaleContract.Data)
+	if err != nil {
+		writeErr(w, 422, "economic_policy_invalid", err.Error())
+		return
+	}
+	economicBytes, err := json.Marshal(economic)
+	if err != nil {
+		writeErr(w, 503, "snapshot_unavailable", "contrato indisponível")
 		return
 	}
 
 	now := time.Now().UTC()
 	protocolID := idgen.New()
 	commandID := idgen.New()
-	clientDeadline := now.Add(time.Duration(contract.ClientSLASeconds) * time.Second)
+	clientDeadline := now.Add(time.Duration(target.ClientSLASeconds) * time.Second)
 
 	dispatchMode := dispatch.DispatchQueued
 	if mode == "SYNC" {
@@ -171,37 +244,46 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	p := Protocol{
-		ProtocolID: protocolID, TenantID: tenantID, IdempotencyKey: idempotencyKey,
+		ProtocolID: protocolID, TenantID: tenantID, ApplicationID: principal.ApplicationID, CellID: os.Getenv("CELL_ID"), IdempotencyKey: idempotencyKey,
 		RequestHash: requestHash, RequestBody: canon, Mode: mode, DispatchMode: string(dispatchMode),
 		CommandID: commandID, Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: clientDeadline,
 	}
-	if err := h.store.Create(ctx, p); err != nil {
-		// EXE-01: sem banco de admissao (ou falha equivalente),
-		// responder indisponibilidade — nao confirmar aceite fictício.
-		writeErr(w, http.StatusServiceUnavailable, "admission_unavailable", "nao foi possivel persistir o aceite")
+	cmd := dispatch.Command{
+		FileRefs: fileRefs,
+		TenantID: tenantID, ApplicationID: principal.ApplicationID, CellID: p.CellID, ProtocolID: protocolID, StepID: protocolID, CommandID: commandID,
+		TraceID: traceID, DispatchMode: dispatchMode, Epoch: 1, ServiceCode: req.ServiceCode, ServiceVersion: snapshot.Target.Version,
+		ProviderAccountID: snapshot.SelectedRoute.ProviderAccountID, RequestBody: json.RawMessage(transformed), StepDeadline: clientDeadline,
+		AcceptedAt: now, RetryDeadline: now.Add(time.Duration(target.RetryTTLSeconds) * time.Second), ConfigSnapshot: snapshotBytes, EconomicSnapshot: economicBytes,
+	}
+	accepted, created, err := h.store.Admit(ctx, p, cmd, principal.Subject, sale.StrictBalance)
+	if errors.Is(err, ErrIdempotencyConflict) {
+		writeErr(w, 409, "idempotency_conflict", "chave reutilizada com outro pedido")
 		return
 	}
-
-	// FIN-06: para contrato com saldo estrito, nenhum passo externo e
-	// liberado antes da reserva confirmada na autoridade financeira.
-	if contract.StrictBalance {
-		if err := h.libra.Reserve(ctx, tenantID, protocolID, contract.UnitPrice, "BRL"); err != nil {
-			reason := "falha ao obter reserva financeira"
-			if errors.Is(err, libraclient.ErrLimitExceeded) {
-				reason = "limite estrito do tenant excedido"
-			}
-			body := FinalBody{ProtocolID: protocolID, ErrorCode: "STRICT_BALANCE_UNAVAILABLE", ErrorMessage: reason}
-			_, _ = h.finalizer.Finalize(ctx, traceID, tenantID, protocolID, 0, StatusFailed, body, "STRICT_BALANCE_UNAVAILABLE")
-			writeErr(w, http.StatusPaymentRequired, "strict_balance_unavailable", reason)
+	if err != nil {
+		writeErr(w, 503, "admission_unavailable", "aceite não confirmado; repita a mesma chave")
+		return
+	}
+	if !created {
+		h.respondExistingAdmission(w, r, accepted)
+		return
+	}
+	w.Header().Set("Location", "/v1/protocols/"+protocolID)
+	w.Header().Set("X-Protocol-Id", protocolID)
+	// Once acceptance commits, client disconnection cannot cancel custody work.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), 5*time.Second)
+	defer cancel()
+	if sale.StrictBalance {
+		if err = h.libra.ReserveExact(ctx, tenantID, protocolID, string(sale.ReservationAmount), sale.Currency); err != nil {
+			h.respondWithProtocol(w, p, http.StatusServiceUnavailable)
+			return
+		}
+		if _, err = h.store.db.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE command_id=$1 AND state='WAITING_RESERVATION'", commandID); err != nil {
+			h.respondWithProtocol(w, p, 503)
 			return
 		}
 	}
 
-	cmd := dispatch.Command{
-		TenantID: tenantID, ProtocolID: protocolID, StepID: protocolID, CommandID: commandID,
-		TraceID: traceID, DispatchMode: dispatchMode, Epoch: 1, ServiceCode: req.ServiceCode, ServiceVersion: req.ServiceVersion,
-		ProviderAccountID: req.ProviderAccountID, RequestBody: req.Input, StepDeadline: clientDeadline,
-	}
 	h.log.Debug("comando de despacho construido", "trace_id", traceID, "protocol_id", protocolID,
 		"command_id", commandID, "dispatch_mode", dispatchMode, "provider_account_id", req.ProviderAccountID)
 
@@ -210,11 +292,17 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ASYNC/AUTO: 202 somente apos commit (ja ocorrido acima).
-	if err := h.dispatcher.DispatchQueued(ctx, cmd); err != nil {
-		h.log.Error("falha ao publicar comando em fila; protocolo permanece ACCEPTED para retomada", "error", err)
+	// The durable intent publisher owns delivery and retry after admission.
+	if mode == "AUTO" {
+		h.respondAuto(w, r, accepted, target.AutoWaitSeconds)
+		return
 	}
-	fresh, _ := h.store.Get(ctx, tenantID, protocolID)
+
+	fresh, err := h.store.Get(ctx, tenantID, protocolID)
+	if err != nil {
+		acceptedError(w, protocolID, 503, "protocol_temporarily_unavailable")
+		return
+	}
 	h.respondWithProtocol(w, fresh, http.StatusAccepted)
 }
 
@@ -222,14 +310,14 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 // diretamente, aguarda o fato externo na mesma chamada e decide o
 // prazo antes de responder.
 func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, tenantID, protocolID, commandID string, cmd dispatch.Command) {
-	ctx, cancel := context.WithDeadline(r.Context(), cmd.StepDeadline)
+	ctx, cancel := context.WithDeadline(context.WithoutCancel(r.Context()), cmd.StepDeadline)
 	defer cancel()
 
 	result, err := h.dispatcher.DispatchDirect(ctx, cmd)
 
 	current, getErr := h.store.Get(r.Context(), tenantID, protocolID)
 	if getErr != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", getErr.Error())
+		acceptedError(w, protocolID, 503, "protocol_temporarily_unavailable")
 		return
 	}
 	if IsTerminal(current.Status) {
@@ -243,7 +331,7 @@ func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, te
 		// Timeout/incerteza: nao anunciar sucesso; se o deadline ja
 		// passou, o timer o finalizara como EXPIRED; caso contrario,
 		// devolve 504 sem sucesso fictício.
-		writeErr(w, http.StatusGatewayTimeout, "provider_uncertain", "resultado do provedor incerto (UNKNOWN); consulte novamente com a mesma chave")
+		acceptedError(w, protocolID, 504, "provider_uncertain")
 		return
 	}
 
@@ -254,7 +342,7 @@ func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, te
 	body := FinalBody{ProtocolID: protocolID, Result: result.ResponseBody, ErrorCode: result.ErrorCode, ErrorMessage: result.ErrorMessage}
 	applied, err := h.finalizer.Finalize(r.Context(), cmd.TraceID, tenantID, protocolID, current.Version, status, body, "")
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		acceptedError(w, protocolID, 503, "final_custody_unavailable")
 		return
 	}
 	if !applied {
@@ -264,6 +352,11 @@ func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, te
 	}
 	fresh, _ := h.store.Get(r.Context(), tenantID, protocolID)
 	h.respondWithProtocol(w, fresh, http.StatusOK)
+}
+
+func acceptedError(w http.ResponseWriter, id string, status int, code string) {
+	w.Header().Set("Location", "/v1/protocols/"+id)
+	writeJSON(w, status, map[string]any{"protocol_id": id, "query_url": "/v1/protocols/" + id, "error": code, "message": "Aceite conservado; consulte o protocolo ou repita a mesma chave."})
 }
 
 func statusForTerminal(s Status) int {
@@ -276,13 +369,22 @@ func statusForTerminal(s Status) int {
 // handleGet implementa o GET unificado de estado/resultado (EXE-07,
 // COM-05): mesma representacao usada pelo webhook.
 func (h *Handlers) handleGet(w http.ResponseWriter, r *http.Request) {
-	tenantID := r.Header.Get("X-Tenant-Id")
-	if tenantID == "" {
-		writeErr(w, http.StatusUnauthorized, "missing_tenant", "X-Tenant-Id e obrigatorio")
+	if r.Method != http.MethodGet {
+		auth.Error(w, 405, "method_not_allowed")
+		return
+	}
+	tenantID, authorized := auth.PublicTenant(r.Context(), "protocols:read")
+	if !authorized {
+		writeErr(w, http.StatusUnauthorized, "forbidden", "identidade com permissão de leitura necessária")
 		return
 	}
 	protocolID := strings.TrimPrefix(r.URL.Path, "/v1/protocols/")
 	p, err := h.store.Get(r.Context(), tenantID, protocolID)
+	principal, _ := auth.FromContext(r.Context())
+	if err == nil && p.ApplicationID != principal.ApplicationID {
+		writeErr(w, 404, "not_found", "protocolo não encontrado")
+		return
+	}
 	if errors.Is(err, ErrProtocolNotFound) {
 		// EXE-16: inexistente ou de outro tenant recebem a mesma
 		// resposta, sem revelar existencia (SEG-04).
@@ -301,6 +403,18 @@ func (h *Handlers) handleGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handlers) respondWithProtocol(w http.ResponseWriter, p Protocol, status int) {
+	w.Header().Set("Cache-Control", "no-store")
+	if p.ProtocolID != "" {
+		w.Header().Set("Location", "/v1/protocols/"+p.ProtocolID)
+	}
+	if len(p.FinalRepresentation) > 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-store")
+		w.WriteHeader(status)
+		_, _ = w.Write(p.FinalRepresentation)
+		return
+	}
+
 	resp := map[string]any{
 		"protocol_id":    p.ProtocolID,
 		"status":         p.Status,

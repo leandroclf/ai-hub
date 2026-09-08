@@ -1,0 +1,109 @@
+=== RUN   TestAdmissionPostgresAtomicIdempotency
+    admission_test.go:123: 24 simultaneous requests: one protocol+intent; conflicting payload refused; application keys independent; reservation not released; failed intent insertion rolls back protocol
+--- PASS: TestAdmissionPostgresAtomicIdempotency (0.18s)
+PASS
+ok  	ai-hub/hub/internal/orbita	1.202s
+=== RUN   TestPostgresSubmissionAndObservationCustody
+    custody_test.go:101: 24 submit contenders: one owner and prewritten attempt; 12 observations: one terminal fact; actual response retained; tenant conflict denied; late UNKNOWN preserved as receipt
+--- PASS: TestPostgresSubmissionAndObservationCustody (0.36s)
+PASS
+ok  	ai-hub/hub/internal/cometa	1.380s
+=== RUN   TestPostgresVersionedWebhookCustody
+    custody_test.go:123: acknowledged receipts=1 <nil>
+--- FAIL: TestPostgresVersionedWebhookCustody (0.32s)
+FAIL
+FAIL	ai-hub/hub/internal/pulsar	0.342s
+=== RUN   TestDAGContract
+--- PASS: TestDAGContract (0.00s)
+=== RUN   TestTechnicalProjection
+--- PASS: TestTechnicalProjection (0.00s)
+=== RUN   TestImportSecretSanitization
+--- PASS: TestImportSecretSanitization (0.00s)
+=== RUN   TestCatalogValidation
+--- PASS: TestCatalogValidation (0.00s)
+=== RUN   TestCatalogPostgresConcurrencyPublicationAndIsolation
+--- PASS: TestCatalogPostgresConcurrencyPublicationAndIsolation (0.55s)
+=== RUN   TestCatalogPostgresPaginationAndStaging
+--- PASS: TestCatalogPostgresPaginationAndStaging (0.38s)
+=== RUN   TestValidateService
+=== RUN   TestValidateService/valido
+=== RUN   TestValidateService/sem_codigo
+=== RUN   TestValidateService/modo_invalido
+=== RUN   TestValidateService/sla_invalido
+=== RUN   TestValidateService/modo_duplicado
+--- PASS: TestValidateService (0.00s)
+    --- PASS: TestValidateService/valido (0.00s)
+    --- PASS: TestValidateService/sem_codigo (0.00s)
+    --- PASS: TestValidateService/modo_invalido (0.00s)
+    --- PASS: TestValidateService/sla_invalido (0.00s)
+    --- PASS: TestValidateService/modo_duplicado (0.00s)
+=== RUN   TestValidateProviderAccount
+--- PASS: TestValidateProviderAccount (0.00s)
+PASS
+ok  	ai-hub/hub/internal/atlas	1.951s
+=== RUN   TestExactPlanPrices
+=== RUN   TestExactPlanPrices/marginal-four
+=== RUN   TestExactPlanPrices/volume-four
+=== RUN   TestExactPlanPrices/four-decimal
+=== RUN   TestExactPlanPrices/allowance
+--- PASS: TestExactPlanPrices (0.00s)
+    --- PASS: TestExactPlanPrices/marginal-four (0.00s)
+    --- PASS: TestExactPlanPrices/volume-four (0.00s)
+    --- PASS: TestExactPlanPrices/four-decimal (0.00s)
+    --- PASS: TestExactPlanPrices/allowance (0.00s)
+=== RUN   TestFinancePostgresScenarios
+=== RUN   TestFinancePostgresScenarios/R2-FIN-01-S01_snapshot_frozen
+=== RUN   TestFinancePostgresScenarios/R2-FIN-01-S02_client_direct
+=== RUN   TestFinancePostgresScenarios/R2-FIN-01-S03_submit_then_expiry
+=== RUN   TestFinancePostgresScenarios/R2-FIN-02-S01_distinct_operations
+=== RUN   TestFinancePostgresScenarios/R2-FIN-02-S02_tariffed_polls
+=== RUN   TestFinancePostgresScenarios/R2-FIN-02-S03_exact_arithmetic
+=== RUN   TestFinancePostgresScenarios/R2-FIN-03-S01_cumulative_balance
+=== RUN   TestFinancePostgresScenarios/R2-FIN-03-S02_concurrent_last_balance
+=== RUN   TestFinancePostgresScenarios/R2-FIN-03-S03_missing_limit
+=== RUN   TestFinancePostgresScenarios/R2-FIN-03-S04_unknown_hold
+=== RUN   TestFinancePostgresScenarios/R2-FIN-04-S01_marginal_journal
+=== RUN   TestFinancePostgresScenarios/R2-FIN-04-S02_package
+=== RUN   TestFinancePostgresScenarios/R2-FIN-04-S03_concurrent_allowance
+=== RUN   TestFinancePostgresScenarios/R2-FIN-05-S01_balanced_and_immutable
+=== RUN   TestFinancePostgresScenarios/R2-FIN-05-S02_replay_inbox_atomic
+=== RUN   TestFinancePostgresScenarios/R2-FIN-05-S03_authorized_compensation
+=== RUN   TestFinancePostgresScenarios/R2-FIN-06-S01_incomplete_watermark
+=== RUN   TestFinancePostgresScenarios/R2-FIN-06-S02_export_repeated
+=== RUN   TestFinancePostgresScenarios/R2-FIN-06-S03_sla_dispute
+=== RUN   TestFinancePostgresScenarios/quarantine_and_tenant_authorization
+=== RUN   TestFinancePostgresScenarios/failed_commit_rolls_back_inbox_and_journal
+--- PASS: TestFinancePostgresScenarios (0.89s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-01-S01_snapshot_frozen (0.07s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-01-S02_client_direct (0.04s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-01-S03_submit_then_expiry (0.15s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-02-S01_distinct_operations (0.04s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-02-S02_tariffed_polls (0.06s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-02-S03_exact_arithmetic (0.02s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-03-S01_cumulative_balance (0.05s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-03-S02_concurrent_last_balance (0.11s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-03-S03_missing_limit (0.00s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-03-S04_unknown_hold (0.03s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-04-S01_marginal_journal (0.06s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-04-S02_package (0.05s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-04-S03_concurrent_allowance (0.04s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-05-S01_balanced_and_immutable (0.02s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-05-S02_replay_inbox_atomic (0.02s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-05-S03_authorized_compensation (0.03s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-06-S01_incomplete_watermark (0.02s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-06-S02_export_repeated (0.03s)
+    --- PASS: TestFinancePostgresScenarios/R2-FIN-06-S03_sla_dispute (0.02s)
+    --- PASS: TestFinancePostgresScenarios/quarantine_and_tenant_authorization (0.00s)
+    --- PASS: TestFinancePostgresScenarios/failed_commit_rolls_back_inbox_and_journal (0.01s)
+PASS
+ok  	ai-hub/hub/internal/libra	1.919s
+=== RUN   TestBasicUsesDecryptedVersionWithoutFallback
+--- PASS: TestBasicUsesDecryptedVersionWithoutFallback (0.00s)
+=== RUN   TestOAuthWorksWithoutRedisAndScopesTokensByBinding
+--- PASS: TestOAuthWorksWithoutRedisAndScopesTokensByBinding (0.01s)
+=== RUN   TestAWSVaultLocalStackVersion
+    vault_test.go:13: requires isolated LocalStack secret fixture
+--- SKIP: TestAWSVaultLocalStackVersion (0.00s)
+PASS
+ok  	ai-hub/hub/internal/providerauth	1.025s
+FAIL

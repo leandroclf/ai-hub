@@ -1,0 +1,9 @@
+Produto: hiveplace-06-antispoofing
+Request: POST /v3/anti-spoofing/validate
+Autenticacao: Bearer via access_token obtido por Client Credentials
+Payload: imagem JPEG Base64 do exemplo POST RAND da collection
+
+Resposta:
+[{"valor":"98","nome":"resultado-score-antispofing"},{"valor":"Concluido","nome":"status"}]
+
+HTTP_STATUS=200

@@ -1,0 +1,77 @@
+ Image ai-hub-r2-atlas:r2 Building 
+#1 [internal] load local bake definitions
+#1 reading from stdin 610B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 525B done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for gcr.io/distroless/static-debian12:latest
+#3 ...
+
+#4 [auth] library/golang:pull token for registry-1.docker.io
+#4 DONE 0.0s
+
+#5 [internal] load metadata for docker.io/library/golang:1.24-bookworm
+#5 ...
+
+#3 [internal] load metadata for gcr.io/distroless/static-debian12:latest
+#3 DONE 1.3s
+
+#5 [internal] load metadata for docker.io/library/golang:1.24-bookworm
+#5 DONE 1.5s
+
+#6 [internal] load .dockerignore
+#6 transferring context: 2B done
+#6 DONE 0.0s
+
+#7 [build 1/6] FROM docker.io/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac
+#7 resolve docker.io/library/golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac 0.0s done
+#7 DONE 0.0s
+
+#8 [stage-1 1/2] FROM gcr.io/distroless/static-debian12:latest@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2
+#8 resolve gcr.io/distroless/static-debian12:latest@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2 0.0s done
+#8 DONE 0.0s
+
+#9 [internal] load build context
+#9 transferring context: 1.77MB 0.1s done
+#9 DONE 0.2s
+
+#10 [build 2/6] WORKDIR /src
+#10 CACHED
+
+#11 [build 3/6] COPY go.mod go.sum ./
+#11 CACHED
+
+#12 [build 4/6] RUN go mod download
+#12 CACHED
+
+#13 [build 5/6] COPY . .
+#13 DONE 1.4s
+
+#14 [build 6/6] RUN CGO_ENABLED=0 GOOS=linux go build -o /out/service ./cmd/atlas
+#14 DONE 8.3s
+
+#8 [stage-1 1/2] FROM gcr.io/distroless/static-debian12:latest@sha256:d75cdd72874d4790092fcb1b058493ecf6bb5bf2b2b897045b00ff01d91843f2
+#8 CACHED
+
+#15 [stage-1 2/2] COPY --from=build /out/service /service
+#15 DONE 0.1s
+
+#16 exporting to image
+#16 exporting layers
+#16 exporting layers 0.5s done
+#16 exporting manifest sha256:0e7eb30dd29be08b11ef76813023be1449bcba63cc5c851e3848f2e4930cc350
+#16 exporting manifest sha256:0e7eb30dd29be08b11ef76813023be1449bcba63cc5c851e3848f2e4930cc350 0.0s done
+#16 exporting config sha256:e2a9a528ca531003df89d16b0a455479fbfebddd860167576ecd3b6f57a1a81b 0.0s done
+#16 exporting attestation manifest sha256:fe1f90029208c17eb2a8ac07df8224955e278dbdb096f633e7ab757b2074b2b8 0.0s done
+#16 exporting manifest list sha256:08865a496d8680cd720d7cd6f573cf1140ccf6b82cc54632166fdaf5c2d19b6c
+#16 exporting manifest list sha256:08865a496d8680cd720d7cd6f573cf1140ccf6b82cc54632166fdaf5c2d19b6c 0.0s done
+#16 naming to docker.io/library/ai-hub-r2-atlas:r2 done
+#16 unpacking to docker.io/library/ai-hub-r2-atlas:r2 0.1s done
+#16 DONE 0.7s
+
+#17 resolving provenance for metadata file
+#17 DONE 0.0s
+ Image ai-hub-r2-atlas:r2 Built 

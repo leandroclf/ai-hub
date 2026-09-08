@@ -1,0 +1,11 @@
+=== RUN   TestPostgresPollingClaimsFenceAndAbsoluteDeadline
+    polling_custody_test.go:141: 24 contenders: one committed STATUS preparation; takeover fenced stale final while retaining receipt; backoff and Retry-After persisted; original deadline unchanged; insufficient budget and foreign cell denied
+--- PASS: TestPostgresPollingClaimsFenceAndAbsoluteDeadline (0.10s)
+=== RUN   TestPostgresPollingCallbackConflictRetainsBoth
+    polling_custody_test.go:174: Conflicting poll/callback conserved both observations and produced exactly one terminal outbox fact
+--- PASS: TestPostgresPollingCallbackConflictRetainsBoth (0.07s)
+=== RUN   TestPostgresPollingAuthenticatedHTTP
+    polling_custody_test.go:253: Actual local HTTP GET used dedicated decrypted Basic secret, workload-authenticated current binding and pinned egress; revoked binding prevented next provider call; terminal receipt persisted
+--- PASS: TestPostgresPollingAuthenticatedHTTP (0.07s)
+PASS
+ok  	ai-hub/hub/internal/cometa	1.266s

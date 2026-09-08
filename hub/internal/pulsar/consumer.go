@@ -2,20 +2,24 @@ package pulsar
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"log/slog"
+	"os"
 
-	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/queue"
 )
 
 type protocolFact struct {
-	ProtocolID string          `json:"protocol_id"`
-	TraceID    string          `json:"trace_id,omitempty"`
-	TenantID   string          `json:"tenant_id"`
-	Status     string          `json:"status"`
-	FinalBody  json.RawMessage `json:"final_body"`
-	EventID    string          `json:"event_id"`
+	Representation []byte          `json:"representation"`
+	CellID         string          `json:"cell_id"`
+	ProtocolID     string          `json:"protocol_id"`
+	TraceID        string          `json:"trace_id,omitempty"`
+	TenantID       string          `json:"tenant_id"`
+	Status         string          `json:"status"`
+	FinalBody      json.RawMessage `json:"final_body"`
+	EventID        string          `json:"event_id"`
 }
 
 // RunFactConsumer consome "protocol.finalized" (COM-01: "Orbita ->
@@ -37,19 +41,17 @@ func RunFactConsumer(ctx context.Context, q *queue.Client, queueURL string, stor
 		}
 		for _, m := range msgs {
 			var fact protocolFact
-			if err := json.Unmarshal(m.Envelope.Payload, &fact); err == nil && fact.ProtocolID != "" {
-				log.Debug("pulsar: fato de protocolo recebido", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID, "status", fact.Status)
-				dest, derr := store.GetDestination(ctx, fact.TenantID)
-				if derr == nil {
-					deliveryID := idgen.New()
-					if err := store.CreateDelivery(ctx, deliveryID, fact.ProtocolID, fact.EventID, dest.URL); err != nil {
-						log.Error("pulsar: falha ao criar entrega", "trace_id", fact.TraceID, "error", err)
-					} else {
-						log.Info("pulsar: entrega agendada", "trace_id", fact.TraceID, "protocol_id", fact.ProtocolID, "delivery_id", deliveryID, "destination", dest.URL)
-					}
-				} else {
-					log.Debug("pulsar: tenant sem destino de webhook cadastrado", "trace_id", fact.TraceID, "tenant_id", fact.TenantID)
+			if json.Unmarshal(m.Envelope.Payload, &fact) != nil || m.Envelope.Type != "protocol.finalized" || m.Envelope.SchemaVersion != 1 || m.Envelope.Producer != "orbita" || fact.CellID != os.Getenv("CELL_ID") || fact.TenantID != m.Envelope.TenantID || len(fact.Representation) == 0 {
+				sum := sha256.Sum256(m.RawBody)
+				_, err := store.db.ExecContext(ctx, `INSERT INTO message_quarantine(consumer,body_sha256,body,reason) VALUES('pulsar',$1,$2,'invalid_final_envelope') ON CONFLICT(consumer,body_sha256) DO UPDATE SET occurrences=message_quarantine.occurrences+1,last_seen_at=clock_timestamp()`, hex.EncodeToString(sum[:]), m.RawBody)
+				if err == nil {
+					_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
 				}
+				continue
+			}
+			if err := store.ConserveFinal(ctx, m.Envelope.EventID, fact); err != nil {
+				log.Error("pulsar final custody unavailable")
+				continue
 			}
 			_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
 		}

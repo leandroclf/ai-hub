@@ -1,0 +1,517 @@
+name: ai-hub-r2
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: hub
+      POSTGRES_PASSWORD: r2-local-fixture
+      POSTGRES_DB: postgres
+    ports:
+    - 127.0.0.1:15432:5432
+    volumes:
+    - postgres-data:/var/lib/postgresql/data
+    - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test:
+      - CMD-SHELL
+      - pg_isready -U hub -d postgres
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    mem_limit: 512m
+    command:
+    - postgres
+    - -c
+    - max_connections=200
+  migrate:
+    image: postgres:16-alpine
+    environment:
+      PGHOST: postgres
+      PGUSER: hub
+      PGPASSWORD: r2-local-fixture
+    entrypoint:
+    - /bin/sh
+    - /scripts/migrate.sh
+    volumes:
+    - ../../migrations:/migrations:ro
+    - ./scripts:/scripts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+  localstack:
+    image: localstack/localstack:3.8
+    environment:
+      SERVICES: sqs,sns,s3,secretsmanager
+      DEFAULT_REGION: us-east-1
+      PERSISTENCE: '1'
+      SNAPSHOT_SAVE_STRATEGY: ON_SHUTDOWN
+    ports:
+    - 127.0.0.1:14566:4566
+    volumes:
+    - aws-data:/var/lib/localstack
+    healthcheck:
+      test:
+      - CMD
+      - curl
+      - -sf
+      - http://localhost:4566/_localstack/health
+      interval: 2s
+      timeout: 3s
+      retries: 60
+    mem_limit: 1024m
+  redis:
+    image: redis:7.4-alpine
+    profiles:
+    - cache
+    ports:
+    - 127.0.0.1:16379:6379
+    mem_limit: 128m
+  identity:
+    image: quay.io/keycloak/keycloak:26.7.3
+    command:
+    - start-dev
+    - --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/hub_identity
+      KC_DB_USERNAME: hub
+      KC_DB_PASSWORD: r2-local-fixture
+      KC_HOSTNAME: http://localhost:18085
+      KC_HEALTH_ENABLED: 'true'
+      KC_BOOTSTRAP_ADMIN_USERNAME: r2-bootstrap
+      KC_BOOTSTRAP_ADMIN_PASSWORD: r2-bootstrap-fixture
+    ports:
+    - 127.0.0.1:18085:8080
+    volumes:
+    - ./identity:/opt/keycloak/data/import:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    mem_limit: 768m
+  atlas:
+    image: ai-hub-r2-atlas:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: atlas
+    environment:
+      HTTP_ADDR: :8081
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: atlas
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OIDC_ISSUER: http://localhost:18085/realms/ai-hub-r2
+      OIDC_JWKS_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/certs
+      OIDC_AUDIENCE: ai-hub
+      OIDC_TOKEN_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/token
+      WORKLOAD_CLIENT_ID: hub-atlas
+      WORKLOAD_CLIENT_SECRET_FILE: /run/fixtures/atlas-secret.txt
+      ATLAS_URL: http://atlas:8081
+      ORBITA_URL: http://orbita:8080
+      LIBRA_URL: http://libra:8084
+      COMETA_URL: http://cometa:8082
+      SELF_URL: http://atlas:8081
+      QUEUE_ENDPOINT: http://localstack:4566
+      QUEUE_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_PUBLIC_ENDPOINT: http://localhost:14566
+      S3_BUCKET: r2-custody
+      SECRETS_ENDPOINT: http://localstack:4566
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: us-east-1
+      REDIS_ADDR: ''
+      QUEUE_NAMESPACE: r2-cell-a
+      CONTROL_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_control?sslmode=disable
+      EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+    ports:
+    - 127.0.0.1:18081:8081
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+    volumes:
+    - ./identity:/run/fixtures:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  orbita:
+    image: ai-hub-r2-orbita:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: orbita
+    environment:
+      HTTP_ADDR: :8080
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: orbita
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OIDC_ISSUER: http://localhost:18085/realms/ai-hub-r2
+      OIDC_JWKS_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/certs
+      OIDC_AUDIENCE: ai-hub
+      OIDC_TOKEN_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/token
+      WORKLOAD_CLIENT_ID: hub-orbita
+      WORKLOAD_CLIENT_SECRET_FILE: /run/fixtures/orbita-secret.txt
+      ATLAS_URL: http://atlas:8081
+      ORBITA_URL: http://orbita:8080
+      LIBRA_URL: http://libra:8084
+      COMETA_URL: http://cometa:8082
+      SELF_URL: http://orbita:8080
+      QUEUE_ENDPOINT: http://localstack:4566
+      QUEUE_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_PUBLIC_ENDPOINT: http://localhost:14566
+      S3_BUCKET: r2-custody
+      SECRETS_ENDPOINT: http://localstack:4566
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: us-east-1
+      REDIS_ADDR: ''
+      QUEUE_NAMESPACE: r2-cell-a
+      CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
+      EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+    ports:
+    - 127.0.0.1:18080:8080
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+    volumes:
+    - ./identity:/run/fixtures:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  cometa:
+    image: ai-hub-r2-cometa:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: cometa
+    environment:
+      HTTP_ADDR: :8082
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: cometa
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OIDC_ISSUER: http://localhost:18085/realms/ai-hub-r2
+      OIDC_JWKS_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/certs
+      OIDC_AUDIENCE: ai-hub
+      OIDC_TOKEN_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/token
+      WORKLOAD_CLIENT_ID: hub-cometa
+      WORKLOAD_CLIENT_SECRET_FILE: /run/fixtures/cometa-secret.txt
+      ATLAS_URL: http://atlas:8081
+      ORBITA_URL: http://orbita:8080
+      LIBRA_URL: http://libra:8084
+      COMETA_URL: http://cometa:8082
+      SELF_URL: http://cometa:8082
+      QUEUE_ENDPOINT: http://localstack:4566
+      QUEUE_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_PUBLIC_ENDPOINT: http://localhost:14566
+      S3_BUCKET: r2-custody
+      SECRETS_ENDPOINT: http://localstack:4566
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: us-east-1
+      REDIS_ADDR: ''
+      QUEUE_NAMESPACE: r2-cell-a
+      CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
+      EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+    ports:
+    - 127.0.0.1:18082:8082
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+    volumes:
+    - ./identity:/run/fixtures:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  pulsar:
+    image: ai-hub-r2-pulsar:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: pulsar
+    environment:
+      HTTP_ADDR: :8083
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: pulsar
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OIDC_ISSUER: http://localhost:18085/realms/ai-hub-r2
+      OIDC_JWKS_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/certs
+      OIDC_AUDIENCE: ai-hub
+      OIDC_TOKEN_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/token
+      WORKLOAD_CLIENT_ID: hub-pulsar
+      WORKLOAD_CLIENT_SECRET_FILE: /run/fixtures/pulsar-secret.txt
+      ATLAS_URL: http://atlas:8081
+      ORBITA_URL: http://orbita:8080
+      LIBRA_URL: http://libra:8084
+      COMETA_URL: http://cometa:8082
+      SELF_URL: http://pulsar:8083
+      QUEUE_ENDPOINT: http://localstack:4566
+      QUEUE_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_PUBLIC_ENDPOINT: http://localhost:14566
+      S3_BUCKET: r2-custody
+      SECRETS_ENDPOINT: http://localstack:4566
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: us-east-1
+      REDIS_ADDR: ''
+      QUEUE_NAMESPACE: r2-cell-a
+      CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
+      EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+    ports:
+    - 127.0.0.1:18083:8083
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+    volumes:
+    - ./identity:/run/fixtures:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  libra:
+    image: ai-hub-r2-libra:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: libra
+    environment:
+      HTTP_ADDR: :8084
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: libra
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      OIDC_ISSUER: http://localhost:18085/realms/ai-hub-r2
+      OIDC_JWKS_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/certs
+      OIDC_AUDIENCE: ai-hub
+      OIDC_TOKEN_URL: http://identity:8080/realms/ai-hub-r2/protocol/openid-connect/token
+      WORKLOAD_CLIENT_ID: hub-libra
+      WORKLOAD_CLIENT_SECRET_FILE: /run/fixtures/libra-secret.txt
+      ATLAS_URL: http://atlas:8081
+      ORBITA_URL: http://orbita:8080
+      LIBRA_URL: http://libra:8084
+      COMETA_URL: http://cometa:8082
+      SELF_URL: http://libra:8084
+      QUEUE_ENDPOINT: http://localstack:4566
+      QUEUE_REGION: us-east-1
+      S3_ENDPOINT: http://localstack:4566
+      S3_PUBLIC_ENDPOINT: http://localhost:14566
+      S3_BUCKET: r2-custody
+      SECRETS_ENDPOINT: http://localstack:4566
+      AWS_ENDPOINT_URL: http://localstack:4566
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+      AWS_REGION: us-east-1
+      REDIS_ADDR: ''
+      QUEUE_NAMESPACE: r2-cell-a
+      FINANCE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_finance?sslmode=disable
+      EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+    ports:
+    - 127.0.0.1:18084:8084
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+    volumes:
+    - ./identity:/run/fixtures:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  provider-sim:
+    image: ai-hub-r2-provider-sim:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: provider-sim
+    environment:
+      HTTP_ADDR: :8090
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: provider-sim
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+    ports:
+    - 127.0.0.1:18090:8090
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+  webhook-sink:
+    image: ai-hub-r2-webhook-sink:r2
+    build:
+      context: ../..
+      dockerfile: deploy/Dockerfile
+      args:
+        SERVICE: webhook-sink
+    environment:
+      HTTP_ADDR: :8091
+      LOG_LEVEL: info
+      ENVIRONMENT: local
+      CELL_ID: r2-cell-a
+      OTEL_SERVICE_NAME: webhook-sink
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+    ports:
+    - 127.0.0.1:18091:8091
+    stop_grace_period: 30s
+    mem_limit: 192m
+    logging:
+      driver: json-file
+      options:
+        max-size: 5m
+        max-file: '2'
+        mode: non-blocking
+        max-buffer-size: 1m
+  admin-ui:
+    image: ai-hub-r2-admin-ui:r2
+    build:
+      context: ../..
+      dockerfile: deploy/r2/Dockerfile.ui
+    ports:
+    - 127.0.0.1:13000:8080
+    depends_on:
+    - atlas
+    - orbita
+    - pulsar
+    - libra
+    mem_limit: 96m
+  kong:
+    image: kong:3.8
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: /kong/kong.yml
+      KONG_ADMIN_LISTEN: 'off'
+      KONG_PROXY_ACCESS_LOG: /dev/stdout
+      KONG_PROXY_ERROR_LOG: /dev/stderr
+    volumes:
+    - ./kong.yml:/kong/kong.yml:ro
+    ports:
+    - 127.0.0.1:18000:8000
+    depends_on:
+    - orbita
+    mem_limit: 256m
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    command:
+    - --config.file=/etc/prometheus/prometheus.yml
+    - --storage.tsdb.retention.time=3d
+    - --web.enable-lifecycle
+    ports:
+    - 127.0.0.1:19090:9090
+    volumes:
+    - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    - ./observability/alerts.yml:/etc/prometheus/alerts.yml:ro
+    - prometheus-data:/prometheus
+    mem_limit: 384m
+  loki:
+    image: grafana/loki:3.3.2
+    command:
+    - -config.file=/etc/loki/config.yaml
+    ports:
+    - 127.0.0.1:13100:3100
+    volumes:
+    - ./observability/loki.yaml:/etc/loki/config.yaml:ro
+    - loki-data:/loki
+    mem_limit: 384m
+  tempo:
+    image: grafana/tempo:2.6.1
+    command:
+    - -config.file=/etc/tempo.yaml
+    ports:
+    - 127.0.0.1:13200:3200
+    volumes:
+    - ./observability/tempo.yaml:/etc/tempo.yaml:ro
+    - tempo-data:/var/tempo
+    mem_limit: 384m
+  alloy:
+    image: grafana/alloy:v1.5.1
+    command:
+    - run
+    - --server.http.listen-addr=0.0.0.0:12345
+    - --storage.path=/var/lib/alloy/data
+    - /etc/alloy/config.alloy
+    ports:
+    - 127.0.0.1:12345:12345
+    volumes:
+    - ./observability/config.alloy:/etc/alloy/config.alloy:ro
+    - /var/run/docker.sock:/var/run/docker.sock:ro
+    - alloy-data:/var/lib/alloy/data
+    mem_limit: 384m
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+    - 127.0.0.1:13001:3000
+    environment:
+      GF_SECURITY_ADMIN_USER: r2-observer
+      GF_SECURITY_ADMIN_PASSWORD: r2-observer-fixture
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    volumes:
+    - grafana-data:/var/lib/grafana
+    - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+    - ./observability/dashboards:/var/lib/grafana/dashboards:ro
+    mem_limit: 256m
+volumes:
+  postgres-data: {}
+  aws-data: {}
+  prometheus-data: {}
+  loki-data: {}
+  tempo-data: {}
+  alloy-data: {}
+  grafana-data: {}

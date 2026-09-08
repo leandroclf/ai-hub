@@ -1,0 +1,206 @@
+cenario;requisito;titulo;change;resultado;evidencia;observacao
+R2-SEG-01-S01;R2-SEG-01;Cliente autorizado;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-01-S02;R2-SEG-01;Tentativa entre tenants;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-01-S03;R2-SEG-01;Token inválido;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-02-S01;R2-SEG-02;Chamada interna permitida;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-02-S02;R2-SEG-02;Bypass pela porta interna;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-02-S03;R2-SEG-02;Pool reutilizado;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-03-S01;R2-SEG-03;Diagnóstico de desenvolvedor;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-03-S02;R2-SEG-03;Sem elevação implícita;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-03-S03;R2-SEG-03;Auditoria indisponível;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-04-S01;R2-SEG-04;Destino homologado;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-04-S02;R2-SEG-04;SSRF e rebinding;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-04-S03;R2-SEG-04;Rede privada legítima;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-05-S01;R2-SEG-05;Alteração atribuível;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-05-S02;R2-SEG-05;Sessão termina;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-SEG-05-S03;R2-SEG-05;Falha de backend;r2-01-identidade-e-isolamento;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-01-S01;R2-EXE-01;Crash após aceite;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-01-S02;R2-EXE-01;Broker indisponível;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-01-S03;R2-EXE-01;Commit incerto;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-02-S01;R2-EXE-02;Concorrência real;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-02-S02;R2-EXE-02;Chave divergente;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-02-S03;R2-EXE-02;Erro após aceite;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-03-S01;R2-EXE-03;Dois executores;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-03-S02;R2-EXE-03;Crash após envio;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-03-S03;R2-EXE-03;Fencing antigo;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-04-S01;R2-EXE-04;Conteúdo real;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-04-S02;R2-EXE-04;Resposta inválida;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-04-S03;R2-EXE-04;Commit falha;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-05-S01;R2-EXE-05;Efeito falha;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-05-S02;R2-EXE-05;Reentrega após commit;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-05-S03;R2-EXE-05;Schema desconhecido;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-06-S01;R2-EXE-06;Timer atrasado;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-06-S02;R2-EXE-06;Commit cruza o limite;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-06-S03;R2-EXE-06;Final e expiração concorrentes;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-06-S04;R2-EXE-06;Resultado tardio custoso;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-07-S01;R2-EXE-07;SYNC com broker parado;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-07-S02;R2-EXE-07;Natureza incompatível;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-07-S03;R2-EXE-07;AUTO rápido e lento;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-07-S04;R2-EXE-07;Cliente desconecta;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-08-S01;R2-EXE-08;Igualdade completa;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-08-S02;R2-EXE-08;Upgrade e mudança de contrato;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-08-S03;R2-EXE-08;Resultado pendente ou expirado;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-09-S01;R2-EXE-09;Protocolo órfão de despacho;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-09-S02;R2-EXE-09;Parceiro sem consulta idempotente;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-EXE-09-S03;R2-EXE-09;Callback antes da associação;r2-02-execucao-duravel-e-resultados;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-01-S01;R2-INT-01;REST real distinto do simulador;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-01-S02;R2-INT-01;Capacidade ausente;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-01-S03;R2-INT-01;Protocolo especializado;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-02-S01;R2-INT-02;Dois clientes na mesma conta;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-02-S02;R2-INT-02;Vínculo dedicado indisponível;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-02-S03;R2-INT-02;Rotação e cache;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-03-S01;R2-INT-03;mTLS comprovado;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-03-S02;R2-INT-03;Redis ausente;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-03-S03;R2-INT-03;Cofre indisponível;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-04-S01;R2-INT-04;Ativação de polling;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-04-S02;R2-INT-04;Resposta pendente saudável;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-04-S03;R2-INT-04;Polling e callback concorrentes;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-04-S04;R2-INT-04;Falha de recibo;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-05-S01;R2-INT-05;TTL zero;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-05-S02;R2-INT-05;Reinício no meio da janela;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-05-S03;R2-INT-05;429 com espera incompatível;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-05-S04;R2-INT-05;Timeout após envio;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-06-S01;R2-INT-06;Provedor degrada;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-06-S02;R2-INT-06;Provedor escala;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-06-S03;R2-INT-06;Três réplicas e partição;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-06-S04;R2-INT-06;Ruído de cliente;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-07-S01;R2-INT-07;Mesma URL em dois tenants;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-07-S02;R2-INT-07;Rotação e replay;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-07-S03;R2-INT-07;Destino lento ou indisponível;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-07-S04;R2-INT-07;Duplicata no receptor;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-08-S01;R2-INT-08;Violação apenas do provedor;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-08-S02;R2-INT-08;Rejeição contratada;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-INT-08-S03;R2-INT-08;Coorte ainda aberta;r2-03-integracoes-credenciais-e-pressao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-01-S01;R2-CAT-01;Publicação válida;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-01-S02;R2-CAT-01;Sobrescrita de publicado;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-01-S03;R2-CAT-01;Edição concorrente;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-02-S01;R2-CAT-02;Seleção elegível;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-02-S02;R2-CAT-02;Conta escolhida pelo cliente;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-02-S03;R2-CAT-02;Sem combinação de SLA viável;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-03-S01;R2-CAT-03;A e B independentes;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-03-S02;R2-CAT-03;Passo opcional falha;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-03-S03;R2-CAT-03;Fan-out abusivo;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-04-S01;R2-CAT-04;Dependência C;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-04-S02;R2-CAT-04;Ciclo ou referência inválida;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-04-S03;R2-CAT-04;Compensação incompleta;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-05-S01;R2-CAT-05;Dois contratos legados;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-05-S02;R2-CAT-05;Transformação inválida;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-05-S03;R2-CAT-05;Upgrade de schema;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-06-S01;R2-CAT-06;Contrato muda durante processamento;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-06-S02;R2-CAT-06;Atlas parado;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-06-S03;R2-CAT-06;Revogação de segurança;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-07-S01;R2-CAT-07;Reimportação idempotente;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-07-S02;R2-CAT-07;Falha no meio do lote;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-07-S03;R2-CAT-07;Credenciais na collection;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-08-S01;R2-CAT-08;Milhares de registros;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-08-S02;R2-CAT-08;Refresh e outro operador;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-CAT-08-S03;R2-CAT-08;Capacidade insuficiente;r2-04-catalogo-produtos-e-contratos;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-01-S01;R2-ADM-01;Entrada autorizada;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-01-S02;R2-ADM-01;URL sem permissão;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-01-S03;R2-ADM-01;Logout;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-02-S01;R2-ADM-02;Catálogo populoso;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-02-S02;R2-ADM-02;Lista falha;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-02-S03;R2-ADM-02;Conflito de edição;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-03-S01;R2-ADM-03;Novo cliente;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-03-S02;R2-ADM-03;Pendência visível;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-03-S03;R2-ADM-03;Suspensão;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-04-S01;R2-ADM-04;Importação por preview;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-04-S02;R2-ADM-04;Serviço validado;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-04-S03;R2-ADM-04;Sem adapter;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-05-S01;R2-ADM-05;Editor de composição;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-05-S02;R2-ADM-05;Ciclo detectado;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-05-S03;R2-ADM-05;Simulação sem efeitos;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-06-S01;R2-ADM-06;Diagnóstico de binding;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-06-S02;R2-ADM-06;Rotação;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-06-S03;R2-ADM-06;Pressão reduzida;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-07-S01;R2-ADM-07;Contrato legado;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-07-S02;R2-ADM-07;TTL versus SLA;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-07-S03;R2-ADM-07;SYNC incompatível;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-08-S01;R2-ADM-08;Diagnóstico completo;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-08-S02;R2-ADM-08;Resultado custodiado;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-08-S03;R2-ADM-08;Filtro entre tenants;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-09-S01;R2-ADM-09;Webhook esgotado;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-09-S02;R2-ADM-09;UNKNOWN externo;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-09-S03;R2-ADM-09;Leitor administrativo;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-10-S01;R2-ADM-10;Apuração de quebra;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-10-S02;R2-ADM-10;Dados desatualizados;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-10-S03;R2-ADM-10;Consulta limitada;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-11-S01;R2-ADM-11;Extrato explicável;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-11-S02;R2-ADM-11;Fechamento incompleto;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-11-S03;R2-ADM-11;Estorno;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-12-S01;R2-ADM-12;Teclado e erro;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-12-S02;R2-ADM-12;Falha de rede ou 409;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-ADM-12-S03;R2-ADM-12;Jornada integrada;r2-05-console-administrativo;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-01-S01;R2-FIN-01;Preço muda antes de consumir;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-01-S02;R2-FIN-01;Cliente paga diretamente;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-01-S03;R2-FIN-01;Compra por submit;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-02-S01;R2-FIN-02;Dois passos custosos;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-02-S02;R2-FIN-02;Polling tarifado;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-02-S03;R2-FIN-02;Precisão;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-03-S01;R2-FIN-03;Limite cumulativo;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-03-S02;R2-FIN-03;Concorrência pelo último saldo;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-03-S03;R2-FIN-03;Limite não configurado;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-03-S04;R2-FIN-03;Timeout com efeito incerto;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-04-S01;R2-FIN-04;Faixa marginal;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-04-S02;R2-FIN-04;Pacote versus soma;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-04-S03;R2-FIN-04;Franquia final concorrente;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-05-S01;R2-FIN-05;Partidas balanceadas;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-05-S02;R2-FIN-05;Reprocessamento;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-05-S03;R2-FIN-05;Estorno autorizado;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-06-S01;R2-FIN-06;Fato atrasado;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-06-S02;R2-FIN-06;Exportação repetida;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-FIN-06-S03;R2-FIN-06;Contestação de SLA;r2-06-financeiro-auditavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-01-S01;R2-DAD-01;Arquivo elegível;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-01-S02;R2-DAD-01;Objeto de outro cliente;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-01-S03;R2-DAD-01;Multipart incompleto;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-02-S01;R2-DAD-02;Resultado grande;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-02-S02;R2-DAD-02;S3 falha;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-02-S03;R2-DAD-02;Objeto sem commit do protocolo;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-03-S01;R2-DAD-03;Expurgo elegível;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-03-S02;R2-DAD-03;Entrega pendente;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-03-S03;R2-DAD-03;Mensagem antiga;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-04-S01;R2-DAD-04;Writer indisponível com final válido;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-04-S02;R2-DAD-04;Réplica atrasada;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-04-S03;R2-DAD-04;Isolamento de domínio;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-05-S01;R2-DAD-05;Restore controlado;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-05-S02;R2-DAD-05;Operação após backup;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-DAD-05-S03;R2-DAD-05;Falha regional;r2-07-objetos-dados-e-retencao;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-01-S01;R2-OPE-01;Primeira instalação;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-01-S02;R2-OPE-01;Recriação sem reset;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-01-S03;R2-OPE-01;Cache desligado;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-02-S01;R2-OPE-02;Overlay aplicável;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-02-S02;R2-OPE-02;Separação ambiental;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-02-S03;R2-OPE-02;Produção sem perfil;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-03-S01;R2-OPE-03;Dependência opcional falha;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-03-S02;R2-OPE-03;Rolling update;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-03-S03;R2-OPE-03;Provedor fora;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-04-S01;R2-OPE-04;Fila cresce com CPU baixa;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-04-S02;R2-OPE-04;Célula próxima do envelope;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-04-S03;R2-OPE-04;Quota esgotada;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-05-S01;R2-OPE-05;Cliente realocado;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-05-S02;R2-OPE-05;Dois ambientes/células;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-05-S03;R2-OPE-05;Falha parcial de provisionamento;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-06-S01;R2-OPE-06;Reinício com broker fora;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-06-S02;R2-OPE-06;Redis lenta;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-06-S03;R2-OPE-06;Todas cópias autoritativas indisponíveis;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-07-S01;R2-OPE-07;Fluxo rastreável;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-07-S02;R2-OPE-07;Alerta exercitado;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-07-S03;R2-OPE-07;Backend de observabilidade fora;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-08-S01;R2-OPE-08;AWS real;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-08-S02;R2-OPE-08;IAM insuficiente;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-08-S03;R2-OPE-08;Atualização de dependência;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-09-S01;R2-OPE-09;Perfil de referência;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-09-S02;R2-OPE-09;Manutenção e ruído;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-OPE-09-S03;R2-OPE-09;Uso crítico;r2-08-operacao-elastica-e-observavel;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-01-S01;R2-QUA-01;Novo requisito implementado;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-01-S02;R2-QUA-01;Evidência incompatível;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-01-S03;R2-QUA-01;Decisão ainda pendente;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-02-S01;R2-QUA-02;Ambiente limpo;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-02-S02;R2-QUA-02;Regressão do eco;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-02-S03;R2-QUA-02;Regressão financeira;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-03-S01;R2-QUA-03;PR de backend;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-03-S02;R2-QUA-03;UI sem backend;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-03-S03;R2-QUA-03;P0 reaberto;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-04-S01;R2-QUA-04;Importação deste pacote;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-04-S02;R2-QUA-04;Mudança R2 concluída;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos
+R2-QUA-04-S03;R2-QUA-04;Regressão posterior;r2-09-qualificacao-e-rastreabilidade;NAO_EXECUTADO;;Exige verificação de todas as precondições e oráculos

@@ -2,8 +2,11 @@ package cometa
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"log/slog"
+	"os"
 	"time"
 
 	"ai-hub/hub/internal/dispatch"
@@ -31,32 +34,30 @@ func RunCommandWorker(ctx context.Context, q *queue.Client, queueURL string, exe
 		}
 		for _, m := range msgs {
 			var cmd dispatch.Command
-			if err := json.Unmarshal(m.Envelope.Payload, &cmd); err != nil {
-				log.Error("worker: comando invalido, descartando", "error", err)
-				_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
-				continue
-			}
-			if cmd.DispatchMode != dispatch.DispatchQueued {
-				// EXE-15: o despachante de outbox so publica comandos
-				// elegiveis QUEUED; uma intencao DIRECT nunca deveria
-				// chegar aqui.
-				log.Warn("worker: comando com dispatch_mode inesperado, descartando", "dispatch_mode", cmd.DispatchMode)
-				_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
+			if json.Unmarshal(m.Envelope.Payload, &cmd) != nil || cmd.DispatchMode != dispatch.DispatchQueued || cmd.CellID != os.Getenv("CELL_ID") || m.Envelope.TenantID != cmd.TenantID || m.Envelope.EventID != cmd.CommandID || m.Envelope.Type != "command.dispatch" || m.Envelope.Producer != "orbita" || m.Envelope.SchemaVersion != 1 {
+				sum := sha256.Sum256(m.RawBody)
+				_, err := exec.store.db.ExecContext(ctx, `INSERT INTO message_quarantine(consumer,body_sha256,body,reason) VALUES('cometa', $1,$2,'invalid_command_envelope') ON CONFLICT(consumer,body_sha256) DO UPDATE SET last_seen_at=clock_timestamp(),occurrences=message_quarantine.occurrences+1`, hex.EncodeToString(sum[:]), m.RawBody)
+				if err == nil {
+					_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
+				}
 				continue
 			}
 			execCtx := ctx
+			var result dispatch.Result
 			if !cmd.StepDeadline.IsZero() {
 				var cancel func()
 				execCtx, cancel = context.WithDeadline(ctx, cmd.StepDeadline)
-				exec.Execute(execCtx, cmd)
+				result = exec.Execute(execCtx, cmd)
 				cancel()
 			} else {
-				exec.Execute(execCtx, cmd)
+				result = exec.Execute(execCtx, cmd)
 			}
 			// Ack somente apos o efeito/intencao local estar
 			// confirmado (COM-03): Execute ja persistiu antes de
 			// retornar.
-			_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
+			if result.Durable {
+				_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
+			}
 		}
 	}
 }

@@ -2,7 +2,10 @@ package orbita
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"log/slog"
+	"time"
 
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
@@ -24,12 +27,17 @@ type FinalBody struct {
 // "protocol") quando um protocolo e finalizado — consumido por Pulsar
 // (webhook) e Libra (receita), conforme COM-01.
 type ProtocolFinalizedFact struct {
-	ProtocolID string    `json:"protocol_id"`
-	TraceID    string    `json:"trace_id,omitempty"`
-	TenantID   string    `json:"tenant_id"`
-	Status     string    `json:"status"`
-	FinalBody  FinalBody `json:"final_body"`
-	EventID    string    `json:"event_id"`
+	EconomicSnapshot json.RawMessage `json:"economic_snapshot"`
+	EvidenceID       string          `json:"evidence_id"`
+	OccurredAt       time.Time       `json:"occurred_at"`
+	Representation   []byte          `json:"representation"`
+	CellID           string          `json:"cell_id"`
+	ProtocolID       string          `json:"protocol_id"`
+	TraceID          string          `json:"trace_id,omitempty"`
+	TenantID         string          `json:"tenant_id"`
+	Status           string          `json:"status"`
+	FinalBody        FinalBody       `json:"final_body"`
+	EventID          string          `json:"event_id"`
 }
 
 // Finalizer aplica a transicao terminal unica do protocolo (EXE-11) e
@@ -50,14 +58,24 @@ func NewFinalizer(store *Store, log *slog.Logger) *Finalizer {
 func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID string, expectedVersion int, status Status, body FinalBody, reason string) (bool, error) {
 	eventID := idgen.New()
 	body.Status = string(status)
+	body.ProtocolID = protocolID
+	body.ResultVersion = 1
 
 	applied, err := f.store.Finalize(ctx, FinalizeParams{
 		ProtocolID: protocolID, ExpectedVersion: expectedVersion, Status: status,
 		FinalBody: body, TerminalReason: reason, FinalEventID: eventID,
 	}, func(tx *sqlTx) error {
 		fact := ProtocolFinalizedFact{ProtocolID: protocolID, TraceID: traceID, TenantID: tenantID, Status: string(status), FinalBody: body, EventID: eventID}
+		fact.Representation = tx.Representation
+		fact.EvidenceID = eventID
+		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,i.command->'economic_snapshot',clock_timestamp() FROM protocols p JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.EconomicSnapshot, &fact.OccurredAt); err != nil {
+			return err
+		}
 		return outbox.Enqueue(ctx, tx.Tx(), "protocol", protocolID, "protocol.finalized", fact)
 	})
+	if errors.Is(err, ErrResultLate) {
+		return f.Finalize(ctx, traceID, tenantID, protocolID, expectedVersion, StatusExpired, FinalBody{ProtocolID: protocolID, ErrorCode: "SLA_EXCEEDED", ErrorMessage: "prazo do cliente expirado"}, "REJECTED_LATE_SLA")
+	}
 	if err != nil {
 		return false, err
 	}

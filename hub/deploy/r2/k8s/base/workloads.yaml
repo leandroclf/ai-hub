@@ -1,0 +1,748 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: atlas
+  labels: &id001
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: ai-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *id001
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels: *id001
+      containers:
+      - name: atlas
+        image: ai-hub-r2-atlas:r2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8081
+        env:
+        - name: HTTP_ADDR
+          value: :8081
+        - name: OTEL_SERVICE_NAME
+          value: atlas
+        - name: WORKLOAD_CLIENT_ID
+          value: hub-atlas
+        - name: WORKLOAD_CLIENT_SECRET_FILE
+          value: /run/workload/client-secret
+        - name: CONTROL_DSN
+          valueFrom:
+            secretKeyRef:
+              name: hub-runtime
+              key: CONTROL_DSN
+        envFrom:
+        - configMapRef:
+            name: hub-runtime
+        volumeMounts:
+        - name: workload
+          mountPath: /run/workload
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          httpGet:
+            path: /healthz/startup
+            port: http
+          periodSeconds: 2
+          timeoutSeconds: 2
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: http
+          periodSeconds: 3
+          timeoutSeconds: 2
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+      volumes:
+      - name: workload
+        secret:
+          secretName: atlas-workload
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: atlas
+spec:
+  selector:
+    app.kubernetes.io/name: atlas
+    app.kubernetes.io/part-of: ai-hub
+  ports:
+  - name: http
+    port: 8081
+    targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: atlas
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: atlas
+      app.kubernetes.io/part-of: ai-hub
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: atlas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: atlas
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+    scaleUp:
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orbita
+  labels: &id001
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: ai-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *id001
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels: *id001
+      containers:
+      - name: orbita
+        image: ai-hub-r2-orbita:r2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8080
+        env:
+        - name: HTTP_ADDR
+          value: :8080
+        - name: OTEL_SERVICE_NAME
+          value: orbita
+        - name: WORKLOAD_CLIENT_ID
+          value: hub-orbita
+        - name: WORKLOAD_CLIENT_SECRET_FILE
+          value: /run/workload/client-secret
+        - name: CORE_DSN
+          valueFrom:
+            secretKeyRef:
+              name: hub-runtime
+              key: CORE_DSN
+        envFrom:
+        - configMapRef:
+            name: hub-runtime
+        volumeMounts:
+        - name: workload
+          mountPath: /run/workload
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          httpGet:
+            path: /healthz/startup
+            port: http
+          periodSeconds: 2
+          timeoutSeconds: 2
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: http
+          periodSeconds: 3
+          timeoutSeconds: 2
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+      volumes:
+      - name: workload
+        secret:
+          secretName: orbita-workload
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orbita
+spec:
+  selector:
+    app.kubernetes.io/name: orbita
+    app.kubernetes.io/part-of: ai-hub
+  ports:
+  - name: http
+    port: 8080
+    targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: orbita
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: orbita
+      app.kubernetes.io/part-of: ai-hub
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: orbita
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: orbita
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+    scaleUp:
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cometa
+  labels: &id001
+    app.kubernetes.io/name: cometa
+    app.kubernetes.io/part-of: ai-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *id001
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels: *id001
+      containers:
+      - name: cometa
+        image: ai-hub-r2-cometa:r2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8082
+        env:
+        - name: HTTP_ADDR
+          value: :8082
+        - name: OTEL_SERVICE_NAME
+          value: cometa
+        - name: WORKLOAD_CLIENT_ID
+          value: hub-cometa
+        - name: WORKLOAD_CLIENT_SECRET_FILE
+          value: /run/workload/client-secret
+        - name: CORE_DSN
+          valueFrom:
+            secretKeyRef:
+              name: hub-runtime
+              key: CORE_DSN
+        envFrom:
+        - configMapRef:
+            name: hub-runtime
+        volumeMounts:
+        - name: workload
+          mountPath: /run/workload
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          httpGet:
+            path: /healthz/startup
+            port: http
+          periodSeconds: 2
+          timeoutSeconds: 2
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: http
+          periodSeconds: 3
+          timeoutSeconds: 2
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+      volumes:
+      - name: workload
+        secret:
+          secretName: cometa-workload
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cometa
+spec:
+  selector:
+    app.kubernetes.io/name: cometa
+    app.kubernetes.io/part-of: ai-hub
+  ports:
+  - name: http
+    port: 8082
+    targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cometa
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cometa
+      app.kubernetes.io/part-of: ai-hub
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cometa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cometa
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+    scaleUp:
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar
+  labels: &id001
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: ai-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *id001
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels: *id001
+      containers:
+      - name: pulsar
+        image: ai-hub-r2-pulsar:r2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8083
+        env:
+        - name: HTTP_ADDR
+          value: :8083
+        - name: OTEL_SERVICE_NAME
+          value: pulsar
+        - name: WORKLOAD_CLIENT_ID
+          value: hub-pulsar
+        - name: WORKLOAD_CLIENT_SECRET_FILE
+          value: /run/workload/client-secret
+        - name: CORE_DSN
+          valueFrom:
+            secretKeyRef:
+              name: hub-runtime
+              key: CORE_DSN
+        envFrom:
+        - configMapRef:
+            name: hub-runtime
+        volumeMounts:
+        - name: workload
+          mountPath: /run/workload
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          httpGet:
+            path: /healthz/startup
+            port: http
+          periodSeconds: 2
+          timeoutSeconds: 2
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: http
+          periodSeconds: 3
+          timeoutSeconds: 2
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+      volumes:
+      - name: workload
+        secret:
+          secretName: pulsar-workload
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pulsar
+spec:
+  selector:
+    app.kubernetes.io/name: pulsar
+    app.kubernetes.io/part-of: ai-hub
+  ports:
+  - name: http
+    port: 8083
+    targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pulsar
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pulsar
+      app.kubernetes.io/part-of: ai-hub
+---
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pulsar
+spec:
+  scaleTargetRef:
+    name: pulsar
+  pollingInterval: 15
+  cooldownPeriod: 120
+  minReplicaCount: 1
+  maxReplicaCount: 2
+  fallback:
+    failureThreshold: 3
+    replicas: 1
+  triggers:
+  - type: postgresql
+    metadata:
+      connectionFromEnv: CORE_DSN
+      query: SELECT count(*) FROM deliveries WHERE state IN ('PENDING','RETRY_SCHEDULED') AND next_attempt_at <= now()
+      targetQueryValue: '10'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: libra
+  labels: &id001
+    app.kubernetes.io/name: libra
+    app.kubernetes.io/part-of: ai-hub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: *id001
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels: *id001
+    spec:
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 35
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+        labelSelector:
+          matchLabels: *id001
+      containers:
+      - name: libra
+        image: ai-hub-r2-libra:r2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: http
+          containerPort: 8084
+        env:
+        - name: HTTP_ADDR
+          value: :8084
+        - name: OTEL_SERVICE_NAME
+          value: libra
+        - name: WORKLOAD_CLIENT_ID
+          value: hub-libra
+        - name: WORKLOAD_CLIENT_SECRET_FILE
+          value: /run/workload/client-secret
+        - name: FINANCE_DSN
+          valueFrom:
+            secretKeyRef:
+              name: hub-runtime
+              key: FINANCE_DSN
+        envFrom:
+        - configMapRef:
+            name: hub-runtime
+        volumeMounts:
+        - name: workload
+          mountPath: /run/workload
+          readOnly: true
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 500m
+            memory: 192Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 65532
+          capabilities:
+            drop:
+            - ALL
+        startupProbe:
+          httpGet:
+            path: /healthz/startup
+            port: http
+          periodSeconds: 2
+          timeoutSeconds: 2
+          failureThreshold: 60
+        readinessProbe:
+          httpGet:
+            path: /healthz/ready
+            port: http
+          periodSeconds: 3
+          timeoutSeconds: 2
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz/live
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 2
+          failureThreshold: 3
+      volumes:
+      - name: workload
+        secret:
+          secretName: libra-workload
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: libra
+spec:
+  selector:
+    app.kubernetes.io/name: libra
+    app.kubernetes.io/part-of: ai-hub
+  ports:
+  - name: http
+    port: 8084
+    targetPort: http
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: libra
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: libra
+      app.kubernetes.io/part-of: ai-hub
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: libra
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: libra
+  minReplicas: 1
+  maxReplicas: 2
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+    scaleUp:
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60

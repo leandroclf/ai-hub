@@ -4,12 +4,14 @@
 package libraclient
 
 import (
+	"ai-hub/hub/internal/platform/auth"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -25,12 +27,17 @@ type Client struct {
 
 // New cria um cliente do Libra.
 func New(baseURL string) *Client {
-	return &Client{baseURL: baseURL, http: &http.Client{Timeout: 3 * time.Second}}
+	return &Client{baseURL: baseURL, http: auth.WorkloadClient(baseURL, 3*time.Second)}
 }
 
 // Reserve solicita a reserva atomica do valor do contrato para o
 // protocolo (FIN-06). Idempotente por protocol_id no lado do Libra.
 func (c *Client) Reserve(ctx context.Context, tenantID, protocolID string, amount float64, currency string) error {
+	return c.ReserveExact(ctx, tenantID, protocolID, strconv.FormatFloat(amount, 'f', -1, 64), currency)
+}
+
+// ReserveExact keeps decimal values textual end to end.
+func (c *Client) ReserveExact(ctx context.Context, tenantID, protocolID, amount, currency string) error {
 	body, _ := json.Marshal(map[string]any{
 		"tenant_id": tenantID, "protocol_id": protocolID, "amount": amount, "currency": currency,
 	})

@@ -5,8 +5,12 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/config"
 	"ai-hub/hub/internal/platform/httpserver"
 	"ai-hub/hub/internal/platform/logging"
@@ -34,7 +38,7 @@ func main() {
 	handlers := pulsar.NewHandlers(store)
 	worker := pulsar.NewDeliveryWorker(store, orbitaURL, log)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 
 	q, err := queue.New(ctx, queueEndpoint, queueRegion)
@@ -42,32 +46,42 @@ func main() {
 		log.Error("falha ao conectar ao broker", "error", err)
 		panic(err)
 	}
-	protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
-	if err != nil {
-		log.Error("falha ao localizar topico de fatos de protocolo", "error", err)
-		panic(err)
-	}
-	factsQueueURL, err := q.EnsureQueue(ctx, "pulsar-protocol-facts")
-	if err != nil {
-		log.Error("falha ao criar fila de fatos de protocolo", "error", err)
-		panic(err)
-	}
-	factsQueueARN, err := q.QueueARN(ctx, factsQueueURL)
-	if err != nil {
-		log.Error("falha ao obter ARN da fila", "error", err)
-		panic(err)
-	}
-	_ = q.AllowSNSDelivery(ctx, factsQueueURL, factsQueueARN)
-	_ = q.Subscribe(ctx, protocolFactsTopicARN, factsQueueARN)
+	go queue.RunBootstrap(ctx, func() error {
+		protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
+		if err != nil {
+			log.Error("falha ao localizar topico de fatos de protocolo", "error", err)
+			return err
+		}
+		factsQueueURL, err := q.EnsureQueue(ctx, "pulsar-protocol-facts")
+		if err != nil {
+			log.Error("falha ao criar fila de fatos de protocolo", "error", err)
+			return err
+		}
+		factsQueueARN, err := q.QueueARN(ctx, factsQueueURL)
+		if err != nil {
+			log.Error("falha ao obter ARN da fila", "error", err)
+			return err
+		}
+		if err := q.AllowSNSDelivery(ctx, factsQueueURL, factsQueueARN, protocolFactsTopicARN); err != nil {
+			return err
+		}
+		if err := q.Subscribe(ctx, protocolFactsTopicARN, factsQueueARN); err != nil {
+			return err
+		}
 
-	go pulsar.RunFactConsumer(ctx, q, factsQueueURL, store, log)
+		go pulsar.RunFactConsumer(ctx, q, factsQueueURL, store, log)
+		return nil
+	}, log)
+
 	go worker.Run(ctx, 1*time.Second)
 
 	readiness := func(ctx context.Context) error { return store.Ping(ctx) }
 	srv := httpserver.New(log, readiness, readiness, nil)
+	srv.AuthMiddleware = auth.FromEnv().Middleware
 	mux := http.NewServeMux()
 	handlers.Register(mux)
 	srv.Handle("/internal/", mux)
+	srv.Handle("/admin/v1/", mux)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

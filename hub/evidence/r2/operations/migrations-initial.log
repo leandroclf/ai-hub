@@ -1,0 +1,104 @@
+ Container ai-hub-r2-postgres-1 Running 
+ Container ai-hub-r2-postgres-1 Waiting 
+ Container ai-hub-r2-postgres-1 Healthy 
+ Container ai-hub-r2-migrate-run-9cda38532c19 Creating 
+ Container ai-hub-r2-migrate-run-9cda38532c19 Created 
+CREATE TABLE
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+INSERT 0 1
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+ALTER TABLE
+INSERT 0 1
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+DO
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+INSERT 0 1
+COMMIT
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE FUNCTION
+DROP TRIGGER
+psql:/migrations/control/0020_catalog_versions.sql:45: NOTICE:  trigger "catalog_immutable_content" for relation "catalog_resources" does not exist, skipping
+CREATE TRIGGER
+CREATE FUNCTION
+DROP TRIGGER
+psql:/migrations/control/0020_catalog_versions.sql:54: NOTICE:  trigger "legacy_service_immutable_content" for relation "services" does not exist, skipping
+CREATE TRIGGER
+INSERT 0 0
+INSERT 0 1
+COMMIT
+CREATE TABLE
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+INSERT 0 1
+COMMIT
+CREATE TABLE
+BEGIN
+ pg_advisory_xact_lock 
+-----------------------
+ 
+(1 row)
+
+CREATE TABLE
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+INSERT 0 1
+COMMIT

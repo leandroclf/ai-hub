@@ -1,0 +1,68 @@
+[
+  {
+    "service": "atlas",
+    "path": "/healthz/ready",
+    "without_token_status": 200
+  },
+  {
+    "service": "atlas",
+    "path": "/admin/v1/services",
+    "without_token_status": 401
+  },
+  {
+    "service": "orbita",
+    "path": "/healthz/ready",
+    "without_token_status": 200
+  },
+  {
+    "service": "orbita",
+    "path": "/v1/protocols/example",
+    "without_token_status": 401
+  },
+  {
+    "service": "cometa",
+    "path": "/healthz/ready",
+    "without_token_status": 200
+  },
+  {
+    "service": "cometa",
+    "path": "/internal/operations/example",
+    "without_token_status": 401
+  },
+  {
+    "service": "libra",
+    "path": "/healthz/ready",
+    "without_token_status": 200
+  },
+  {
+    "service": "libra",
+    "path": "/admin/v1/finance/accounts",
+    "without_token_status": 401
+  },
+  {
+    "service": "atlas",
+    "path": "/admin/v1/me",
+    "authenticated_status": 200,
+    "response_keys": [
+      "subject",
+      "tenant_id",
+      "application_id",
+      "cell_id",
+      "scopes",
+      "roles",
+      "mfa",
+      "workload",
+      "expires_at",
+      "environment"
+    ]
+  },
+  {
+    "service": "atlas",
+    "path": "/admin/v1/services?tenant_id=acme",
+    "authenticated_status": 200,
+    "response_keys": [
+      "items",
+      "next_cursor"
+    ]
+  }
+]
