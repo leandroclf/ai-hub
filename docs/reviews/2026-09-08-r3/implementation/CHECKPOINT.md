@@ -90,3 +90,9 @@
 ### Próxima retomada
 
 Prioridade: conectar o executor a um DAG persistido e concluir o cenário de restore populado com oráculos independentes; depois substituir a compatibilidade RLS pela credencial de runtime nos serviços, executar a matriz de falhas/reinícios e tratar os fluxos administrativos/comerciais restantes. D-01…D-07 e T-R2-01 permanecem gates externos/decisórios, sem bloquear a implementação técnica independente.
+
+## Baseline de decisões adotada — 2026-09-09
+
+- D-01…D-07 receberam defaults executáveis para laboratório/homologação em `05-DECISOES-E-MIGRACAO.md`: envelope sintético, SLA e retry, unidade financeira, retenção, plataforma, capacidade de provedor e catálogo versionado.
+- T-R2-01 recebeu a regra operacional conservadora: só anunciar sucesso após confirmação durável; em dúvida, preservar `UNKNOWN` e reconciliar; resultado tardio não reabre protocolo. A prova formal da fronteira relógio/commit continua obrigatória.
+- As decisões habilitam a execução técnica, mas não substituem ratificação nominal de produção, contrato comercial, orçamento, retenção regulatória, matriz de capacidades de provedor ou aceite de RPO/RTO.

@@ -19,6 +19,25 @@ O ADR existente T-R2-01 é evidência de um limite do algoritmo atual, não auto
 Se uma solução exigir mudança normativa, documentar opções/consequências e manter o gate aberto; concluir trabalho independente.
 Não prometer que qualquer agente poderá resolver matematicamente um requisito incompatível com o modelo de falhas.
 
+## Baseline adotada para execução — 2026-09-09
+
+As decisões abaixo foram adotadas pelo responsável da execução para viabilizar o planejamento no laboratório local e no perfil de homologação. Elas são defaults versionados, não contratos comerciais nem autorização de produção. Uma mudança exige nova versão de contrato, migração compatível e requalificação dos cenários afetados.
+
+| ID | Decisão adotada | Motivo e trade-off | Critério de revisão |
+|---|---|---|---|
+| D-01 | Perfil sintético inicial: 100 tenants, 10 aplicações/tenant, 20 provedores, 200 RPS de admissão, 50 RPS por provedor, payload JSON até 1 MiB, arquivo até 1 GiB, operação até 60 s, concorrência de 500 operações por célula | Envelope pequeno e reproduzível para Compose/Kind; não representa demanda comercial real | Substituir pelos percentis observados de 30 dias e pelo pico contratado antes da ativação comercial |
+| D-02 | SLA de cliente padrão de 30 s; reserva de finalização de 5 s; timeout por tentativa de 10 s; `Retry-After` respeitado; primeira falha transitória fixa a janela de retry; `UNKNOWN` não é sucesso; resultado tardio vira evidência sem reabrir protocolo | Mantém prazos separados e evita retry inseguro; pode reduzir disponibilidade percebida em provedor ambíguo | Aprovação por Produto/Operações após ensaio T-R2-01 e definição por perfil de criticidade |
+| D-03 | Cobrança por unidade econômica efetiva, deduplicada por chave semântica; reserva antes do efeito; captura pelo valor efetivo; `UNKNOWN` mantém retenção; ledger decimal em BRL com 4 casas e estorno por lançamento compensatório | Conserva dinheiro e evita cobrança por duplicata técnica; não define impostos ou preço comercial final | Aprovação Comercial/Financeiro e contrato de tabela de preços, franquias, impostos e moedas |
+| D-04 | Dados sintéticos no laboratório; classificação `SYNTHETIC`/`CONFIDENTIAL`; PostgreSQL e S3 na mesma região lógica; retenção online de 90 dias, uploads órfãos por 24 h, logs 30 dias, traces 7 dias, métricas 90 dias; obrigações abertas sem expurgo | Reproduzível e conservador para teste; prazos não são decisão jurídica | Aprovação dos donos dos dados, Segurança e Jurídico; substituir por política regulatória/contratual |
+| D-05 | Kubernetes/EKS como alvo de produção, Compose para local, Kind para qualificação; PostgreSQL gerenciado por célula; S3 versionado; Kong na borda; HPA/KEDA para escala; OpenTelemetry + Prometheus/Loki/Grafana/Tempo; sem provisionamento pago nesta execução | Padrão operacional comum e compatível com os artefatos existentes; custo e RPO/RTO de produção continuam condicionados ao orçamento | Aprovação de Arquitetura/Plataforma/FinOps com região, orçamento, RPO/RTO, edição e topologia |
+| D-06 | Cada operação recebe chave estável; reenviar só com idempotência homologada ou prova de ausência de efeito; callback e polling podem coexistir; callback é recebido em inbox durável; conflito gera reconciliação; conta/binding permanecem congelados por operação | Maximiza interoperabilidade e segurança; exige provider-sim/adapters que exponham status e idempotência | Homologação individual de cada provedor e aprovação da matriz de capacidades |
+| D-07 | Catálogo inicial versionado com JSON Schema, perfis de entrada/saída, produtos e ofertas imutáveis após publicação; import/export em JSON/CSV versionado; planos suportam unidade, franquia, volume total e faixas marginais | Facilita evolução compatível e jornada administrativa; requer governança de versão e validação financeira | Aprovação de Produto/Financeiro do catálogo, layouts, preços e contratos reais |
+| T-R2-01 | Adotar operacionalmente a regra conservadora: confirmação durável antes de anunciar sucesso; em dúvida, `UNKNOWN`/reconciliação; nunca usar comparação de relógio anterior ao commit como prova | É segura sob falha entre efeito externo e commit, mas pode converter casos ambíguos em indisponibilidade | Core/Dados/SRE devem concluir contraexemplo com relógios separados, fencing e commit; a regra normativa não é considerada matematicamente encerrada sem esse ensaio |
+
+### Aprovação necessária antes de produção
+
+Os defaults acima autorizam o avanço técnico local e de homologação. Antes de qualquer ativação comercial, devem ser substituídos ou ratificados por responsáveis nominais: demanda real (D-01), SLA (D-02), contratos financeiros (D-03), retenção e região (D-04), plataforma/orçamento/RPO-RTO (D-05), matriz de capacidades de cada provedor (D-06), catálogo e formatos oficiais (D-07) e resultado técnico do contraexemplo T-R2-01.
+
 ## Sequência e dependências
 1. G0/G1, fixture OIDC e harness G2/G3: tornam as correções verificáveis desde o começo.
 2. EXE-05 e ADM-01: topologia/custódia e fronteira de acesso antes de expor jornadas.

@@ -77,3 +77,7 @@ Foram implementados e verificados os seguintes incrementos, sem promover artific
 - O migrador agora interrompe divergência de checksum em vez de ignorá-la.
 
 Assim, o estado correto continua sendo **implementação parcial qualificada**, não implementação integral. Permanecem abertos: restore populado reconciliado, adoção RLS no runtime dos serviços, conexão do executor ao DAG real, planos comerciais e jornadas administrativas restantes, ensaios completos de falha/reinício com oráculos independentes, fechamento individual dos achados quando houver prova, e as decisões D-01…D-07/T-R2-01. As alterações desta atualização ainda estão no working tree; não houve push, merge, implantação remota ou remoção de volumes.
+
+## Decisões adotadas para viabilizar a execução
+
+Os defaults técnicos de D-01…D-07 e T-R2-01 foram registrados em `docs/reviews/2026-09-08-r3/05-DECISOES-E-MIGRACAO.md` e estão valendo para local/homologação. Eles não fecham os gates de produção: os valores reais de demanda, SLA, preço, retenção, plataforma/orçamento, capacidades dos provedores, catálogo oficial e a semântica normativa de T-R2-01 ainda exigem ratificação e evidência próprias.
