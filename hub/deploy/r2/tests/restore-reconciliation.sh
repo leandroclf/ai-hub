@@ -10,6 +10,12 @@ suffix=${R2_RESTORE_SUFFIX:-$(date -u +%Y%m%d%H%M%S)}
 case "$suffix" in *[!a-zA-Z0-9_]*) echo "invalid restore suffix" >&2; exit 2;; esac
 psql_hub=(docker exec -i "$container" psql -U hub -v ON_ERROR_STOP=1 -X)
 
+relation_digest() {
+  local database=$1
+  local relation=$2
+  "${psql_hub[@]}" -d "$database" -Atqc "SELECT md5(COALESCE(string_agg(row_to_json(t)::text, '' ORDER BY row_to_json(t)::text),'')) FROM $relation t"
+}
+
 declare -A tables=(
   [control]='catalog_resources catalog_publications'
   [core]='protocols operations attempts callback_inbox deliveries outbox'
@@ -27,10 +33,15 @@ SQL
     dst=$("${psql_hub[@]}" -d "$target" -Atqc "SELECT count(*) FROM $table")
     test "$src" = "$dst" || { echo "restore count mismatch $source.$table: $src != $dst" >&2; exit 1; }
     printf 'restore count %s.%s: %s\n' "$source" "$table" "$src"
+    src_digest=$(relation_digest "$source" "$table")
+    dst_digest=$(relation_digest "$target" "$table")
+    test "$src_digest" = "$dst_digest" || { echo "restore digest mismatch $source.$table: $src_digest != $dst_digest" >&2; exit 1; }
+    printf 'restore digest %s.%s: %s\n' "$source" "$table" "$src_digest"
   done
 done
 
-bucket=${R2_RESTORE_BUCKET:-r2-custody-restore-${suffix}}
+bucket_suffix=${suffix//_/-}
+bucket=${R2_RESTORE_BUCKET:-r2-custody-restore-${bucket_suffix}}
 docker exec ai_hub_r3qual-localstack-1 awslocal s3 mb "s3://$bucket" >/dev/null
 docker exec ai_hub_r3qual-localstack-1 awslocal s3 sync s3://r2-custody "s3://$bucket" >/dev/null
 source_objects=$(docker exec ai_hub_r3qual-localstack-1 awslocal s3api list-objects-v2 --bucket r2-custody --query 'length(Contents || `[]`)' --output text)

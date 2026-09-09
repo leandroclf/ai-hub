@@ -91,3 +91,5 @@ O runtime de Órbita passou a executar o expurgo de objetos por lote durável qu
 O provider-sim agora mantém seu oráculo de efeitos em volume exclusivo, com gravação atômica. A submissão sintética repetida após reinício preservou o mesmo identificador externo e um único efeito. Essa prova melhora a qualificação de não-reexecução, mas não substitui o restore completo reconciliado com a autoridade financeira.
 
 A prova de retenção PostgreSQL+LocalStack também cobre execução efetiva: o pin exclui a obrigação do plano, o `UNPIN` gera ação auditável, o lote cria tombstone e remove a versão, e uma leitura posterior é negada. Falhas de S3 continuam retomáveis pelo estado `PURGING`.
+
+O harness de restore foi fortalecido com digestes determinísticos de linhas e correção de nomes de bucket S3. A execução isolada `autonomous_digest2` passou e conservou o oráculo externo sem replay; como não havia objetos no bucket fonte nessa janela, a prova ainda não encerra o restore populado de objetos, efeitos externos e financeiro.
