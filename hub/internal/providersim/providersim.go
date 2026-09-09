@@ -31,11 +31,12 @@ const (
 
 // SubmitRequest e o corpo aceito por POST /v1/operations.
 type SubmitRequest struct {
-	ProtocolID  string `json:"protocol_id"`
-	Mode        Mode   `json:"mode"`
-	DelayMs     int    `json:"delay_ms"`
-	Fail        bool   `json:"fail"`
-	CallbackURL string `json:"callback_url,omitempty"`
+	ProtocolID      string `json:"protocol_id"`
+	Mode            Mode   `json:"mode"`
+	DelayMs         int    `json:"delay_ms"`
+	Fail            bool   `json:"fail"`
+	DropAfterEffect bool   `json:"drop_after_effect"`
+	CallbackURL     string `json:"callback_url,omitempty"`
 }
 
 // OperationResult e o formato de resultado devolvido pelo provedor,
@@ -265,6 +266,18 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 		_ = json.NewEncoder(w).Encode(OperationResult{ProviderRequestID: id, Status: "PENDING"})
 	default: // ModeSync
+		if req.DropAfterEffect {
+			// O efeito e a chave ja foram persistidos acima. Fechar a
+			// conexao simula a queda entre o envio externo e a resposta,
+			// deixando o consumidor legitimamente em UNKNOWN.
+			if h, ok := w.(http.Hijacker); ok {
+				conn, _, err := h.Hijack()
+				if err == nil {
+					_ = conn.Close()
+				}
+			}
+			return
+		}
 		if req.DelayMs > 0 {
 			time.Sleep(time.Duration(req.DelayMs) * time.Millisecond)
 		}

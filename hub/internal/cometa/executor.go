@@ -138,10 +138,11 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	delayMs := requestedDelayMs(cmd.RequestBody)
 
 	req := providersim.SubmitRequest{
-		ProtocolID: cmd.ProtocolID,
-		Mode:       providersim.Mode(pa.ProviderMode),
-		DelayMs:    delayMs,
-		Fail:       fail,
+		ProtocolID:      cmd.ProtocolID,
+		Mode:            providersim.Mode(pa.ProviderMode),
+		DelayMs:         delayMs,
+		Fail:            fail,
+		DropAfterEffect: shouldDropAfterEffect(cmd.RequestBody),
 	}
 	if pa.ProviderMode == string(providersim.ModeAsyncCallback) {
 		req.CallbackURL = e.callbackURLFor(operationID, claim.CallbackToken)
@@ -301,6 +302,15 @@ func requestedDelayMs(body any) int {
 	default:
 		return 0
 	}
+}
+
+func shouldDropAfterEffect(body any) bool {
+	m, ok := inputObject(body)
+	if !ok {
+		return false
+	}
+	v, ok := m["force_drop_after_effect"].(bool)
+	return ok && v
 }
 
 func inputObject(body any) (map[string]any, bool) {
