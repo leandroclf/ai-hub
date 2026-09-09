@@ -254,6 +254,17 @@ func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r
 	if json.Unmarshal(original, &cmd) != nil {
 		return dispatch.Result{}, errors.New("invalid stored command")
 	}
+	// A terminal operation may still receive a callback or poll result. Keep
+	// the receipt, but classify a different terminal fact explicitly so the
+	// reconciler/finance pipeline can investigate it without reopening the
+	// protocol or treating it as a new effect.
+	if state == string(StateSucceeded) || state == string(StateFailed) || state == string(StateCancelled) {
+		var existing dispatch.Result
+		if len(result) > 0 && json.Unmarshal(result, &existing) == nil &&
+			(existing.Kind != r.Kind || (existing.ProviderRequestID != "" && r.ProviderRequestID != "" && existing.ProviderRequestID != r.ProviderRequestID)) {
+			source += "_CONFLICT"
+		}
+	}
 	r.CommandID = cmd.CommandID
 	r.OperationID = cmd.CommandID
 	r.Durable = true

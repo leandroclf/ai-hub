@@ -103,3 +103,9 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - `dispatch.Command` carrega `retry_ttl_seconds`; a primeira falha transitória inicia a janela uma única vez. Tentativas posteriores não renovam o horizonte; TTL zero encerra a intenção como `EXPIRED` para reconciliação.
 - O teste PostgreSQL `TestPostgresRetryHorizonStartsOnceAndExpires` passou com a instância real: primeira falha, takeover após lease, backoff elegível, expiração e estado final `EXPIRED`.
 - A imagem atual de Órbita foi reconstruída e recriada no Compose oficial; `/healthz/ready` retornou `200`.
+
+## Continuação — conflito de observações externas
+
+- Callback/polling que chegam após um estado terminal e divergem do fato vencedor agora recebem fonte `CALLBACK_CONFLICT` ou `POLL_AFTER_FINAL_CONFLICT` em `operation_receipts`.
+- A evidência conflitante é conservada, mas não reabre a operação, não substitui o resultado durável e não cria novo outbox/efeito.
+- `TestPostgresPollingCallbackConflictRetainsBoth` passou no PostgreSQL real: duas observações, exatamente um fato terminal e uma evidência explicitamente conflitante.

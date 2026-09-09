@@ -76,6 +76,7 @@ Foram implementados e verificados os seguintes incrementos, sem promover artific
 - A validação individual dos 42 achados históricos foi documentada em `REAVALIACAO-42-INDIVIDUAL.md`; nenhum foi encerrado sem evidência própria.
 - O migrador agora interrompe divergência de checksum em vez de ignorá-la.
 - O retry transitório agora grava a primeira falha e uma janela absoluta em `command_intents`; a prova PostgreSQL real confirmou que takeover não renova o TTL e que a intenção termina em `EXPIRED` após o horizonte.
+- Observações finais divergentes de callback/polling agora são classificadas como `*_CONFLICT` em receipts duráveis; o resultado vencedor e o único outbox terminal permanecem inalterados, comprovado no PostgreSQL real.
 
 Assim, o estado correto continua sendo **implementação parcial qualificada**, não implementação integral. Permanecem abertos: restore populado reconciliado, adoção RLS no runtime dos serviços, conexão do executor ao DAG real, planos comerciais e jornadas administrativas restantes, ensaios completos de falha/reinício com oráculos independentes, fechamento individual dos achados quando houver prova, e as decisões D-01…D-07/T-R2-01. As alterações desta atualização ainda estão no working tree; não houve push, merge, implantação remota ou remoção de volumes.
 

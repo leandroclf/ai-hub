@@ -117,7 +117,8 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 	}
 	defer tx.Rollback()
 	var state, tenant, cell string
-	err = tx.QueryRowContext(ctx, `SELECT state,tenant_id,cell_id FROM operations WHERE operation_id=$1 FOR UPDATE`, c.Command.CommandID).Scan(&state, &tenant, &cell)
+	var existingRaw []byte
+	err = tx.QueryRowContext(ctx, `SELECT state,tenant_id,cell_id,result FROM operations WHERE operation_id=$1 FOR UPDATE`, c.Command.CommandID).Scan(&state, &tenant, &cell, &existingRaw)
 	if err != nil {
 		return err
 	}
@@ -136,6 +137,11 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 	}
 	if terminal {
 		source = "POLL_AFTER_FINAL"
+		var existing dispatch.Result
+		if json.Unmarshal(existingRaw, &existing) == nil &&
+			(existing.Kind != r.Kind || (existing.ProviderRequestID != "" && r.ProviderRequestID != "" && existing.ProviderRequestID != r.ProviderRequestID)) {
+			source += "_CONFLICT"
+		}
 	}
 	r.CommandID = c.Command.CommandID
 	r.OperationID = c.Command.CommandID

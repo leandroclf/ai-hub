@@ -165,11 +165,12 @@ func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 		}
 	}()
 	wg.Wait()
-	var facts, receipts int
+	var facts, receipts, conflicts int
 	s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&facts)
 	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receipts)
-	if facts != before+1 || receipts != 3 {
-		t.Fatalf("facts=%d before=%d receipts=%d", facts, before, receipts)
+	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1 AND source LIKE '%CONFLICT'`, cmd.CommandID).Scan(&conflicts)
+	if facts != before+1 || receipts != 3 || conflicts != 1 {
+		t.Fatalf("facts=%d before=%d receipts=%d conflicts=%d", facts, before, receipts, conflicts)
 	}
 	t.Log("Conflicting poll/callback conserved both observations and produced exactly one terminal outbox fact")
 }
