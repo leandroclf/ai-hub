@@ -95,3 +95,5 @@ A prova de retenção PostgreSQL+LocalStack também cobre execução efetiva: o 
 O harness de restore foi fortalecido com digestes determinísticos de linhas e correção de nomes de bucket S3. A execução isolada `autonomous_digest2` passou e conservou o oráculo externo sem replay; como não havia objetos no bucket fonte nessa janela, a prova ainda não encerra o restore populado de objetos, efeitos externos e financeiro.
 
 Foi adicionada uma injeção controlada de queda entre efeito externo e resposta HTTP. O provider-sim persiste a chave/efeito antes de fechar a conexão e o Cometa encaminha `force_drop_after_effect`; a implementação está coberta por teste unitário, mas o cenário integrado com protocolo real, recuperação e oráculo financeiro permanece aberto.
+
+No ensaio HTTP real após reconstrução da imagem atual, a primeira chamada perdeu a resposta e a repetição retornou `SUCCEEDED` com o mesmo identificador externo; o oráculo permaneceu em um único efeito. A prova ainda é do provider-sim; a integração completa com protocolo do Hub e oráculo financeiro permanece aberta.

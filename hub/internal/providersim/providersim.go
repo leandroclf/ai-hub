@@ -270,6 +270,10 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 			// O efeito e a chave ja foram persistidos acima. Fechar a
 			// conexao simula a queda entre o envio externo e a resposta,
 			// deixando o consumidor legitimamente em UNKNOWN.
+			s.mu.Lock()
+			s.ops[id] = &operation{result: result, ready: true}
+			s.saveStateLocked()
+			s.mu.Unlock()
 			if h, ok := w.(http.Hijacker); ok {
 				conn, _, err := h.Hijack()
 				if err == nil {
