@@ -20,7 +20,9 @@ SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = '$version') AS app
     \echo migration $domain/$version already applied
   \else
     \echo checksum mismatch $domain/$version
-    \quit 3
+    DO $$ BEGIN
+      RAISE EXCEPTION 'checksum mismatch %/%', '$domain', '$version';
+    END $$;
   \endif
 \else
   \i $file

@@ -53,7 +53,9 @@ type operation struct {
 type Server struct {
 	mu         sync.Mutex
 	ops        map[string]*operation
+	protocols  map[string]string
 	seq        int
+	effects    int
 	httpClient *http.Client
 	tokens     map[string]time.Time
 }
@@ -62,6 +64,7 @@ type Server struct {
 func NewServer() *Server {
 	return &Server{
 		ops:        make(map[string]*operation),
+		protocols:  make(map[string]string),
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 		tokens:     make(map[string]time.Time),
 	}
@@ -79,6 +82,7 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/v1/operations", s.handleSubmit)
 	mux.HandleFunc("/v1/operations/", s.handleGet)
 	mux.HandleFunc("/oauth/token", s.handleToken)
+	mux.HandleFunc("/__qualification/effects", s.handleEffects)
 }
 
 func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +144,31 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	id := s.nextID()
+	s.mu.Lock()
+	if id := s.protocols[req.ProtocolID]; id != "" {
+		op := s.ops[id]
+		var existing OperationResult
+		if op != nil {
+			existing = op.result
+		}
+		s.mu.Unlock()
+		if op == nil {
+			w.WriteHeader(http.StatusConflict)
+			return
+		}
+		if existing.Status == "PENDING" {
+			w.WriteHeader(http.StatusAccepted)
+		} else {
+			w.WriteHeader(http.StatusOK)
+		}
+		_ = json.NewEncoder(w).Encode(existing)
+		return
+	}
+	s.seq++
+	id := fmt.Sprintf("prov-req-%06d", s.seq)
+	s.protocols[req.ProtocolID] = id
+	s.effects++
+	s.mu.Unlock()
 	status := "SUCCEEDED"
 	if req.Fail {
 		status = "FAILED"
@@ -172,6 +200,16 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(result)
 	}
+}
+
+func (s *Server) handleEffects(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	writeJSON(w, http.StatusOK, map[string]any{"effects": s.effects, "protocols": len(s.protocols)})
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
