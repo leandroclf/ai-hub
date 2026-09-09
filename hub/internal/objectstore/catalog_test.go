@@ -159,5 +159,22 @@ func TestPostgresS3MultipartFileRef(t *testing.T) {
 	if err != nil || len(plan.FileIDs) != 0 {
 		t.Fatal("pinned obligation selected for purge")
 	}
-	t.Logf("direct multipart upload and streaming verify/download: %d bytes, 3 parts; pinned immutable version, SHA256 and tenant authorization verified against PostgreSQL+LocalStack; retention pin excludes purge", size)
+	if err = catalog.Unpin(ctx, "tenant-a", ref.ID, "protocol-obligation", "fixture-operator"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec("UPDATE file_refs SET retention_until=clock_timestamp()-interval '1 second' WHERE id=$1", ref.ID); err != nil {
+		t.Fatal(err)
+	}
+	batch, err := catalog.RunPurgeBatch(ctx, "tenant-a", "fixture-operator")
+	if err != nil || batch.Candidates != 1 || batch.Purged != 1 || batch.Failed != 0 {
+		t.Fatalf("retention batch: %+v, err=%v", batch, err)
+	}
+	tombstoned, err := catalog.IsTombstoned(ctx, "tenant-a", ref.ID)
+	if err != nil || !tombstoned {
+		t.Fatalf("purge tombstone missing: %v", err)
+	}
+	if _, err = catalog.Download(ctx, "tenant-a", ref.ID); !errors.Is(err, ErrNotFound) {
+		t.Fatal("purged object remained readable")
+	}
+	t.Logf("direct multipart upload and streaming verify/download: %d bytes, 3 parts; pin excluded first plan, then durable retention batch tombstoned and removed the unpinned version", size)
 }

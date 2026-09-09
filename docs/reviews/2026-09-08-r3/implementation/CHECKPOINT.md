@@ -107,6 +107,7 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 
 - O provider-sim passou a persistir `protocol_id`, `provider_request_id`, operações e contador de efeitos em `/var/lib/provider-sim/state.json`, com gravação atômica e volume exclusivo `provider-sim-data`.
 - Ensaio real: submissão sintética retornou `prov-req-000001` e `effects=1`; após `docker compose restart provider-sim`, a mesma submissão retornou o mesmo identificador e `effects=1, protocols=1`. Isso comprova não reexecução do simulador após reinício.
+- A prova PostgreSQL+LocalStack de objetos foi ampliada: pin inicialmente excluiu o arquivo do plano; após `UNPIN` auditado, `RunPurgeBatch` criou tombstone, removeu a versão S3 e `Download` passou a retornar `ErrNotFound` (`TestPostgresS3MultipartFileRef` PASS em 1,79s).
 
 ## Continuação — horizonte absoluto de retry
 
