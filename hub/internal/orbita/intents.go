@@ -144,7 +144,35 @@ func (s *Store) CompleteIntent(ctx context.Context, i Intent, delivered bool) (b
 		state = "DELIVERED"
 		code = ""
 	}
-	res, err := s.db.ExecContext(ctx, `UPDATE command_intents SET state=$4,last_error=NULLIF($5,''),lease_owner=NULL,lease_until=NULL,next_attempt_at=clock_timestamp()+interval '2 seconds' WHERE command_id=$1 AND lease_owner=$2 AND epoch=$3 AND lease_until>clock_timestamp() AND state='READY'`, i.Command.CommandID, i.Owner, i.Epoch, state, code)
+	// The retry horizon starts at the first transient transport failure and
+	// remains immutable across attempts and process restarts. Once exhausted,
+	// the intent stops publishing and remains available to reconciliation.
+	res, err := s.db.ExecContext(ctx, `
+		UPDATE command_intents
+		SET state = CASE
+			WHEN $4 = 'DELIVERED' THEN 'DELIVERED'
+			WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN 'EXPIRED'
+			WHEN $6 <= 0 THEN 'EXPIRED'
+			ELSE 'READY'
+		END,
+			retry_started_at = CASE
+				WHEN $4 = 'DELIVERED' THEN retry_started_at
+				WHEN retry_started_at IS NULL THEN clock_timestamp()
+				ELSE retry_started_at
+			END,
+			retry_until = CASE
+				WHEN $4 = 'DELIVERED' THEN retry_until
+				WHEN retry_until IS NULL AND $6 > 0 THEN clock_timestamp() + make_interval(secs=>$6)
+				ELSE retry_until
+			END,
+			last_error=NULLIF($5,''), lease_owner=NULL, lease_until=NULL,
+			next_attempt_at = CASE
+				WHEN $4 = 'DELIVERED' THEN clock_timestamp()
+				WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN clock_timestamp()
+				WHEN $6 <= 0 THEN clock_timestamp()
+				ELSE clock_timestamp()+make_interval(secs=>LEAST(2,$6))
+			END
+		WHERE command_id=$1 AND lease_owner=$2 AND epoch=$3 AND lease_until>clock_timestamp() AND state='READY'`, i.Command.CommandID, i.Owner, i.Epoch, state, code, i.Command.RetryTTLSeconds)
 	if err != nil {
 		return false, err
 	}

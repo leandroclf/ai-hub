@@ -96,3 +96,10 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - D-01…D-07 receberam defaults executáveis para laboratório/homologação em `05-DECISOES-E-MIGRACAO.md`: envelope sintético, SLA e retry, unidade financeira, retenção, plataforma, capacidade de provedor e catálogo versionado.
 - T-R2-01 recebeu a regra operacional conservadora: só anunciar sucesso após confirmação durável; em dúvida, preservar `UNKNOWN` e reconciliar; resultado tardio não reabre protocolo. A prova formal da fronteira relógio/commit continua obrigatória.
 - As decisões habilitam a execução técnica, mas não substituem ratificação nominal de produção, contrato comercial, orçamento, retenção regulatória, matriz de capacidades de provedor ou aceite de RPO/RTO.
+
+## Continuação — horizonte absoluto de retry
+
+- `command_intents` passou a persistir `retry_started_at` e `retry_until` pela migração `core/0035_retry_horizon.sql`.
+- `dispatch.Command` carrega `retry_ttl_seconds`; a primeira falha transitória inicia a janela uma única vez. Tentativas posteriores não renovam o horizonte; TTL zero encerra a intenção como `EXPIRED` para reconciliação.
+- O teste PostgreSQL `TestPostgresRetryHorizonStartsOnceAndExpires` passou com a instância real: primeira falha, takeover após lease, backoff elegível, expiração e estado final `EXPIRED`.
+- A imagem atual de Órbita foi reconstruída e recriada no Compose oficial; `/healthz/ready` retornou `200`.

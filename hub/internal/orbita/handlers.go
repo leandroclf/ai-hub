@@ -253,7 +253,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		TenantID: tenantID, ApplicationID: principal.ApplicationID, CellID: p.CellID, ProtocolID: protocolID, StepID: protocolID, CommandID: commandID,
 		TraceID: traceID, DispatchMode: dispatchMode, Epoch: 1, ServiceCode: req.ServiceCode, ServiceVersion: snapshot.Target.Version,
 		ProviderAccountID: snapshot.SelectedRoute.ProviderAccountID, RequestBody: json.RawMessage(transformed), StepDeadline: clientDeadline,
-		AcceptedAt: now, RetryDeadline: now.Add(time.Duration(target.RetryTTLSeconds) * time.Second), ConfigSnapshot: snapshotBytes, EconomicSnapshot: economicBytes,
+		AcceptedAt: now, RetryDeadline: now.Add(time.Duration(target.RetryTTLSeconds) * time.Second), RetryTTLSeconds: target.RetryTTLSeconds, ConfigSnapshot: snapshotBytes, EconomicSnapshot: economicBytes,
 	}
 	accepted, created, err := h.store.Admit(ctx, p, cmd, principal.Subject, sale.StrictBalance)
 	if errors.Is(err, ErrIdempotencyConflict) {

@@ -39,6 +39,7 @@ type Command struct {
 	EconomicSnapshot json.RawMessage   `json:"economic_snapshot,omitempty"`
 	AcceptedAt       time.Time         `json:"accepted_at"`
 	RetryDeadline    time.Time         `json:"retry_deadline"`
+	RetryTTLSeconds  int               `json:"retry_ttl_seconds,omitempty"`
 	TenantID         string            `json:"tenant_id"`
 	ProtocolID       string            `json:"protocol_id"`
 	StepID           string            `json:"step_id"`
