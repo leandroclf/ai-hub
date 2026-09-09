@@ -1,0 +1,9 @@
+=== RUN   TestR3PreservesLargeInteger
+    r3_precision_probe_test.go:7: contrato alterado: input={"id":9007199254740993} output={"id":9007199254740992}
+--- FAIL: TestR3PreservesLargeInteger (0.00s)
+=== RUN   TestR3RejectsEnumViolation
+    r3_precision_probe_test.go:11: schema enum ignorado: INVALID foi aceito
+--- FAIL: TestR3RejectsEnumViolation (0.00s)
+FAIL
+FAIL	ai-hub/hub/internal/atlas	0.003s
+FAIL

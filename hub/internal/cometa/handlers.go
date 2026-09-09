@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/providersim"
+	"github.com/google/uuid"
 )
 
 // Handlers expoe a API interna do Cometa: despacho direto (COM-06),
@@ -107,19 +109,68 @@ func (h *Handlers) handleGetOperation(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-// handleCallback recebe o retorno assincrono do provedor simulado em
-// modo async_callback (EXE-08: autenticar, persistir recibo, so
-// depois responder 2xx — autenticacao de callback e um placeholder
-// nesta referencia local, ja que nao ha segredo real de provedor).
+// handleCallback recebe o retorno assíncrono do provedor. A capability por
+// operação protege o endpoint enquanto a política homologada por conta
+// (assinatura, mTLS ou token do provedor) não está disponível neste contrato.
+// A resposta 2xx só é emitida depois da custódia durável.
 func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
 	operationID := strings.TrimPrefix(r.URL.Path, "/internal/callbacks/")
+	if operationID == "" || strings.Contains(operationID, "/") {
+		http.Error(w, "invalid callback operation", http.StatusBadRequest)
+		return
+	}
+	if _, err := uuid.Parse(operationID); err != nil {
+		http.Error(w, "invalid callback operation", http.StatusBadRequest)
+		return
+	}
+	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 512*1024))
 	var result providersim.OperationResult
-	if err := json.NewDecoder(r.Body).Decode(&result); err != nil {
+	if err != nil || len(body) == 0 || json.Unmarshal(body, &result) != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	// 2xx confirma recebimento HTTP; a aplicacao do fato ocorre de
-	// forma duravel antes desta resposta (EXE-08).
-	h.exec.ApplyExternalObservation(r.Context(), dispatch.Command{}, operationID, result)
+	token := r.URL.Query().Get("token")
+	if err := h.store.AuthenticateCallback(r.Context(), operationID, token); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			if err := h.store.StoreOrphanCallback(r.Context(), operationID, token, body); err != nil {
+				http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusAccepted)
+			return
+		}
+		http.Error(w, "callback unauthorized", http.StatusUnauthorized)
+		return
+	}
+	// 2xx is an acknowledgement of durable custody, never merely of parsing.
+	if _, err := h.exec.ApplyExternalObservation(r.Context(), operationID, result); err != nil {
+		http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	// A callback conhecida também funciona como gatilho seguro para recuperar
+	// callbacks que chegaram antes da correlação. Cada item é reaplicado pelo
+	// mesmo caminho de custódia e permanece idempotente no estado terminal.
+	if _, err := h.store.ReconcileCallbackInbox(r.Context(), func(ctx context.Context, id string, observed dispatch.Result) error {
+		providerResult := providersim.OperationResult{
+			ProviderRequestID: observed.ProviderRequestID,
+			Detail:            observed.ErrorMessage,
+		}
+		if observed.Kind == dispatch.FactSucceeded {
+			providerResult.Status = "SUCCEEDED"
+		} else if observed.Kind == dispatch.FactFailed {
+			providerResult.Status = "FAILED"
+		} else {
+			return errors.New("invalid reconciled callback status")
+		}
+		_, err := h.exec.ApplyExternalObservation(ctx, id, providerResult)
+		return err
+	}); err != nil {
+		http.Error(w, "callback reconciliation unavailable", http.StatusServiceUnavailable)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }

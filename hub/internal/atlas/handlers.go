@@ -228,6 +228,13 @@ func validateProviderAccount(pa *ProviderAccount) error {
 		if strings.TrimSpace(pa.AuthUsername) == "" || strings.TrimSpace(pa.AuthSecretRef) == "" {
 			return errors.New("BASIC exige auth_username e auth_secret_ref")
 		}
+	case "API_KEY":
+		if pa.APIKeyHeader != "X-API-Key" && pa.APIKeyHeader != "Authorization" {
+			return errors.New("API_KEY exige api_key_header X-API-Key ou Authorization")
+		}
+		if strings.TrimSpace(pa.AuthSecretRef) == "" {
+			return errors.New("API_KEY exige auth_secret_ref")
+		}
 	case "OAUTH_CLIENT_CREDENTIALS", "MTLS_OAUTH":
 		tokenURL, parseErr := url.ParseRequestURI(strings.TrimSpace(pa.OAuthTokenURL))
 		if parseErr != nil || tokenURL.Scheme == "" || tokenURL.Host == "" ||
@@ -238,7 +245,7 @@ func validateProviderAccount(pa *ProviderAccount) error {
 			return errors.New("MTLS_OAUTH exige mtls_certificate_ref")
 		}
 	default:
-		return errors.New("auth_type aceita somente NONE, BASIC, OAUTH_CLIENT_CREDENTIALS ou MTLS_OAUTH")
+		return errors.New("auth_type aceita somente NONE, BASIC, API_KEY, OAUTH_CLIENT_CREDENTIALS ou MTLS_OAUTH")
 	}
 	return nil
 }

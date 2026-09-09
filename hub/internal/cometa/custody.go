@@ -2,7 +2,10 @@ package cometa
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -17,6 +20,9 @@ type Submission struct {
 	Command          dispatch.Command
 	Owner, AttemptID string
 	Epoch            int64
+	// CallbackToken is a one-operation capability sent only to the provider
+	// in its callback URL. Its hash, never the capability itself, is durable.
+	CallbackToken string
 }
 
 // PrepareSubmission grants the first submitter exclusive ownership and records
@@ -32,13 +38,18 @@ func (s *Store) PrepareSubmission(ctx context.Context, cmd dispatch.Command, bin
 	}
 	sum := sha256.Sum256(raw)
 	hash := hex.EncodeToString(sum[:])
-	claim := Submission{Command: cmd, Owner: idgen.New(), AttemptID: idgen.New(), Epoch: 1}
+	callbackToken, err := newCallbackToken()
+	if err != nil {
+		return Submission{}, false, err
+	}
+	claim := Submission{Command: cmd, Owner: idgen.New(), AttemptID: idgen.New(), Epoch: 1, CallbackToken: callbackToken}
+	tokenHash := callbackTokenHash(callbackToken)
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Submission{}, false, err
 	}
 	defer tx.Rollback()
-	res, err := tx.ExecContext(ctx, `INSERT INTO operations(operation_id,protocol_id,provider_account_id,credential_binding_id,secret_version_id,tenant_id,application_id,cell_id,command,command_hash,state,submit_owner,submit_epoch,submit_lease_until) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'SUBMITTING',$11,1,clock_timestamp()+interval '30 seconds') ON CONFLICT(operation_id) DO NOTHING`, cmd.CommandID, cmd.ProtocolID, cmd.ProviderAccountID, binding, secretVersion, cmd.TenantID, cmd.ApplicationID, cmd.CellID, raw, hash, claim.Owner)
+	res, err := tx.ExecContext(ctx, `INSERT INTO operations(operation_id,protocol_id,provider_account_id,credential_binding_id,secret_version_id,tenant_id,application_id,cell_id,command,command_hash,callback_token_hash,state,submit_owner,submit_epoch,submit_lease_until) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'SUBMITTING',$12,1,clock_timestamp()+interval '30 seconds') ON CONFLICT(operation_id) DO NOTHING`, cmd.CommandID, cmd.ProtocolID, cmd.ProviderAccountID, binding, secretVersion, cmd.TenantID, cmd.ApplicationID, cmd.CellID, raw, hash, tokenHash, claim.Owner)
 	if err != nil {
 		return Submission{}, false, err
 	}
@@ -64,6 +75,127 @@ func (s *Store) PrepareSubmission(ctx context.Context, cmd dispatch.Command, bin
 		return Submission{}, false, err
 	}
 	return claim, true, nil
+}
+
+func newCallbackToken() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func callbackTokenHash(token string) string {
+	sum := sha256.Sum256([]byte(token))
+	return hex.EncodeToString(sum[:])
+}
+
+// AuthenticateCallback verifies the per-operation callback capability without
+// exposing it in storage or accepting a callback for a different operation.
+func (s *Store) AuthenticateCallback(ctx context.Context, operationID, token string) error {
+	if operationID == "" || token == "" {
+		return errors.New("missing callback capability")
+	}
+	var expected string
+	if err := s.db.QueryRowContext(ctx, `SELECT callback_token_hash FROM operations WHERE operation_id=$1`, operationID).Scan(&expected); err != nil {
+		return err
+	}
+	actual := callbackTokenHash(token)
+	if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(actual)) != 1 {
+		return errors.New("invalid callback capability")
+	}
+	return nil
+}
+
+// StoreOrphanCallback conserva um callback válido sintaticamente cuja
+// operação ainda não está disponível nesta autoridade. O token é guardado
+// somente como hash; a reconciliação posterior decide se ele pertence à
+// operação que apareceu.
+func (s *Store) StoreOrphanCallback(ctx context.Context, operationID, token string, body []byte) error {
+	if operationID == "" || token == "" || len(body) == 0 {
+		return errors.New("invalid orphan callback")
+	}
+	sum := sha256.Sum256(body)
+	_, err := s.db.ExecContext(ctx, `
+		INSERT INTO callback_inbox(inbox_id,operation_id,token_hash,body_sha256,body)
+		VALUES($1,$2,$3,$4,$5)
+		ON CONFLICT(operation_id,body_sha256)
+		DO UPDATE SET occurrences=callback_inbox.occurrences+1
+	`, idgen.New(), operationID, callbackTokenHash(token), hex.EncodeToString(sum[:]), body)
+	return err
+}
+
+// ReconcileCallbackInbox reapplies callbacks received before operation
+// correlation. Invalid capabilities are retained as rejected evidence and
+// never reach the external-observation state machine.
+func (s *Store) ReconcileCallbackInbox(ctx context.Context, apply func(context.Context, string, dispatch.Result) error) (int, error) {
+	rows, err := s.db.QueryContext(ctx, `
+		SELECT i.inbox_id, i.operation_id, i.token_hash, i.body,
+		       o.callback_token_hash, o.command
+		FROM callback_inbox i
+		JOIN operations o ON o.operation_id=i.operation_id
+		WHERE i.disposition='RECEIVED'
+		ORDER BY i.received_at
+	`)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	count := 0
+	for rows.Next() {
+		var inboxID, operationID, receivedHash, expectedHash string
+		var body, commandRaw []byte
+		if err := rows.Scan(&inboxID, &operationID, &receivedHash, &body, &expectedHash, &commandRaw); err != nil {
+			return count, err
+		}
+		if subtle.ConstantTimeCompare([]byte(receivedHash), []byte(expectedHash)) != 1 {
+			if _, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition='REJECTED',processed_at=clock_timestamp() WHERE inbox_id=$1 AND disposition='RECEIVED'`, inboxID); err != nil {
+				return count, err
+			}
+			continue
+		}
+		var result providersimOperationResult
+		if err := json.Unmarshal(body, &result); err != nil {
+			return count, err
+		}
+		if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
+			if _, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition='REJECTED',processed_at=clock_timestamp() WHERE inbox_id=$1 AND disposition='RECEIVED'`, inboxID); err != nil {
+				return count, err
+			}
+			continue
+		}
+		var command dispatch.Command
+		if err := json.Unmarshal(commandRaw, &command); err != nil {
+			return count, err
+		}
+		if err := apply(ctx, operationID, result.toDispatchResult()); err != nil {
+			return count, err
+		}
+		if _, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition='APPLIED',processed_at=clock_timestamp() WHERE inbox_id=$1 AND disposition='RECEIVED'`, inboxID); err != nil {
+			return count, err
+		}
+		count++
+	}
+	return count, rows.Err()
+}
+
+// providersimOperationResult is kept local to avoid coupling custody to the
+// provider simulator package in production reconciliation code.
+type providersimOperationResult struct {
+	ProviderRequestID string `json:"provider_request_id"`
+	Status            string `json:"status"`
+	Detail            string `json:"detail,omitempty"`
+}
+
+func (r providersimOperationResult) toDispatchResult() dispatch.Result {
+	kind := dispatch.FactUnknown
+	if r.Status == "SUCCEEDED" {
+		kind = dispatch.FactSucceeded
+	}
+	if r.Status == "FAILED" {
+		kind = dispatch.FactFailed
+	}
+	return dispatch.Result{Kind: kind, ProviderRequestID: r.ProviderRequestID, ResponseBody: map[string]any{"detail": r.Detail}}
 }
 
 func (s *Store) DurableResult(ctx context.Context, cmd dispatch.Command) (dispatch.Result, error) {

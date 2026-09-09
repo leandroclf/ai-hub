@@ -87,6 +87,7 @@ type ProviderAccount struct {
 	BaseURL              string `json:"base_url"`
 	ProviderMode         string `json:"provider_mode"`
 	AuthType             string `json:"auth_type"`
+	APIKeyHeader         string `json:"api_key_header"`
 	AuthUsername         string `json:"auth_username"`
 	AuthSecretRef        string `json:"auth_secret_ref"`
 	OAuthTokenURL        string `json:"oauth_token_url"`
@@ -107,8 +108,8 @@ func (s *Store) UpsertProviderAccount(ctx context.Context, pa ProviderAccount) e
 	_, err := s.db.ExecContext(ctx, `
 		INSERT INTO provider_accounts (provider_account_id, provider_id, environment, base_url, provider_mode,
 			auth_type, auth_username, auth_secret_ref, oauth_token_url, oauth_client_id,
-			oauth_client_secret_ref, mtls_certificate_ref, token_ttl_seconds)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+			oauth_client_secret_ref, mtls_certificate_ref, api_key_header, token_ttl_seconds)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		ON CONFLICT (provider_account_id) DO UPDATE SET
 			provider_id = EXCLUDED.provider_id,
 			environment = EXCLUDED.environment,
@@ -121,10 +122,11 @@ func (s *Store) UpsertProviderAccount(ctx context.Context, pa ProviderAccount) e
 			oauth_client_id = EXCLUDED.oauth_client_id,
 			oauth_client_secret_ref = EXCLUDED.oauth_client_secret_ref,
 			mtls_certificate_ref = EXCLUDED.mtls_certificate_ref,
+			api_key_header = EXCLUDED.api_key_header,
 			token_ttl_seconds = EXCLUDED.token_ttl_seconds
 	`, pa.ProviderAccountID, pa.ProviderID, pa.Environment, pa.BaseURL, pa.ProviderMode,
 		pa.AuthType, pa.AuthUsername, pa.AuthSecretRef, pa.OAuthTokenURL, pa.OAuthClientID,
-		pa.OAuthClientSecretRef, pa.MTLSCertificateRef, pa.TokenTTLSeconds)
+		pa.OAuthClientSecretRef, pa.MTLSCertificateRef, pa.APIKeyHeader, pa.TokenTTLSeconds)
 	if err != nil {
 		return fmt.Errorf("atlas: publicar conta de provedor: %w", err)
 	}
@@ -137,12 +139,12 @@ func (s *Store) GetProviderAccount(ctx context.Context, id string) (ProviderAcco
 	row := s.db.QueryRowContext(ctx, `
 		SELECT provider_account_id, provider_id, environment, base_url, provider_mode,
 		       auth_type, auth_username, auth_secret_ref, oauth_token_url, oauth_client_id,
-		       oauth_client_secret_ref, mtls_certificate_ref, token_ttl_seconds
+		       oauth_client_secret_ref, mtls_certificate_ref, api_key_header, token_ttl_seconds
 		FROM provider_accounts WHERE provider_account_id = $1
 	`, id)
 	err := row.Scan(&pa.ProviderAccountID, &pa.ProviderID, &pa.Environment, &pa.BaseURL, &pa.ProviderMode,
 		&pa.AuthType, &pa.AuthUsername, &pa.AuthSecretRef, &pa.OAuthTokenURL, &pa.OAuthClientID,
-		&pa.OAuthClientSecretRef, &pa.MTLSCertificateRef, &pa.TokenTTLSeconds)
+		&pa.OAuthClientSecretRef, &pa.MTLSCertificateRef, &pa.APIKeyHeader, &pa.TokenTTLSeconds)
 	if errors.Is(err, sql.ErrNoRows) {
 		return ProviderAccount{}, ErrNotFound
 	}

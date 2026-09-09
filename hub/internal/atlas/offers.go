@@ -1,11 +1,15 @@
 package atlas
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"reflect"
 	"sort"
+	"strings"
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
@@ -27,12 +31,23 @@ type OfferSnapshot struct {
 }
 
 func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service, account string) (OfferSnapshot, error) {
-	resources, err := s.ListResources(ctx, "offers", tenant, "", "PUBLISHED", "", 0, 101)
-	if err != nil {
-		return OfferSnapshot{}, err
-	}
-	if len(resources) > 100 {
-		return OfferSnapshot{}, errors.New("ofertas ambíguas ou excesso no escopo")
+	// O portfólio não tem limite artificial antes do filtro efetivo. A
+	// paginação mantém cada leitura limitada e a ambiguidade só é avaliada
+	// entre ofertas elegíveis para a aplicação/serviço solicitados.
+	var resources []Resource
+	var err error
+	afterID, afterVersion := "", 0
+	for {
+		page, err := s.ListResources(ctx, "offers", tenant, "", "PUBLISHED", afterID, afterVersion, 200)
+		if err != nil {
+			return OfferSnapshot{}, err
+		}
+		resources = append(resources, page...)
+		if len(page) < 200 {
+			break
+		}
+		last := page[len(page)-1]
+		afterID, afterVersion = last.ID, last.Version
 	}
 	var selected *Resource
 	var data CatalogData
@@ -165,13 +180,14 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 	if len(input) > 256*1024 || len(mapping) > 128 {
 		return nil, errors.New("transformação excede limite")
 	}
-	var source map[string]any
-	if json.Unmarshal(input, &source) != nil {
+	var source map[string]json.RawMessage
+	decoder := json.NewDecoder(bytes.NewReader(input))
+	if err := decoder.Decode(&source); err != nil {
 		return nil, errors.New("entrada deve ser objeto JSON")
 	}
 	out := source
 	if len(mapping) > 0 {
-		out = map[string]any{}
+		out = map[string]json.RawMessage{}
 		for dst, src := range mapping {
 			if !safeField(dst) || !safeField(src) {
 				return nil, errors.New("campo de mapeamento inválido")
@@ -184,50 +200,162 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 		}
 	}
 	var contract struct {
-		Type       string   `json:"type"`
-		Required   []string `json:"required"`
-		Properties map[string]struct {
-			Type string `json:"type"`
-		} `json:"properties"`
+		Type       string                     `json:"type"`
+		Required   []string                   `json:"required"`
+		Properties map[string]json.RawMessage `json:"properties"`
 	}
 	if json.Unmarshal(schema, &contract) != nil || contract.Type != "object" {
 		return nil, errors.New("schema inválido")
+	}
+	if contract.Properties == nil {
+		return nil, errors.New("schema sem propriedades")
 	}
 	for _, field := range contract.Required {
 		if _, ok := out[field]; !ok {
 			return nil, errors.New("campo obrigatório ausente: " + field)
 		}
 	}
-	for field, rule := range contract.Properties {
+	for field, ruleRaw := range contract.Properties {
 		value, ok := out[field]
 		if !ok {
 			continue
 		}
-		valid := false
-		switch rule.Type {
-		case "string":
-			_, valid = value.(string)
-		case "number":
-			_, valid = value.(float64)
-		case "integer":
-			f, ok := value.(float64)
-			valid = ok && f == float64(int64(f))
-		case "boolean":
-			_, valid = value.(bool)
-		case "object":
-			_, valid = value.(map[string]any)
-		case "array":
-			_, valid = value.([]any)
-		case "null":
-			valid = value == nil
+		var rule struct {
+			Type string            `json:"type"`
+			Enum []json.RawMessage `json:"enum"`
 		}
+		if json.Unmarshal(ruleRaw, &rule) != nil || rule.Type == "" {
+			return nil, errors.New("regra de schema inválida: " + field)
+		}
+		valid := validJSONType(value, rule.Type)
 		if !valid {
 			return nil, errors.New("tipo inválido: " + field)
 		}
+		if len(rule.Enum) > 0 {
+			matched := false
+			for _, candidate := range rule.Enum {
+				if jsonEqual(value, candidate) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				return nil, errors.New("valor fora do enum: " + field)
+			}
+		}
+	}
+	if encoded, err := json.Marshal(out); err != nil {
+		return nil, errors.New("resultado não serializável")
+	} else if err := validateJSONSchema(encoded, schema, "$"); err != nil {
+		return nil, err
+	}
+	if len(mapping) == 0 {
+		return append(json.RawMessage(nil), input...), nil
 	}
 	b, err := json.Marshal(out)
 	if len(b) > 256*1024 {
 		return nil, errors.New("resultado excede limite")
 	}
 	return b, err
+}
+
+// validateJSONSchema cobre o subconjunto declarativo publicado pelo Hub e
+// recusa construções não qualificadas. A validação conserva RawMessage até o
+// fim; nenhum número passa por float64 e nenhum campo extra é aceito quando o
+// contrato o proíbe.
+func validateJSONSchema(value, schema json.RawMessage, path string) error {
+	var rule struct {
+		Type                 string                     `json:"type"`
+		Required             []string                   `json:"required"`
+		Properties           map[string]json.RawMessage `json:"properties"`
+		AdditionalProperties *bool                      `json:"additionalProperties"`
+		Items                json.RawMessage            `json:"items"`
+		Enum                 []json.RawMessage          `json:"enum"`
+	}
+	if err := json.Unmarshal(schema, &rule); err != nil || rule.Type == "" {
+		return errors.New("schema inválido em " + path)
+	}
+	if len(rule.Enum) > 0 {
+		matched := false
+		for _, candidate := range rule.Enum {
+			if jsonEqual(value, candidate) {
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return errors.New("valor fora do enum: " + path)
+		}
+	}
+	if !validJSONType(value, rule.Type) {
+		return errors.New("tipo inválido: " + path)
+	}
+	if rule.Type == "object" {
+		var fields map[string]json.RawMessage
+		if json.Unmarshal(value, &fields) != nil {
+			return errors.New("objeto inválido: " + path)
+		}
+		for _, required := range rule.Required {
+			if _, ok := fields[required]; !ok {
+				return errors.New("campo obrigatório ausente: " + path + "." + required)
+			}
+		}
+		for name, field := range fields {
+			child, ok := rule.Properties[name]
+			if !ok {
+				if rule.AdditionalProperties != nil && !*rule.AdditionalProperties {
+					return errors.New("campo adicional não permitido: " + path + "." + name)
+				}
+				continue
+			}
+			if err := validateJSONSchema(field, child, path+"."+name); err != nil {
+				return err
+			}
+		}
+	}
+	if rule.Type == "array" && len(rule.Items) > 0 {
+		var items []json.RawMessage
+		if json.Unmarshal(value, &items) != nil {
+			return errors.New("array inválido: " + path)
+		}
+		for i, item := range items {
+			if err := validateJSONSchema(item, rule.Items, fmt.Sprintf("%s[%d]", path, i)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func validJSONType(raw json.RawMessage, want string) bool {
+	trimmed := bytes.TrimSpace(raw)
+	switch want {
+	case "string":
+		var v string
+		return json.Unmarshal(trimmed, &v) == nil
+	case "number", "integer":
+		var n json.Number
+		if json.Unmarshal(trimmed, &n) != nil || n.String() == "" {
+			return false
+		}
+		return want != "integer" || !strings.ContainsAny(n.String(), ".eE")
+	case "boolean":
+		return bytes.Equal(trimmed, []byte("true")) || bytes.Equal(trimmed, []byte("false"))
+	case "object":
+		return len(trimmed) > 1 && trimmed[0] == '{'
+	case "array":
+		return len(trimmed) > 1 && trimmed[0] == '['
+	case "null":
+		return bytes.Equal(trimmed, []byte("null"))
+	default:
+		return false
+	}
+}
+
+func jsonEqual(a, b json.RawMessage) bool {
+	var left, right any
+	la, lb := json.NewDecoder(bytes.NewReader(a)), json.NewDecoder(bytes.NewReader(b))
+	la.UseNumber()
+	lb.UseNumber()
+	return la.Decode(&left) == nil && lb.Decode(&right) == nil && reflect.DeepEqual(left, right)
 }

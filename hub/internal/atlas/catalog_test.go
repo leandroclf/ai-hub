@@ -54,6 +54,25 @@ func TestTechnicalProjection(t *testing.T) {
 		t.Fatal("arbitrary mapping accepted")
 	}
 }
+
+func TestTechnicalProjectionPreservesExactNumbersAndEnums(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object","properties":{"id":{"type":"integer"},"status":{"type":"string","enum":["OK"]}}}`)
+	input := json.RawMessage(`{"id":9007199254740993,"status":"OK"}`)
+	out, err := TransformJSON(input, nil, schema)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(input, out) {
+		t.Fatalf("representação numérica alterada: input=%s output=%s", input, out)
+	}
+	if _, err := TransformJSON(json.RawMessage(`{"id":1,"status":"INVALID"}`), nil, schema); err == nil {
+		t.Fatal("valor fora do enum aceito")
+	}
+	nested := json.RawMessage(`{"type":"object","additionalProperties":false,"properties":{"meta":{"type":"object","additionalProperties":false,"properties":{"code":{"type":"string"}}}}}`)
+	if _, err := TransformJSON(json.RawMessage(`{"meta":{"code":"ok","extra":true}}`), nil, nested); err == nil {
+		t.Fatal("campo adicional aninhado aceito")
+	}
+}
 func TestImportSecretSanitization(t *testing.T) {
 	input := json.RawMessage(`{"variable":[{"key":"secret","value":"never-retain-me"}],"item":[{"request":{"method":"POST","url":{"raw":"https://name:password@api.example.test/service?token=never-retain-me"},"header":[{"key":"Authorization","value":"Bearer never-retain-me"}],"body":{"raw":"never-retain-me"},"auth":{"type":"bearer","bearer":[{"value":"never-retain-me"}]}}}]}`)
 	items, err := SanitizeImport(input)

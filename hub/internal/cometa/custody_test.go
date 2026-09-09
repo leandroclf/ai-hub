@@ -101,6 +101,24 @@ func TestPostgresSubmissionAndObservationCustody(t *testing.T) {
 	t.Log("24 submit contenders: one owner and prewritten attempt; 12 observations: one terminal fact; actual response retained; tenant conflict denied; late UNKNOWN preserved as receipt")
 }
 
+func TestCallbackCapabilityIsRandomAndStoredOnlyAsHash(t *testing.T) {
+	first, err := newCallbackToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := newCallbackToken()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if first == second || len(first) < 40 {
+		t.Fatalf("callback capability is not an independent high-entropy value")
+	}
+	hash := callbackTokenHash(first)
+	if hash == first || len(hash) != 64 || hash == callbackTokenHash(second) {
+		t.Fatalf("callback capability hashing is invalid")
+	}
+}
+
 func TestPostgresPendingCustodyAtomic(t *testing.T) {
 	t.Setenv("ENVIRONMENT", "local")
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
