@@ -1,7 +1,9 @@
 import {createHmac} from 'node:crypto';
 import {writeFile} from 'node:fs/promises';
-const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'/tmp/ai-hub-r2-browser/node_modules/playwright/index.mjs');
-const browser=await chromium.launch({headless:true});
+const playwright=await import(process.env.PLAYWRIGHT_MODULE||'playwright-core');
+const chromium=playwright.chromium||playwright.default?.chromium;
+if(!chromium) throw new Error('playwright-core sem export chromium');
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome'});
 const page=await browser.newPage({viewport:{width:1365,height:900}});
 const evidence=[];
 try {
@@ -18,6 +20,29 @@ try {
  await page.waitForURL('http://localhost:13000/services');
  await page.getByRole('heading',{name:'Serviços',exact:true}).waitFor();
  evidence.push({check:'OIDC Authorization Code PKCE + password + OTP in Chromium',status:'PASS'});
+ const clientCode=`browser-client-${Date.now()}`;
+ await page.getByRole('link',{name:'Clientes',exact:true}).click();
+ await page.getByRole('heading',{name:'Clientes',exact:true}).waitFor();
+ await page.getByRole('link',{name:'Criar rascunho',exact:true}).click();
+ await page.getByLabel('Nome',{exact:true}).fill(`Browser ${clientCode}`);
+ await page.getByLabel('Código estável',{exact:true}).fill(clientCode);
+ await page.locator('#field-environment').selectOption('local');
+ await page.locator('#field-cell_id').fill('r2-cell-a');
+ await page.locator('#field-capacity_units').fill('1');
+ await page.locator('#field-isolation_class').selectOption('SHARED');
+ await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
+ await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
+ await page.reload({waitUntil:'networkidle'});
+ await page.waitForTimeout(60500-(Date.now()%30000));
+ await page.getByRole('button',{name:'Entrar',exact:true}).click();
+ await page.locator('#username').fill('operadora-a');
+ await page.locator('#password').fill('R2-fixture-password!');
+ await page.locator('#kc-login').click();
+ await page.locator('#otp').waitFor();
+ for(let attempt=0;attempt<4 && await page.locator('#otp').count();attempt++){const retryCounter=Buffer.alloc(8);retryCounter.writeBigUInt64BE(BigInt(Math.floor(Date.now()/30000)));const retryDigest=createHmac('sha1',Buffer.from('JBSWY3DPEHPK3PXP')).update(retryCounter).digest();const retryOffset=retryDigest[retryDigest.length-1]&15;const retryOtp=((retryDigest.readUInt32BE(retryOffset)&0x7fffffff)%1000000).toString().padStart(6,'0');await page.locator('#otp').fill(retryOtp);await page.locator('#kc-login').click();await page.waitForTimeout(1100);}
+ await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
+ await page.locator(`input[value="Browser ${clientCode}"]`).waitFor();
+ evidence.push({check:'Admin resource save, reload and durable readback',status:'PASS',resource:clientCode});
  await page.getByRole('link',{name:'Provedores',exact:true}).click();
  await page.waitForURL('http://localhost:13000/providers');
  await page.getByRole('heading',{name:'Provedores',exact:true}).waitFor();

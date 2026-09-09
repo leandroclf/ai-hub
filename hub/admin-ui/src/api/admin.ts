@@ -12,4 +12,13 @@ export async function api<T>(path:string,init:RequestInit={}):Promise<T>{
  if(!response.ok)throw new APIError(response.status,data);return data as T;
 }
 export const resourceURL=(r:Pick<Resource,'kind'|'id'|'version'>)=>`/admin/v1/${r.kind}/${encodeURIComponent(r.id)}/${r.version}`;
-export function command<T>(path:string,body:unknown,revision?:number){return api<T>(path,{method:'POST',headers:{'Idempotency-Key':crypto.randomUUID(),...(revision?{'If-Match':`"${revision}"`}:{})},body:JSON.stringify(body)})}
+export async function command<T>(path:string,body:unknown,revision?:number,idempotencyKey=crypto.randomUUID()):Promise<T>{
+ const request=()=>api<T>(path,{method:'POST',headers:{'Idempotency-Key':idempotencyKey,...(revision?{'If-Match':`"${revision}"`}: {})},body:JSON.stringify(body)});
+ try{return await request()}catch(error){
+  // Timeout/5xx pode ocorrer depois do efeito externo. A segunda tentativa
+  // reutiliza a mesma intenção para que a autoridade durável deduplique-a.
+  if(error instanceof APIError&&error.status<500)throw error;
+  await new Promise(resolve=>setTimeout(resolve,150));
+  return request();
+ }
+}

@@ -88,6 +88,22 @@ services:
       postgres:
         condition: service_healthy
     mem_limit: 768m
+  identity-reconcile:
+    image: python:3.12-alpine
+    command: ["python", "/scripts/reconcile_identity.py"]
+    environment:
+      KEYCLOAK_URL: http://identity:8080
+      KEYCLOAK_REALM: ai-hub-r2
+      KEYCLOAK_ADMIN_USER: r2-bootstrap
+      KEYCLOAK_ADMIN_PASSWORD: r2-bootstrap-fixture
+      R2_FIXTURE_PASSWORD: R2-fixture-password!
+      R2_FIXTURE_OTP: JBSWY3DPEHPK3PXP
+    volumes:
+    - ./scripts/reconcile_identity.py:/scripts/reconcile_identity.py:ro
+    depends_on:
+    - identity
+    restart: "no"
+    mem_limit: 128m
   atlas:
     image: ai-hub-r2-atlas:r2
     build:
@@ -439,6 +455,10 @@ services:
       KONG_ADMIN_LISTEN: 'off'
       KONG_PROXY_ACCESS_LOG: /dev/stdout
       KONG_PROXY_ERROR_LOG: /dev/stderr
+      # O default `auto` cria um worker por CPU disponível no Docker Desktop.
+      # A fixture local precisa de concorrência limitada para manter o healthcheck
+      # e os serviços de domínio responsivos durante a qualificação.
+      KONG_NGINX_WORKER_PROCESSES: '1'
     volumes:
     - ./kong.yml:/kong/kong.yml:ro
     ports:
