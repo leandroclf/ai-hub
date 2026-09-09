@@ -17,7 +17,7 @@ func main() {
 	addr := config.Env("HTTP_ADDR", ":8090")
 
 	srv := httpserver.New(log, nil, nil, nil)
-	sim := providersim.NewServer()
+	sim := providersim.NewServerWithState(config.Env("PROVIDER_STATE_FILE", ""))
 	mux := http.NewServeMux()
 	sim.Routes(mux)
 	srv.Handle("/v1/", mux)

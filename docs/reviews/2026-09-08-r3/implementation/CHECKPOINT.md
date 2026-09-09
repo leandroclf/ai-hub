@@ -103,6 +103,11 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - `RunRetentionWorker` foi conectado ao processo Órbita e executa imediatamente e em intervalo configurável. O escopo é somente a lista explícita `RETENTION_TENANTS`; configuração vazia desabilita o expurgo e não existe wildcard.
 - `TenantsFromEnv` remove espaços, entradas vazias e duplicatas; a regressão unitária passou. O worker preserva obrigações por meio dos pins e do estado durável existente.
 
+## Continuação — oráculo externo persistente
+
+- O provider-sim passou a persistir `protocol_id`, `provider_request_id`, operações e contador de efeitos em `/var/lib/provider-sim/state.json`, com gravação atômica e volume exclusivo `provider-sim-data`.
+- Ensaio real: submissão sintética retornou `prov-req-000001` e `effects=1`; após `docker compose restart provider-sim`, a mesma submissão retornou o mesmo identificador e `effects=1, protocols=1`. Isso comprova não reexecução do simulador após reinício.
+
 ## Continuação — horizonte absoluto de retry
 
 - `command_intents` passou a persistir `retry_started_at` e `retry_until` pela migração `core/0035_retry_horizon.sql`.

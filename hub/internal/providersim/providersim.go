@@ -13,6 +13,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -58,15 +60,81 @@ type Server struct {
 	effects    int
 	httpClient *http.Client
 	tokens     map[string]time.Time
+	stateFile  string
+}
+
+type persistedState struct {
+	Ops       map[string]persistedOperation `json:"ops"`
+	Protocols map[string]string             `json:"protocols"`
+	Seq       int                           `json:"seq"`
+	Effects   int                           `json:"effects"`
+}
+
+type persistedOperation struct {
+	Result OperationResult `json:"result"`
+	Ready  bool            `json:"ready"`
 }
 
 // NewServer cria um novo provedor simulado.
 func NewServer() *Server {
+	return NewServerWithState("")
+}
+
+// NewServerWithState habilita a persistência local do oráculo externo. O
+// arquivo deve estar em um volume exclusivo do simulador; estado comercial
+// real nunca é usado nesta fixture.
+func NewServerWithState(stateFile string) *Server {
+	s := newServer(stateFile)
+	s.loadState()
+	return s
+}
+
+func newServer(stateFile string) *Server {
 	return &Server{
 		ops:        make(map[string]*operation),
 		protocols:  make(map[string]string),
 		httpClient: &http.Client{Timeout: 5 * time.Second},
 		tokens:     make(map[string]time.Time),
+		stateFile:  stateFile,
+	}
+}
+
+func (s *Server) loadState() {
+	if s.stateFile == "" {
+		return
+	}
+	b, err := os.ReadFile(s.stateFile)
+	if err != nil {
+		return
+	}
+	var state persistedState
+	if json.Unmarshal(b, &state) != nil {
+		return
+	}
+	for id, op := range state.Ops {
+		s.ops[id] = &operation{result: op.Result, ready: op.Ready}
+	}
+	s.protocols, s.seq, s.effects = state.Protocols, state.Seq, state.Effects
+}
+
+func (s *Server) saveStateLocked() {
+	if s.stateFile == "" {
+		return
+	}
+	state := persistedState{Ops: make(map[string]persistedOperation, len(s.ops)), Protocols: s.protocols, Seq: s.seq, Effects: s.effects}
+	for id, op := range s.ops {
+		state.Ops[id] = persistedOperation{Result: op.result, Ready: op.ready}
+	}
+	b, err := json.Marshal(state)
+	if err != nil {
+		return
+	}
+	if err = os.MkdirAll(filepath.Dir(s.stateFile), 0700); err != nil {
+		return
+	}
+	tmp := s.stateFile + ".tmp"
+	if err = os.WriteFile(tmp, b, 0600); err == nil {
+		_ = os.Rename(tmp, s.stateFile)
 	}
 }
 
@@ -168,6 +236,10 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	id := fmt.Sprintf("prov-req-%06d", s.seq)
 	s.protocols[req.ProtocolID] = id
 	s.effects++
+	// Acknowledge the external effect only after its durable fixture oracle
+	// has recorded the stable protocol mapping.
+	s.ops[id] = &operation{result: OperationResult{ProviderRequestID: id, Status: "PENDING"}}
+	s.saveStateLocked()
 	s.mu.Unlock()
 	status := "SUCCEEDED"
 	if req.Fail {
@@ -179,6 +251,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	case ModeAsyncPoll:
 		s.mu.Lock()
 		s.ops[id] = &operation{result: OperationResult{ProviderRequestID: id, Status: "PENDING"}}
+		s.saveStateLocked()
 		s.mu.Unlock()
 		go s.resolveAfter(id, req.DelayMs, result)
 		w.WriteHeader(http.StatusAccepted)
@@ -186,6 +259,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	case ModeAsyncCallback:
 		s.mu.Lock()
 		s.ops[id] = &operation{result: OperationResult{ProviderRequestID: id, Status: "PENDING"}}
+		s.saveStateLocked()
 		s.mu.Unlock()
 		go s.callbackAfter(id, req.DelayMs, result, req.CallbackURL)
 		w.WriteHeader(http.StatusAccepted)
@@ -196,6 +270,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 		s.mu.Lock()
 		s.ops[id] = &operation{result: result, ready: true}
+		s.saveStateLocked()
 		s.mu.Unlock()
 		w.WriteHeader(http.StatusOK)
 		_ = json.NewEncoder(w).Encode(result)
@@ -224,6 +299,7 @@ func (s *Server) resolveAfter(id string, delayMs int, result OperationResult) {
 	}
 	s.mu.Lock()
 	s.ops[id] = &operation{result: result, ready: true}
+	s.saveStateLocked()
 	s.mu.Unlock()
 }
 

@@ -398,6 +398,7 @@ services:
       CELL_ID: r2-cell-a
       OTEL_SERVICE_NAME: provider-sim
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
+      PROVIDER_STATE_FILE: /var/lib/provider-sim/state.json
     ports:
     - 127.0.0.1:18090:8090
     stop_grace_period: 30s
@@ -409,6 +410,8 @@ services:
         max-file: '2'
         mode: non-blocking
         max-buffer-size: 1m
+    volumes:
+    - provider-sim-data:/var/lib/provider-sim
   webhook-sink:
     image: ai-hub-r2-webhook-sink:r2
     build:
@@ -535,3 +538,4 @@ volumes:
   tempo-data: {}
   alloy-data: {}
   grafana-data: {}
+  provider-sim-data: {}

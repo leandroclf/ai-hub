@@ -87,3 +87,5 @@ Os defaults técnicos de D-01…D-07 e T-R2-01 foram registrados em `docs/review
 ## Atualização técnica — worker de retenção
 
 O runtime de Órbita passou a executar o expurgo de objetos por lote durável quando `RETENTION_TENANTS` contém uma lista explícita. O plano de candidatos é persistido antes do efeito externo; falhas individuais deixam `PURGING` para retry e pins continuam impedindo expurgo de obrigações. A configuração vazia mantém o worker desabilitado por segurança. A regressão de normalização de tenants e a compilação dos pacotes passaram; a qualificação integrada de retenção com objetos expirados e falha/retry do S3 ainda é um gate aberto.
+
+O provider-sim agora mantém seu oráculo de efeitos em volume exclusivo, com gravação atômica. A submissão sintética repetida após reinício preservou o mesmo identificador externo e um único efeito. Essa prova melhora a qualificação de não-reexecução, mas não substitui o restore completo reconciliado com a autoridade financeira.
