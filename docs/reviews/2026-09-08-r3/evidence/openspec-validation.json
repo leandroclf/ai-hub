@@ -1,0 +1,72 @@
+{
+  "items": [
+    {
+      "id": "r3-01-custodia-e-integracao-externa",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 42
+    },
+    {
+      "id": "r3-02-portfolio-e-contratos-efetivos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 41
+    },
+    {
+      "id": "r3-03-capacidade-credenciais-e-latencia",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 41
+    },
+    {
+      "id": "r3-04-console-e-autorizacao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 41
+    },
+    {
+      "id": "r3-05-financeiro-e-entregas",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 41
+    },
+    {
+      "id": "r3-06-dados-plataforma-e-continuidade",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 41
+    },
+    {
+      "id": "r3-07-qualificacao-integral",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 4
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 7,
+      "passed": 7,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 7,
+        "passed": 7,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/workspace/scratch/30287dd6a4c3/AI_HUB_R3",
+    "source": "nearest"
+  }
+}

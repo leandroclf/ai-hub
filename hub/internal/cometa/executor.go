@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -143,7 +144,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		Fail:       fail,
 	}
 	if pa.ProviderMode == string(providersim.ModeAsyncCallback) {
-		req.CallbackURL = e.callbackURLFor(operationID)
+		req.CallbackURL = e.callbackURLFor(operationID, claim.CallbackToken)
 	}
 
 	e.log.Debug("enviando chamada ao provedor", "trace_id", cmd.TraceID, "operation_id", operationID,
@@ -157,7 +158,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	httpReq.Header.Set("Content-Type", "application/json")
 	if err := e.tokenCache.Apply(ctx, client, pa.ProviderAccountID, providerauth.Config{
 		BindingID: cred.BindingID, TenantID: cmd.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion,
-		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef,
+		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader,
 		TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID,
 		ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef,
 		TokenTTLSeconds: pa.TokenTTLSeconds,
@@ -269,8 +270,8 @@ func (e *Executor) publishOperationFact(ctx context.Context, operationID string,
 	return tx.Commit()
 }
 
-func (e *Executor) callbackURLFor(operationID string) string {
-	return fmt.Sprintf("%s/internal/callbacks/%s", e.selfURL, operationID)
+func (e *Executor) callbackURLFor(operationID, token string) string {
+	return fmt.Sprintf("%s/internal/callbacks/%s?token=%s", e.selfURL, operationID, url.QueryEscape(token))
 }
 
 // shouldFail permite injetar falha deterministica a partir do proprio
@@ -315,28 +316,32 @@ func inputObject(body any) (map[string]any, bool) {
 // ApplyExternalObservation aplica uma observacao recebida por callback
 // ou por polling ao consolidado da operacao (EXE-06): se ja concluida,
 // trata como evidencia duplicada.
-func (e *Executor) ApplyExternalObservation(ctx context.Context, cmdCtx dispatch.Command, operationID string, result providersim.OperationResult) {
-	op, err := e.store.Get(ctx, operationID)
+func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID string, result providersim.OperationResult) (dispatch.Result, error) {
+	_, err := e.store.Get(ctx, operationID)
 	if err != nil {
 		e.log.Warn("observacao para operacao desconhecida", "operation_id", operationID)
-		return
-	}
-	if op.State == StateSucceeded || op.State == StateFailed {
-		e.log.Info("observacao duplicada ignorada (uma transicao final ja aplicada)", "operation_id", operationID)
-		return
+		return dispatch.Result{}, err
 	}
 	if result.Status == "PENDING" {
-		return
+		return dispatch.Result{}, errors.New("callback pending is not a final observation")
 	}
 	var raw []byte
 	if err = e.store.db.QueryRowContext(ctx, "SELECT command FROM operations WHERE operation_id=$1", operationID).Scan(&raw); err != nil {
-		return
+		return dispatch.Result{}, err
 	}
 	var command dispatch.Command
 	if json.Unmarshal(raw, &command) != nil {
-		return
+		return dispatch.Result{}, errors.New("invalid stored callback command")
 	}
-	e.finalize(ctx, command, operationID, result)
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: map[string]any{"detail": result.Detail}}
+	if result.Status == "SUCCEEDED" {
+		response.Kind = dispatch.FactSucceeded
+	} else if result.Status == "FAILED" {
+		response.Kind = dispatch.FactFailed
+	} else {
+		return dispatch.Result{}, errors.New("invalid callback status")
+	}
+	return e.store.ConserveObservation(ctx, command, response, "CALLBACK")
 }
 
 func factKindFor(state State) dispatch.FactKind {

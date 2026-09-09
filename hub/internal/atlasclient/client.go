@@ -74,6 +74,7 @@ type ProviderAccount struct {
 	BaseURL              string `json:"base_url"`
 	ProviderMode         string `json:"provider_mode"`
 	AuthType             string `json:"auth_type"`
+	APIKeyHeader         string `json:"api_key_header"`
 	AuthUsername         string `json:"auth_username"`
 	AuthSecretRef        string `json:"auth_secret_ref"`
 	OAuthTokenURL        string `json:"oauth_token_url"`

@@ -24,7 +24,10 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		auth.Error(w, 401, "unauthenticated")
 		return
 	}
-	if p.Workload || !p.HasScope("protocols:read") {
+	// A consumer token with protocols:read is not an administrative identity.
+	// Administrative diagnostics require a nominal, MFA-authenticated role;
+	// cross-tenant access is checked separately below.
+	if p.Workload || !p.HasScope("protocols:read") || !p.MFA || !p.HasRole("hub_protocol_reader") {
 		auth.Error(w, 403, "forbidden")
 		return
 	}
@@ -37,7 +40,7 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		tenant = p.TenantID
 	}
 	cross := tenant != p.TenantID || tenant == "*"
-	if tenant == "" || cross && (!p.MFA || !p.HasRole("hub_protocol_reader")) {
+	if tenant == "" || cross && !p.HasScope("admin:cross_tenant") {
 		auth.Error(w, 403, "global_reader_mfa_required")
 		return
 	}

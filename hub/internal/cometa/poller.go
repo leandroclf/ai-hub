@@ -102,7 +102,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil {
 		return unknown("poll_request_invalid")
 	}
-	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: c.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
+	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: c.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
 		return unknown("poll_authentication_failed")
 	}
 	// Recheck the committed fence after credential resolution, before HTTP I/O.

@@ -11,8 +11,12 @@ for db in hub_control hub_core hub_finance; do
 EOSQL
 done
 
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_control -f /migrations/control/0001_init.sql
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_control -f /migrations/control/0002_provider_auth.sql
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_control -f /migrations/control/0003_provider_api_catalog.sql
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_core -f /migrations/core/0001_init.sql
-psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_finance -f /migrations/finance/0001_init.sql
+for file in /migrations/control/*.sql; do
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_control -f "$file"
+done
+for file in /migrations/core/*.sql; do
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_core -f "$file"
+done
+for file in /migrations/finance/*.sql; do
+  psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d hub_finance -f "$file"
+done

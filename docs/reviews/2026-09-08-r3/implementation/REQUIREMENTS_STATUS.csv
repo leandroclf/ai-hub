@@ -1,0 +1,190 @@
+requisito;titulo;origem;tarefas;situacao;evidencia;observacao
+ARQ-01;Fronteiras;baseline;r2-08-operacao-elastica-e-observavel:2.2/3.2;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+ARQ-02;Topologia de referência;baseline;"r2-04-catalogo-produtos-e-contratos:2.6/3.6;r2-08-operacao-elastica-e-observavel:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+ARQ-03;Escolha tecnológica;baseline;r2-03-integracoes-credenciais-e-pressao:2.3/3.3;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+ARQ-04;Linguagem e tecnologia por aplicação;baseline;r2-09-qualificacao-e-rastreabilidade:2.4/3.4;REVALIDACAO_PENDENTE;;ESCOLHA_CONSTATADA
+ARQ-05;Razões das dependências e revisão de alternativas;baseline;r2-08-operacao-elastica-e-observavel:2.8/3.8;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+ARQ-06;Tecnologias para expansão e continuidade;baseline;"r2-08-operacao-elastica-e-observavel:2.2/3.2;r2-08-operacao-elastica-e-observavel:2.4/3.4;r2-08-operacao-elastica-e-observavel:2.5/3.5";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+COM-01;Comunicação interna definida;baseline;r2-02-execucao-duravel-e-resultados:2.7/3.7;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+COM-02;Integração de clientes e provedores;baseline;"r2-01-identidade-e-isolamento:2.4/3.4;r2-03-integracoes-credenciais-e-pressao:2.1/3.1;r2-04-catalogo-produtos-e-contratos:2.5/3.5;r2-04-catalogo-produtos-e-contratos:2.7/3.7;r2-05-console-administrativo:2.4/3.4;r2-07-objetos-dados-e-retencao:2.1/3.1";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+COM-03;Mensagens e idempotência;baseline;"r2-02-execucao-duravel-e-resultados:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.5/3.5";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+COM-04;Evolução de contratos;baseline;"r2-02-execucao-duravel-e-resultados:2.5/3.5;r2-02-execucao-duravel-e-resultados:2.8/3.8;r2-04-catalogo-produtos-e-contratos:2.5/3.5;r2-09-qualificacao-e-rastreabilidade:2.3/3.3";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+COM-05;Mesmo contrato em GET e webhook;baseline;"r2-02-execucao-duravel-e-resultados:2.8/3.8;r2-03-integracoes-credenciais-e-pressao:2.7/3.7;r2-04-catalogo-produtos-e-contratos:2.5/3.5";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+COM-06;Contrato do despacho direto;baseline;"r2-02-execucao-duravel-e-resultados:2.3/3.3;r2-02-execucao-duravel-e-resultados:2.4/3.4;r2-02-execucao-duravel-e-resultados:2.7/3.7";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CAT-01;Catálogo de serviços;baseline;"r2-04-catalogo-produtos-e-contratos:2.1/3.1;r2-04-catalogo-produtos-e-contratos:2.7/3.7;r2-05-console-administrativo:2.2/3.2;r2-05-console-administrativo:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CAT-02;Portfólio e disponibilidade;baseline;"r2-04-catalogo-produtos-e-contratos:2.1/3.1;r2-04-catalogo-produtos-e-contratos:2.2/3.2;r2-04-catalogo-produtos-e-contratos:2.7/3.7;r2-05-console-administrativo:2.3/3.3;r2-05-console-administrativo:2.4/3.4";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-03;Agregação;baseline;"r2-04-catalogo-produtos-e-contratos:2.3/3.3;r2-05-console-administrativo:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-04;Composição;baseline;"r2-04-catalogo-produtos-e-contratos:2.4/3.4;r2-05-console-administrativo:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-05;Consolidação e efeitos;baseline;"r2-04-catalogo-produtos-e-contratos:2.3/3.3;r2-04-catalogo-produtos-e-contratos:2.4/3.4;r2-05-console-administrativo:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-06;Seleção e equivalência de provedores;baseline;"r2-03-integracoes-credenciais-e-pressao:2.1/3.1;r2-03-integracoes-credenciais-e-pressao:2.6/3.6;r2-04-catalogo-produtos-e-contratos:2.2/3.2;r2-05-console-administrativo:2.6/3.6";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-07;Política comercial do produto;baseline;"r2-05-console-administrativo:2.5/3.5;r2-06-financeiro-auditavel:2.4/3.4";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-08;Rastreabilidade da composição;baseline;"r2-04-catalogo-produtos-e-contratos:2.3/3.3;r2-04-catalogo-produtos-e-contratos:2.4/3.4;r2-05-console-administrativo:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-09;Contratos técnicos por cliente;baseline;"r2-02-execucao-duravel-e-resultados:2.8/3.8;r2-04-catalogo-produtos-e-contratos:2.5/3.5;r2-05-console-administrativo:2.7/3.7";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CAT-10;Elegibilidade de SLA e capacidade;baseline;"r2-03-integracoes-credenciais-e-pressao:2.8/3.8;r2-04-catalogo-produtos-e-contratos:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CAT-11;Crescimento, modalidade e elegibilidade de credencial;baseline;"r2-02-execucao-duravel-e-resultados:2.7/3.7;r2-03-integracoes-credenciais-e-pressao:2.1/3.1;r2-03-integracoes-credenciais-e-pressao:2.2/3.2;r2-04-catalogo-produtos-e-contratos:2.2/3.2;r2-04-catalogo-produtos-e-contratos:2.8/3.8;r2-05-console-administrativo:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CFG-01;Portal e API administrativa;baseline;"r2-01-identidade-e-isolamento:2.5/3.5;r2-04-catalogo-produtos-e-contratos:2.8/3.8;r2-05-console-administrativo:2.1/3.1;r2-05-console-administrativo:2.2/3.2;r2-05-console-administrativo:2.3/3.3;r2-05-console-administrativo:2.12/3.12";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CFG-02;Publicação governada;baseline;"r2-01-identidade-e-isolamento:2.5/3.5;r2-04-catalogo-produtos-e-contratos:2.1/3.1;r2-04-catalogo-produtos-e-contratos:2.6/3.6;r2-04-catalogo-produtos-e-contratos:2.7/3.7;r2-05-console-administrativo:2.4/3.4";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CFG-03;Manutenção e diagnóstico;baseline;"r2-01-identidade-e-isolamento:2.3/3.3;r2-03-integracoes-credenciais-e-pressao:2.7/3.7;r2-05-console-administrativo:2.8/3.8;r2-05-console-administrativo:2.9/3.9;r2-05-console-administrativo:2.10/3.10";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+SEG-01;Identidade e autorização;baseline;"r2-01-identidade-e-isolamento:2.1/3.1;r2-01-identidade-e-isolamento:2.2/3.2;r2-01-identidade-e-isolamento:2.5/3.5;r2-05-console-administrativo:2.1/3.1;r2-08-operacao-elastica-e-observavel:2.8/3.8";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+SEG-02;Destinos, callbacks e dados;baseline;"r2-01-identidade-e-isolamento:2.4/3.4;r2-03-integracoes-credenciais-e-pressao:2.4/3.4;r2-03-integracoes-credenciais-e-pressao:2.7/3.7;r2-07-objetos-dados-e-retencao:2.1/3.1";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+SEG-03;Isolamento e auditoria;baseline;"r2-01-identidade-e-isolamento:2.1/3.1;r2-01-identidade-e-isolamento:2.2/3.2;r2-01-identidade-e-isolamento:2.5/3.5;r2-07-objetos-dados-e-retencao:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CFG-04;Configuração dos novos limites;baseline;"r2-03-integracoes-credenciais-e-pressao:2.5/3.5;r2-04-catalogo-produtos-e-contratos:2.1/3.1;r2-05-console-administrativo:2.7/3.7";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+SEG-04;Administração entre tenants para desenvolvedores;baseline;"r2-01-identidade-e-isolamento:2.3/3.3;r2-05-console-administrativo:2.1/3.1;r2-05-console-administrativo:2.8/3.8;r2-05-console-administrativo:2.9/3.9";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+CFG-05;Gestão de credenciais Hub–cliente–provedor;baseline;"r2-01-identidade-e-isolamento:2.4/3.4;r2-03-integracoes-credenciais-e-pressao:2.2/3.2;r2-05-console-administrativo:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+CFG-06;Onboarding e capacidade como serviço interno;baseline;"r2-04-catalogo-produtos-e-contratos:2.8/3.8;r2-05-console-administrativo:2.2/3.2;r2-05-console-administrativo:2.3/3.3;r2-08-operacao-elastica-e-observavel:2.4/3.4;r2-08-operacao-elastica-e-observavel:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+SEG-05;Resolução, rotação e isolamento de segredo;baseline;"r2-03-integracoes-credenciais-e-pressao:2.2/3.2;r2-03-integracoes-credenciais-e-pressao:2.3/3.3;r2-05-console-administrativo:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-01;Contrato de aquisição;baseline;"r2-05-console-administrativo:2.11/3.11;r2-06-financeiro-auditavel:2.1/3.1";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+FIN-02;Contrato de venda e planos;baseline;"r2-04-catalogo-produtos-e-contratos:2.2/3.2;r2-05-console-administrativo:2.11/3.11;r2-06-financeiro-auditavel:2.1/3.1;r2-06-financeiro-auditavel:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-03;Vigência e snapshot;baseline;"r2-04-catalogo-produtos-e-contratos:2.6/3.6;r2-05-console-administrativo:2.7/3.7;r2-06-financeiro-auditavel:2.1/3.1";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-04;Medição e chaves econômicas;baseline;"r2-02-execucao-duravel-e-resultados:2.5/3.5;r2-06-financeiro-auditavel:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-05;Matriz de incidência;baseline;"r2-06-financeiro-auditavel:2.1/3.1;r2-06-financeiro-auditavel:2.2/3.2;r2-06-financeiro-auditavel:2.4/3.4";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+FIN-06;Reserva de saldo e limites;baseline;"r2-05-console-administrativo:2.11/3.11;r2-06-financeiro-auditavel:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-07;Apuração e ledger;baseline;"r2-05-console-administrativo:2.11/3.11;r2-06-financeiro-auditavel:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+FIN-08;Fechamento, conciliação e pagamento;baseline;"r2-05-console-administrativo:2.11/3.11;r2-06-financeiro-auditavel:2.6/3.6";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+FIN-09;Exemplos de referência para QA;baseline;"r2-06-financeiro-auditavel:2.2/3.2;r2-06-financeiro-auditavel:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-10;Quebra de SLA, custo tardio e créditos;baseline;"r2-02-execucao-duravel-e-resultados:2.6/3.6;r2-03-integracoes-credenciais-e-pressao:2.8/3.8;r2-05-console-administrativo:2.11/3.11;r2-06-financeiro-auditavel:2.3/3.3;r2-06-financeiro-auditavel:2.5/3.5;r2-06-financeiro-auditavel:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+FIN-11;Conta, credencial e responsabilidade econômica;baseline;"r2-03-integracoes-credenciais-e-pressao:2.2/3.2;r2-06-financeiro-auditavel:2.1/3.1;r2-06-financeiro-auditavel:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DEC-01;Decisões arquiteturais de referência;baseline;r2-09-qualificacao-e-rastreabilidade:2.4/3.4;REVALIDACAO_PENDENTE;;DOCUMENTAL
+DEC-02;Registro de decisões pendentes (P-01 a P-11);baseline;r2-09-qualificacao-e-rastreabilidade:2.1/3.1;REVALIDACAO_PENDENTE;;DOCUMENTAL
+DEC-03;Decisões herdadas da v3 e preservadas;baseline;r2-09-qualificacao-e-rastreabilidade:2.4/3.4;REVALIDACAO_PENDENTE;;DOCUMENTAL
+DEC-04;Decisões e compatibilidade introduzidas na v4;baseline;r2-09-qualificacao-e-rastreabilidade:2.4/3.4;REVALIDACAO_PENDENTE;;DOCUMENTAL
+DEC-05;Registro de gaps, riscos e mitigação;baseline;"r2-09-qualificacao-e-rastreabilidade:2.1/3.1;r2-09-qualificacao-e-rastreabilidade:2.4/3.4";REVALIDACAO_PENDENTE;;DOCUMENTAL
+OPE-01;Modelo de capacidade;baseline;r2-08-operacao-elastica-e-observavel:2.9/3.9;REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-02;Estratégia de baixa latência;baseline;r2-08-operacao-elastica-e-observavel:2.9/3.9;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-03;SLOs e semântica de garantia;baseline;"r2-08-operacao-elastica-e-observavel:2.7/3.7;r2-08-operacao-elastica-e-observavel:2.9/3.9";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-04;Ambientes e alta disponibilidade;baseline;"r2-08-operacao-elastica-e-observavel:2.1/3.1;r2-08-operacao-elastica-e-observavel:2.2/3.2;r2-08-operacao-elastica-e-observavel:2.8/3.8";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-05;Probes, escala e proteção;baseline;"r2-08-operacao-elastica-e-observavel:2.2/3.2;r2-08-operacao-elastica-e-observavel:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-06;Observabilidade e runbooks;baseline;"r2-05-console-administrativo:2.10/3.10;r2-08-operacao-elastica-e-observavel:2.7/3.7";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-07;Amortecimento e controle adaptativo do provedor;baseline;"r2-03-integracoes-credenciais-e-pressao:2.6/3.6;r2-05-console-administrativo:2.6/3.6";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-08;Isolamento de concorrência e células;baseline;"r2-03-integracoes-credenciais-e-pressao:2.6/3.6;r2-08-operacao-elastica-e-observavel:2.4/3.4;r2-08-operacao-elastica-e-observavel:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-09;Orçamento de latência e paralelismo;baseline;r2-08-operacao-elastica-e-observavel:2.9/3.9;REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-10;Aferição de SLA em ambas as relações;baseline;"r2-02-execucao-duravel-e-resultados:2.6/3.6;r2-03-integracoes-credenciais-e-pressao:2.8/3.8;r2-05-console-administrativo:2.10/3.10;r2-08-operacao-elastica-e-observavel:2.7/3.7";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-11;Preservação de informação e limites da garantia;baseline;"r2-02-execucao-duravel-e-resultados:2.5/3.5;r2-02-execucao-duravel-e-resultados:2.9/3.9;r2-07-objetos-dados-e-retencao:2.2/3.2;r2-07-objetos-dados-e-retencao:2.3/3.3;r2-07-objetos-dados-e-retencao:2.5/3.5;r2-08-operacao-elastica-e-observavel:2.9/3.9";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-12;Escala automática de ponta a ponta;baseline;r2-08-operacao-elastica-e-observavel:2.4/3.4;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-13;Matriz de dependências e fallback seguro;baseline;"r2-03-integracoes-credenciais-e-pressao:2.3/3.3;r2-08-operacao-elastica-e-observavel:2.3/3.3;r2-08-operacao-elastica-e-observavel:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+OPE-14;Manutenção sem indisponibilidade evitável;baseline;r2-08-operacao-elastica-e-observavel:2.3/3.3;REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+OPE-15;Criticidade, tolerância a falhas e continuidade operacional;baseline;"r2-07-objetos-dados-e-retencao:2.5/3.5;r2-08-operacao-elastica-e-observavel:2.9/3.9;r2-09-qualificacao-e-rastreabilidade:2.3/3.3";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+EXE-01;Admissão durável;baseline;"r2-02-execucao-duravel-e-resultados:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-02;Modos de atendimento;baseline;r2-02-execucao-duravel-e-resultados:2.7/3.7;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-03;Estados e autoridade;baseline;"r2-02-execucao-duravel-e-resultados:2.9/3.9;r2-04-catalogo-produtos-e-contratos:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-04;Operação e correlação;baseline;"r2-02-execucao-duravel-e-resultados:2.3/3.3;r2-02-execucao-duravel-e-resultados:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-05;Polling configurável;baseline;r2-03-integracoes-credenciais-e-pressao:2.4/3.4;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-06;Concorrência entre callback e polling;baseline;r2-03-integracoes-credenciais-e-pressao:2.4/3.4;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-07;Contrato de consultas públicas;baseline;"r2-01-identidade-e-isolamento:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.8/3.8;r2-05-console-administrativo:2.8/3.8";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-08;Webhooks;baseline;"r2-02-execucao-duravel-e-resultados:2.5/3.5;r2-03-integracoes-credenciais-e-pressao:2.7/3.7;r2-05-console-administrativo:2.9/3.9";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-09;Falhas, retry e encerramento;baseline;"r2-02-execucao-duravel-e-resultados:2.3/3.3;r2-02-execucao-duravel-e-resultados:2.9/3.9;r2-03-integracoes-credenciais-e-pressao:2.5/3.5;r2-05-console-administrativo:2.9/3.9";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-10;TTL de reprocessamento em segundos;baseline;"r2-03-integracoes-credenciais-e-pressao:2.5/3.5;r2-05-console-administrativo:2.7/3.7";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-11;Deadline, encerramento e disputa temporal;baseline;"r2-02-execucao-duravel-e-resultados:2.6/3.6;r2-03-integracoes-credenciais-e-pressao:2.8/3.8;r2-05-console-administrativo:2.7/3.7";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-12;Rejeição de retorno tardio sem apagar evidência;baseline;r2-02-execucao-duravel-e-resultados:2.6/3.6;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-13;Paralelismo e espera eficiente;baseline;"r2-03-integracoes-credenciais-e-pressao:2.6/3.6;r2-04-catalogo-produtos-e-contratos:2.3/3.3;r2-04-catalogo-produtos-e-contratos:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-14;SYNC direto, prazo e resposta final;baseline;"r2-02-execucao-duravel-e-resultados:2.4/3.4;r2-02-execucao-duravel-e-resultados:2.7/3.7";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-15;Posse única entre despacho direto, fila e recuperação;baseline;"r2-02-execucao-duravel-e-resultados:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.3/3.3;r2-02-execucao-duravel-e-resultados:2.9/3.9";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+EXE-16;UUIDv7, repetição e consulta futura;baseline;"r2-01-identidade-e-isolamento:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-01;Bancos e propriedade;baseline;"r2-01-identidade-e-isolamento:2.2/3.2;r2-07-objetos-dados-e-retencao:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-02;Modelo lógico mínimo;baseline;r2-02-execucao-duravel-e-resultados:2.1/3.1;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-03;Transações e referências;baseline;"r2-02-execucao-duravel-e-resultados:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.2/3.2;r2-02-execucao-duravel-e-resultados:2.3/3.3;r2-06-financeiro-auditavel:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-04;Resultado como fonte de consulta;baseline;"r2-02-execucao-duravel-e-resultados:2.4/3.4;r2-02-execucao-duravel-e-resultados:2.8/3.8;r2-05-console-administrativo:2.8/3.8;r2-07-objetos-dados-e-retencao:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-05;Arquivos e atomicidade com objetos;baseline;"r2-07-objetos-dados-e-retencao:2.1/3.1;r2-07-objetos-dados-e-retencao:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-06;Retenção e expurgo;baseline;r2-07-objetos-dados-e-retencao:2.3/3.3;REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+DAD-07;Isolamento, recuperação e auditoria;baseline;"r2-01-identidade-e-isolamento:2.2/3.2;r2-07-objetos-dados-e-retencao:2.4/3.4;r2-07-objetos-dados-e-retencao:2.5/3.5;r2-08-operacao-elastica-e-observavel:2.1/3.1";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-08;Persistência adicional de contrato, prazo e pressão;baseline;"r2-04-catalogo-produtos-e-contratos:2.6/3.6;r2-07-objetos-dados-e-retencao:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-09;Dependência mínima de escrita, sem custódia fictícia;baseline;"r2-02-execucao-duravel-e-resultados:2.1/3.1;r2-02-execucao-duravel-e-resultados:2.9/3.9;r2-07-objetos-dados-e-retencao:2.2/3.2;r2-08-operacao-elastica-e-observavel:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-10;Cache dispensável e continuidade de leitura;baseline;"r2-03-integracoes-credenciais-e-pressao:2.3/3.3;r2-04-catalogo-produtos-e-contratos:2.6/3.6;r2-07-objetos-dados-e-retencao:2.4/3.4;r2-08-operacao-elastica-e-observavel:2.6/3.6";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+DAD-11;Dados, placement e crescimento de células;baseline;"r2-04-catalogo-produtos-e-contratos:2.8/3.8;r2-06-financeiro-auditavel:2.3/3.3;r2-08-operacao-elastica-e-observavel:2.4/3.4;r2-08-operacao-elastica-e-observavel:2.5/3.5";REVALIDACAO_PENDENTE;;NAO_IMPLEMENTADO
+QUA-01;Estratégia de engenharia;baseline;"r2-04-catalogo-produtos-e-contratos:2.7/3.7;r2-08-operacao-elastica-e-observavel:2.1/3.1;r2-09-qualificacao-e-rastreabilidade:2.2/3.2";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+QUA-02;Casos críticos de falha e concorrência;baseline;r2-09-qualificacao-e-rastreabilidade:2.2/3.2;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+QUA-03;Critérios de aceite e evidência;baseline;"r2-05-console-administrativo:2.12/3.12;r2-09-qualificacao-e-rastreabilidade:2.1/3.1;r2-09-qualificacao-e-rastreabilidade:2.4/3.4";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+QUA-04;Gates e definição de pronto;baseline;"r2-05-console-administrativo:2.12/3.12;r2-08-operacao-elastica-e-observavel:2.8/3.8;r2-09-qualificacao-e-rastreabilidade:2.1/3.1;r2-09-qualificacao-e-rastreabilidade:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+QUA-05;Qualificação dos incrementos v3;baseline;r2-09-qualificacao-e-rastreabilidade:2.2/3.2;REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+QUA-06;Qualificação integrada da v4;baseline;"r2-09-qualificacao-e-rastreabilidade:2.2/3.2;r2-09-qualificacao-e-rastreabilidade:2.3/3.3";REVALIDACAO_PENDENTE;;PARCIAL_NAO_QUALIFICADO
+R2-SEG-01;Identidade autenticada e autorização por recurso;r2-01-identidade-e-isolamento;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-SEG-02;Workloads com menor privilégio;r2-01-identidade-e-isolamento;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-SEG-03;Leitura administrativa individual entre tenants;r2-01-identidade-e-isolamento;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-SEG-04;Destinos externos e callbacks protegidos;r2-01-identidade-e-isolamento;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-SEG-05;Sessão administrativa e trilha de alterações;r2-01-identidade-e-isolamento;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-01;Aceite e intenção recuperáveis em todas as modalidades;r2-02-execucao-duravel-e-resultados;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-02;Idempotência concorrente com UUID recuperável;r2-02-execucao-duravel-e-resultados;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-03;Um dono de despacho e tentativa anterior ao efeito;r2-02-execucao-duravel-e-resultados;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-04;Resultado externo válido e durável;r2-02-execucao-duravel-e-resultados;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-05;Inbox, outbox e confirmação de mensagens;r2-02-execucao-duravel-e-resultados;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-06;Deadline por confirmação durável e final tardio;r2-02-execucao-duravel-e-resultados;2.6 / 3.6;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-07;SYNC direto e AUTO com espera limitada;r2-02-execucao-duravel-e-resultados;2.7 / 3.7;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-08;Representação final única por contrato de cliente;r2-02-execucao-duravel-e-resultados;2.8 / 3.8;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-EXE-09;Reconciliação de obrigações sem reexecutar efeitos;r2-02-execucao-duravel-e-resultados;2.9 / 3.9;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-01;Adapter executável homologado por capacidade;r2-03-integracoes-credenciais-e-pressao;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-02;Credencial efetiva vinculada ao cliente e à conta;r2-03-integracoes-credenciais-e-pressao;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-03;Segredos reais e cache dispensável;r2-03-integracoes-credenciais-e-pressao;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-04;Polling e callback combináveis e coordenados;r2-03-integracoes-credenciais-e-pressao;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-05;Janela absoluta de retry e classificação de falha;r2-03-integracoes-credenciais-e-pressao;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-06;Controle adaptativo global por domínio de capacidade;r2-03-integracoes-credenciais-e-pressao;2.6 / 3.6;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-07;Entrega ao cliente com identidade e política próprias;r2-03-integracoes-credenciais-e-pressao;2.7 / 3.7;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-INT-08;SLA do provedor separado de SLA do cliente;r2-03-integracoes-credenciais-e-pressao;2.8 / 3.8;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-01;Catálogo versionado com publicação governada;r2-04-catalogo-produtos-e-contratos;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-02;Ofertas por cliente e roteamento autorizado;r2-04-catalogo-produtos-e-contratos;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-03;Agregação paralela limitada;r2-04-catalogo-produtos-e-contratos;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-04;Composição por DAG e compensações;r2-04-catalogo-produtos-e-contratos;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-05;Perfis técnicos de entrada e saída por cliente;r2-04-catalogo-produtos-e-contratos;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-06;Snapshot e projeções independentes de consulta por pedido;r2-04-catalogo-produtos-e-contratos;2.6 / 3.6;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-07;Importação segura e inventário executável distinto;r2-04-catalogo-produtos-e-contratos;2.7 / 3.7;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-CAT-08;Consulta administrativa persistente e onboarding;r2-04-catalogo-produtos-e-contratos;2.8 / 3.8;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-01;Sessão, contexto e navegação administrativa;r2-05-console-administrativo;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-02;Listagens reais e detalhe editável;r2-05-console-administrativo;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-03;Clientes, aplicações e ofertas contratadas;r2-05-console-administrativo;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-04;Catálogo importado e serviços executáveis;r2-05-console-administrativo;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-05;Produtos agregados e compostos;r2-05-console-administrativo;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-06;Provedores, vínculos e saúde de integração;r2-05-console-administrativo;2.6 / 3.6;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-07;Contratos técnicos e políticas temporais;r2-05-console-administrativo;2.7 / 3.7;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-08;Busca e timeline operacional de protocolos;r2-05-console-administrativo;2.8 / 3.8;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-09;Entregas e reprocessamento com segurança de efeito;r2-05-console-administrativo;2.9 / 3.9;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-10;SLA bilateral e painéis operacionais consultáveis;r2-05-console-administrativo;2.10 / 3.10;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-11;Financeiro de compra, venda e conciliação;r2-05-console-administrativo;2.11 / 3.11;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-ADM-12;Qualidade de uso, acessibilidade e integração real;r2-05-console-administrativo;2.12 / 3.12;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-FIN-01;Compra, venda e incidência por snapshot;r2-06-financeiro-auditavel;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-FIN-02;Medição exata e deduplicação econômica;r2-06-financeiro-auditavel;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-FIN-03;Saldo estrito e retenção de incerteza;r2-06-financeiro-auditavel;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-FIN-04;Planos, franquias e política de produto;r2-06-financeiro-auditavel;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-FIN-05;Ledger imutável e ajustes compensatórios;r2-06-financeiro-auditavel;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-FIN-06;Fechamento, reconciliação e integração financeira;r2-06-financeiro-auditavel;2.6 / 3.6;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-DAD-01;Upload direto e referência imutável por tenant;r2-07-objetos-dados-e-retencao;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-DAD-02;Custódia de resultado volumoso;r2-07-objetos-dados-e-retencao;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-DAD-03;Retenção por classe e obrigações abertas;r2-07-objetos-dados-e-retencao;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-DAD-04;Propriedade, RLS e continuidade de leitura;r2-07-objetos-dados-e-retencao;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-DAD-05;Restauração reconciliada sem duplicar efeito;r2-07-objetos-dados-e-retencao;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-01;Plataforma local completa e persistente;r2-08-operacao-elastica-e-observavel;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-02;Kubernetes e cinco ambientes coerentes;r2-08-operacao-elastica-e-observavel;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-03;Probes por capacidade e drenagem;r2-08-operacao-elastica-e-observavel;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-04;Escala de pods, nós e dados sem chamados rotineiros;r2-08-operacao-elastica-e-observavel;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-05;Placement, fencing e recursos por ambiente e célula;r2-08-operacao-elastica-e-observavel;2.5 / 3.5;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-06;Fallback seletivo e dependências mínimas;r2-08-operacao-elastica-e-observavel;2.6 / 3.6;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-07;Telemetria e SLA com investigação acionável;r2-08-operacao-elastica-e-observavel;2.7 / 3.7;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-08;Segurança e reprodutibilidade de infraestrutura;r2-08-operacao-elastica-e-observavel;2.8 / 3.8;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-OPE-09;SLO, isolamento e continuidade qualificados;r2-08-operacao-elastica-e-observavel;2.9 / 3.9;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-QUA-01;Rastreabilidade do alvo até evidência;r2-09-qualificacao-e-rastreabilidade;2.1 / 3.1;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-QUA-02;Fixtures e oráculos independentes reproduzíveis;r2-09-qualificacao-e-rastreabilidade;2.2 / 3.2;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-QUA-03;Gates de contrato, experiência e operação;r2-09-qualificacao-e-rastreabilidade;2.3 / 3.3;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R2-QUA-04;Evolução OpenSpec e baseline sem falso arquivamento;r2-09-qualificacao-e-rastreabilidade;2.4 / 3.4;EM_IMPLEMENTACAO;;Nenhuma conclusão integral inferida de teste parcial
+R3-EXE-01;R3-EXE-01;r3;hub/internal/atlasclient/client.go";PENDENTE;;hub/internal/cometa/poller.go
+R3-EXE-02;R3-EXE-02;r3;hub/cmd/cometa/main.go";PENDENTE;;hub/internal/cometa/executor.go
+R3-EXE-03;R3-EXE-03;r3;hub/internal/orbita/intents.go";PENDENTE;;hub/internal/cometa/executor.go
+R3-EXE-04;R3-EXE-04;r3;hub/internal/orbita/finalize.go;PENDENTE;;hub/internal/cometa/polling_custody.go
+R3-EXE-05;R3-EXE-05;r3;hub/internal/libra/consumers.go;PENDENTE;;hub/internal/queue/queue.go
+R3-CAT-01;R3-CAT-01;r3;R3-CAT-01-S01,R3-CAT-01-S02,R3-CAT-01-S03;IMPLEMENTACAO_PARCIAL;hub/internal/atlas/offers.go:TransformJSON;Precisão, enum e additionalProperties têm regressão unitária; cenários integrados e limites de custo ainda pendentes
+R3-CAT-02;R3-CAT-02;r3;hub/internal/atlas/offers.go";PENDENTE;;hub/internal/orbita/finalize.go
+R3-CAT-03;R3-CAT-03;r3;hub/internal/atlas/offers.go";PENDENTE;;hub/internal/atlas/catalog.go
+R3-CAT-04;R3-CAT-04;r3;hub/internal/atlas/catalog.go";PENDENTE;;hub/internal/atlasclient/client.go
+R3-INT-01;R3-INT-01;r3;hub/internal/cometa/poller.go";PENDENTE;;hub/internal/cometa/executor.go
+R3-INT-02;R3-INT-02;r3;3.1/.2/.3;PENDENTE;;R3-INT-02-S01,R3-INT-02-S02,R3-INT-02-S03
+R3-INT-03;R3-INT-03;r3;hub/internal/cometa/poller.go;PENDENTE;;hub/internal/cometa/executor.go
+R3-ADM-01;R3-ADM-01;r3;R3-ADM-01-S01,R3-ADM-01-S02,R3-ADM-01-S03;PENDENTE;;hub/internal/platform/auth/auth.go"
+R3-ADM-02;R3-ADM-02;r3;hub/internal/orbita/admin.go";PENDENTE;;hub/internal/pulsar/handlers.go
+R3-ADM-03;R3-ADM-03;r3;R3-ADM-03-S01,R3-ADM-03-S02,R3-ADM-03-S03;PENDENTE;;hub/internal/libra/handlers.go"
+R3-ADM-04;R3-ADM-04;r3;R3-ADM-04-S01,R3-ADM-04-S02,R3-ADM-04-S03;PENDENTE;;hub/admin-ui/src"
+R3-FIN-01;R3-FIN-01;r3;hub/internal/contracts/economics/publication.go";PENDENTE;;hub/internal/orbita/handlers.go
+R3-FIN-02;R3-FIN-02;r3;hub/internal/libra/store.go;PENDENTE;;hub/internal/cometa/polling_custody.go
+R3-FIN-03;R3-FIN-03;r3;hub/internal/pulsar/handlers.go";PENDENTE;;hub/internal/orbita/finalize.go
+R3-OPE-01;R3-OPE-01;r3;hub/internal/cometa/executor.go;PENDENTE;;hub/internal/objectstore/retention.go
+R3-OPE-02;R3-OPE-02;r3;hub/deploy/r2/k8s/overlays/prd/kustomization.yaml";PENDENTE;;hub/deploy/r2/k8s/base/workloads.yaml
+R3-OPE-03;R3-OPE-03;r3;R3-OPE-03-S01,R3-OPE-03-S02,R3-OPE-03-S03;PENDENTE;;hub/internal/platform/httpserver"
+R3-OPE-04;R3-OPE-04;r3;hub/internal/platform/pg;PENDENTE;;hub/migrations/control
+R3-OPE-05;R3-OPE-05;r3;hub/deploy/r2";PENDENTE;;hub/admin-ui/src/pages/OperationsPage.tsx
+R3-QUA-01;R3-QUA-01;r3;docs/reviews/2026-09-07-r2/implementation/FINAL_REPORT.md";PENDENTE;;hub/internal/cometa/custody_test.go

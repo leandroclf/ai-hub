@@ -1,0 +1,328 @@
+{"Time":"2026-09-08T19:12:14.553357038-04:00","Action":"start","Package":"ai-hub/hub/cmd/atlas"}
+{"Time":"2026-09-08T19:12:14.553431841-04:00","Action":"output","Package":"ai-hub/hub/cmd/atlas","Output":"?   \tai-hub/hub/cmd/atlas\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:14.553440544-04:00","Action":"skip","Package":"ai-hub/hub/cmd/atlas","Elapsed":0}
+{"Time":"2026-09-08T19:12:23.798465823-04:00","Action":"start","Package":"ai-hub/hub/cmd/cometa"}
+{"Time":"2026-09-08T19:12:23.798494746-04:00","Action":"output","Package":"ai-hub/hub/cmd/cometa","Output":"?   \tai-hub/hub/cmd/cometa\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:23.798501577-04:00","Action":"skip","Package":"ai-hub/hub/cmd/cometa","Elapsed":0}
+{"Time":"2026-09-08T19:12:23.945923639-04:00","Action":"start","Package":"ai-hub/hub/cmd/libra"}
+{"Time":"2026-09-08T19:12:23.945948807-04:00","Action":"output","Package":"ai-hub/hub/cmd/libra","Output":"?   \tai-hub/hub/cmd/libra\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:23.945955437-04:00","Action":"skip","Package":"ai-hub/hub/cmd/libra","Elapsed":0}
+{"Time":"2026-09-08T19:12:32.803189164-04:00","Action":"start","Package":"ai-hub/hub/cmd/orbita"}
+{"Time":"2026-09-08T19:12:32.803293001-04:00","Action":"output","Package":"ai-hub/hub/cmd/orbita","Output":"?   \tai-hub/hub/cmd/orbita\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:32.803302575-04:00","Action":"skip","Package":"ai-hub/hub/cmd/orbita","Elapsed":0}
+{"Time":"2026-09-08T19:12:32.80340267-04:00","Action":"start","Package":"ai-hub/hub/cmd/provider-sim"}
+{"Time":"2026-09-08T19:12:32.803440227-04:00","Action":"output","Package":"ai-hub/hub/cmd/provider-sim","Output":"?   \tai-hub/hub/cmd/provider-sim\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:32.803446967-04:00","Action":"skip","Package":"ai-hub/hub/cmd/provider-sim","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.062688182-04:00","Action":"start","Package":"ai-hub/hub/cmd/pulsar"}
+{"Time":"2026-09-08T19:12:33.062975234-04:00","Action":"output","Package":"ai-hub/hub/cmd/pulsar","Output":"?   \tai-hub/hub/cmd/pulsar\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:33.062987082-04:00","Action":"skip","Package":"ai-hub/hub/cmd/pulsar","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.063005694-04:00","Action":"start","Package":"ai-hub/hub/cmd/webhook-sink"}
+{"Time":"2026-09-08T19:12:33.063040837-04:00","Action":"output","Package":"ai-hub/hub/cmd/webhook-sink","Output":"?   \tai-hub/hub/cmd/webhook-sink\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:33.063048128-04:00","Action":"skip","Package":"ai-hub/hub/cmd/webhook-sink","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.938661964-04:00","Action":"start","Package":"ai-hub/hub/internal/atlas"}
+{"Time":"2026-09-08T19:12:33.938802546-04:00","Action":"start","Package":"ai-hub/hub/internal/atlasclient"}
+{"Time":"2026-09-08T19:12:33.938819742-04:00","Action":"output","Package":"ai-hub/hub/internal/atlasclient","Output":"?   \tai-hub/hub/internal/atlasclient\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:33.938828084-04:00","Action":"skip","Package":"ai-hub/hub/internal/atlasclient","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.947559423-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestDAGContract"}
+{"Time":"2026-09-08T19:12:33.947599994-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestDAGContract","Output":"=== RUN   TestDAGContract\n"}
+{"Time":"2026-09-08T19:12:33.947653655-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestDAGContract","Output":"--- PASS: TestDAGContract (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.94765736-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestDAGContract","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.947666864-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestTechnicalProjection"}
+{"Time":"2026-09-08T19:12:33.947668988-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestTechnicalProjection","Output":"=== RUN   TestTechnicalProjection\n"}
+{"Time":"2026-09-08T19:12:33.947983952-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestTechnicalProjection","Output":"--- PASS: TestTechnicalProjection (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.948013696-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestTechnicalProjection","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.948027377-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestImportSecretSanitization"}
+{"Time":"2026-09-08T19:12:33.94802914-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestImportSecretSanitization","Output":"=== RUN   TestImportSecretSanitization\n"}
+{"Time":"2026-09-08T19:12:33.94847488-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestImportSecretSanitization","Output":"--- PASS: TestImportSecretSanitization (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.948492627-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestImportSecretSanitization","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.948506868-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogValidation"}
+{"Time":"2026-09-08T19:12:33.948508821-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogValidation","Output":"=== RUN   TestCatalogValidation\n"}
+{"Time":"2026-09-08T19:12:33.949591471-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogValidation","Output":"--- PASS: TestCatalogValidation (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.94961091-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogValidation","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.949627755-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresConcurrencyPublicationAndIsolation"}
+{"Time":"2026-09-08T19:12:33.949629848-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresConcurrencyPublicationAndIsolation","Output":"=== RUN   TestCatalogPostgresConcurrencyPublicationAndIsolation\n"}
+{"Time":"2026-09-08T19:12:33.949696679-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresConcurrencyPublicationAndIsolation","Output":"    catalog_test.go:132: ATLAS_TEST_DSN required for PostgreSQL qualification\n"}
+{"Time":"2026-09-08T19:12:33.949713745-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresConcurrencyPublicationAndIsolation","Output":"--- SKIP: TestCatalogPostgresConcurrencyPublicationAndIsolation (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.949735067-04:00","Action":"skip","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresConcurrencyPublicationAndIsolation","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.949749589-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresPaginationAndStaging"}
+{"Time":"2026-09-08T19:12:33.949751341-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresPaginationAndStaging","Output":"=== RUN   TestCatalogPostgresPaginationAndStaging\n"}
+{"Time":"2026-09-08T19:12:33.949797431-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresPaginationAndStaging","Output":"    catalog_test.go:202: ATLAS_TEST_DSN required for PostgreSQL qualification\n"}
+{"Time":"2026-09-08T19:12:33.949828407-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresPaginationAndStaging","Output":"--- SKIP: TestCatalogPostgresPaginationAndStaging (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.949849289-04:00","Action":"skip","Package":"ai-hub/hub/internal/atlas","Test":"TestCatalogPostgresPaginationAndStaging","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.949864421-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService"}
+{"Time":"2026-09-08T19:12:33.949866384-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService","Output":"=== RUN   TestValidateService\n"}
+{"Time":"2026-09-08T19:12:33.94991643-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/valido"}
+{"Time":"2026-09-08T19:12:33.949918403-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/valido","Output":"=== RUN   TestValidateService/valido\n"}
+{"Time":"2026-09-08T19:12:33.94995647-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/valido","Output":"--- PASS: TestValidateService/valido (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.949973185-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/valido","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.949988969-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sem_codigo"}
+{"Time":"2026-09-08T19:12:33.949990721-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sem_codigo","Output":"=== RUN   TestValidateService/sem_codigo\n"}
+{"Time":"2026-09-08T19:12:33.950051313-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sem_codigo","Output":"--- PASS: TestValidateService/sem_codigo (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.95005595-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sem_codigo","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.95006259-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_invalido"}
+{"Time":"2026-09-08T19:12:33.950064643-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_invalido","Output":"=== RUN   TestValidateService/modo_invalido\n"}
+{"Time":"2026-09-08T19:12:33.950103942-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_invalido","Output":"--- PASS: TestValidateService/modo_invalido (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.950151413-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_invalido","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.950154238-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sla_invalido"}
+{"Time":"2026-09-08T19:12:33.95015579-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sla_invalido","Output":"=== RUN   TestValidateService/sla_invalido\n"}
+{"Time":"2026-09-08T19:12:33.950197062-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sla_invalido","Output":"--- PASS: TestValidateService/sla_invalido (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.950213557-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/sla_invalido","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.950228239-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_duplicado"}
+{"Time":"2026-09-08T19:12:33.950230052-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_duplicado","Output":"=== RUN   TestValidateService/modo_duplicado\n"}
+{"Time":"2026-09-08T19:12:33.950268469-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_duplicado","Output":"--- PASS: TestValidateService/modo_duplicado (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.950288399-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService/modo_duplicado","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.950311364-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService","Output":"--- PASS: TestValidateService (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.950327258-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateService","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.950342721-04:00","Action":"run","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateProviderAccount"}
+{"Time":"2026-09-08T19:12:33.950344544-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateProviderAccount","Output":"=== RUN   TestValidateProviderAccount\n"}
+{"Time":"2026-09-08T19:12:33.950397143-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateProviderAccount","Output":"--- PASS: TestValidateProviderAccount (0.00s)\n"}
+{"Time":"2026-09-08T19:12:33.950420508-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Test":"TestValidateProviderAccount","Elapsed":0}
+{"Time":"2026-09-08T19:12:33.950438295-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:34.843046523-04:00","Action":"start","Package":"ai-hub/hub/internal/cometa"}
+{"Time":"2026-09-08T19:12:34.843143028-04:00","Action":"start","Package":"ai-hub/hub/internal/contracts/economics"}
+{"Time":"2026-09-08T19:12:34.843175867-04:00","Action":"output","Package":"ai-hub/hub/internal/contracts/economics","Output":"?   \tai-hub/hub/internal/contracts/economics\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:34.843186654-04:00","Action":"skip","Package":"ai-hub/hub/internal/contracts/economics","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.843238362-04:00","Action":"start","Package":"ai-hub/hub/internal/contracts/files"}
+{"Time":"2026-09-08T19:12:34.843247565-04:00","Action":"output","Package":"ai-hub/hub/internal/contracts/files","Output":"?   \tai-hub/hub/internal/contracts/files\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:34.843252973-04:00","Action":"skip","Package":"ai-hub/hub/internal/contracts/files","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.843262488-04:00","Action":"start","Package":"ai-hub/hub/internal/dispatch"}
+{"Time":"2026-09-08T19:12:34.843266985-04:00","Action":"output","Package":"ai-hub/hub/internal/dispatch","Output":"?   \tai-hub/hub/internal/dispatch\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:34.84327075-04:00","Action":"skip","Package":"ai-hub/hub/internal/dispatch","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.858618291-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAggregateReplicasCells"}
+{"Time":"2026-09-08T19:12:34.858653755-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAggregateReplicasCells","Output":"=== RUN   TestPostgresCapacityAggregateReplicasCells\n"}
+{"Time":"2026-09-08T19:12:34.85869707-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAggregateReplicasCells","Output":"    capacity_test.go:37: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.858704351-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAggregateReplicasCells","Output":"--- SKIP: TestPostgresCapacityAggregateReplicasCells (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.858733765-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAggregateReplicasCells","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.858739944-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAdaptiveAndPending"}
+{"Time":"2026-09-08T19:12:34.858742087-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAdaptiveAndPending","Output":"=== RUN   TestPostgresCapacityAdaptiveAndPending\n"}
+{"Time":"2026-09-08T19:12:34.858787636-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAdaptiveAndPending","Output":"    capacity_test.go:106: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.858807235-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAdaptiveAndPending","Output":"--- SKIP: TestPostgresCapacityAdaptiveAndPending (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.858819023-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityAdaptiveAndPending","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.858833094-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityRollingRateIsolation"}
+{"Time":"2026-09-08T19:12:34.858835097-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityRollingRateIsolation","Output":"=== RUN   TestPostgresCapacityRollingRateIsolation\n"}
+{"Time":"2026-09-08T19:12:34.858875458-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityRollingRateIsolation","Output":"    capacity_test.go:167: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.858895138-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityRollingRateIsolation","Output":"--- SKIP: TestPostgresCapacityRollingRateIsolation (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.858910611-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresCapacityRollingRateIsolation","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.858924572-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresSubmissionAndObservationCustody"}
+{"Time":"2026-09-08T19:12:34.858926435-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresSubmissionAndObservationCustody","Output":"=== RUN   TestPostgresSubmissionAndObservationCustody\n"}
+{"Time":"2026-09-08T19:12:34.858954938-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresSubmissionAndObservationCustody","Output":"    custody_test.go:21: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.858976831-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresSubmissionAndObservationCustody","Output":"--- SKIP: TestPostgresSubmissionAndObservationCustody (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.858990181-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresSubmissionAndObservationCustody","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.859001468-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPendingCustodyAtomic"}
+{"Time":"2026-09-08T19:12:34.859003601-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPendingCustodyAtomic","Output":"=== RUN   TestPostgresPendingCustodyAtomic\n"}
+{"Time":"2026-09-08T19:12:34.859080957-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPendingCustodyAtomic","Output":"    custody_test.go:108: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.859133767-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPendingCustodyAtomic","Output":"--- SKIP: TestPostgresPendingCustodyAtomic (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.859174869-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPendingCustodyAtomic","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.859181158-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresOperationResourceScope"}
+{"Time":"2026-09-08T19:12:34.859185735-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresOperationResourceScope","Output":"=== RUN   TestPostgresOperationResourceScope\n"}
+{"Time":"2026-09-08T19:12:34.859287769-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresOperationResourceScope","Output":"    handlers_test.go:21: requires isolated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.859293968-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresOperationResourceScope","Output":"--- SKIP: TestPostgresOperationResourceScope (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.859295991-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresOperationResourceScope","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.859298084-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingClaimsFenceAndAbsoluteDeadline"}
+{"Time":"2026-09-08T19:12:34.859299717-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingClaimsFenceAndAbsoluteDeadline","Output":"=== RUN   TestPostgresPollingClaimsFenceAndAbsoluteDeadline\n"}
+{"Time":"2026-09-08T19:12:34.859316031-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingClaimsFenceAndAbsoluteDeadline","Output":"    polling_custody_test.go:68: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.859343382-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingClaimsFenceAndAbsoluteDeadline","Output":"--- SKIP: TestPostgresPollingClaimsFenceAndAbsoluteDeadline (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.859362451-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingClaimsFenceAndAbsoluteDeadline","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.859380128-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingCallbackConflictRetainsBoth"}
+{"Time":"2026-09-08T19:12:34.85938203-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingCallbackConflictRetainsBoth","Output":"=== RUN   TestPostgresPollingCallbackConflictRetainsBoth\n"}
+{"Time":"2026-09-08T19:12:34.859422712-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingCallbackConflictRetainsBoth","Output":"    polling_custody_test.go:144: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.859478606-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingCallbackConflictRetainsBoth","Output":"--- SKIP: TestPostgresPollingCallbackConflictRetainsBoth (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.859495581-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingCallbackConflictRetainsBoth","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.859512166-04:00","Action":"run","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingAuthenticatedHTTP"}
+{"Time":"2026-09-08T19:12:34.859514019-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingAuthenticatedHTTP","Output":"=== RUN   TestPostgresPollingAuthenticatedHTTP\n"}
+{"Time":"2026-09-08T19:12:34.859579337-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingAuthenticatedHTTP","Output":"    polling_custody_test.go:187: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:34.859608-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingAuthenticatedHTTP","Output":"--- SKIP: TestPostgresPollingAuthenticatedHTTP (0.00s)\n"}
+{"Time":"2026-09-08T19:12:34.859705517-04:00","Action":"skip","Package":"ai-hub/hub/internal/cometa","Test":"TestPostgresPollingAuthenticatedHTTP","Elapsed":0}
+{"Time":"2026-09-08T19:12:34.859708241-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:34.952469793-04:00","Action":"output","Package":"ai-hub/hub/internal/atlas","Output":"ok  \tai-hub/hub/internal/atlas\t1.014s\n"}
+{"Time":"2026-09-08T19:12:34.953389206-04:00","Action":"pass","Package":"ai-hub/hub/internal/atlas","Elapsed":1.015}
+{"Time":"2026-09-08T19:12:35.545703053-04:00","Action":"start","Package":"ai-hub/hub/internal/libra"}
+{"Time":"2026-09-08T19:12:35.545849338-04:00","Action":"start","Package":"ai-hub/hub/internal/libraclient"}
+{"Time":"2026-09-08T19:12:35.545867305-04:00","Action":"output","Package":"ai-hub/hub/internal/libraclient","Output":"?   \tai-hub/hub/internal/libraclient\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:35.545874796-04:00","Action":"skip","Package":"ai-hub/hub/internal/libraclient","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.560049132-04:00","Action":"run","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices"}
+{"Time":"2026-09-08T19:12:35.560102412-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices","Output":"=== RUN   TestExactPlanPrices\n"}
+{"Time":"2026-09-08T19:12:35.56031366-04:00","Action":"run","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/marginal-four"}
+{"Time":"2026-09-08T19:12:35.560321682-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/marginal-four","Output":"=== RUN   TestExactPlanPrices/marginal-four\n"}
+{"Time":"2026-09-08T19:12:35.560525198-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/marginal-four","Output":"--- PASS: TestExactPlanPrices/marginal-four (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.560574012-04:00","Action":"pass","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/marginal-four","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.560615244-04:00","Action":"run","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/volume-four"}
+{"Time":"2026-09-08T19:12:35.56061941-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/volume-four","Output":"=== RUN   TestExactPlanPrices/volume-four\n"}
+{"Time":"2026-09-08T19:12:35.560762385-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/volume-four","Output":"--- PASS: TestExactPlanPrices/volume-four (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.560789676-04:00","Action":"pass","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/volume-four","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.560816446-04:00","Action":"run","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/four-decimal"}
+{"Time":"2026-09-08T19:12:35.560819641-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/four-decimal","Output":"=== RUN   TestExactPlanPrices/four-decimal\n"}
+{"Time":"2026-09-08T19:12:35.560896707-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/four-decimal","Output":"--- PASS: TestExactPlanPrices/four-decimal (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.560923838-04:00","Action":"pass","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/four-decimal","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.560947684-04:00","Action":"run","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/allowance"}
+{"Time":"2026-09-08T19:12:35.560950959-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/allowance","Output":"=== RUN   TestExactPlanPrices/allowance\n"}
+{"Time":"2026-09-08T19:12:35.561018661-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/allowance","Output":"--- PASS: TestExactPlanPrices/allowance (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.561043208-04:00","Action":"pass","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices/allowance","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.561182487-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices","Output":"--- PASS: TestExactPlanPrices (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.561211962-04:00","Action":"pass","Package":"ai-hub/hub/internal/libra","Test":"TestExactPlanPrices","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.56123722-04:00","Action":"run","Package":"ai-hub/hub/internal/libra","Test":"TestFinancePostgresScenarios"}
+{"Time":"2026-09-08T19:12:35.561240204-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestFinancePostgresScenarios","Output":"=== RUN   TestFinancePostgresScenarios\n"}
+{"Time":"2026-09-08T19:12:35.561318722-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestFinancePostgresScenarios","Output":"    finance_test.go:99: requires real PostgreSQL R2_FINANCE_DSN\n"}
+{"Time":"2026-09-08T19:12:35.561364161-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Test":"TestFinancePostgresScenarios","Output":"--- SKIP: TestFinancePostgresScenarios (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.561388447-04:00","Action":"skip","Package":"ai-hub/hub/internal/libra","Test":"TestFinancePostgresScenarios","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.561418412-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:35.616078186-04:00","Action":"start","Package":"ai-hub/hub/internal/objectstore"}
+{"Time":"2026-09-08T19:12:35.62997299-04:00","Action":"run","Package":"ai-hub/hub/internal/objectstore","Test":"TestPostgresS3MultipartFileRef"}
+{"Time":"2026-09-08T19:12:35.630047713-04:00","Action":"output","Package":"ai-hub/hub/internal/objectstore","Test":"TestPostgresS3MultipartFileRef","Output":"=== RUN   TestPostgresS3MultipartFileRef\n"}
+{"Time":"2026-09-08T19:12:35.630097978-04:00","Action":"output","Package":"ai-hub/hub/internal/objectstore","Test":"TestPostgresS3MultipartFileRef","Output":"    catalog_test.go:27: requires isolated PostgreSQL and S3\n"}
+{"Time":"2026-09-08T19:12:35.630104017-04:00","Action":"output","Package":"ai-hub/hub/internal/objectstore","Test":"TestPostgresS3MultipartFileRef","Output":"--- SKIP: TestPostgresS3MultipartFileRef (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.630188454-04:00","Action":"skip","Package":"ai-hub/hub/internal/objectstore","Test":"TestPostgresS3MultipartFileRef","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.630196506-04:00","Action":"output","Package":"ai-hub/hub/internal/objectstore","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:35.863088857-04:00","Action":"output","Package":"ai-hub/hub/internal/cometa","Output":"ok  \tai-hub/hub/internal/cometa\t1.020s\n"}
+{"Time":"2026-09-08T19:12:35.863918796-04:00","Action":"pass","Package":"ai-hub/hub/internal/cometa","Elapsed":1.021}
+{"Time":"2026-09-08T19:12:35.900885069-04:00","Action":"start","Package":"ai-hub/hub/internal/orbita"}
+{"Time":"2026-09-08T19:12:35.900969061-04:00","Action":"start","Package":"ai-hub/hub/internal/outbox"}
+{"Time":"2026-09-08T19:12:35.900992826-04:00","Action":"output","Package":"ai-hub/hub/internal/outbox","Output":"?   \tai-hub/hub/internal/outbox\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:35.901005395-04:00","Action":"skip","Package":"ai-hub/hub/internal/outbox","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.915010561-04:00","Action":"run","Package":"ai-hub/hub/internal/orbita","Test":"TestAdmissionPostgresAtomicIdempotency"}
+{"Time":"2026-09-08T19:12:35.915073385-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestAdmissionPostgresAtomicIdempotency","Output":"=== RUN   TestAdmissionPostgresAtomicIdempotency\n"}
+{"Time":"2026-09-08T19:12:35.915081448-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestAdmissionPostgresAtomicIdempotency","Output":"    admission_test.go:22: requires isolated migrated PostgreSQL R2_CORE_TEST_DSN\n"}
+{"Time":"2026-09-08T19:12:35.91516315-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestAdmissionPostgresAtomicIdempotency","Output":"--- SKIP: TestAdmissionPostgresAtomicIdempotency (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.915205274-04:00","Action":"skip","Package":"ai-hub/hub/internal/orbita","Test":"TestAdmissionPostgresAtomicIdempotency","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.915226265-04:00","Action":"run","Package":"ai-hub/hub/internal/orbita","Test":"TestAutoPostgresBoundedWait"}
+{"Time":"2026-09-08T19:12:35.91522921-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestAutoPostgresBoundedWait","Output":"=== RUN   TestAutoPostgresBoundedWait\n"}
+{"Time":"2026-09-08T19:12:35.915344313-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestAutoPostgresBoundedWait","Output":"    auto_test.go:21: requires isolated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:35.915364684-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestAutoPostgresBoundedWait","Output":"--- SKIP: TestAutoPostgresBoundedWait (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.915399336-04:00","Action":"skip","Package":"ai-hub/hub/internal/orbita","Test":"TestAutoPostgresBoundedWait","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.915418324-04:00","Action":"run","Package":"ai-hub/hub/internal/orbita","Test":"TestOperationFactPostgresCustody"}
+{"Time":"2026-09-08T19:12:35.915420398-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestOperationFactPostgresCustody","Output":"=== RUN   TestOperationFactPostgresCustody\n"}
+{"Time":"2026-09-08T19:12:35.915483893-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestOperationFactPostgresCustody","Output":"    factconsumer_test.go:22: requires isolated migrated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:35.915538425-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Test":"TestOperationFactPostgresCustody","Output":"--- SKIP: TestOperationFactPostgresCustody (0.00s)\n"}
+{"Time":"2026-09-08T19:12:35.915565426-04:00","Action":"skip","Package":"ai-hub/hub/internal/orbita","Test":"TestOperationFactPostgresCustody","Elapsed":0}
+{"Time":"2026-09-08T19:12:35.915590594-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:36.048616151-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/auth"}
+{"Time":"2026-09-08T19:12:36.048759912-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/config"}
+{"Time":"2026-09-08T19:12:36.048776547-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/config","Output":"?   \tai-hub/hub/internal/platform/config\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:36.048786502-04:00","Action":"skip","Package":"ai-hub/hub/internal/platform/config","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.05866994-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature"}
+{"Time":"2026-09-08T19:12:36.058695919-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature","Output":"=== RUN   TestAccessTokenClaimsAndSignature\n"}
+{"Time":"2026-09-08T19:12:36.308084855-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/egress"}
+{"Time":"2026-09-08T19:12:36.316601361-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/egress","Test":"TestUnsafeAddressesAndSchemes"}
+{"Time":"2026-09-08T19:12:36.316636904-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/egress","Test":"TestUnsafeAddressesAndSchemes","Output":"=== RUN   TestUnsafeAddressesAndSchemes\n"}
+{"Time":"2026-09-08T19:12:36.31667413-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/egress","Test":"TestUnsafeAddressesAndSchemes","Output":"--- PASS: TestUnsafeAddressesAndSchemes (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.316723484-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/egress","Test":"TestUnsafeAddressesAndSchemes","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.316733359-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/egress","Test":"TestPrivateScopeAndRedirectDoNotLeak"}
+{"Time":"2026-09-08T19:12:36.316736975-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/egress","Test":"TestPrivateScopeAndRedirectDoNotLeak","Output":"=== RUN   TestPrivateScopeAndRedirectDoNotLeak\n"}
+{"Time":"2026-09-08T19:12:36.319073511-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/egress","Test":"TestPrivateScopeAndRedirectDoNotLeak","Output":"--- PASS: TestPrivateScopeAndRedirectDoNotLeak (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.319087802-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/egress","Test":"TestPrivateScopeAndRedirectDoNotLeak","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.319091798-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/egress","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:36.398411131-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/httpserver"}
+{"Time":"2026-09-08T19:12:36.398493485-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/idgen"}
+{"Time":"2026-09-08T19:12:36.398552589-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/logging"}
+{"Time":"2026-09-08T19:12:36.398662775-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/logging","Output":"?   \tai-hub/hub/internal/platform/logging\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:36.398672249-04:00","Action":"skip","Package":"ai-hub/hub/internal/platform/logging","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.39883528-04:00","Action":"start","Package":"ai-hub/hub/internal/platform/pg"}
+{"Time":"2026-09-08T19:12:36.39884846-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/pg","Output":"?   \tai-hub/hub/internal/platform/pg\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:36.398853357-04:00","Action":"skip","Package":"ai-hub/hub/internal/platform/pg","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.406666604-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUUIDv7"}
+{"Time":"2026-09-08T19:12:36.40674375-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUUIDv7","Output":"=== RUN   TestNewIsUUIDv7\n"}
+{"Time":"2026-09-08T19:12:36.406754246-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUUIDv7","Output":"--- PASS: TestNewIsUUIDv7 (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.406757842-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUUIDv7","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.406762148-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUnique"}
+{"Time":"2026-09-08T19:12:36.406764011-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUnique","Output":"=== RUN   TestNewIsUnique\n"}
+{"Time":"2026-09-08T19:12:36.407850296-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes"}
+{"Time":"2026-09-08T19:12:36.407857867-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes","Output":"=== RUN   TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes\n"}
+{"Time":"2026-09-08T19:12:36.408900756-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUnique","Output":"--- PASS: TestNewIsUnique (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.408912524-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/idgen","Test":"TestNewIsUnique","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.408915889-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/idgen","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:36.409152315-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes","Output":"--- PASS: TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.409164113-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.409168629-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestShutdownWaitsForAcceptedRequest"}
+{"Time":"2026-09-08T19:12:36.409171694-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestShutdownWaitsForAcceptedRequest","Output":"=== RUN   TestShutdownWaitsForAcceptedRequest\n"}
+{"Time":"2026-09-08T19:12:36.44702003-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestShutdownWaitsForAcceptedRequest","Output":"--- PASS: TestShutdownWaitsForAcceptedRequest (0.04s)\n"}
+{"Time":"2026-09-08T19:12:36.447067411-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestShutdownWaitsForAcceptedRequest","Elapsed":0.04}
+{"Time":"2026-09-08T19:12:36.447075573-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestTelemetryDropsWithoutBlockingBusiness"}
+{"Time":"2026-09-08T19:12:36.447078818-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestTelemetryDropsWithoutBlockingBusiness","Output":"=== RUN   TestTelemetryDropsWithoutBlockingBusiness\n"}
+{"Time":"2026-09-08T19:12:36.534245599-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestTelemetryDropsWithoutBlockingBusiness","Output":"--- PASS: TestTelemetryDropsWithoutBlockingBusiness (0.09s)\n"}
+{"Time":"2026-09-08T19:12:36.534294583-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestTelemetryDropsWithoutBlockingBusiness","Elapsed":0.09}
+{"Time":"2026-09-08T19:12:36.534302936-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestW3CTracePropagationAndInvalidParent"}
+{"Time":"2026-09-08T19:12:36.534306121-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestW3CTracePropagationAndInvalidParent","Output":"=== RUN   TestW3CTracePropagationAndInvalidParent\n"}
+{"Time":"2026-09-08T19:12:36.535645877-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestW3CTracePropagationAndInvalidParent","Output":"--- PASS: TestW3CTracePropagationAndInvalidParent (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.535658376-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/httpserver","Test":"TestW3CTracePropagationAndInvalidParent","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.535662642-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:36.564383583-04:00","Action":"output","Package":"ai-hub/hub/internal/libra","Output":"ok  \tai-hub/hub/internal/libra\t1.019s\n"}
+{"Time":"2026-09-08T19:12:36.564975825-04:00","Action":"pass","Package":"ai-hub/hub/internal/libra","Elapsed":1.019}
+{"Time":"2026-09-08T19:12:36.633404754-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/expired"}
+{"Time":"2026-09-08T19:12:36.633449591-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/expired","Output":"=== RUN   TestAccessTokenClaimsAndSignature/expired\n"}
+{"Time":"2026-09-08T19:12:36.634346185-04:00","Action":"output","Package":"ai-hub/hub/internal/objectstore","Output":"ok  \tai-hub/hub/internal/objectstore\t1.018s\n"}
+{"Time":"2026-09-08T19:12:36.635063795-04:00","Action":"pass","Package":"ai-hub/hub/internal/objectstore","Elapsed":1.019}
+{"Time":"2026-09-08T19:12:36.637102403-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/expired","Output":"--- PASS: TestAccessTokenClaimsAndSignature/expired (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.637147421-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/expired","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.637188222-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/issuer"}
+{"Time":"2026-09-08T19:12:36.637192288-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/issuer","Output":"=== RUN   TestAccessTokenClaimsAndSignature/issuer\n"}
+{"Time":"2026-09-08T19:12:36.638995492-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/issuer","Output":"--- PASS: TestAccessTokenClaimsAndSignature/issuer (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.639001671-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/issuer","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.639028431-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/audience"}
+{"Time":"2026-09-08T19:12:36.639031205-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/audience","Output":"=== RUN   TestAccessTokenClaimsAndSignature/audience\n"}
+{"Time":"2026-09-08T19:12:36.640853918-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/audience","Output":"--- PASS: TestAccessTokenClaimsAndSignature/audience (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.640863072-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/audience","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.640867949-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/future"}
+{"Time":"2026-09-08T19:12:36.640870303-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/future","Output":"=== RUN   TestAccessTokenClaimsAndSignature/future\n"}
+{"Time":"2026-09-08T19:12:36.642479494-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/future","Output":"--- PASS: TestAccessTokenClaimsAndSignature/future (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.642504843-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/future","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.642508839-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/subject"}
+{"Time":"2026-09-08T19:12:36.642511382-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/subject","Output":"=== RUN   TestAccessTokenClaimsAndSignature/subject\n"}
+{"Time":"2026-09-08T19:12:36.644007834-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/subject","Output":"--- PASS: TestAccessTokenClaimsAndSignature/subject (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.644014785-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/subject","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.644050348-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/ID_token"}
+{"Time":"2026-09-08T19:12:36.644052822-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/ID_token","Output":"=== RUN   TestAccessTokenClaimsAndSignature/ID_token\n"}
+{"Time":"2026-09-08T19:12:36.646132602-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/ID_token","Output":"--- PASS: TestAccessTokenClaimsAndSignature/ID_token (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.646153303-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature/ID_token","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.648090298-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature","Output":"--- PASS: TestAccessTokenClaimsAndSignature (0.59s)\n"}
+{"Time":"2026-09-08T19:12:36.648099492-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestAccessTokenClaimsAndSignature","Elapsed":0.59}
+{"Time":"2026-09-08T19:12:36.648110708-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestHeaderCannotGrantTenantAndScopes"}
+{"Time":"2026-09-08T19:12:36.648129857-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestHeaderCannotGrantTenantAndScopes","Output":"=== RUN   TestHeaderCannotGrantTenantAndScopes\n"}
+{"Time":"2026-09-08T19:12:36.833171525-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestHeaderCannotGrantTenantAndScopes","Output":"--- PASS: TestHeaderCannotGrantTenantAndScopes (0.18s)\n"}
+{"Time":"2026-09-08T19:12:36.833214109-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestHeaderCannotGrantTenantAndScopes","Elapsed":0.18}
+{"Time":"2026-09-08T19:12:36.833222371-04:00","Action":"run","Package":"ai-hub/hub/internal/platform/auth","Test":"TestReaderDoesNotGrantWritesAndWorkloadIsCellBound"}
+{"Time":"2026-09-08T19:12:36.833225466-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestReaderDoesNotGrantWritesAndWorkloadIsCellBound","Output":"=== RUN   TestReaderDoesNotGrantWritesAndWorkloadIsCellBound\n"}
+{"Time":"2026-09-08T19:12:36.833230433-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Test":"TestReaderDoesNotGrantWritesAndWorkloadIsCellBound","Output":"--- PASS: TestReaderDoesNotGrantWritesAndWorkloadIsCellBound (0.00s)\n"}
+{"Time":"2026-09-08T19:12:36.833233778-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Test":"TestReaderDoesNotGrantWritesAndWorkloadIsCellBound","Elapsed":0}
+{"Time":"2026-09-08T19:12:36.833237434-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:36.917946927-04:00","Action":"output","Package":"ai-hub/hub/internal/orbita","Output":"ok  \tai-hub/hub/internal/orbita\t1.017s\n"}
+{"Time":"2026-09-08T19:12:36.918458607-04:00","Action":"pass","Package":"ai-hub/hub/internal/orbita","Elapsed":1.018}
+{"Time":"2026-09-08T19:12:37.092154678-04:00","Action":"start","Package":"ai-hub/hub/internal/providerauth"}
+{"Time":"2026-09-08T19:12:37.092277392-04:00","Action":"start","Package":"ai-hub/hub/internal/providersim"}
+{"Time":"2026-09-08T19:12:37.092294027-04:00","Action":"output","Package":"ai-hub/hub/internal/providersim","Output":"?   \tai-hub/hub/internal/providersim\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:37.0923028-04:00","Action":"skip","Package":"ai-hub/hub/internal/providersim","Elapsed":0}
+{"Time":"2026-09-08T19:12:37.102695831-04:00","Action":"run","Package":"ai-hub/hub/internal/providerauth","Test":"TestBasicUsesDecryptedVersionWithoutFallback"}
+{"Time":"2026-09-08T19:12:37.102719356-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestBasicUsesDecryptedVersionWithoutFallback","Output":"=== RUN   TestBasicUsesDecryptedVersionWithoutFallback\n"}
+{"Time":"2026-09-08T19:12:37.102810112-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestBasicUsesDecryptedVersionWithoutFallback","Output":"--- PASS: TestBasicUsesDecryptedVersionWithoutFallback (0.00s)\n"}
+{"Time":"2026-09-08T19:12:37.102816963-04:00","Action":"pass","Package":"ai-hub/hub/internal/providerauth","Test":"TestBasicUsesDecryptedVersionWithoutFallback","Elapsed":0}
+{"Time":"2026-09-08T19:12:37.102822842-04:00","Action":"run","Package":"ai-hub/hub/internal/providerauth","Test":"TestOAuthWorksWithoutRedisAndScopesTokensByBinding"}
+{"Time":"2026-09-08T19:12:37.102824925-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestOAuthWorksWithoutRedisAndScopesTokensByBinding","Output":"=== RUN   TestOAuthWorksWithoutRedisAndScopesTokensByBinding\n"}
+{"Time":"2026-09-08T19:12:37.107013226-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestOAuthWorksWithoutRedisAndScopesTokensByBinding","Output":"--- PASS: TestOAuthWorksWithoutRedisAndScopesTokensByBinding (0.00s)\n"}
+{"Time":"2026-09-08T19:12:37.107029301-04:00","Action":"pass","Package":"ai-hub/hub/internal/providerauth","Test":"TestOAuthWorksWithoutRedisAndScopesTokensByBinding","Elapsed":0}
+{"Time":"2026-09-08T19:12:37.10703552-04:00","Action":"run","Package":"ai-hub/hub/internal/providerauth","Test":"TestAWSVaultLocalStackVersion"}
+{"Time":"2026-09-08T19:12:37.107038234-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestAWSVaultLocalStackVersion","Output":"=== RUN   TestAWSVaultLocalStackVersion\n"}
+{"Time":"2026-09-08T19:12:37.10713528-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestAWSVaultLocalStackVersion","Output":"    vault_test.go:13: requires isolated LocalStack secret fixture\n"}
+{"Time":"2026-09-08T19:12:37.107169752-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Test":"TestAWSVaultLocalStackVersion","Output":"--- SKIP: TestAWSVaultLocalStackVersion (0.00s)\n"}
+{"Time":"2026-09-08T19:12:37.107173528-04:00","Action":"skip","Package":"ai-hub/hub/internal/providerauth","Test":"TestAWSVaultLocalStackVersion","Elapsed":0}
+{"Time":"2026-09-08T19:12:37.107200889-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:37.310383522-04:00","Action":"start","Package":"ai-hub/hub/internal/pulsar"}
+{"Time":"2026-09-08T19:12:37.310529242-04:00","Action":"start","Package":"ai-hub/hub/internal/queue"}
+{"Time":"2026-09-08T19:12:37.310569893-04:00","Action":"output","Package":"ai-hub/hub/internal/queue","Output":"?   \tai-hub/hub/internal/queue\t[no test files]\n"}
+{"Time":"2026-09-08T19:12:37.310577735-04:00","Action":"skip","Package":"ai-hub/hub/internal/queue","Elapsed":0}
+{"Time":"2026-09-08T19:12:37.320862571-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/egress","Output":"ok  \tai-hub/hub/internal/platform/egress\t1.013s\n"}
+{"Time":"2026-09-08T19:12:37.321435594-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/egress","Elapsed":1.013}
+{"Time":"2026-09-08T19:12:37.324449068-04:00","Action":"run","Package":"ai-hub/hub/internal/pulsar","Test":"TestPostgresVersionedWebhookCustody"}
+{"Time":"2026-09-08T19:12:37.324462498-04:00","Action":"output","Package":"ai-hub/hub/internal/pulsar","Test":"TestPostgresVersionedWebhookCustody","Output":"=== RUN   TestPostgresVersionedWebhookCustody\n"}
+{"Time":"2026-09-08T19:12:37.324489739-04:00","Action":"output","Package":"ai-hub/hub/internal/pulsar","Test":"TestPostgresVersionedWebhookCustody","Output":"    custody_test.go:35: requires isolated PostgreSQL\n"}
+{"Time":"2026-09-08T19:12:37.324495198-04:00","Action":"output","Package":"ai-hub/hub/internal/pulsar","Test":"TestPostgresVersionedWebhookCustody","Output":"--- SKIP: TestPostgresVersionedWebhookCustody (0.00s)\n"}
+{"Time":"2026-09-08T19:12:37.324497752-04:00","Action":"skip","Package":"ai-hub/hub/internal/pulsar","Test":"TestPostgresVersionedWebhookCustody","Elapsed":0}
+{"Time":"2026-09-08T19:12:37.324500205-04:00","Action":"output","Package":"ai-hub/hub/internal/pulsar","Output":"PASS\n"}
+{"Time":"2026-09-08T19:12:37.410396198-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/idgen","Output":"ok  \tai-hub/hub/internal/platform/idgen\t1.012s\n"}
+{"Time":"2026-09-08T19:12:37.410885805-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/idgen","Elapsed":1.012}
+{"Time":"2026-09-08T19:12:37.537782716-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/httpserver","Output":"ok  \tai-hub/hub/internal/platform/httpserver\t1.139s\n"}
+{"Time":"2026-09-08T19:12:37.538305573-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/httpserver","Elapsed":1.1400000000000001}
+{"Time":"2026-09-08T19:12:37.831681668-04:00","Action":"output","Package":"ai-hub/hub/internal/platform/auth","Output":"ok  \tai-hub/hub/internal/platform/auth\t1.783s\n"}
+{"Time":"2026-09-08T19:12:37.83224771-04:00","Action":"pass","Package":"ai-hub/hub/internal/platform/auth","Elapsed":1.784}
+{"Time":"2026-09-08T19:12:38.109519797-04:00","Action":"output","Package":"ai-hub/hub/internal/providerauth","Output":"ok  \tai-hub/hub/internal/providerauth\t1.017s\n"}
+{"Time":"2026-09-08T19:12:38.110243436-04:00","Action":"pass","Package":"ai-hub/hub/internal/providerauth","Elapsed":1.018}
+{"Time":"2026-09-08T19:12:38.327414343-04:00","Action":"output","Package":"ai-hub/hub/internal/pulsar","Output":"ok  \tai-hub/hub/internal/pulsar\t1.017s\n"}
+{"Time":"2026-09-08T19:12:38.327879073-04:00","Action":"pass","Package":"ai-hub/hub/internal/pulsar","Elapsed":1.018}

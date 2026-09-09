@@ -1,0 +1,54 @@
+go: downloading github.com/lib/pq v1.12.3
+go: downloading github.com/google/uuid v1.6.0
+go: downloading github.com/aws/aws-sdk-go-v2 v1.46.0
+go: downloading github.com/aws/aws-sdk-go-v2/config v1.33.3
+go: downloading github.com/aws/aws-sdk-go-v2/service/s3 v1.111.0
+go: downloading github.com/aws/smithy-go v1.28.1
+go: downloading github.com/aws/aws-sdk-go-v2/credentials v1.20.3
+go: downloading github.com/aws/aws-sdk-go-v2/service/sns v1.46.0
+go: downloading github.com/aws/aws-sdk-go-v2/service/sqs v1.51.0
+go: downloading github.com/redis/go-redis/v9 v9.7.0
+go: downloading github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.20
+go: downloading github.com/aws/aws-sdk-go-v2/internal/configsources v1.5.2
+go: downloading github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.2
+go: downloading github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.13.19
+go: downloading github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.11.2
+go: downloading github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.14.2
+go: downloading github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.20.2
+go: downloading github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.19.2
+go: downloading github.com/aws/aws-sdk-go-v2/service/sso v1.37.0
+go: downloading github.com/aws/aws-sdk-go-v2/service/ssooidc v1.42.0
+go: downloading github.com/aws/aws-sdk-go-v2/service/sts v1.49.0
+go: downloading github.com/aws/aws-sdk-go-v2/service/signin v1.9.0
+go: downloading github.com/cespare/xxhash/v2 v2.2.0
+go: downloading github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f
+go: downloading github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.8.2
+?   	ai-hub/hub/cmd/atlas	[no test files]
+?   	ai-hub/hub/cmd/cometa	[no test files]
+?   	ai-hub/hub/cmd/libra	[no test files]
+?   	ai-hub/hub/cmd/orbita	[no test files]
+?   	ai-hub/hub/cmd/provider-sim	[no test files]
+?   	ai-hub/hub/cmd/pulsar	[no test files]
+?   	ai-hub/hub/cmd/webhook-sink	[no test files]
+ok  	ai-hub/hub/internal/atlas	0.004s
+?   	ai-hub/hub/internal/atlasclient	[no test files]
+ok  	ai-hub/hub/internal/cometa	0.016s
+?   	ai-hub/hub/internal/contracts/economics	[no test files]
+?   	ai-hub/hub/internal/contracts/files	[no test files]
+?   	ai-hub/hub/internal/dispatch	[no test files]
+ok  	ai-hub/hub/internal/libra	0.008s
+?   	ai-hub/hub/internal/libraclient	[no test files]
+ok  	ai-hub/hub/internal/objectstore	0.004s
+ok  	ai-hub/hub/internal/orbita	0.005s
+?   	ai-hub/hub/internal/outbox	[no test files]
+ok  	ai-hub/hub/internal/platform/auth	0.136s
+?   	ai-hub/hub/internal/platform/config	[no test files]
+ok  	ai-hub/hub/internal/platform/egress	0.005s
+ok  	ai-hub/hub/internal/platform/httpserver	0.056s
+ok  	ai-hub/hub/internal/platform/idgen	0.005s
+?   	ai-hub/hub/internal/platform/logging	[no test files]
+?   	ai-hub/hub/internal/platform/pg	[no test files]
+ok  	ai-hub/hub/internal/providerauth	0.005s
+?   	ai-hub/hub/internal/providersim	[no test files]
+ok  	ai-hub/hub/internal/pulsar	0.003s
+?   	ai-hub/hub/internal/queue	[no test files]

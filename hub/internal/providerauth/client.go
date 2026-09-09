@@ -49,6 +49,8 @@ type TokenCache struct {
 	client   *redis.Client
 	Resolver SecretResolver
 	mu       sync.Mutex
+	locksMu  sync.Mutex
+	locks    map[string]*sync.Mutex
 	tokens   map[string]cachedToken
 }
 type cachedToken struct {
@@ -57,7 +59,7 @@ type cachedToken struct {
 }
 
 func NewTokenCache(addr string) *TokenCache {
-	return &TokenCache{client: redis.NewClient(&redis.Options{Addr: addr, DialTimeout: 100 * time.Millisecond, ReadTimeout: 100 * time.Millisecond, WriteTimeout: 100 * time.Millisecond, MaxRetries: -1}), Resolver: AWSVault{}, tokens: map[string]cachedToken{}}
+	return &TokenCache{client: redis.NewClient(&redis.Options{Addr: addr, DialTimeout: 100 * time.Millisecond, ReadTimeout: 100 * time.Millisecond, WriteTimeout: 100 * time.Millisecond, MaxRetries: -1}), Resolver: AWSVault{}, tokens: map[string]cachedToken{}, locks: map[string]*sync.Mutex{}}
 }
 
 func (c *TokenCache) Ping(ctx context.Context) error { return c.client.Ping(ctx).Err() }
@@ -80,26 +82,18 @@ func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, provid
 	material := strings.Join([]string{cfg.Environment, cfg.TenantID, cfg.BindingID, providerAccountID, cfg.TokenURL, cfg.ClientID, secret.Version}, "\x1f")
 	hash := sha256.Sum256([]byte(material))
 	key := "hub:provider-token:" + hex.EncodeToString(hash[:])
+	keyLock := c.lockFor(key)
+	keyLock.Lock()
+	defer keyLock.Unlock()
 	c.mu.Lock()
-	defer c.mu.Unlock()
-	if cached, ok := c.tokens[key]; ok && time.Now().Before(cached.expires) {
+	cached, ok := c.tokens[key]
+	c.mu.Unlock()
+	if ok && time.Now().Before(cached.expires) {
 		return cached.value, nil
 	}
-	// Redis is optional and never authoritative. Expiry is verified independently.
-	if c.client != nil {
-		cacheCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-		raw, e := c.client.Get(cacheCtx, key).Result()
-		cancel()
-		if e == nil {
-			var cached struct {
-				Value   string
-				Expires time.Time
-			}
-			if json.Unmarshal([]byte(raw), &cached) == nil && cached.Value != "" && time.Now().Before(cached.Expires) {
-				return cached.Value, nil
-			}
-		}
-	}
+	// Redis nunca armazena bearer tokens. Ele permanece disponível somente
+	// para saúde/compatibilidade operacional; a autoridade do token é o L1
+	// vinculado à conta, binding, tenant, ambiente e versão do segredo.
 	form := url.Values{"grant_type": {"client_credentials"}, "client_id": {cfg.ClientID}, "client_secret": {secret.Value}}
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, cfg.TokenURL, strings.NewReader(form.Encode()))
 	if err != nil {
@@ -129,6 +123,8 @@ func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, provid
 		ttl = cfg.TokenTTLSeconds
 	}
 	expiry := time.Now().Add(time.Duration(ttl) * time.Second)
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.tokens == nil {
 		c.tokens = map[string]cachedToken{}
 	}
@@ -142,16 +138,21 @@ func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, provid
 	if len(c.tokens) < 1024 {
 		c.tokens[key] = cachedToken{out.AccessToken, expiry}
 	}
-	if c.client != nil {
-		raw, _ := json.Marshal(struct {
-			Value   string
-			Expires time.Time
-		}{out.AccessToken, expiry})
-		cacheCtx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-		_ = c.client.Set(cacheCtx, key, raw, time.Until(expiry)).Err()
-		cancel()
-	}
 	return out.AccessToken, nil
+}
+
+func (c *TokenCache) lockFor(key string) *sync.Mutex {
+	c.locksMu.Lock()
+	defer c.locksMu.Unlock()
+	if c.locks == nil {
+		c.locks = map[string]*sync.Mutex{}
+	}
+	if lock, ok := c.locks[key]; ok {
+		return lock
+	}
+	lock := &sync.Mutex{}
+	c.locks[key] = lock
+	return lock
 }
 
 func (c *TokenCache) applyCertificate(ctx context.Context, client *http.Client, cfg Config) error {
