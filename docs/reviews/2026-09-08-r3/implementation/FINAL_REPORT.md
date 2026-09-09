@@ -64,3 +64,16 @@ Os digests reproduzíveis dos arquivos alterados nesta execução estão em `EVI
 - O console recebeu retry transitório com a mesma `Idempotency-Key`, e o realm passou a declarar o User Profile administrativo necessário para claims de tenant/aplicação/célula. A reconciliação reproduzível das credenciais OTP e a jornada completa de navegador passaram nesta retomada.
 
 Conclusão: a entrega permanece **implementação parcial qualificada em laboratório**. Kind, observabilidade e navegador autenticado agora têm evidência real; continuam impedindo a declaração integral os gates de restore reconciliado, RLS/continuidade, DAG/composição e console avançado, reavaliação individual dos 42 achados, cenários completos de falha/restore e as decisões externas D-01…D-07/T-R2-01. Não houve push, merge, implantação remota ou remoção de volumes.
+
+## Atualização técnica posterior — 2026-09-09
+
+Foram implementados e verificados os seguintes incrementos, sem promover artificialmente seus gates:
+
+- Executor DAG bounded em `hub/internal/atlas/executor.go`, com entradas derivadas das dependências, paralelismo limitado, execução parcial e compensação reversa; testes unitários com race passaram. A integração ao DAG persistido e aos fluxos de composição ainda não foi comprovada.
+- Provider-sim com deduplicação por protocolo e oráculo independente de efeitos. O ensaio de duas submissões iguais produziu um único efeito; a fixture é em memória e não substitui uma prova de recuperação do provedor.
+- RLS efetivo para a credencial sintética não proprietária `hub_runtime`, com `FORCE ROW LEVEL SECURITY`, migrações de compatibilidade, flags de papel não privilegiado e prova negativa de acesso cruzado em control/core/finance. Os serviços ainda não foram convertidos integralmente para essa credencial.
+- Harness de restore em bancos e bucket isolados, com comparação de contagens, objetos e observação de não-replay durante a janela cercada. A reconciliação populada entre efeitos externos e financeiro ainda falta.
+- A validação individual dos 42 achados históricos foi documentada em `REAVALIACAO-42-INDIVIDUAL.md`; nenhum foi encerrado sem evidência própria.
+- O migrador agora interrompe divergência de checksum em vez de ignorá-la.
+
+Assim, o estado correto continua sendo **implementação parcial qualificada**, não implementação integral. Permanecem abertos: restore populado reconciliado, adoção RLS no runtime dos serviços, conexão do executor ao DAG real, planos comerciais e jornadas administrativas restantes, ensaios completos de falha/reinício com oráculos independentes, fechamento individual dos achados quando houver prova, e as decisões D-01…D-07/T-R2-01. As alterações desta atualização ainda estão no working tree; não houve push, merge, implantação remota ou remoção de volumes.

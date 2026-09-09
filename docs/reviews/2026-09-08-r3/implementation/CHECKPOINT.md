@@ -77,3 +77,16 @@
 - Observabilidade real: Prometheus `up=1`, Loki com 9.181 entradas via `loki.source.docker` sem erros de parsing/entrega, Tempo com traces dos serviços e Grafana/Alloy/Loki/Prometheus/Tempo saudáveis.
 - Integrações reais pós-reboot: Órbita, Cometa, Atlas, Pulsar, objetos PostgreSQL+LocalStack, Libra R2-FIN-01..06 e cofre SigV4 com versão fixada passaram; reinicialização controlada da Órbita preservou readiness 200 nas cinco APIs.
 - Gates ainda abertos: restore reconciliado com efeitos externos/financeiro, RLS com credencial não proprietária, executor DAG/composição além do planejador, fluxos administrativos restantes, reavaliação individual dos 42 achados históricos, ensaios completos de falha/restore e decisões externas D-01…D-07/T-R2-01.
+
+## Continuação autônoma — custódia, isolamento e rastreabilidade
+
+- Foi implementado `ExecuteDAG` em `hub/internal/atlas/executor.go`, com camadas do planejador, limite de paralelismo, mapeamento de entradas, modo parcial e compensação reversa. `go test -race ./internal/atlas` passou. A API ainda não está conectada a um produto/DAG persistido de produção; portanto o gate de composição permanece aberto.
+- O provider-sim ganhou deduplicação por `protocol_id` e o oráculo `/__qualification/effects`. Duas submissões do mesmo protocolo retornaram o mesmo `provider_request_id` e produziram um único efeito no ensaio sintético. O contador é em memória e não prova recuperação do provedor após reinício.
+- Foram adicionadas as migrações `0033_runtime_rls` e `0034_runtime_rls_migration_compat` para control/core/finance, com a role `hub_runtime` sem privilégios de proprietário e `FORCE ROW LEVEL SECURITY`. A prova negativa passou nos três bancos, incluindo verificação de `rolsuper=false`, `rolcreaterole=false` e `rolbypassrls=false`; os serviços legados ainda usam a compatibilidade do usuário `hub`, então a adoção integral do DSN runtime continua aberta.
+- `restore-reconciliation.sh` executou dump/restore em bancos isolados, comparou contagens de tabelas e objetos e observou o oráculo externo sem re-admissão (`RESTORE_RECONCILIATION=PASS`, sufixo `autonomous2`). Esse é um ensaio de restore cercado e sem replay; ainda falta um cenário populado que reconcilie efeitos externos e obrigações financeiras após restore.
+- `migrate.sh` passou a falhar de fato em divergência de checksum; o fluxo anterior ignorava o código de `\quit 3`. A correção foi validada com migrações 0033/0034 aplicadas no ecossistema oficial.
+- A reavaliação individual dos 42 achados está em `REAVALIACAO-42-INDIVIDUAL.md`. Nenhum achado foi encerrado por inferência; cada item possui estado, evidência atual e condição objetiva de encerramento.
+
+### Próxima retomada
+
+Prioridade: conectar o executor a um DAG persistido e concluir o cenário de restore populado com oráculos independentes; depois substituir a compatibilidade RLS pela credencial de runtime nos serviços, executar a matriz de falhas/reinícios e tratar os fluxos administrativos/comerciais restantes. D-01…D-07 e T-R2-01 permanecem gates externos/decisórios, sem bloquear a implementação técnica independente.

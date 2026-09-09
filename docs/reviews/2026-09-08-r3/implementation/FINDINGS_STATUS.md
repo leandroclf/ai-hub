@@ -11,3 +11,5 @@ Os 25 achados F-R3-01…F-R3-25 permanecem `ABERTO` até a execução correspond
 ## Histórico
 
 Os 42 achados R2 permanecem `REVALIDACAO_PENDENTE`. A execução anterior tem valor histórico e não qualifica este SHA.
+
+A reavaliação deixou de ser apenas uma pendência agregada: cada item F-01…F-42 foi revisitado em [`REAVALIACAO-42-INDIVIDUAL.md`](REAVALIACAO-42-INDIVIDUAL.md), com evidência disponível, estado atual e critério objetivo para encerramento. Nenhum foi encerrado sem prova individual.
