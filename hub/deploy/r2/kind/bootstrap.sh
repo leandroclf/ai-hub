@@ -2,6 +2,8 @@
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 tool_dir=${R2_TOOL_DIR:-/tmp/ai-hub-r2-tools}
+compose_project=${R2_COMPOSE_PROJECT:-ai_hub_r3qual}
+compose=(docker compose -p "$compose_project" -f "$root/compose.yaml")
 mkdir -p "$tool_dir"
 kind_bin=${KIND_BIN:-$tool_dir/kind}
 kubeconfig="$tool_dir/kubeconfig"
@@ -18,7 +20,8 @@ if ! "$kind_bin" get clusters | rg -qx 'ai-hub-r2'; then
   "$kind_bin" create cluster --name ai-hub-r2 --image kindest/node:v1.32.2 --config "$root/kind/cluster.yaml" --kubeconfig "$kubeconfig" --wait 90s
 fi
 for node in $("$kind_bin" get nodes --name ai-hub-r2); do
-  if ! docker inspect "$node" --format '{{json .NetworkSettings.Networks}}' | jq -e 'has("ai-hub-r2_default")' >/dev/null; then docker network connect ai-hub-r2_default "$node"; fi
+  compose_network="${compose_project}_default"
+  if ! docker inspect "$node" --format '{{json .NetworkSettings.Networks}}' | jq -e --arg network "$compose_network" 'has($network)' >/dev/null; then docker network connect "$compose_network" "$node"; fi
 done
 curl -fsSL https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml -o "$tool_dir/metrics-server.yaml"
 curl -fsSL https://github.com/kedacore/keda/releases/download/v2.17.2/keda-2.17.2.yaml -o "$tool_dir/keda.yaml"
@@ -28,11 +31,11 @@ kubectl --kubeconfig "$kubeconfig" -n kube-system patch deployment metrics-serve
 kubectl --kubeconfig "$kubeconfig" apply --server-side -f "$tool_dir/keda.yaml"
 for service in atlas orbita cometa pulsar libra; do "$kind_bin" load docker-image "ai-hub-r2-$service:r2" --name ai-hub-r2; done
 for domain in control core finance; do
-  docker compose -f "$root/compose.yaml" exec -T postgres psql -U hub -d postgres -v ON_ERROR_STOP=1 <<SQL
+  "${compose[@]}" exec -T postgres psql -U hub -d postgres -v ON_ERROR_STOP=1 <<SQL
 SELECT 'CREATE DATABASE hub_${domain}_kind' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname='hub_${domain}_kind')\gexec
 SQL
 done
-docker compose -f "$root/compose.yaml" run --rm -e MIGRATION_DB_SUFFIX=_kind migrate
+"${compose[@]}" run --rm -e MIGRATION_DB_SUFFIX=_kind migrate
 python3 "$root/kind/render-runtime.py" > "$tool_dir/runtime.yaml"
 kubectl --kubeconfig "$kubeconfig" apply -f "$tool_dir/runtime.yaml"
 kubectl --kubeconfig "$kubeconfig" apply -k "$root/k8s/overlays/local-kind"

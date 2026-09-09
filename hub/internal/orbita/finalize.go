@@ -68,7 +68,13 @@ func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID 
 		fact := ProtocolFinalizedFact{ProtocolID: protocolID, TraceID: traceID, TenantID: tenantID, Status: string(status), FinalBody: body, EventID: eventID}
 		fact.Representation = tx.Representation
 		fact.EvidenceID = eventID
-		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,i.command->'economic_snapshot',clock_timestamp() FROM protocols p JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.EconomicSnapshot, &fact.OccurredAt); err != nil {
+		// A command may legitimately omit an economic snapshot (for example
+		// a synthetic/provider qualification request).  PostgreSQL returns
+		// NULL for the JSON projection in that case, while json.RawMessage
+		// is not a nullable database/sql destination.  Normalize the absence
+		// to an empty object so finalization remains durable and the outbox
+		// fact keeps a valid JSON contract.
+		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,COALESCE(i.command->'economic_snapshot','{}'::jsonb),clock_timestamp() FROM protocols p JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.EconomicSnapshot, &fact.OccurredAt); err != nil {
 			return err
 		}
 		return outbox.Enqueue(ctx, tx.Tx(), "protocol", protocolID, "protocol.finalized", fact)

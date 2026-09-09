@@ -62,10 +62,10 @@ func decodeBody(w http.ResponseWriter, r *http.Request, v any) error {
 	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(v); err != nil {
-		return errors.New("JSON inválido ou corpo excede 1 MiB")
+		return fmt.Errorf("JSON inválido ou corpo excede 1 MiB: %w", err)
 	}
 	if err := dec.Decode(new(any)); err != io.EOF {
-		return errors.New("apenas um objeto JSON permitido")
+		return fmt.Errorf("apenas um objeto JSON permitido: %w", err)
 	}
 	return nil
 }

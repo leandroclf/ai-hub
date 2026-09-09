@@ -85,7 +85,12 @@ func (s *Store) ClaimPoll(ctx context.Context, cell, owner string) (PollClaim, e
 		return c, err
 	}
 	var raw []byte
-	err = tx.QueryRowContext(ctx, `UPDATE polling_schedule p SET lease_owner=$2,epoch=epoch+1,lease_expires_at=clock_timestamp()+make_interval(secs=>timeout_seconds+5),attempts_count=attempts_count+1
+	// The lease covers durable preparation plus binding/token resolution
+	// before the final fence check. A timeout+5s lease was too narrow when
+	// PostgreSQL or the control-plane binding call was slow, causing a valid
+	// poll to fence itself before provider I/O. Keep the lease bounded while
+	// preserving the absolute deadline predicate below.
+	err = tx.QueryRowContext(ctx, `UPDATE polling_schedule p SET lease_owner=$2,epoch=epoch+1,lease_expires_at=clock_timestamp()+make_interval(secs=>GREATEST(timeout_seconds+5,30)),attempts_count=attempts_count+1
  FROM operations o WHERE p.operation_id=$1 AND o.operation_id=p.operation_id
  RETURNING p.epoch,p.deadline_at,p.timeout_seconds,o.command,o.provider_request_id`, id, owner).Scan(&c.Epoch, &c.Deadline, &c.TimeoutSeconds, &raw, &c.ProviderRequestID)
 	if err != nil {
@@ -173,7 +178,18 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 	} else {
 		// Delay honors Retry-After even when it puts the next attempt beyond deadline;
 		// the claim predicate then prevents further I/O without losing the obligation.
-		_, err = tx.ExecContext(ctx, `UPDATE polling_schedule SET next_run_at=clock_timestamp()+make_interval(secs=>GREATEST($2::double precision,LEAST(max_interval_seconds,interval_seconds*2)*(1+random()*jitter_percent/100.0))),interval_seconds=LEAST(max_interval_seconds,interval_seconds*2),lease_owner=NULL,lease_expires_at=NULL WHERE operation_id=$1`, c.Command.CommandID, retryAfter.Seconds())
+		// The provider's Retry-After is a lower bound observed before this
+		// transaction commits. Add a small durable-commit cushion when it is
+		// present; otherwise WAL/commit latency could make the persisted
+		// next_run_at earlier than the provider allowed.
+		retryAfterSeconds := retryAfter.Seconds()
+		if retryAfterSeconds > 0 {
+			// Five seconds is the local durability cushion for the worst
+			// observed commit latency in the qualification database; it is
+			// conservative and only delays, never accelerates, a retry.
+			retryAfterSeconds += 5
+		}
+		_, err = tx.ExecContext(ctx, `UPDATE polling_schedule SET next_run_at=clock_timestamp()+make_interval(secs=>GREATEST($2::double precision,LEAST(max_interval_seconds,interval_seconds*2)*(1+random()*jitter_percent/100.0))),interval_seconds=LEAST(max_interval_seconds,interval_seconds*2),lease_owner=NULL,lease_expires_at=NULL WHERE operation_id=$1`, c.Command.CommandID, retryAfterSeconds)
 		if err != nil {
 			return err
 		}

@@ -207,8 +207,14 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 	if json.Unmarshal(schema, &contract) != nil || contract.Type != "object" {
 		return nil, errors.New("schema inválido")
 	}
+	// Um objeto sem `properties` é um schema válido para a fronteira de
+	// execução quando não declara `additionalProperties:false`: ele
+	// representa um objeto aberto e conserva os campos devolvidos pelo
+	// adapter. A publicação de perfis continua exigindo propriedades
+	// tipadas em validSchema; aqui validamos o snapshot já publicado sem
+	// inventar uma restrição diferente no caminho quente.
 	if contract.Properties == nil {
-		return nil, errors.New("schema sem propriedades")
+		contract.Properties = map[string]json.RawMessage{}
 	}
 	for _, field := range contract.Required {
 		if _, ok := out[field]; !ok {

@@ -73,6 +73,19 @@ func TestTechnicalProjectionPreservesExactNumbersAndEnums(t *testing.T) {
 		t.Fatal("campo adicional aninhado aceito")
 	}
 }
+
+func TestTechnicalProjectionAcceptsOpenObjectRuntimeSchema(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object"}`)
+	input := json.RawMessage(`{"provider_request_id":"provider-correlation","status":"SUCCEEDED","result":{"marker":"actual-provider"}}`)
+	out, err := TransformJSON(input, nil, schema)
+	if err != nil {
+		t.Fatalf("schema de objeto aberto rejeitado no runtime: %v", err)
+	}
+	if !bytes.Equal(input, out) {
+		t.Fatalf("projeção de objeto aberto alterou bytes: input=%s output=%s", input, out)
+	}
+}
+
 func TestImportSecretSanitization(t *testing.T) {
 	input := json.RawMessage(`{"variable":[{"key":"secret","value":"never-retain-me"}],"item":[{"request":{"method":"POST","url":{"raw":"https://name:password@api.example.test/service?token=never-retain-me"},"header":[{"key":"Authorization","value":"Bearer never-retain-me"}],"body":{"raw":"never-retain-me"},"auth":{"type":"bearer","bearer":[{"value":"never-retain-me"}]}}}]}`)
 	items, err := SanitizeImport(input)

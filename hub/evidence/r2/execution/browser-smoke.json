@@ -4,6 +4,11 @@
     "status": "PASS"
   },
   {
+    "check": "Admin resource save, reload and durable readback",
+    "status": "PASS",
+    "resource": "browser-client-1788967926311"
+  },
+  {
     "check": "URL navigation and real authenticated provider list",
     "status": "PASS"
   },
