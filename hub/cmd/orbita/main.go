@@ -140,6 +140,13 @@ func main() {
 		fileCatalog := objectstore.NewCatalog(db, objects)
 		handlers.SetFileCatalog(fileCatalog)
 		objectstore.NewHandlers(fileCatalog).Register(mux)
+		// Expurgo é opt-in e exige tenants explícitos. Isso evita que um
+		// processo de runtime obtenha escopo global por configuração implícita.
+		retentionTenants := objectstore.TenantsFromEnv(config.Env("RETENTION_TENANTS", ""))
+		if len(retentionTenants) > 0 {
+			retentionActor := config.Env("RETENTION_ACTOR", "retention-worker")
+			go objectstore.RunRetentionWorker(ctx, fileCatalog, retentionTenants, retentionActor, config.EnvDurationSeconds("RETENTION_INTERVAL_SECONDS", 60), log)
+		}
 		if config.Env("ENVIRONMENT", "") == "local" {
 			go queue.RunBootstrap(ctx, func() error { return objects.EnsureBucket(ctx) }, log)
 		}

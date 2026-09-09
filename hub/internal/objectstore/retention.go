@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,6 +17,90 @@ type PurgePlan struct {
 	ID        string    `json:"id"`
 	FileIDs   []string  `json:"file_ids"`
 	ExpiresAt time.Time `json:"expires_at"`
+}
+
+// PurgeBatchResult descreve uma rodada de retenção. Erros por arquivo são
+// contabilizados individualmente para que uma falha transitória no S3 não
+// impeça a tentativa dos demais candidatos.
+type PurgeBatchResult struct {
+	Tenant     string
+	Candidates int
+	Purged     int
+	Failed     int
+}
+
+// RunPurgeBatch executa uma rodada durável para um tenant. O plano é gravado
+// antes das deleções e cada Purge mantém o tombstone e o estado PURGING, de
+// modo que reinícios retomem o trabalho sem perder a intenção de expurgo.
+func (c *Catalog) RunPurgeBatch(ctx context.Context, tenant, actor string) (PurgeBatchResult, error) {
+	result := PurgeBatchResult{Tenant: tenant}
+	plan, err := c.DryRun(ctx, tenant, actor)
+	if err != nil {
+		return result, err
+	}
+	result.Candidates = len(plan.FileIDs)
+	for _, id := range plan.FileIDs {
+		if err := c.Purge(ctx, tenant, plan.ID, id, actor); err != nil {
+			result.Failed++
+			continue
+		}
+		result.Purged++
+	}
+	return result, nil
+}
+
+// RunRetentionWorker processa somente os tenants explicitamente configurados.
+// Não existe modo wildcard: retenção é uma operação destrutiva e a identidade
+// do worker precisa receber o escopo por configuração revisável.
+func RunRetentionWorker(ctx context.Context, c *Catalog, tenants []string, actor string, interval time.Duration, log *slog.Logger) {
+	if c == nil || len(tenants) == 0 || actor == "" {
+		return
+	}
+	if interval <= 0 {
+		interval = time.Minute
+	}
+	if log == nil {
+		log = slog.Default()
+	}
+	run := func() {
+		for _, tenant := range tenants {
+			result, err := c.RunPurgeBatch(ctx, tenant, actor)
+			if err != nil {
+				log.Error("falha na rodada de retencao", "tenant_id", tenant, "error", err)
+				continue
+			}
+			log.Info("rodada de retencao concluida", "tenant_id", tenant, "candidatos", result.Candidates, "expurgados", result.Purged, "falhas", result.Failed)
+		}
+	}
+	run()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			run()
+		}
+	}
+}
+
+// TenantsFromEnv normaliza uma lista explícita separada por vírgula.
+func TenantsFromEnv(value string) []string {
+	seen := make(map[string]struct{})
+	var tenants []string
+	for _, raw := range strings.Split(value, ",") {
+		tenant := strings.TrimSpace(raw)
+		if tenant == "" {
+			continue
+		}
+		if _, ok := seen[tenant]; ok {
+			continue
+		}
+		seen[tenant] = struct{}{}
+		tenants = append(tenants, tenant)
+	}
+	return tenants
 }
 
 func (c *Catalog) DryRun(ctx context.Context, tenant, actor string) (PurgePlan, error) {

@@ -97,6 +97,12 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - T-R2-01 recebeu a regra operacional conservadora: só anunciar sucesso após confirmação durável; em dúvida, preservar `UNKNOWN` e reconciliar; resultado tardio não reabre protocolo. A prova formal da fronteira relógio/commit continua obrigatória.
 - As decisões habilitam a execução técnica, mas não substituem ratificação nominal de produção, contrato comercial, orçamento, retenção regulatória, matriz de capacidades de provedor ou aceite de RPO/RTO.
 
+## Continuação — worker durável de retenção
+
+- `Catalog.RunPurgeBatch` agora executa o plano persistido e tenta cada candidato individualmente; falha no S3 deixa o item em `PURGING` para retomada posterior e não impede os demais candidatos.
+- `RunRetentionWorker` foi conectado ao processo Órbita e executa imediatamente e em intervalo configurável. O escopo é somente a lista explícita `RETENTION_TENANTS`; configuração vazia desabilita o expurgo e não existe wildcard.
+- `TenantsFromEnv` remove espaços, entradas vazias e duplicatas; a regressão unitária passou. O worker preserva obrigações por meio dos pins e do estado durável existente.
+
 ## Continuação — horizonte absoluto de retry
 
 - `command_intents` passou a persistir `retry_started_at` e `retry_until` pela migração `core/0035_retry_horizon.sql`.
