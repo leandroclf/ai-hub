@@ -8,10 +8,29 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	_ "github.com/lib/pq"
 )
+
+// RuntimeDSN fixa o tenant no nível da sessão PostgreSQL. É usado por
+// workloads dedicados a um único tenant; serviços multi-tenant devem abrir
+// transações com contexto equivalente por request antes de adotar a role.
+func RuntimeDSN(dsn, tenant string) (string, error) {
+	if strings.TrimSpace(tenant) == "" || strings.ContainsAny(tenant, "\x00\r\n") {
+		return "", fmt.Errorf("pg: tenant runtime inválido")
+	}
+	u, err := url.Parse(dsn)
+	if err != nil || u.Scheme == "" {
+		return "", fmt.Errorf("pg: DSN runtime inválido")
+	}
+	q := u.Query()
+	q.Set("options", "-c app.tenant_id="+tenant)
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
 
 // Config controla o orcamento de conexoes do pool, conforme OPE-02:
 // concorrencia maxima por pod/servico deve caber no orcamento do banco.

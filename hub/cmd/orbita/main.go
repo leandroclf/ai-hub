@@ -29,6 +29,13 @@ func main() {
 	log := logging.New("orbita")
 	addr := config.Env("HTTP_ADDR", ":8080")
 	dsn := config.Env("CORE_DSN", "postgres://hub:hub@localhost:5432/hub_core?sslmode=disable")
+	if tenant := config.Env("RUNTIME_TENANT_ID", ""); tenant != "" {
+		var dsnErr error
+		dsn, dsnErr = pg.RuntimeDSN(dsn, tenant)
+		if dsnErr != nil {
+			panic(dsnErr)
+		}
+	}
 	atlasURL := config.Env("ATLAS_URL", "http://localhost:8081")
 	libraURL := config.Env("LIBRA_URL", "http://localhost:8084")
 	cometaURL := config.Env("COMETA_URL", "http://localhost:8082")

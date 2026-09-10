@@ -109,3 +109,5 @@ A prova de redelivery também foi reforçada: eventos com novo identificador de 
 O ensaio de callback conflitante foi ampliado para uma observação tardia após a disputa inicial: a evidência adicional é conservada em receipt, sem reabrir o terminal nem criar novo evento de outbox.
 
 O ensaio de fencing também confirma que um owner stale não acrescenta fato terminal ao outbox existente; somente o takeover vigente pode continuar o polling, preservando a deadline absoluta e a agenda de retry.
+
+Foi preparada a adoção de RLS por sessão com `RuntimeDSN` e `RUNTIME_TENANT_ID` no Órbita. Essa opção cobre workloads dedicados; não fecha o gate de serviços multi-tenant, que ainda precisa propagar o tenant em cada transação usando a credencial não proprietária.

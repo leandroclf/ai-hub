@@ -117,6 +117,7 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - `R2-FIN-05-S02` foi reforçado para distinguir identidade de transporte e unidade econômica: redelivery com novo `event_id` conserva dois inboxes, mas apenas um `economic_fact` e um journal (dois lançamentos balanceados); passou em 0,04s.
 - `TestPostgresPollingCallbackConflictRetainsBoth` foi reforçado: callback tardio adicional cria somente receipt de evidência conflitante; o outbox terminal permanece único. PASS PostgreSQL real em 0,07s.
 - `TestPostgresPollingClaimsFenceAndAbsoluteDeadline` foi reforçado para comparar o outbox antes/depois da conclusão stale, respeitando o evento durável de aceitação já existente. O stale owner não adicionou fato terminal; fencing, takeover, backoff e deadline passaram em 0,09s.
+- O pacote `pg` passou a oferecer `RuntimeDSN`, fixando `app.tenant_id` via opção de sessão; Órbita aceita `RUNTIME_TENANT_ID` para implantação dedicada. A configuração padrão não muda, pois workloads multi-tenant ainda exigem propagação transacional por request. `go test ./internal/platform/pg` passou.
 
 ## Continuação — horizonte absoluto de retry
 
