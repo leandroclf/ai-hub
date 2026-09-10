@@ -4,14 +4,23 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	"ai-hub/hub/internal/atlas"
+	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/providerauth"
+	"ai-hub/hub/internal/providersim"
 	_ "github.com/lib/pq"
 )
 
@@ -117,6 +126,90 @@ func TestCallbackCapabilityIsRandomAndStoredOnlyAsHash(t *testing.T) {
 	if hash == first || len(hash) != 64 || hash == callbackTokenHash(second) {
 		t.Fatalf("callback capability hashing is invalid")
 	}
+}
+
+func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	t.Setenv("CELL_ID", "r2-cell-a")
+	t.Setenv("ENVIRONMENT", "local")
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(8)
+	store := NewStore(db)
+	id := idgen.New()
+	cmd := dispatch.Command{CommandID: id, ProtocolID: idgen.New(), TenantID: "drop-synthetic", ApplicationID: "app-a", CellID: "r2-cell-a", ProviderAccountID: "account", StepDeadline: time.Now().Add(time.Minute), RequestBody: map[string]any{"force_drop_after_effect": true}}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", id)
+		db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", id)
+		db.Exec("DELETE FROM attempts WHERE operation_id=$1", id)
+		db.Exec("DELETE FROM operations WHERE operation_id=$1", id)
+	})
+	provider := providersim.NewServer()
+	providerMux := http.NewServeMux()
+	provider.Routes(providerMux)
+	providerHTTP := httptest.NewServer(providerMux)
+	defer providerHTTP.Close()
+	providerURL, _ := url.Parse(providerHTTP.URL)
+	t.Setenv("EGRESS_HTTP_ORIGINS", providerHTTP.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", providerURL.Host+"=127.0.0.1/32")
+	catalog := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/token" {
+			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "fixture-workload", "expires_in": 60, "token_type": "Bearer"})
+			return
+		}
+		if r.Header.Get("Authorization") != "Bearer fixture-workload" {
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(atlasclient.CredentialBinding{BindingID: "binding", SecretRef: "fixture-secret", SecretVersion: "v1", CredentialMode: "SHARED_HUB"})
+	}))
+	defer catalog.Close()
+	account, _ := json.Marshal(map[string]any{"base_url": providerHTTP.URL, "provider_mode": "sync", "auth_type": "NONE"})
+	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object","properties":{}}}`)}}
+	cmd.ConfigSnapshot, _ = json.Marshal(snapshot)
+	tokenFile := t.TempDir() + "/secret"
+	if err := os.WriteFile(tokenFile, []byte("fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("OIDC_TOKEN_URL", catalog.URL+"/token")
+	t.Setenv("WORKLOAD_CLIENT_ID", "fixture")
+	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", tokenFile)
+	exec := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: dropFixtureVault{}})
+	first := exec.Execute(context.Background(), cmd)
+	t.Logf("first execution: %+v", first)
+	if first.Kind != dispatch.FactUnknown || !first.Durable {
+		t.Fatalf("first execution should be durable UNKNOWN: %+v", first)
+	}
+	second := exec.Execute(context.Background(), cmd)
+	if second.Kind != dispatch.FactUnknown || !second.Durable || second.EvidenceID != first.EvidenceID {
+		t.Fatalf("recovery changed durable UNKNOWN: first=%+v second=%+v", first, second)
+	}
+	response, err := providerHTTP.Client().Get(providerHTTP.URL + "/__qualification/effects")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	var effects struct {
+		Effects int `json:"effects"`
+	}
+	if err = json.NewDecoder(response.Body).Decode(&effects); err != nil {
+		t.Fatal(err)
+	}
+	if effects.Effects != 1 {
+		t.Fatalf("external effect was reexecuted: %d", effects.Effects)
+	}
+}
+
+type dropFixtureVault struct{}
+
+func (dropFixtureVault) Resolve(context.Context, string, string) (providerauth.Secret, error) {
+	return providerauth.Secret{Value: "fixture", Version: "v1"}, nil
 }
 
 func TestPostgresPendingCustodyAtomic(t *testing.T) {

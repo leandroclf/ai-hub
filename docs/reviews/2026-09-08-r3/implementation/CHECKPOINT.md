@@ -111,6 +111,7 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - O harness de restore passou a comparar digestes determinísticos das linhas, além de contagens, e sanitiza `_` para `-` no nome do bucket S3. A execução `R2_RESTORE_SUFFIX=autonomous_digest2` passou em control/core/finance, com oráculo externo observado sem replay; o bucket isolado não continha objetos nesta execução.
 - O provider-sim aceita a injeção `drop_after_effect`; a chave e o efeito são persistidos antes do fechamento da conexão. Cometa propaga `force_drop_after_effect` do payload sintético para esse ensaio, permitindo observar `UNKNOWN` sem apagar a evidência externa.
 - Após reconstrução correta da imagem, o ensaio HTTP real `qualification-drop-after-effect-v4-20260909` confirmou a recuperação: a primeira chamada perdeu a resposta, a repetição retornou `prov-req-000001`/`SUCCEEDED` e o oráculo permaneceu em `effects=1, protocols=1`.
+- O teste integrado PostgreSQL `TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted` passou: Cometa recebeu queda pós-efeito, persistiu `UNKNOWN`/`transport_error`, a segunda execução reutilizou a operação e o oráculo HTTP confirmou exatamente um efeito.
 
 ## Continuação — horizonte absoluto de retry
 
