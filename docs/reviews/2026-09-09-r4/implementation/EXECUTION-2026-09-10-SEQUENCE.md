@@ -35,6 +35,10 @@ reprodutível.
 - Carga autorizada pós-rebuild (`r4-authorized-1789081369162`): PASS após a
   conexão dos pools HTTP; os oito cenários terminaram conforme esperado e a
   mesma chave produziu quatro observações do mesmo protocolo.
+- Reconciliação administrativa de protocolo: PASS no teste de integração com
+  PostgreSQL; a solicitação exige MFA e `protocols:reconcile`, é idempotente
+  enquanto aberta, fica auditada na mesma transação e retorna explicitamente
+  `no_provider_replay`.
 
 ## Correção implementada
 
@@ -55,7 +59,7 @@ reutilização por origem e a independência dos clientes.
 Ainda não há evidência suficiente para fechar a missão completa de 201
 requisitos/732 cenários. Permanecem no OpenSpec os itens de executor DAG,
 capacidade ligada a todo I/O, budgets completos de pools HTTP, operações administrativas e
-financeiras completas, FileRefs no fluxo, fencing geral de efeito incerto,
+financeiras completas além da reconciliação de protocolos, FileRefs no fluxo, fencing geral de efeito incerto,
 projeções escaláveis, telemetria bilateral e matriz integral sem lacunas.
 
 O resultado desta execução deve ser lido como `PASS` dos gates listados e

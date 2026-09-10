@@ -158,7 +158,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-14 Concluir e requalificar R3-ADM-02 — Ações operacionais com API efetiva.
-  - Objective: Nenhuma alteração no frontend; IDs de entrega/rotas SLA/reconcile continuam incompatíveis.
+  - Objective: A ação de reconciliação de protocolos agora possui API Orbita durável, idempotente, auditada e sem replay de provedor; ainda faltam as demais ações operacionais, IDs de entrega e rotas SLA compatíveis.
   - Likely files/components: hub/admin-ui/src/pages/OperationsPage.tsx, hub/internal/pulsar/handlers.go, hub/internal/orbita/admin.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.

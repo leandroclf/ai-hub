@@ -3,12 +3,14 @@ package orbita
 import (
 	"encoding/base64"
 	"encoding/json"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/idgen"
 )
 
 func (h *Handlers) RegisterAdmin(mux *http.ServeMux) {
@@ -31,8 +33,14 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		auth.Error(w, 403, "forbidden")
 		return
 	}
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodGet && r.Method != http.MethodPost {
 		auth.Error(w, 405, "method_not_allowed")
+		return
+	}
+	path := strings.TrimPrefix(r.URL.Path, "/admin/v1/protocols")
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	if len(parts) > 2 {
+		auth.Error(w, 404, "not_found")
 		return
 	}
 	tenant := r.URL.Query().Get("tenant_id")
@@ -44,13 +52,47 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		auth.Error(w, 403, "global_reader_mfa_required")
 		return
 	}
-	path := strings.TrimPrefix(r.URL.Path, "/admin/v1/protocols")
-	parts := strings.Split(strings.Trim(path, "/"), "/")
-	if len(parts) > 2 {
-		auth.Error(w, 404, "not_found")
+	id := parts[0]
+	if r.Method == http.MethodPost {
+		if id == "" || len(parts) != 2 || parts[1] != "reconcile" || !p.HasScope("protocols:reconcile") || !p.MFA || !p.HasRole("hub_protocol_reader") {
+			auth.Error(w, 403, "forbidden")
+			return
+		}
+		protocol, err := h.store.GetByID(r.Context(), id)
+		if err != nil || (tenant != "*" && protocol.TenantID != tenant) {
+			auth.Error(w, 404, "not_found")
+			return
+		}
+		var input struct {
+			Reason string `json:"reason"`
+		}
+		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64*1024))
+		decoder.DisallowUnknownFields()
+		if decoder.Decode(&input) != nil || decoder.Decode(&struct{}{}) != io.EOF || len(strings.TrimSpace(input.Reason)) < 8 {
+			auth.Error(w, 422, "reason_required")
+			return
+		}
+		tx, err := h.store.db.BeginTx(r.Context(), nil)
+		if err != nil {
+			auth.Error(w, 503, "reconciliation_unavailable")
+			return
+		}
+		defer tx.Rollback()
+		requestID := idgen.New()
+		var storedRequestID string
+		err = tx.QueryRowContext(r.Context(), `INSERT INTO protocol_reconciliation_requests(request_id,protocol_id,tenant_id,requested_by,reason) VALUES($1,$2,$3,$4,$5) ON CONFLICT (tenant_id,protocol_id) WHERE state='OPEN' DO UPDATE SET updated_at=clock_timestamp(),reason=EXCLUDED.reason,requested_by=EXCLUDED.requested_by RETURNING request_id`, requestID, id, protocol.TenantID, p.Subject, strings.TrimSpace(input.Reason)).Scan(&storedRequestID)
+		if err != nil {
+			auth.Error(w, 503, "reconciliation_unavailable")
+			return
+		}
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,$3,'RECONCILIATION_REQUEST',$4)", p.Subject, tenant, id, p.MFA); err != nil || tx.Commit() != nil {
+			auth.Error(w, 503, "audit_unavailable")
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, http.StatusAccepted, map[string]any{"request_id": storedRequestID, "protocol_id": id, "state": "OPEN", "effect": "no_provider_replay"})
 		return
 	}
-	id := parts[0]
 	// Audit is a prerequisite of diagnostic access, including empty/global reads.
 	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,$3,'READ',$4)", p.Subject, tenant, id, p.MFA); err != nil {
 		auth.Error(w, 503, "audit_unavailable")
