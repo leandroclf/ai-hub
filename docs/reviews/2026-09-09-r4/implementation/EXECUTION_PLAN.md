@@ -21,4 +21,10 @@ ou validação de jornada autenticada já preparada pelo operador. Seu resultado
 cookies, gravações e Browser Use Cloud permanecem sujeitos às regras de
 segurança e consentimento descritas no README do harness.
 
-Nesta execução foram concluídas as etapas 1–4 parcialmente. Permanecem abertas as etapas 5–7 e os gates integrados.
+Na execução de 2026-09-10, os gates locais de código, OpenSpec, navegador,
+carga autorizada, RLS e restore passaram; kind passou após reinício dos
+workloads, incluindo ensaio de duas réplicas. O Browser Harness ficou
+`BLOCKED-ENVIRONMENT` por ausência de CDP/DevToolsActivePort. As etapas 5–7
+seguem abertas nos pontos que exigem implementação ou cobertura integral;
+consulte `EXECUTION-2026-09-10-SEQUENCE.md` para a matriz de evidências e
+pendências sem promoção indevida.

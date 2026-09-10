@@ -1,0 +1,54 @@
+# Execução da sequência R4 — 2026-09-10
+
+## Resultado desta iteração
+
+Esta iteração fecha a correção de prazo do polling e requalifica os gates
+locais disponíveis. O OpenSpec estrito permanece válido em 21/21 mudanças.
+As tarefas B-R4 continuam abertas quando o critério exige cobertura integral
+dos cenários, integração ainda ausente ou validação de ambiente não
+reprodutível.
+
+## Evidências executadas
+
+- Suíte Go completa com `-race`: PASS, sem pacotes ignorados, usando bancos
+  isolados `*_r4test` e LocalStack local.
+- `go vet ./...`: PASS.
+- `hub/admin-ui`: `npm run build`: PASS.
+- OpenSpec: `validate --all --strict --no-interactive --json`: PASS, 21/21.
+- Seed do catálogo: PASS, recursos existentes e versionados.
+- Playwright determinístico: PASS para OIDC Authorization Code + PKCE + OTP,
+  persistência do admin, navegação autenticada, ausência de tokens persistentes,
+  viewport de 390px e logout.
+- Carga autorizada: PASS em SYNC sucesso/falha, ASYNC polling A/B, callback,
+  AUTO, saldo estrito e credencial dedicada; idempotência observada quatro
+  vezes para o mesmo protocolo.
+- RLS runtime: PASS nos domínios control/core/finance com prova negativa
+  cross-tenant.
+- Restore/reconciliation com sufixo `r4_sequence_20260910`: PASS para bancos
+  control/core/finance, objetos e oracle de efeitos externos sem replay.
+- Kind existente `ai-hub-r2`: workloads atlas, orbita, cometa, pulsar e libra
+  em `Running`; escala manual para duas réplicas por workload: PASS; PDBs,
+  HPA/KEDA e placement em dois workers observados.
+- Browser Harness: `BLOCKED-ENVIRONMENT`, pois o daemon não encontrou
+  `DevToolsActivePort`/CDP no navegador local. Não é falha funcional do portal
+  e não substitui o gate Playwright.
+
+## Correção implementada
+
+`ScheduleAcceptedPollTx` passa a usar `StepDeadline` como prazo absoluto de
+observação de um efeito externo já aceito, usando `RetryDeadline` somente como
+fallback de compatibilidade. O teste PostgreSQL de custódia verifica o prazo
+persistido. Isso evita que o TTL de recuperação de transporte expire um
+polling saudável antes do SLA do passo.
+
+## Pendências que impedem declaração integral
+
+Ainda não há evidência suficiente para fechar a missão completa de 201
+requisitos/732 cenários. Permanecem no OpenSpec os itens de executor DAG,
+capacidade ligada a todo I/O, pools HTTP, operações administrativas e
+financeiras completas, FileRefs no fluxo, fencing geral de efeito incerto,
+projeções escaláveis, telemetria bilateral e matriz integral sem lacunas.
+
+O resultado desta execução deve ser lido como `PASS` dos gates listados e
+`OPEN` dos requisitos não demonstrados, nunca como promoção automática para
+homologação ou produção.
