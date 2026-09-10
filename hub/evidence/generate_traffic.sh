@@ -3,15 +3,24 @@
 # testes (banco de dados, filas, S3, logs) documentada em
 # hub/evidence/EVIDENCE.md. Nao e um teste automatizado (ver
 # hub/test/e2e para isso); e um script de geracao de evidencia.
+# Para endpoints protegidos, forneca R2_BEARER_TOKEN; o valor nunca e impresso.
 set -uo pipefail
 
 ORBITA=${ORBITA_URL:-http://localhost:18080}
 ATLAS=${ATLAS_URL:-http://localhost:18081}
+AUTH_HEADER=""
+if [[ -n "${R2_BEARER_TOKEN:-}" ]]; then
+  AUTH_HEADER="Authorization: Bearer ${R2_BEARER_TOKEN}"
+fi
+CURL_AUTH_ARGS=()
+if [[ -n "$AUTH_HEADER" ]]; then
+  CURL_AUTH_ARGS=(-H "$AUTH_HEADER")
+fi
 
 req() {
   local desc="$1"; shift
   echo "### $desc"
-  curl -s -w '\nHTTP %{http_code}\n' "$@"
+  curl -s -w '\nHTTP %{http_code}\n' "${CURL_AUTH_ARGS[@]}" "$@"
   echo
 }
 
@@ -56,7 +65,7 @@ req "8. Credencial dedicada (tenant acme-dedicated)" \
   -d '{"mode":"SYNC","provider_account_id":"prov-sync-1","service_code":"consulta-cadastral","service_version":1,"input":{"cpf":"33333333333"}}'
 
 echo "### 9. Cadastrando conta de provedor sem credencial (para o cenario de recusa)"
-curl -s -X POST "$ATLAS/v1/provider-accounts" -H 'Content-Type: application/json' -d '{
+curl -s -X POST "$ATLAS/v1/provider-accounts" "${CURL_AUTH_ARGS[@]}" -H 'Content-Type: application/json' -d '{
   "provider_account_id": "prov-nocred-evid", "provider_id": "provider-sim", "environment": "local",
   "base_url": "http://provider-sim:8090", "provider_mode": "sync"
 }'
