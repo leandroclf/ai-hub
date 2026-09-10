@@ -98,6 +98,19 @@ func count(t *testing.T, s *Store, query string, args ...any) int {
 func TestFinancePostgresScenarios(t *testing.T) {
 	s := financeDB(t)
 	ctx := context.Background()
+	t.Run("R2-FIN-UNKNOWN-no_capture", func(t *testing.T) {
+		e := event(tenant())
+		e.Status = "UNKNOWN"
+		e.Kind = "UNKNOWN"
+		apply(t, s, "cost", e)
+		apply(t, s, "revenue", e)
+		if got := count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID); got != 0 {
+			t.Fatalf("UNKNOWN generated economic facts: %d", got)
+		}
+		if got := count(t, s, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID); got != 0 {
+			t.Fatalf("UNKNOWN generated ledger entries: %d", got)
+		}
+	})
 	t.Run("R2-FIN-01-S01_snapshot_frozen", func(t *testing.T) {
 		e := event(tenant())
 		apply(t, s, "revenue", e)

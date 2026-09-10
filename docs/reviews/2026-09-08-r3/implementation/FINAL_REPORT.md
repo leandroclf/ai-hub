@@ -101,3 +101,5 @@ No ensaio HTTP real após reconstrução da imagem atual, a primeira chamada per
 O ensaio integrado do Executor Cometa passou contra PostgreSQL real: uma queda pós-efeito produziu `UNKNOWN` durável e a execução seguinte reutilizou a operação sem novo efeito no provider-sim. A ligação desse resultado à finalização do protocolo Orbita e à obrigação financeira ainda precisa de qualificação específica.
 
 Essa ligação foi parcialmente reforçada no consumidor de fatos: `UNKNOWN` agora é verificado explicitamente sem terminalização, enquanto um fato terminal posterior é aplicado sob redelivery concorrente com um único outbox. A captura financeira e a jornada completa do protocolo continuam exigindo ensaio específico.
+
+No Libra, a suíte PostgreSQL passou com o cenário explícito `R2-FIN-UNKNOWN-no_capture`: eventos incertos não criam fatos econômicos nem lançamentos contábeis. A reconciliação financeira do protocolo real após restore ainda permanece aberta.
