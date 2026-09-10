@@ -112,6 +112,10 @@ func TestPostgresPollingClaimsFenceAndAbsoluteDeadline(t *testing.T) {
 		t.Fatal("epoch did not advance")
 	}
 	final := dispatch.Result{Kind: dispatch.FactSucceeded, ProviderRequestID: "provider-correlation", ResponseBody: map[string]string{"result_marker": "provider"}}
+	var beforeStale int
+	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&beforeStale); err != nil {
+		t.Fatal(err)
+	}
 	if err = s.CompletePoll(ctx, claim, final, 0); !errors.Is(err, ErrPollFence) {
 		t.Fatalf("stale update %v", err)
 	}
@@ -119,6 +123,10 @@ func TestPostgresPollingClaimsFenceAndAbsoluteDeadline(t *testing.T) {
 	s.db.QueryRow(`SELECT state FROM operations WHERE operation_id=$1`, cmd.CommandID).Scan(&state)
 	if state != "ACCEPTED_EXTERNAL" {
 		t.Fatalf("stale changed state %s", state)
+	}
+	var staleFacts int
+	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&staleFacts); err != nil || staleFacts != beforeStale {
+		t.Fatalf("stale owner published terminal fact: facts=%d before=%d err=%v", staleFacts, beforeStale, err)
 	}
 	if err = s.CompletePoll(ctx, newer, dispatch.Result{Kind: dispatch.FactUnknown, ErrorCode: "poll_pending"}, 5*time.Second); err != nil {
 		t.Fatal(err)
