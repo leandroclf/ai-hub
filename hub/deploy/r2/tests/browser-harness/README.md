@@ -62,10 +62,11 @@ hub/deploy/r2/tests/browser-harness/run.sh
 ```
 
 O runner usa o daemon local padrão, mantém uma única aba e executa o cenário
-`scenarios/admin-console.py`. O cenário verifica a página atual, percorre as
-rotas administrativas autorizadas, confirma que cada tela contém conteúdo útil
-e valida o viewport de 390 px sem overflow horizontal. Ele não cria, publica,
-suspende ou exclui recursos.
+`scenarios/admin-console.py`. O cenário percorre as 16 rotas administrativas
+da fixture, aplica efetivamente um viewport CDP de 390×844, confirma que cada
+tela contém conteúdo útil e verifica ausência de overflow horizontal. Ele não
+cria, publica, suspende ou exclui recursos. A rodada R4 foi reproduzida com
+`browser-harness 0.1.13` instalado fora do repositório.
 
 Para uma execução contra outro endereço:
 
@@ -116,4 +117,3 @@ executar o `browser-smoke.mjs` e registrar o vínculo na matriz de rastreabilida
 O harness está classificado como Alpha no projeto upstream. Fixe a versão da
 ferramenta no ambiente de trabalho quando a equipe precisar reproduzir uma
 execução; não adicione a ferramenta como dependência de runtime do AI Hub.
-

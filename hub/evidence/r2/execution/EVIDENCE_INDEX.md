@@ -1,5 +1,14 @@
 # Evidências da retomada R2 — execução em andamento
 
+## Atualização da rodada R4 — 10/09/2026
+
+| Artefato | Procedimento e resultado | Limite |
+|---|---|---|
+| `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos, `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
+| `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, CRUD/readback, navegação, logout e 390 px: PASS | Não substitui matriz completa de autorização |
+| Browser Harness | Cenário documentado percorreu 16 rotas em CDP dedicado e viewport 390×844: `PASS-EXPLORATORY` | Exploratório; Playwright continua gate bloqueador |
+| cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
+
 Origem: HEAD `a39d394b0d87185ed4cc3861c12ec45f2c302d9e`, branch `r2-implementation`, alterações não commitadas. Ambiente: laboratório isolado `ai-hub-r2`, PostgreSQL16, LocalStack3.8, Keycloak26.7.3; dados sintéticos. Coleta em 07–08/09/2026. A existência de teste com nome de cenário não encerra requisito sem revisar seu oráculo e a integração.
 
 | Artefato | Procedimento e resultado | Limite |

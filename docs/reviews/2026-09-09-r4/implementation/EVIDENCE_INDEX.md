@@ -1,5 +1,23 @@
 # Índice de evidências
 
+## Rodada integrada de 10/09/2026
+
+O índice desta rodada está em
+[`EXECUTION-2026-09-10.md`](EXECUTION-2026-09-10.md). Ele supersede as
+descrições de bloqueio operacional registradas abaixo, sem superseder os
+limites arquiteturais.
+
+| Evidência | Escopo | Resultado |
+|---|---|---|
+| `hub/evidence/r2/execution/authorized-load-latest.log` | Carga autenticada com seed versionado | PASS; oito caminhos, falha controlada e idempotência |
+| `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, logout e viewport móvel |
+| Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP | PASS-EXPLORATORY; 390×844 sem overflow |
+| `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
+| `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS; digest/contagem sem replay |
+| Kind `ai-hub-r2` | Prontidão, métricas, HPA/KEDA e recuperação | PASS local; dependências ainda Compose-linked |
+
+## Evidências históricas
+
 | Evidência | Escopo |
 |---|---|
 | `go test ./...` | compilação e testes unitários atuais |

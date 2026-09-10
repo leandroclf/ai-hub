@@ -6,7 +6,7 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789070081622"
+    "resource": "browser-client-1789072292821"
   },
   {
     "check": "URL navigation and real authenticated provider list",
