@@ -9,5 +9,5 @@ R4-CBK-03;F-R4-03;IMPLEMENTADO_UNITARIO;hub/internal/cometa/custody.go,hub/inter
 R4-CBK-04;F-R4-04;IMPLEMENTADO_CAMINHO;hub/internal/cometa/executor.go,hub/internal/cometa/custody.go;go test ./...;qualificação integrada ainda pendente
 R4-OPE-03;F-R4-09;IMPLEMENTADO_CAMINHO;hub/internal/atlas/offers.go,hub/migrations/control/0037_catalog_offer_lookup.sql;go test ./internal/atlas;ensaio PostgreSQL de crescimento pendente
 R4-QUA-01;F-R4-10;PARCIAL;docs/reviews/2026-09-09-r4/implementation;matriz integral ainda não regenerada
-R4-QUA-02;F-R4-11;ABERTO;hub/admin-ui,hub/internal;console vertical pendente
-R4-QUA-03;F-R4-12;PARCIAL_INTEGRADO;hub/deploy;Compose/probes/upgrade executados;browser/kind/HA/carga pendentes
+R4-QUA-02;F-R4-11;PARCIAL_INTEGRADO;hub/admin-ui,hub/internal;smoke Chromium autenticado e readback aprovados; APIs administrativas adicionais e negativas ainda pendentes
+R4-QUA-03;F-R4-12;PARCIAL_INTEGRADO;hub/deploy;Compose, restore, kind local, probes e browser executados; catálogo publicado, HA completo e carga feliz ainda pendentes

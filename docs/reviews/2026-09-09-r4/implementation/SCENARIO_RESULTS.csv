@@ -29,9 +29,9 @@ R4-CBK-04-S03;IMPLEMENTADO_CAMINHO;resultado completo é preservado;integração
 R4-QUA-01-S01;PASS_ESTRUTURAL;inventário de união presente no pacote
 R4-QUA-01-S02;PENDENTE;matriz de resultados ainda não regenerada
 R4-QUA-01-S03;PENDENTE;hash final depende do working tree
-R4-QUA-02-S01;ABERTO;frontend não alterado nesta fatia
-R4-QUA-02-S02;ABERTO;APIs/DTOs reais pendentes
-R4-QUA-02-S03;ABERTO;browser e negativas de autorização pendentes
+R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, logout e viewport 390px
+R4-QUA-02-S02;PARCIAL;criação/leitura persistente de cliente passou; cobertura administrativa completa pendente
+R4-QUA-02-S03;PARCIAL;ausência de token persistido passou; matriz de negativas de autorização pendente
 R4-QUA-03-S01;PASS;go test ./... verde
-R4-QUA-03-S02;PARCIAL_INTEGRADO;Compose e probes executados;OpenSpec/kind completo pendentes
-R4-QUA-03-S03;PENDENTE;restore/carga/HA não executados
+R4-QUA-03-S02;PASS_INTEGRADO;Compose, kind recriado, readiness, métricas/HPA e recuperação de pod
+R4-QUA-03-S03;PARCIAL_INTEGRADO;restore passou; carga autenticada bloqueada por catálogo sem seed e HA completo pendente
