@@ -32,36 +32,18 @@ type OfferSnapshot struct {
 }
 
 func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service, account string) (OfferSnapshot, error) {
-	// O portfólio não tem limite artificial antes do filtro efetivo. A
-	// paginação mantém cada leitura limitada e a ambiguidade só é avaliada
-	// entre ofertas elegíveis para a aplicação/serviço solicitados.
-	var resources []Resource
-	var err error
-	afterID, afterVersion := "", 0
-	for {
-		page, err := s.ListResources(ctx, "offers", tenant, "", "PUBLISHED", afterID, afterVersion, 200)
-		if err != nil {
-			return OfferSnapshot{}, err
-		}
-		resources = append(resources, page...)
-		if len(page) < 200 {
-			break
-		}
-		last := page[len(page)-1]
-		afterID, afterVersion = last.ID, last.Version
+	// Resolve no banco pelo conjunto elegível. O LIMIT 2 é intencional:
+	// basta distinguir zero, uma oferta ou ambiguidade, sem materializar o
+	// portfólio inteiro no caminho crítico.
+	resources, err := s.listEligibleOffers(ctx, tenant, application, service, account)
+	if err != nil {
+		return OfferSnapshot{}, err
 	}
 	var selected *Resource
 	var data CatalogData
 	for _, r := range resources {
-		if r.TenantID != tenant {
-			continue
-		}
 		d, e := DecodeCatalogData(r)
-		if e != nil || d.ApplicationID != application || d.TargetID != service {
-			continue
-		}
-		now := time.Now()
-		if d.ValidFrom != nil && now.Before(*d.ValidFrom) || d.ValidUntil != nil && !now.Before(*d.ValidUntil) {
+		if e != nil {
 			continue
 		}
 		if selected != nil {
@@ -129,6 +111,29 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service, 
 	}
 	snapshot.Hash = contentHash(snapshot)
 	return snapshot, nil
+}
+
+func (s *Store) listEligibleOffers(ctx context.Context, tenant, application, service, account string) ([]Resource, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources
+		WHERE kind='offers' AND state='PUBLISHED' AND (tenant_id=$1 OR tenant_id='')
+		  AND data->>'application_id'=$2 AND data->>'target_id'=$3
+		  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
+		  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
+		  AND ($4='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$4))
+		ORDER BY id,version LIMIT 2`, tenant, application, service, account)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	resources := make([]Resource, 0, 2)
+	for rows.Next() {
+		r, err := scanResource(rows)
+		if err != nil {
+			return nil, err
+		}
+		resources = append(resources, r)
+	}
+	return resources, rows.Err()
 }
 func (h *Handlers) handleOfferResolve(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
