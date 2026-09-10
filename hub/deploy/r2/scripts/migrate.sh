@@ -32,8 +32,7 @@ SELECT EXISTS(SELECT 1 FROM schema_migrations WHERE version = '$version') AS app
       \if :known_variant
         SELECT EXISTS (
           SELECT 1 FROM information_schema.columns
-          WHERE table_name='provider_accounts' AND column_name IN ('api_key_header')
-          GROUP BY table_name HAVING count(*)=1
+          WHERE table_name='provider_accounts' AND column_name='api_key_header'
         ) AND EXISTS (
           SELECT 1 FROM pg_constraint c JOIN pg_class t ON t.oid=c.conrelid
           WHERE t.relname='provider_accounts' AND pg_get_constraintdef(c.oid) LIKE '%API_KEY%'

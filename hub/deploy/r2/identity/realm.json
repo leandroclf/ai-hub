@@ -7,28 +7,6 @@
   "resetPasswordAllowed": false,
   "accessTokenLifespan": 300,
   "ssoSessionIdleTimeout": 900,
-  "userProfile": {
-    "attributes": [
-      {
-        "name": "tenant_id",
-        "displayName": "Tenant",
-        "permissions": {"view": ["admin", "user"], "edit": ["admin"]},
-        "multivalued": false
-      },
-      {
-        "name": "application_id",
-        "displayName": "Application",
-        "permissions": {"view": ["admin", "user"], "edit": ["admin"]},
-        "multivalued": false
-      },
-      {
-        "name": "cell_id",
-        "displayName": "Cell",
-        "permissions": {"view": ["admin", "user"], "edit": ["admin"]},
-        "multivalued": false
-      }
-    ]
-  },
   "clients": [
     {
       "clientId": "ai-hub-admin",
