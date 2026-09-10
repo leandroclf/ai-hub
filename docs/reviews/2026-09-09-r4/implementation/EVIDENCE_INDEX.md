@@ -10,6 +10,7 @@
 | `hub/internal/cometa/worker.go` | worker autônomo, lote limitado e disposição de poison item |
 | `hub/migrations/control/0037_catalog_offer_lookup.sql` | índice parcial do conjunto elegível de ofertas |
 | `hub/internal/atlas/offers.go` | consulta seletiva com limite de ambiguidade |
+| `COMPOSE-INTEGRATED.md` | bootstrap, OIDC, upgrade, probes e testes integrados locais |
 | `git diff --check` | higiene do diff |
 | `docker compose ls`, `docker ps -a` | proveniência do runtime local |
 

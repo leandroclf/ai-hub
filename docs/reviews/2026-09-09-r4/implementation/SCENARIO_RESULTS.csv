@@ -5,11 +5,11 @@ R4-CTR-01-S03;PASS;go test atlas — EOF estrito
 R4-CTR-02-S01;PASS;go test atlas — minimum aplicado
 R4-CTR-02-S02;PASS;go test atlas — integer exato
 R4-CTR-02-S03;PASS;go test atlas — keyword não suportada recusada
-R4-OPE-01-S01;PENDENTE_INTEGRACAO;teste unitário L1/cofre indisponível ainda não anexado
+R4-OPE-01-S01;PASS_INTEGRADO;LocalStack secret fixture e teste de cofre versionado
 R4-OPE-01-S02;PENDENTE;revogação/binding distinto requer banco/oráculo
 R4-OPE-01-S03;PENDENTE;ensaio de crescimento/cancelamento não executado
-R4-OPE-02-S01;PENDENTE;upgrade PostgreSQL não executado
-R4-OPE-02-S02;PENDENTE;instalação limpa/variante conhecida não executadas
+R4-OPE-02-S01;PASS_INTEGRADO;bootstrap Compose reconciliou variante persistida e preservou ledger
+R4-OPE-02-S02;PASS_INTEGRADO;instalação/upgrade do projeto Compose concluídos; variante conhecida verificada
 R4-OPE-02-S03;PASS_ESTRUTURAL;runner mantém falha para hash desconhecido
 R4-OPE-03-S01;IMPLEMENTADO_CAMINHO;consulta filtrada e índice parcial;ensaio de crescimento PostgreSQL pendente
 R4-OPE-03-S02;IMPLEMENTADO_CAMINHO;LIMIT 2 preserva diagnóstico de ambiguidade;ensaio PostgreSQL pendente
@@ -33,5 +33,5 @@ R4-QUA-02-S01;ABERTO;frontend não alterado nesta fatia
 R4-QUA-02-S02;ABERTO;APIs/DTOs reais pendentes
 R4-QUA-02-S03;ABERTO;browser e negativas de autorização pendentes
 R4-QUA-03-S01;PASS;go test ./... verde
-R4-QUA-03-S02;PENDENTE;OpenSpec/Compose/kind integrados não executados
+R4-QUA-03-S02;PARCIAL_INTEGRADO;Compose e probes executados;OpenSpec/kind completo pendentes
 R4-QUA-03-S03;PENDENTE;restore/carga/HA não executados
