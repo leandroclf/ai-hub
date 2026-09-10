@@ -1,0 +1,175 @@
+{
+  "items": [
+    {
+      "id": "hub-interoperabilidade-v4",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 118
+    },
+    {
+      "id": "r2-01-identidade-e-isolamento",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 48
+    },
+    {
+      "id": "r2-02-execucao-duravel-e-resultados",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 48
+    },
+    {
+      "id": "r2-03-integracoes-credenciais-e-pressao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 49
+    },
+    {
+      "id": "r2-04-catalogo-produtos-e-contratos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 48
+    },
+    {
+      "id": "r2-05-console-administrativo",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 49
+    },
+    {
+      "id": "r2-06-financeiro-auditavel",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 27
+    },
+    {
+      "id": "r2-07-objetos-dados-e-retencao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 27
+    },
+    {
+      "id": "r2-08-operacao-elastica-e-observavel",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 27
+    },
+    {
+      "id": "r2-09-qualificacao-e-rastreabilidade",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 26
+    },
+    {
+      "id": "r3-01-custodia-e-integracao-externa",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 26
+    },
+    {
+      "id": "r3-02-portfolio-e-contratos-efetivos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    },
+    {
+      "id": "r3-03-capacidade-credenciais-e-latencia",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    },
+    {
+      "id": "r3-04-console-e-autorizacao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    },
+    {
+      "id": "r3-05-financeiro-e-entregas",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 16
+    },
+    {
+      "id": "r3-06-dados-plataforma-e-continuidade",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 15
+    },
+    {
+      "id": "r3-07-qualificacao-integral",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 19
+    },
+    {
+      "id": "r4-01-callbacks-autenticados-e-recuperaveis",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 19
+    },
+    {
+      "id": "r4-02-contratos-json-estritos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 19
+    },
+    {
+      "id": "r4-03-upgrade-cache-e-crescimento",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 19
+    },
+    {
+      "id": "r4-04-conclusao-integrada-da-baseline",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 18
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 21,
+      "passed": 21,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 21,
+        "passed": 21,
+        "failed": 0
+      },
+      "spec": {
+        "items": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/workspace/scratch/30287dd6a4c3/review_r4_qa/combined-validation",
+    "source": "nearest"
+  }
+}

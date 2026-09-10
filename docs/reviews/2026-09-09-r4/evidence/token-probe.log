@@ -1,0 +1,6 @@
+=== RUN   TestR4WarmTokenSurvivesVaultOutage
+    r4_token_probe_test.go:11: L1 válido não foi utilizado: err=synthetic vault unavailable
+--- FAIL: TestR4WarmTokenSurvivesVaultOutage (0.00s)
+FAIL
+FAIL	ai-hub/hub/internal/providerauth	0.004s
+FAIL

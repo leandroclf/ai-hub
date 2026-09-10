@@ -1,0 +1,202 @@
+﻿requisito;titulo;origem;spec;linha;r4_diretos;status
+ARQ-01;Fronteiras;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+ARQ-02;Topologia de referência;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;28;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+ARQ-03;Escolha tecnológica;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;51;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+ARQ-04;Linguagem e tecnologia por aplicação;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;74;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+ARQ-05;Razões das dependências e revisão de alternativas;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;97;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+ARQ-06;Tecnologias para expansão e continuidade;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;120;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+COM-01;Comunicação interna definida;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;143;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+COM-02;Integração de clientes e provedores;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;166;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+COM-03;Mensagens e idempotência;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;189;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+COM-04;Evolução de contratos;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;212;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+COM-05;Mesmo contrato em GET e webhook;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;235;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+COM-06;Contrato do despacho direto;v4;openspec/changes/hub-interoperabilidade-v4/specs/arquitetura-e-comunicacao/spec.md;258;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-01;Catálogo de serviços;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-02;Portfólio e disponibilidade;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;23;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-03;Agregação;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;41;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-04;Composição;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;59;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-05;Consolidação e efeitos;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;77;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-06;Seleção e equivalência de provedores;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;95;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-07;Política comercial do produto;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;113;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-08;Rastreabilidade da composição;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;131;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-09;Contratos técnicos por cliente;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;149;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-10;Elegibilidade de SLA e capacidade;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;172;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CAT-11;Crescimento, modalidade e elegibilidade de credencial;v4;openspec/changes/hub-interoperabilidade-v4/specs/catalogo-e-portfolio/spec.md;190;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CFG-01;Portal e API administrativa;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CFG-02;Publicação governada;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;23;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CFG-03;Manutenção e diagnóstico;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;46;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+SEG-01;Identidade e autorização;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;64;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+SEG-02;Destinos, callbacks e dados;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;82;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+SEG-03;Isolamento e auditoria;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;105;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CFG-04;Configuração dos novos limites;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;123;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+SEG-04;Administração entre tenants para desenvolvedores;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;146;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CFG-05;Gestão de credenciais Hub–cliente–provedor;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;174;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+CFG-06;Onboarding e capacidade como serviço interno;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;197;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+SEG-05;Resolução, rotação e isolamento de segredo;v4;openspec/changes/hub-interoperabilidade-v4/specs/configuracao-e-seguranca/spec.md;220;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-01;Contrato de aquisição;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-02;Contrato de venda e planos;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;28;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-03;Vigência e snapshot;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;51;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-04;Medição e chaves econômicas;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;84;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-05;Matriz de incidência;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;107;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-06;Reserva de saldo e limites;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;180;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-07;Apuração e ledger;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;208;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-08;Fechamento, conciliação e pagamento;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;236;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-09;Exemplos de referência para QA;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;264;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-10;Quebra de SLA, custo tardio e créditos;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;297;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+FIN-11;Conta, credencial e responsabilidade econômica;v4;openspec/changes/hub-interoperabilidade-v4/specs/contratos-e-financeiro/spec.md;325;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DEC-01;Decisões arquiteturais de referência;v4;openspec/changes/hub-interoperabilidade-v4/specs/decisoes-e-governanca/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DEC-02;Registro de decisões pendentes (P-01 a P-11);v4;openspec/changes/hub-interoperabilidade-v4/specs/decisoes-e-governanca/spec.md;28;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DEC-03;Decisões herdadas da v3 e preservadas;v4;openspec/changes/hub-interoperabilidade-v4/specs/decisoes-e-governanca/spec.md;56;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DEC-04;Decisões e compatibilidade introduzidas na v4;v4;openspec/changes/hub-interoperabilidade-v4/specs/decisoes-e-governanca/spec.md;84;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DEC-05;Registro de gaps, riscos e mitigação;v4;openspec/changes/hub-interoperabilidade-v4/specs/decisoes-e-governanca/spec.md;112;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-01;Modelo de capacidade;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-02;Estratégia de baixa latência;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;23;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-03;SLOs e semântica de garantia;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;41;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-04;Ambientes e alta disponibilidade;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;64;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-05;Probes, escala e proteção;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;82;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-06;Observabilidade e runbooks;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;100;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-07;Amortecimento e controle adaptativo do provedor;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;118;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-08;Isolamento de concorrência e células;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;141;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-09;Orçamento de latência e paralelismo;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;164;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-10;Aferição de SLA em ambas as relações;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;182;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-11;Preservação de informação e limites da garantia;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;200;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-12;Escala automática de ponta a ponta;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;218;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-13;Matriz de dependências e fallback seguro;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;236;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-14;Manutenção sem indisponibilidade evitável;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;304;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+OPE-15;Criticidade, tolerância a falhas e continuidade operacional;v4;openspec/changes/hub-interoperabilidade-v4/specs/desempenho-e-operacao/spec.md;322;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-01;Admissão durável;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-02;Modos de atendimento;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;28;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-03;Estados e autoridade;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;51;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-04;Operação e correlação;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;74;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-05;Polling configurável;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;92;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-06;Concorrência entre callback e polling;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;115;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-07;Contrato de consultas públicas;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;133;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-08;Webhooks;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;156;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-09;Falhas, retry e encerramento;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;179;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-10;TTL de reprocessamento em segundos;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;202;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-11;Deadline, encerramento e disputa temporal;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;230;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-12;Rejeição de retorno tardio sem apagar evidência;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;253;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-13;Paralelismo e espera eficiente;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;276;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-14;SYNC direto, prazo e resposta final;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;294;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-15;Posse única entre despacho direto, fila e recuperação;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;322;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+EXE-16;UUIDv7, repetição e consulta futura;v4;openspec/changes/hub-interoperabilidade-v4/specs/execucao-e-integracoes/spec.md;350;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-01;Bancos e propriedade;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-02;Modelo lógico mínimo;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;23;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-03;Transações e referências;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;41;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-04;Resultado como fonte de consulta;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;59;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-05;Arquivos e atomicidade com objetos;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;82;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-06;Retenção e expurgo;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;100;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-07;Isolamento, recuperação e auditoria;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;118;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-08;Persistência adicional de contrato, prazo e pressão;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;136;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-09;Dependência mínima de escrita, sem custódia fictícia;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;159;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-10;Cache dispensável e continuidade de leitura;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;177;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+DAD-11;Dados, placement e crescimento de células;v4;openspec/changes/hub-interoperabilidade-v4/specs/persistencia-e-dados/spec.md;200;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+QUA-01;Estratégia de engenharia;v4;openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+QUA-02;Casos críticos de falha e concorrência;v4;openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md;28;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+QUA-03;Critérios de aceite e evidência;v4;openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md;76;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+QUA-04;Gates e definição de pronto;v4;openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md;104;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+QUA-05;Qualificação dos incrementos v3;v4;openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md;132;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+QUA-06;Qualificação integrada da v4;v4;openspec/changes/hub-interoperabilidade-v4/specs/qualidade-e-aceite/spec.md;185;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-SEG-01;Identidade autenticada e autorização por recurso;R2;openspec/changes/r2-01-identidade-e-isolamento/specs/identidade-e-isolamento-operacional/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-SEG-02;Workloads com menor privilégio;R2;openspec/changes/r2-01-identidade-e-isolamento/specs/identidade-e-isolamento-operacional/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-SEG-03;Leitura administrativa individual entre tenants;R2;openspec/changes/r2-01-identidade-e-isolamento/specs/identidade-e-isolamento-operacional/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-SEG-04;Destinos externos e callbacks protegidos;R2;openspec/changes/r2-01-identidade-e-isolamento/specs/identidade-e-isolamento-operacional/spec.md;77;R4-CBK-01,R4-CBK-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-SEG-05;Sessão administrativa e trilha de alterações;R2;openspec/changes/r2-01-identidade-e-isolamento/specs/identidade-e-isolamento-operacional/spec.md;101;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-01;Aceite e intenção recuperáveis em todas as modalidades;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-02;Idempotência concorrente com UUID recuperável;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-03;Um dono de despacho e tentativa anterior ao efeito;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-04;Resultado externo válido e durável;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;77;R4-CBK-04;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-05;Inbox, outbox e confirmação de mensagens;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;101;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-06;Deadline por confirmação durável e final tardio;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;125;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-07;SYNC direto e AUTO com espera limitada;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;155;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-08;Representação final única por contrato de cliente;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;185;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-EXE-09;Reconciliação de obrigações sem reexecutar efeitos;R2;openspec/changes/r2-02-execucao-duravel-e-resultados/specs/execucao-duravel-e-resultados/spec.md;209;R4-CBK-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-01;Adapter executável homologado por capacidade;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-02;Credencial efetiva vinculada ao cliente e à conta;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-03;Segredos reais e cache dispensável;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;53;R4-OPE-01;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-04;Polling e callback combináveis e coordenados;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;77;R4-CBK-01;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-05;Janela absoluta de retry e classificação de falha;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;107;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-06;Controle adaptativo global por domínio de capacidade;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;137;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-07;Entrega ao cliente com identidade e política próprias;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;167;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-INT-08;SLA do provedor separado de SLA do cliente;R2;openspec/changes/r2-03-integracoes-credenciais-e-pressao/specs/integracoes-credenciais-e-pressao/spec.md;197;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-01;Catálogo versionado com publicação governada;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;5;R4-CTR-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-02;Ofertas por cliente e roteamento autorizado;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-03;Agregação paralela limitada;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-04;Composição por DAG e compensações;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;77;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-05;Perfis técnicos de entrada e saída por cliente;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;101;R4-CTR-01,R4-CTR-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-06;Snapshot e projeções independentes de consulta por pedido;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;125;R4-OPE-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-07;Importação segura e inventário executável distinto;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;149;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-CAT-08;Consulta administrativa persistente e onboarding;R2;openspec/changes/r2-04-catalogo-produtos-e-contratos/specs/catalogo-produtos-e-contratos-versionados/spec.md;173;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-01;Sessão, contexto e navegação administrativa;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-02;Listagens reais e detalhe editável;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-03;Clientes, aplicações e ofertas contratadas;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-04;Catálogo importado e serviços executáveis;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;77;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-05;Produtos agregados e compostos;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;101;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-06;Provedores, vínculos e saúde de integração;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;125;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-07;Contratos técnicos e políticas temporais;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;149;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-08;Busca e timeline operacional de protocolos;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;173;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-09;Entregas e reprocessamento com segurança de efeito;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;197;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-10;SLA bilateral e painéis operacionais consultáveis;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;221;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-11;Financeiro de compra, venda e conciliação;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;245;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-ADM-12;Qualidade de uso, acessibilidade e integração real;R2;openspec/changes/r2-05-console-administrativo/specs/console-administrativo-operavel/spec.md;269;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-FIN-01;Compra, venda e incidência por snapshot;R2;openspec/changes/r2-06-financeiro-auditavel/specs/financeiro-auditavel-e-conciliacao/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-FIN-02;Medição exata e deduplicação econômica;R2;openspec/changes/r2-06-financeiro-auditavel/specs/financeiro-auditavel-e-conciliacao/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-FIN-03;Saldo estrito e retenção de incerteza;R2;openspec/changes/r2-06-financeiro-auditavel/specs/financeiro-auditavel-e-conciliacao/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-FIN-04;Planos, franquias e política de produto;R2;openspec/changes/r2-06-financeiro-auditavel/specs/financeiro-auditavel-e-conciliacao/spec.md;83;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-FIN-05;Ledger imutável e ajustes compensatórios;R2;openspec/changes/r2-06-financeiro-auditavel/specs/financeiro-auditavel-e-conciliacao/spec.md;107;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-FIN-06;Fechamento, reconciliação e integração financeira;R2;openspec/changes/r2-06-financeiro-auditavel/specs/financeiro-auditavel-e-conciliacao/spec.md;131;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-DAD-01;Upload direto e referência imutável por tenant;R2;openspec/changes/r2-07-objetos-dados-e-retencao/specs/objetos-dados-e-retencao/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-DAD-02;Custódia de resultado volumoso;R2;openspec/changes/r2-07-objetos-dados-e-retencao/specs/objetos-dados-e-retencao/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-DAD-03;Retenção por classe e obrigações abertas;R2;openspec/changes/r2-07-objetos-dados-e-retencao/specs/objetos-dados-e-retencao/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-DAD-04;Propriedade, RLS e continuidade de leitura;R2;openspec/changes/r2-07-objetos-dados-e-retencao/specs/objetos-dados-e-retencao/spec.md;77;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-DAD-05;Restauração reconciliada sem duplicar efeito;R2;openspec/changes/r2-07-objetos-dados-e-retencao/specs/objetos-dados-e-retencao/spec.md;101;R4-OPE-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-01;Plataforma local completa e persistente;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-02;Kubernetes e cinco ambientes coerentes;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-03;Probes por capacidade e drenagem;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-04;Escala de pods, nós e dados sem chamados rotineiros;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;77;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-05;Placement, fencing e recursos por ambiente e célula;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;101;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-06;Fallback seletivo e dependências mínimas;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;125;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-07;Telemetria e SLA com investigação acionável;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;149;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-08;Segurança e reprodutibilidade de infraestrutura;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;173;R4-OPE-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-OPE-09;SLO, isolamento e continuidade qualificados;R2;openspec/changes/r2-08-operacao-elastica-e-observavel/specs/operacao-elastica-e-observavel/spec.md;197;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-QUA-01;Rastreabilidade do alvo até evidência;R2;openspec/changes/r2-09-qualificacao-e-rastreabilidade/specs/qualificacao-integrada-r2/spec.md;5;R4-QUA-01;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-QUA-02;Fixtures e oráculos independentes reproduzíveis;R2;openspec/changes/r2-09-qualificacao-e-rastreabilidade/specs/qualificacao-integrada-r2/spec.md;29;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-QUA-03;Gates de contrato, experiência e operação;R2;openspec/changes/r2-09-qualificacao-e-rastreabilidade/specs/qualificacao-integrada-r2/spec.md;53;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R2-QUA-04;Evolução OpenSpec e baseline sem falso arquivamento;R2;openspec/changes/r2-09-qualificacao-e-rastreabilidade/specs/qualificacao-integrada-r2/spec.md;77;R4-QUA-01;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-EXE-01;Adapters executáveis e autenticação completa;R3;openspec/changes/r3-01-custodia-e-integracao-externa/specs/01-custodia-e-integracao-externa/spec.md;5;R4-CBK-04;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-EXE-02;Callback com confirmação de custódia;R3;openspec/changes/r3-01-custodia-e-integracao-externa/specs/01-custodia-e-integracao-externa/spec.md;23;R4-CBK-01,R4-CBK-02,R4-CBK-03,R4-CBK-04;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-EXE-03;Recuperação de efeito incerto e fencing;R3;openspec/changes/r3-01-custodia-e-integracao-externa/specs/01-custodia-e-integracao-externa/spec.md;41;R4-CBK-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-EXE-04;Relógios de retry, polling e prazo final;R3;openspec/changes/r3-01-custodia-e-integracao-externa/specs/01-custodia-e-integracao-externa/spec.md;59;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-EXE-05;Topologia de mensagens e quarentena recuperável;R3;openspec/changes/r3-01-custodia-e-integracao-externa/specs/01-custodia-e-integracao-externa/spec.md;77;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-CAT-01;Precisão numérica e validação de schemas;R3;openspec/changes/r3-02-portfolio-e-contratos-efetivos/specs/02-portfolio-e-contratos-efetivos/spec.md;5;R4-CTR-01,R4-CTR-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-CAT-02;Política efetiva e representação por cliente;R3;openspec/changes/r3-02-portfolio-e-contratos-efetivos/specs/02-portfolio-e-contratos-efetivos/spec.md;23;R4-CBK-04;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-CAT-03;Agregação e composição com executor de DAG;R3;openspec/changes/r3-02-portfolio-e-contratos-efetivos/specs/02-portfolio-e-contratos-efetivos/spec.md;41;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-CAT-04;Resolução indexada e projeção disponível;R3;openspec/changes/r3-02-portfolio-e-contratos-efetivos/specs/02-portfolio-e-contratos-efetivos/spec.md;59;R4-OPE-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-INT-01;Controle adaptativo conectado a todo I/O;R3;openspec/changes/r3-03-capacidade-credenciais-e-latencia/specs/03-capacidade-credenciais-e-latencia/spec.md;5;R4-CBK-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-INT-02;Cache de autenticação isolado e sem tokens no Redis;R3;openspec/changes/r3-03-capacidade-credenciais-e-latencia/specs/03-capacidade-credenciais-e-latencia/spec.md;23;R4-OPE-01;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-INT-03;Pools HTTP e budgets de concorrência;R3;openspec/changes/r3-03-capacidade-credenciais-e-latencia/specs/03-capacidade-credenciais-e-latencia/spec.md;41;R4-OPE-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-ADM-01;Fronteira administrativa e aplicação;R3;openspec/changes/r3-04-console-e-autorizacao/specs/04-console-e-autorizacao/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-ADM-02;Ações operacionais com API efetiva;R3;openspec/changes/r3-04-console-e-autorizacao/specs/04-console-e-autorizacao/spec.md;23;R4-QUA-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-ADM-03;Comandos financeiros compatíveis;R3;openspec/changes/r3-04-console-e-autorizacao/specs/04-console-e-autorizacao/spec.md;41;R4-QUA-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-ADM-04;Formulários completos e tempo local;R3;openspec/changes/r3-04-console-e-autorizacao/specs/04-console-e-autorizacao/spec.md;59;R4-QUA-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-FIN-01;Reserva estrita e franquia antes do efeito;R3;openspec/changes/r3-05-financeiro-e-entregas/specs/05-financeiro-e-entregas/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-FIN-02;Incidência completa e fechamento operacional;R3;openspec/changes/r3-05-financeiro-e-entregas/specs/05-financeiro-e-entregas/spec.md;23;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-FIN-03;Destino de webhook congelado por aplicação;R3;openspec/changes/r3-05-financeiro-e-entregas/specs/05-financeiro-e-entregas/spec.md;41;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-OPE-01;Objetos conectados ao fluxo e retenção;R3;openspec/changes/r3-06-dados-plataforma-e-continuidade/specs/06-dados-plataforma-e-continuidade/spec.md;5;;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-OPE-02;Kind completo e ambientes reprodutíveis;R3;openspec/changes/r3-06-dados-plataforma-e-continuidade/specs/06-dados-plataforma-e-continuidade/spec.md;23;R4-OPE-02,R4-QUA-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-OPE-03;Escala e continuidade com envelope;R3;openspec/changes/r3-06-dados-plataforma-e-continuidade/specs/06-dados-plataforma-e-continuidade/spec.md;41;R4-QUA-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-OPE-04;Autoridade durável, isolamento e restore;R3;openspec/changes/r3-06-dados-plataforma-e-continuidade/specs/06-dados-plataforma-e-continuidade/spec.md;59;R4-CBK-02,R4-OPE-01,R4-OPE-02;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-OPE-05;SLA bilateral e telemetria verificável;R3;openspec/changes/r3-06-dados-plataforma-e-continuidade/specs/06-dados-plataforma-e-continuidade/spec.md;77;R4-QUA-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R3-QUA-01;Qualificação integral do SHA sem skips ocultos;R3;openspec/changes/r3-07-qualificacao-integral/specs/07-qualificacao-integral/spec.md;5;R4-QUA-01,R4-QUA-02,R4-QUA-03;NAO_QUALIFICADO_INTEGRALMENTE_NESTA_REVISAO
+R4-CBK-01;Rota de callback compatível com a autenticação do provedor;R4;openspec/changes/r4-01-callbacks-autenticados-e-recuperaveis/specs/r4-01-callbacks-autenticados-e-recuperaveis/spec.md;;R4-CBK-01;NAO_IMPLEMENTADO
+R4-CBK-02;Admissão e deduplicação segura da inbox órfã;R4;openspec/changes/r4-01-callbacks-autenticados-e-recuperaveis/specs/r4-01-callbacks-autenticados-e-recuperaveis/spec.md;;R4-CBK-02;NAO_IMPLEMENTADO
+R4-CBK-03;Recuperador autônomo limitado e independente do HTTP;R4;openspec/changes/r4-01-callbacks-autenticados-e-recuperaveis/specs/r4-01-callbacks-autenticados-e-recuperaveis/spec.md;;R4-CBK-03;NAO_IMPLEMENTADO
+R4-CBK-04;Uma validação de resultado para SUBMIT, polling e callback;R4;openspec/changes/r4-01-callbacks-autenticados-e-recuperaveis/specs/r4-01-callbacks-autenticados-e-recuperaveis/spec.md;;R4-CBK-04;NAO_IMPLEMENTADO
+R4-CTR-01;Documento JSON único e tipos sem coerção;R4;openspec/changes/r4-02-contratos-json-estritos/specs/r4-02-contratos-json-estritos/spec.md;;R4-CTR-01;NAO_IMPLEMENTADO
+R4-CTR-02;Dialeto de schema publicado e semântica numérica;R4;openspec/changes/r4-02-contratos-json-estritos/specs/r4-02-contratos-json-estritos/spec.md;;R4-CTR-02;NAO_IMPLEMENTADO
+R4-OPE-01;L1 utilizável na falha de cofre e coordenação limitada;R4;openspec/changes/r4-03-upgrade-cache-e-crescimento/specs/r4-03-upgrade-cache-e-crescimento/spec.md;;R4-OPE-01;NAO_IMPLEMENTADO
+R4-OPE-02;Upgrade com migração histórica imutável;R4;openspec/changes/r4-03-upgrade-cache-e-crescimento/specs/r4-03-upgrade-cache-e-crescimento/spec.md;;R4-OPE-02;NAO_IMPLEMENTADO
+R4-OPE-03;Consulta de oferta seletiva sem materializar o portfólio;R4;openspec/changes/r4-03-upgrade-cache-e-crescimento/specs/r4-03-upgrade-cache-e-crescimento/spec.md;;R4-OPE-03;NAO_IMPLEMENTADO
+R4-QUA-01;Inventário integral e evidência coerente com o conteúdo;R4;openspec/changes/r4-04-conclusao-integrada-da-baseline/specs/r4-04-conclusao-integrada-da-baseline/spec.md;;R4-QUA-01;NAO_IMPLEMENTADO
+R4-QUA-02;Entrega vertical do console e baseline remanescente;R4;openspec/changes/r4-04-conclusao-integrada-da-baseline/specs/r4-04-conclusao-integrada-da-baseline/spec.md;;R4-QUA-02;NAO_IMPLEMENTADO
+R4-QUA-03;Qualificação reproduzível com um ecossistema local;R4;openspec/changes/r4-04-conclusao-integrada-da-baseline/specs/r4-04-conclusao-integrada-da-baseline/spec.md;;R4-QUA-03;NAO_IMPLEMENTADO

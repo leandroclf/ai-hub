@@ -1,0 +1,21 @@
+=== RUN   TestR4ContractAdversarial
+=== RUN   TestR4ContractAdversarial/null_as_string
+    r4_contract_probe_test.go:11: input ou regra deveria ser recusado: output={"v":null}
+=== RUN   TestR4ContractAdversarial/quoted_integer
+    r4_contract_probe_test.go:11: input ou regra deveria ser recusado: output={"v":"123"}
+=== RUN   TestR4ContractAdversarial/root_null
+=== RUN   TestR4ContractAdversarial/trailing_document
+    r4_contract_probe_test.go:11: input ou regra deveria ser recusado: output={"v":1} {"second":true}
+=== RUN   TestR4ContractAdversarial/ignored_minimum
+    r4_contract_probe_test.go:11: input ou regra deveria ser recusado: output={"v":-1}
+--- FAIL: TestR4ContractAdversarial (0.00s)
+    --- FAIL: TestR4ContractAdversarial/null_as_string (0.00s)
+    --- FAIL: TestR4ContractAdversarial/quoted_integer (0.00s)
+    --- PASS: TestR4ContractAdversarial/root_null (0.00s)
+    --- FAIL: TestR4ContractAdversarial/trailing_document (0.00s)
+    --- FAIL: TestR4ContractAdversarial/ignored_minimum (0.00s)
+=== RUN   TestR4PreviousFixes
+--- PASS: TestR4PreviousFixes (0.00s)
+FAIL
+FAIL	ai-hub/hub/internal/atlas	0.003s
+FAIL

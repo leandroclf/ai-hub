@@ -1,0 +1,10 @@
+# Matriz de risco
+
+| Risco | Prioridade | Mitigação | Responsável | Evidência exigida |
+|---|---|---|---|---|
+| O handler ganhou capability por operação e custódia antes de 2xx. Entretanto, toda a rota /internal/ continua envolvida pelo JWT do Hub; a URL entregue ao provedor contém apenas capability. O simulador não envia JWT Hub. A correção do handler não fecha o caminho de rede. Isso é incompatibilidade de composição, não prova de endpoint publicamente desprotegido. | P0 | R4-CBK-01 | Integrações e Core | R4-CBK-01-S01/S02/S03 |
+| Quando a operação não existe, qualquer token não vazio que alcance o handler permite inserir body e receber 202. A chave única usa operação+hash do body, sem identidade autenticada/token: primeira tentativa com token incorreto pode ocupar a identidade de posterior recibo correto, que só incrementa occurrences. A tabela também não registra tenant/conta/célula, TTL ou quota. Exploração externa depende da rota/autenticação atual; o risco permanece ao corrigir essa rota. | P0 | R4-CBK-02 | Integrações e Core | R4-CBK-02-S01/S02/S03 |
+| ReconcileCallbackInbox só é chamado ao receber outro callback conhecido. A consulta percorre todos os RECEIVED associados, sem LIMIT, claim, lease ou escopo de célula. O cursor permanece aberto enquanto são feitas outras operações SQL e aplicação. O HTTP de uma operação pode depender do backlog/erro de outra, e sem novo callback não há gatilho autônomo. | P0 | R4-CBK-03 | Integrações e Core | R4-CBK-03-S01/S02/S03 |
+| finalize valida OutputSchema e conserva OperationResult. ApplyExternalObservation transforma callback somente em detail, não chama a mesma validação e não confere provider_request_id contra correlação armazenada. ConserveObservation pode sobrescrever a correlação com qualquer ID não vazio recebido. Token de operação não torna o body semanticamente correto. | P0 | R4-CBK-04 | Integrações e Core | R4-CBK-04-S01/S02/S03 |
+
+Probabilidade quantitativa não medida. Evidência estática não é incidente observado.

@@ -1,0 +1,13 @@
+﻿achado;prioridade;requisito;titulo;change;herdados;cenarios;status
+F-R4-01;P0;R4-CBK-01;Rota de callback compatível com a autenticação do provedor;r4-01-callbacks-autenticados-e-recuperaveis;R3-EXE-02,R2-SEG-04,R2-INT-04;R4-CBK-01-S01,R4-CBK-01-S02,R4-CBK-01-S03;ABERTO
+F-R4-02;P0;R4-CBK-02;Admissão e deduplicação segura da inbox órfã;r4-01-callbacks-autenticados-e-recuperaveis;R3-EXE-02,R3-OPE-04,R2-SEG-04;R4-CBK-02-S01,R4-CBK-02-S02,R4-CBK-02-S03;ABERTO
+F-R4-03;P0;R4-CBK-03;Recuperador autônomo limitado e independente do HTTP;r4-01-callbacks-autenticados-e-recuperaveis;R3-EXE-02,R3-EXE-03,R3-INT-01,R2-EXE-09;R4-CBK-03-S01,R4-CBK-03-S02,R4-CBK-03-S03;ABERTO
+F-R4-04;P0;R4-CBK-04;Uma validação de resultado para SUBMIT, polling e callback;r4-01-callbacks-autenticados-e-recuperaveis;R3-EXE-01,R3-EXE-02,R3-CAT-02,R2-EXE-04;R4-CBK-04-S01,R4-CBK-04-S02,R4-CBK-04-S03;ABERTO
+F-R4-05;P0;R4-CTR-01;Documento JSON único e tipos sem coerção;r4-02-contratos-json-estritos;R3-CAT-01,R2-CAT-05;R4-CTR-01-S01,R4-CTR-01-S02,R4-CTR-01-S03;ABERTO
+F-R4-06;P1;R4-CTR-02;Dialeto de schema publicado e semântica numérica;r4-02-contratos-json-estritos;R3-CAT-01,R2-CAT-01,R2-CAT-05;R4-CTR-02-S01,R4-CTR-02-S02,R4-CTR-02-S03;ABERTO
+F-R4-07;P1;R4-OPE-01;L1 utilizável na falha de cofre e coordenação limitada;r4-03-upgrade-cache-e-crescimento;R3-INT-02,R3-OPE-04,R2-INT-03;R4-OPE-01-S01,R4-OPE-01-S02,R4-OPE-01-S03;ABERTO
+F-R4-08;P0;R4-OPE-02;Upgrade com migração histórica imutável;r4-03-upgrade-cache-e-crescimento;R3-OPE-02,R3-OPE-04,R2-OPE-08,R2-DAD-05;R4-OPE-02-S01,R4-OPE-02-S02,R4-OPE-02-S03;ABERTO
+F-R4-09;P1;R4-OPE-03;Consulta de oferta seletiva sem materializar o portfólio;r4-03-upgrade-cache-e-crescimento;R3-CAT-04,R3-INT-03,R2-CAT-06;R4-OPE-03-S01,R4-OPE-03-S02,R4-OPE-03-S03;ABERTO
+F-R4-10;P1;R4-QUA-01;Inventário integral e evidência coerente com o conteúdo;r4-04-conclusao-integrada-da-baseline;R3-QUA-01,R2-QUA-01,R2-QUA-04;R4-QUA-01-S01,R4-QUA-01-S02,R4-QUA-01-S03;ABERTO
+F-R4-11;P1;R4-QUA-02;Entrega vertical do console e baseline remanescente;r4-04-conclusao-integrada-da-baseline;R3-ADM-02,R3-ADM-03,R3-ADM-04,R3-QUA-01;R4-QUA-02-S01,R4-QUA-02-S02,R4-QUA-02-S03;ABERTO
+F-R4-12;P1;R4-QUA-03;Qualificação reproduzível com um ecossistema local;r4-04-conclusao-integrada-da-baseline;R3-QUA-01,R3-OPE-02,R3-OPE-03,R3-OPE-05;R4-QUA-03-S01,R4-QUA-03-S02,R4-QUA-03-S03;ABERTO

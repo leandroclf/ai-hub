@@ -1,0 +1,13 @@
+requisito;achado;status;codigo;validacao
+R4-CTR-01;F-R4-05;IMPLEMENTADO_UNITARIO;hub/internal/atlas/offers.go;go test ./internal/atlas
+R4-CTR-02;F-R4-06;IMPLEMENTADO_UNITARIO;hub/internal/atlas/offers.go;go test ./internal/atlas
+R4-OPE-01;F-R4-07;IMPLEMENTADO_UNITARIO;hub/internal/providerauth/client.go;go test ./internal/providerauth
+R4-OPE-02;F-R4-08;IMPLEMENTADO_ESTRUTURAL;hub/migrations/control/0002_provider_auth.sql,hub/deploy/r2/scripts/migrate.sh;sha256sum e sh -n
+R4-CBK-01;F-R4-01;IMPLEMENTADO_CAMINHO_HTTP;hub/internal/cometa/handlers.go,hub/cmd/cometa/main.go;go test ./...
+R4-CBK-02;F-R4-02;PARCIAL;hub/internal/cometa/handlers.go,hub/internal/cometa/custody.go;integração PostgreSQL pendente
+R4-CBK-03;F-R4-03;ABERTO;hub/internal/cometa/custody.go;worker autônomo/claim/lease pendente
+R4-CBK-04;F-R4-04;PARCIAL;hub/internal/cometa/executor.go,hub/internal/cometa/custody.go;validação única e correlação pendentes
+R4-OPE-03;F-R4-09;ABERTO;hub/internal/atlas/offers.go;índice seletivo e ensaio de crescimento pendentes
+R4-QUA-01;F-R4-10;PARCIAL;docs/reviews/2026-09-09-r4/implementation;matriz integral ainda não regenerada
+R4-QUA-02;F-R4-11;ABERTO;hub/admin-ui,hub/internal;console vertical pendente
+R4-QUA-03;F-R4-12;ABERTO;hub/deploy;gates integrados não executados

@@ -1,0 +1,45 @@
+{
+  "counts": {
+    "pass": 37,
+    "skip": 18
+  },
+  "skips": [
+    "ai-hub/hub/internal/atlas:TestCatalogPostgresConcurrencyPublicationAndIsolation",
+    "ai-hub/hub/internal/atlas:TestCatalogPostgresPaginationAndStaging",
+    "ai-hub/hub/internal/cometa:TestPostgresCapacityAggregateReplicasCells",
+    "ai-hub/hub/internal/cometa:TestPostgresCapacityAdaptiveAndPending",
+    "ai-hub/hub/internal/cometa:TestPostgresCapacityRollingRateIsolation",
+    "ai-hub/hub/internal/cometa:TestPostgresSubmissionAndObservationCustody",
+    "ai-hub/hub/internal/cometa:TestPostgresPendingCustodyAtomic",
+    "ai-hub/hub/internal/cometa:TestPostgresOperationResourceScope",
+    "ai-hub/hub/internal/cometa:TestPostgresPollingClaimsFenceAndAbsoluteDeadline",
+    "ai-hub/hub/internal/cometa:TestPostgresPollingCallbackConflictRetainsBoth",
+    "ai-hub/hub/internal/cometa:TestPostgresPollingAuthenticatedHTTP",
+    "ai-hub/hub/internal/libra:TestFinancePostgresScenarios",
+    "ai-hub/hub/internal/objectstore:TestPostgresS3MultipartFileRef",
+    "ai-hub/hub/internal/orbita:TestAdmissionPostgresAtomicIdempotency",
+    "ai-hub/hub/internal/orbita:TestAutoPostgresBoundedWait",
+    "ai-hub/hub/internal/orbita:TestOperationFactPostgresCustody",
+    "ai-hub/hub/internal/providerauth:TestAWSVaultLocalStackVersion",
+    "ai-hub/hub/internal/pulsar:TestPostgresVersionedWebhookCustody"
+  ],
+  "openspec": {
+    "totals": {
+      "items": 17,
+      "passed": 17,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 17,
+        "passed": 17,
+        "failed": 0
+      },
+      "spec": {
+        "items": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    }
+  }
+}

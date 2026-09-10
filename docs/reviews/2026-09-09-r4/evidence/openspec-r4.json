@@ -1,0 +1,56 @@
+{
+  "items": [
+    {
+      "id": "r4-01-callbacks-autenticados-e-recuperaveis",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 34
+    },
+    {
+      "id": "r4-02-contratos-json-estritos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 33
+    },
+    {
+      "id": "r4-03-upgrade-cache-e-crescimento",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 33
+    },
+    {
+      "id": "r4-04-conclusao-integrada-da-baseline",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 33
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 4,
+      "passed": 4,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 4,
+        "passed": 4,
+        "failed": 0
+      },
+      "spec": {
+        "items": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/workspace/scratch/30287dd6a4c3/AI_HUB_R4",
+    "source": "nearest"
+  }
+}

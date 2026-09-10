@@ -1,0 +1,20 @@
+# Explore — Upgrade, cache e crescimento
+
+Snapshot b9d0f90ce02aa0c27cad546745153d160ff5867f; revisão incremental v4/R2/R3.
+
+## F-R4-07
+Tokens deixaram Redis e lock passou a ser por chave. Contudo, Resolve é chamado antes do L1; prova com L1 válido e cofre indisponível falha. locks cresce sem remoção por binding/versão e mutex não respeita cancelamento durante espera.
+
+[hub/internal/providerauth/client.go:74](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/providerauth/client.go#L74), [hub/internal/providerauth/client.go:144](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/providerauth/client.go#L144)
+
+## F-R4-08
+0002_provider_auth.sql já existente na R2 foi alterada para API_KEY e header. O runner checksum-guardado para em 0002 de um banco previamente migrado, antes de executar a nova 0004. Comparação dos bytes/hashes comprova alteração; falha SQL integrada ainda não foi executada nesta auditoria.
+
+[hub/migrations/control/0002_provider_auth.sql:3](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/migrations/control/0002_provider_auth.sql#L3), [hub/migrations/control/0004_provider_api_key.sql:2](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/migrations/control/0004_provider_api_key.sql#L2), [hub/deploy/r2/scripts/migrate.sh:22](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/deploy/r2/scripts/migrate.sh#L22)
+
+## F-R4-09
+Paginação eliminou recusa acima de 100, mas agrega todas as páginas em resources antes de filtrar aplicação/serviço. Portanto CPU/memória/round-trips continuam proporcionais ao total de ofertas do tenant e o control plane ainda é consultado por pedido.
+
+[hub/internal/atlas/offers.go:33](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/atlas/offers.go#L33), [hub/internal/atlas/catalog.go:419](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/atlas/catalog.go#L419), [hub/internal/atlasclient/client.go:22](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/atlasclient/client.go#L22)
+
+Preservar correções anteriores. Nenhum achado estático é relatado como incidente de produção.

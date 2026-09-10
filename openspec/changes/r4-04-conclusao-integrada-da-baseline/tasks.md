@@ -1,0 +1,231 @@
+# Tasks: Conclusão integrada da baseline
+## 1. Revalidação
+- [ ] 1.1 Confirmar HEAD/diff e fontes atuais.
+  - Objective: preservar correções e verificar mudanças posteriores ao snapshot.
+  - Likely files/components: explore.md e arquivos citados.
+  - Depends on: AGENTS e prompt R4.
+  - Validation: comparação de conteúdo e registro de evidência.
+  - Completion criteria: cada achado tem estado atual verificável.
+
+## 2. R4-QUA-01 — Inventário integral e evidência coerente com o conteúdo
+- [ ] 2.1 Fixar contrato e reproduzir contraexemplos.
+  - Objective: tornar F-R4-10 observável sem enfraquecer regra.
+  - Likely files/components: docs/reviews/2026-09-08-r3/implementation/SCENARIO_RESULTS.csv, docs/reviews/2026-09-08-r3/implementation/FINAL_REPORT.md, docs/reviews/2026-09-08-r3/implementation/CHECKPOINT.md.
+  - Depends on: 1.1.
+  - Validation: R4-QUA-01-S01/S02/S03 e regressão herdada.
+  - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
+- [ ] 2.2 Implementar fluxo, dados e integração.
+  - Objective: A engenharia SHALL gerar inventário diretamente de todas as specs, preservar os 696 cenários herdados e acrescentar R4 sem omissões. Relatório/checkpoint/matrizes devem ser consistentes e vinculados a commit+hash de conteúdo/digests. PASS exige resultado verificável; histórico e evidência do working tree devem ter proveniência distinguível.
+  - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
+  - Depends on: 2.1 e dependências do backlog R4.
+  - Validation: integração real e negativas de autorização/erro.
+  - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
+- [ ] 2.3 Qualificar e anexar evidência.
+  - Objective: fechar cenários e requisitos herdados R3-QUA-01, R2-QUA-01, R2-QUA-04.
+  - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
+  - Depends on: 2.2.
+  - Validation: cenários completos, sem skip obrigatório.
+  - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
+
+## 3. R4-QUA-02 — Entrega vertical do console e baseline remanescente
+- [ ] 3.1 Fixar contrato e reproduzir contraexemplos.
+  - Objective: tornar F-R4-11 observável sem enfraquecer regra.
+  - Likely files/components: hub/admin-ui/src/pages/OperationsPage.tsx, hub/admin-ui/src/pages/FinancePage.tsx, hub/internal/orbita/admin.go.
+  - Depends on: 1.1.
+  - Validation: R4-QUA-02-S01/S02/S03 e regressão herdada.
+  - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
+- [ ] 3.2 Implementar fluxo, dados e integração.
+  - Objective: A próxima implementação SHALL concluir o backlog remanescente v4/R2/R3 por fatias verticais, com contratos backend/UI, persistência, oráculos e browser. Cada jornada só termina quando seu efeito real e autorização são demonstrados; componentes auxiliares e documentação isolados não satisfazem a tarefa. Os requisitos herdados não são substituídos pelos novos R4.
+  - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
+  - Depends on: 3.1 e dependências do backlog R4.
+  - Validation: integração real e negativas de autorização/erro.
+  - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
+- [ ] 3.3 Qualificar e anexar evidência.
+  - Objective: fechar cenários e requisitos herdados R3-ADM-02, R3-ADM-03, R3-ADM-04, R3-QUA-01.
+  - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
+  - Depends on: 3.2.
+  - Validation: cenários completos, sem skip obrigatório.
+  - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
+
+## 4. R4-QUA-03 — Qualificação reproduzível com um ecossistema local
+- [ ] 4.1 Fixar contrato e reproduzir contraexemplos.
+  - Objective: tornar F-R4-12 observável sem enfraquecer regra.
+  - Likely files/components: AGENTS.md, hub/internal/cometa/custody_test.go, hub/deploy/r2/kind/render-runtime.py.
+  - Depends on: 1.1.
+  - Validation: R4-QUA-03-S01/S02/S03 e regressão herdada.
+  - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
+- [ ] 4.2 Implementar fluxo, dados e integração.
+  - Objective: A qualificação SHALL preparar ferramentas fixadas, executar gates integrados sem skip obrigatório e cumprir um único ecossistema Compose ativo do Hub por vez. Inventariar containers/projeto, preservar volumes e terceiros, trocar somente alvos identificados e registrar limpeza. Ausência real de runtime é bloqueio delimitado, não PASS nem motivo para abandonar implementação independente.
+  - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
+  - Depends on: 4.1 e dependências do backlog R4.
+  - Validation: integração real e negativas de autorização/erro.
+  - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
+- [ ] 4.3 Qualificar e anexar evidência.
+  - Objective: fechar cenários e requisitos herdados R3-QUA-01, R3-OPE-02, R3-OPE-03, R3-OPE-05.
+  - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
+  - Depends on: 4.2.
+  - Validation: cenários completos, sem skip obrigatório.
+  - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
+
+## 5. Rollout
+- [ ] 5.1 Ensaiar upgrade/rollback e revisar o diff.
+  - Objective: preservar dados, contratos e obrigações antigas.
+  - Likely files/components: migrações, manifests e relatórios.
+  - Depends on: qualificações anteriores.
+  - Validation: ensaio compatível e checklist avaliador.
+  - Completion criteria: riscos residuais explícitos; sem fechamento por inferência.
+
+## Backlog obrigatório herdado
+
+Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica specs nem cancela suas tarefas.
+
+- [ ] B-R4-01 Concluir e requalificar R3-EXE-01 — Adapters executáveis e autenticação completa.
+  - Objective: API_KEY agora atravessa modelo/projeção/executor/poller; gate synthetic-provider persiste. Fechar adapter real e homologação.
+  - Likely files/components: hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/atlasclient/client.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-02 Concluir e requalificar R3-EXE-02 — Callback com confirmação de custódia.
+  - Objective: Capability e recibo antes de ACK foram adicionados. Nova inbox tem lacunas de autenticação/deduplicação e recuperador; rota segue sob JWT Hub.
+  - Likely files/components: hub/internal/cometa/handlers.go, hub/internal/cometa/executor.go, hub/cmd/cometa/main.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-03 Concluir e requalificar R3-EXE-03 — Recuperação de efeito incerto e fencing.
+  - Objective: PrepareSubmission/UNKNOWN sem recuperador geral e sem fencing de egress continuam. Inbox não resolve incerteza de SUBMIT.
+  - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/executor.go, hub/internal/orbita/intents.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-04 Concluir e requalificar R3-EXE-04 — Relógios de retry, polling e prazo final.
+  - Objective: Relógios, exclusividade polling/callback e T-R2-01 permanecem; sem mudança no finalizador.
+  - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/cometa/polling_custody.go, hub/internal/orbita/finalize.go, docs/reviews/2026-09-07-r2/implementation/ADR_T_R2_01_DEADLINE.md.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-05 Concluir e requalificar R3-EXE-05 — Topologia de mensagens e quarentena recuperável.
+  - Objective: Topologia/outboxes/consumidor financeiro não mudaram. Quarentena financeira continua só hash.
+  - Likely files/components: hub/internal/queue/bootstrap.go, hub/internal/queue/queue.go, hub/internal/libra/consumers.go, hub/internal/libra/store.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-06 Concluir e requalificar R3-CAT-01 — Precisão numérica e validação de schemas.
+  - Objective: Precisão grande/enum simples corrigidos e reproduzidos positivamente. Novas violações de tipos/EOF/schema ainda abertas.
+  - Likely files/components: hub/internal/atlas/offers.go, hub/internal/orbita/handlers.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-07 Concluir e requalificar R3-CAT-02 — Política efetiva e representação por cliente.
+  - Objective: Handler de admissão e finalizer não mudaram; política efetiva/versão e OutputMapping pendentes.
+  - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/orbita/finalize.go, hub/internal/atlas/offers.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-08 Concluir e requalificar R3-CAT-03 — Agregação e composição com executor de DAG.
+  - Objective: Executor de DAG não conectado; PlanDAG de catálogo não é execução de produto.
+  - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/atlas/catalog.go, hub/internal/atlas/offers.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-09 Concluir e requalificar R3-CAT-04 — Resolução indexada e projeção disponível.
+  - Objective: Teto de 100 removido por paginação; todas as ofertas ainda materializadas antes do filtro e Atlas consultado por pedido.
+  - Likely files/components: hub/internal/atlas/offers.go, hub/internal/atlasclient/client.go, hub/internal/atlas/catalog.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-10 Concluir e requalificar R3-INT-01 — Controle adaptativo conectado a todo I/O.
+  - Objective: Capacity continua sem ligação a Execute/requestPoll; código desse controlador e consumidores permanece igual.
+  - Likely files/components: hub/internal/cometa/capacity.go, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-11 Concluir e requalificar R3-INT-02 — Cache de autenticação isolado e sem tokens no Redis.
+  - Objective: Tokens removidos do Redis; lock por chave existe. L1 ainda depende do cofre; crescimento de locks não limitado.
+  - Likely files/components: hub/internal/providerauth/client.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-12 Concluir e requalificar R3-INT-03 — Pools HTTP e budgets de concorrência.
+  - Objective: Transports por chamada permanecem; arquivo egress não mudou e chamadas NewClient continuam.
+  - Likely files/components: hub/internal/platform/egress, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/providerauth/client.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-13 Concluir e requalificar R3-ADM-01 — Fronteira administrativa e aplicação.
+  - Objective: Papel hub_protocol_reader e MFA agora obrigatórios no admin; avanço de autorização constatado. Requalificar política de aplicação/mascaramento e browser sem afirmar bypass corrigido ainda existente.
+  - Likely files/components: hub/internal/orbita/admin.go, hub/internal/platform/auth/auth.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-14 Concluir e requalificar R3-ADM-02 — Ações operacionais com API efetiva.
+  - Objective: Nenhuma alteração no frontend; IDs de entrega/rotas SLA/reconcile continuam incompatíveis.
+  - Likely files/components: hub/admin-ui/src/pages/OperationsPage.tsx, hub/internal/pulsar/handlers.go, hub/internal/orbita/admin.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-15 Concluir e requalificar R3-ADM-03 — Comandos financeiros compatíveis.
+  - Objective: Frontend/handlers financeiros não mudaram; payload/tenant/datas e fluxo idempotente continuam pendentes.
+  - Likely files/components: hub/admin-ui/src/pages/FinancePage.tsx, hub/internal/libra/handlers.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-16 Concluir e requalificar R3-ADM-04 — Formulários completos e tempo local.
+  - Objective: Catálogo UI não mudou; multimodalidade, campos auth, fuso e lookups continuam pendentes.
+  - Likely files/components: hub/admin-ui/src/pages/CatalogPage.tsx, hub/admin-ui/src.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-17 Concluir e requalificar R3-FIN-01 — Reserva estrita e franquia antes do efeito.
+  - Objective: Financeiro não mudou; reserva versus efetivo e franquia pré-efeito precisam fechamento.
+  - Likely files/components: hub/internal/libra/store.go, hub/internal/orbita/handlers.go, hub/internal/contracts/economics/publication.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-18 Concluir e requalificar R3-FIN-02 — Incidência completa e fechamento operacional.
+  - Objective: Financeiro/contratos econômicos não mudaram; incidência e fechamento integrados continuam pendentes.
+  - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/polling_custody.go, hub/internal/libra/store.go, hub/internal/libra/handlers.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-19 Concluir e requalificar R3-FIN-03 — Destino de webhook congelado por aplicação.
+  - Objective: Pulsar não mudou; seleção de destinos atuais em vez de snapshot continua.
+  - Likely files/components: hub/internal/pulsar/custody.go, hub/internal/orbita/finalize.go, hub/internal/pulsar/handlers.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-20 Concluir e requalificar R3-OPE-01 — Objetos conectados ao fluxo e retenção.
+  - Objective: Objetos/admissão não mudaram; integração de FileRefs/resultados no adapter permanece pendente.
+  - Likely files/components: hub/internal/objectstore/catalog.go, hub/internal/objectstore/retention.go, hub/internal/cometa/executor.go, hub/internal/orbita/admission.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-21 Concluir e requalificar R3-OPE-02 — Kind completo e ambientes reprodutíveis.
+  - Objective: Kind/overlays não mudaram; dependências ligadas a Compose não equivalem a cluster completo.
+  - Likely files/components: hub/deploy/r2/kind/render-runtime.py, hub/deploy/r2/k8s/base/workloads.yaml, hub/deploy/r2/k8s/overlays/prd/kustomization.yaml.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-22 Concluir e requalificar R3-OPE-03 — Escala e continuidade com envelope.
+  - Objective: Autoscaling/placement/drenagem não receberam fechamento neste delta; exigem ensaio.
+  - Likely files/components: hub/deploy/r2/k8s/base/workloads.yaml, hub/internal/platform/httpserver.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-23 Concluir e requalificar R3-OPE-04 — Autoridade durável, isolamento e restore.
+  - Objective: Migrações de callback adicionadas, mas alteração de migração histórica cria novo risco de upgrade. RLS/restore sem prova integrada atual.
+  - Likely files/components: hub/migrations/core, hub/migrations/control, hub/internal/platform/pg, hub/internal/orbita/admission.go.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-24 Concluir e requalificar R3-OPE-05 — SLA bilateral e telemetria verificável.
+  - Objective: UI SLA/telemetria não mudaram; sinais reais de domínio e consulta bilateral pendentes.
+  - Likely files/components: hub/internal/platform/httpserver/telemetry.go, hub/admin-ui/src/pages/OperationsPage.tsx, hub/deploy/r2.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+- [ ] B-R4-25 Concluir e requalificar R3-QUA-01 — Qualificação integral do SHA sem skips ocultos.
+  - Objective: OpenSpec strict atual 17/17 e build/race passam nesta auditoria; 18 testes skip. Matriz omite 416 cenários v4 e relatórios são contraditórios.
+  - Likely files/components: hub/internal/atlas/catalog_test.go, hub/internal/cometa/custody_test.go, docs/reviews/2026-09-07-r2/implementation/FINAL_REPORT.md.
+  - Depends on: contrato/custódia e ordem do documento 02.
+  - Validation: todos os cenários originais do requisito e herdados vinculados.
+  - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
