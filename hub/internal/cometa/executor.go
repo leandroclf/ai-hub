@@ -272,7 +272,7 @@ func (e *Executor) publishOperationFact(ctx context.Context, operationID string,
 }
 
 func (e *Executor) callbackURLFor(operationID, token string) string {
-	return fmt.Sprintf("%s/internal/callbacks/%s?token=%s", e.selfURL, operationID, url.QueryEscape(token))
+	return fmt.Sprintf("%s/callbacks/%s?token=%s", e.selfURL, operationID, url.QueryEscape(token))
 }
 
 // shouldFail permite injetar falha deterministica a partir do proprio

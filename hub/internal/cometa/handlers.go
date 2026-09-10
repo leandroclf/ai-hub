@@ -2,11 +2,13 @@ package cometa
 
 import (
 	"context"
+	"crypto/subtle"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 
 	"ai-hub/hub/internal/dispatch"
@@ -30,9 +32,18 @@ func NewHandlers(exec *Executor, store *Store) *Handlers {
 
 // Register registra as rotas do Cometa num ServeMux.
 func (h *Handlers) Register(mux *http.ServeMux) {
+	h.RegisterInternal(mux)
+	h.RegisterCallback(mux)
+}
+
+func (h *Handlers) RegisterInternal(mux *http.ServeMux) {
 	mux.HandleFunc("/internal/commands/direct", h.handleDirect)
 	mux.HandleFunc("/internal/operations/", h.handleGetOperation)
+}
+
+func (h *Handlers) RegisterCallback(mux *http.ServeMux) {
 	mux.HandleFunc("/internal/callbacks/", h.handleCallback)
+	mux.HandleFunc("/callbacks/", h.handleCallback)
 }
 
 // handleDirect e o endpoint SYNC (COM-01: "Orbita -> Cometa em SYNC:
@@ -119,12 +130,17 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	operationID := strings.TrimPrefix(r.URL.Path, "/internal/callbacks/")
+	operationID = strings.TrimPrefix(operationID, "/callbacks/")
 	if operationID == "" || strings.Contains(operationID, "/") {
 		http.Error(w, "invalid callback operation", http.StatusBadRequest)
 		return
 	}
 	if _, err := uuid.Parse(operationID); err != nil {
 		http.Error(w, "invalid callback operation", http.StatusBadRequest)
+		return
+	}
+	if !secureCallbackKey(r.Header.Get("X-Provider-Callback-Key")) {
+		http.Error(w, "callback unauthorized", http.StatusUnauthorized)
 		return
 	}
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 512*1024))
@@ -173,4 +189,9 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func secureCallbackKey(value string) bool {
+	expected := os.Getenv("CALLBACK_INGRESS_KEY")
+	return expected != "" && value != "" && subtle.ConstantTimeCompare([]byte(value), []byte(expected)) == 1
 }

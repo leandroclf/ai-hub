@@ -86,6 +86,40 @@ func TestTechnicalProjectionAcceptsOpenObjectRuntimeSchema(t *testing.T) {
 	}
 }
 
+func TestTechnicalProjectionRejectsInvalidJSONDocumentsAndTypes(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object","properties":{"name":{"type":"string"},"count":{"type":"integer"}},"required":["name"]}`)
+	for name, input := range map[string]json.RawMessage{
+		"null as string":        json.RawMessage(`{"name":null}`),
+		"number as string":      json.RawMessage(`{"name":123}`),
+		"string as integer":     json.RawMessage(`{"name":"ok","count":"1"}`),
+		"concatenated document": json.RawMessage(`{"name":"ok"}{"name":"later"}`),
+	} {
+		t.Run(name, func(t *testing.T) {
+			if _, err := TransformJSON(input, nil, schema); err == nil {
+				t.Fatal("documento/tipo inválido aceito")
+			}
+		})
+	}
+}
+
+func TestTechnicalProjectionEnforcesPublishedDialectAndBounds(t *testing.T) {
+	valid := json.RawMessage(`{"type":"object","properties":{"amount":{"type":"number","minimum":0}},"required":["amount"]}`)
+	if _, err := TransformJSON(json.RawMessage(`{"amount":-1}`), nil, valid); err == nil {
+		t.Fatal("minimum foi ignorado")
+	}
+	unsupported := json.RawMessage(`{"type":"object","properties":{"name":{"type":"string","minLength":2}}}`)
+	if validSchema(unsupported) {
+		t.Fatal("keyword não suportada publicada")
+	}
+	if _, err := TransformJSON(json.RawMessage(`{"name":"x"}`), nil, unsupported); err == nil {
+		t.Fatal("keyword não suportada aceita em runtime")
+	}
+	integer := json.RawMessage(`{"type":"object","properties":{"count":{"type":"integer"}}}`)
+	if _, err := TransformJSON(json.RawMessage(`{"count":1.0}`), nil, integer); err != nil {
+		t.Fatalf("integer JSON semanticamente exato rejeitado: %v", err)
+	}
+}
+
 func TestImportSecretSanitization(t *testing.T) {
 	input := json.RawMessage(`{"variable":[{"key":"secret","value":"never-retain-me"}],"item":[{"request":{"method":"POST","url":{"raw":"https://name:password@api.example.test/service?token=never-retain-me"},"header":[{"key":"Authorization","value":"Bearer never-retain-me"}],"body":{"raw":"never-retain-me"},"auth":{"type":"bearer","bearer":[{"value":"never-retain-me"}]}}}]}`)
 	items, err := SanitizeImport(input)

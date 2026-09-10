@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"math/big"
 	"net/http"
 	"reflect"
 	"sort"
-	"strings"
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
@@ -180,9 +181,15 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 	if len(input) > 256*1024 || len(mapping) > 128 {
 		return nil, errors.New("transformação excede limite")
 	}
+	decoded, err := decodeSingleJSON(input)
+	if err != nil {
+		return nil, errors.New("entrada deve ser objeto JSON")
+	}
+	if !validJSONType(decoded, "object") {
+		return nil, errors.New("entrada deve ser objeto JSON")
+	}
 	var source map[string]json.RawMessage
-	decoder := json.NewDecoder(bytes.NewReader(input))
-	if err := decoder.Decode(&source); err != nil {
+	if err := json.Unmarshal(decoded, &source); err != nil {
 		return nil, errors.New("entrada deve ser objeto JSON")
 	}
 	out := source
@@ -199,11 +206,10 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 			out[dst] = value
 		}
 	}
-	var contract struct {
-		Type       string                     `json:"type"`
-		Required   []string                   `json:"required"`
-		Properties map[string]json.RawMessage `json:"properties"`
+	if err := validateSchemaDefinition(schema, "$", map[string]bool{}); err != nil {
+		return nil, errors.New("schema inválido")
 	}
+	var contract schemaRule
 	if json.Unmarshal(schema, &contract) != nil || contract.Type != "object" {
 		return nil, errors.New("schema inválido")
 	}
@@ -226,10 +232,7 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 		if !ok {
 			continue
 		}
-		var rule struct {
-			Type string            `json:"type"`
-			Enum []json.RawMessage `json:"enum"`
-		}
+		var rule schemaRule
 		if json.Unmarshal(ruleRaw, &rule) != nil || rule.Type == "" {
 			return nil, errors.New("regra de schema inválida: " + field)
 		}
@@ -270,15 +273,8 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 // fim; nenhum número passa por float64 e nenhum campo extra é aceito quando o
 // contrato o proíbe.
 func validateJSONSchema(value, schema json.RawMessage, path string) error {
-	var rule struct {
-		Type                 string                     `json:"type"`
-		Required             []string                   `json:"required"`
-		Properties           map[string]json.RawMessage `json:"properties"`
-		AdditionalProperties *bool                      `json:"additionalProperties"`
-		Items                json.RawMessage            `json:"items"`
-		Enum                 []json.RawMessage          `json:"enum"`
-	}
-	if err := json.Unmarshal(schema, &rule); err != nil || rule.Type == "" {
+	var rule schemaRule
+	if err := validateSchemaDefinition(schema, path, map[string]bool{}); err != nil || json.Unmarshal(schema, &rule) != nil || rule.Type == "" {
 		return errors.New("schema inválido em " + path)
 	}
 	if len(rule.Enum) > 0 {
@@ -292,6 +288,12 @@ func validateJSONSchema(value, schema json.RawMessage, path string) error {
 		if !matched {
 			return errors.New("valor fora do enum: " + path)
 		}
+	}
+	if len(rule.Minimum) > 0 && compareJSONNumber(value, rule.Minimum) < 0 {
+		return errors.New("valor menor que minimum: " + path)
+	}
+	if len(rule.Maximum) > 0 && compareJSONNumber(value, rule.Maximum) > 0 {
+		return errors.New("valor maior que maximum: " + path)
 	}
 	if !validJSONType(value, rule.Type) {
 		return errors.New("tipo inválido: " + path)
@@ -338,13 +340,13 @@ func validJSONType(raw json.RawMessage, want string) bool {
 	switch want {
 	case "string":
 		var v string
-		return json.Unmarshal(trimmed, &v) == nil
+		return !bytes.Equal(trimmed, []byte("null")) && json.Unmarshal(trimmed, &v) == nil
 	case "number", "integer":
 		var n json.Number
-		if json.Unmarshal(trimmed, &n) != nil || n.String() == "" {
+		if bytes.Equal(trimmed, []byte("null")) || len(trimmed) == 0 || (trimmed[0] != '-' && (trimmed[0] < '0' || trimmed[0] > '9')) || json.Unmarshal(trimmed, &n) != nil || n.String() == "" {
 			return false
 		}
-		return want != "integer" || !strings.ContainsAny(n.String(), ".eE")
+		return want != "integer" || isExactInteger(n.String())
 	case "boolean":
 		return bytes.Equal(trimmed, []byte("true")) || bytes.Equal(trimmed, []byte("false"))
 	case "object":
@@ -356,6 +358,100 @@ func validJSONType(raw json.RawMessage, want string) bool {
 	default:
 		return false
 	}
+}
+
+// schemaRule is the deliberately small, published JSON Schema dialect used by
+// profiles. Unknown keywords are rejected at publication and runtime instead
+// of being silently ignored.
+type schemaRule struct {
+	Type                 string                     `json:"type"`
+	Required             []string                   `json:"required"`
+	Properties           map[string]json.RawMessage `json:"properties"`
+	AdditionalProperties *bool                      `json:"additionalProperties"`
+	Items                json.RawMessage            `json:"items"`
+	Enum                 []json.RawMessage          `json:"enum"`
+	Minimum              json.RawMessage            `json:"minimum"`
+	Maximum              json.RawMessage            `json:"maximum"`
+}
+
+var supportedSchemaKeywords = map[string]bool{
+	"type": true, "required": true, "properties": true,
+	"additionalProperties": true, "items": true, "enum": true,
+	"minimum": true, "maximum": true,
+}
+
+func validateSchemaDefinition(raw json.RawMessage, path string, stack map[string]bool) error {
+	var obj map[string]json.RawMessage
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	if err := dec.Decode(&obj); err != nil || obj == nil {
+		return errors.New("schema deve ser objeto")
+	}
+	for key := range obj {
+		if !supportedSchemaKeywords[key] {
+			return fmt.Errorf("keyword não suportada em %s: %s", path, key)
+		}
+	}
+	var rule schemaRule
+	if err := json.Unmarshal(raw, &rule); err != nil || rule.Type == "" {
+		return errors.New("tipo de schema obrigatório")
+	}
+	validTypes := map[string]bool{"object": true, "array": true, "string": true, "number": true, "integer": true, "boolean": true, "null": true}
+	if !validTypes[rule.Type] {
+		return errors.New("tipo de schema não suportado")
+	}
+	for _, field := range rule.Required {
+		if !safeField(field) {
+			return errors.New("required inválido")
+		}
+	}
+	for key, child := range rule.Properties {
+		if !safeField(key) {
+			return errors.New("propriedade inválida")
+		}
+		if err := validateSchemaDefinition(child, path+"."+key, stack); err != nil {
+			return err
+		}
+	}
+	if len(rule.Items) > 0 {
+		if err := validateSchemaDefinition(rule.Items, path+"[]", stack); err != nil {
+			return err
+		}
+	}
+	for name, bound := range map[string]json.RawMessage{"minimum": rule.Minimum, "maximum": rule.Maximum} {
+		if len(bound) > 0 && !validJSONType(bound, "number") {
+			return fmt.Errorf("%s deve ser número", name)
+		}
+	}
+	return nil
+}
+
+func decodeSingleJSON(raw []byte) (json.RawMessage, error) {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var value json.RawMessage
+	if err := dec.Decode(&value); err != nil {
+		return nil, err
+	}
+	var extra any
+	if err := dec.Decode(&extra); err != io.EOF {
+		return nil, errors.New("mais de um documento JSON")
+	}
+	return value, nil
+}
+
+func isExactInteger(raw string) bool {
+	r, ok := new(big.Rat).SetString(raw)
+	return ok && r.IsInt()
+}
+
+func compareJSONNumber(a, b json.RawMessage) int {
+	ra, oka := new(big.Rat).SetString(string(bytes.TrimSpace(a)))
+	rb, okb := new(big.Rat).SetString(string(bytes.TrimSpace(b)))
+	if !oka || !okb {
+		return 0
+	}
+	return ra.Cmp(rb)
 }
 
 func jsonEqual(a, b json.RawMessage) bool {

@@ -325,11 +325,14 @@ func safeField(s string) bool {
 	return true
 }
 func validSchema(raw json.RawMessage) bool {
-	var s struct {
-		Type       string                     `json:"type"`
-		Properties map[string]json.RawMessage `json:"properties"`
+	var s schemaRule
+	if json.Unmarshal(raw, &s) != nil || s.Type != "object" {
+		return false
 	}
-	return json.Unmarshal(raw, &s) == nil && s.Type == "object" && s.Properties != nil
+	if s.Properties == nil {
+		return false
+	}
+	return validateSchemaDefinition(raw, "$", map[string]bool{}) == nil
 }
 func PlanDAG(steps []Step) ([][]string, error) {
 	if len(steps) > 20 {

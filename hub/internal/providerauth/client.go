@@ -50,16 +50,36 @@ type TokenCache struct {
 	Resolver SecretResolver
 	mu       sync.Mutex
 	locksMu  sync.Mutex
-	locks    map[string]*sync.Mutex
+	locks    map[string]*keyedLock
 	tokens   map[string]cachedToken
 }
+
+type keyedLock struct{ gate chan struct{} }
+
+func newKeyedLock() *keyedLock {
+	l := &keyedLock{gate: make(chan struct{}, 1)}
+	l.gate <- struct{}{}
+	return l
+}
+
+func (l *keyedLock) acquire(ctx context.Context) error {
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-l.gate:
+		return nil
+	}
+}
+
+func (l *keyedLock) release() { l.gate <- struct{}{} }
+
 type cachedToken struct {
-	value   string
-	expires time.Time
+	value, environment, tenant, binding, version string
+	expires                                      time.Time
 }
 
 func NewTokenCache(addr string) *TokenCache {
-	return &TokenCache{client: redis.NewClient(&redis.Options{Addr: addr, DialTimeout: 100 * time.Millisecond, ReadTimeout: 100 * time.Millisecond, WriteTimeout: 100 * time.Millisecond, MaxRetries: -1}), Resolver: AWSVault{}, tokens: map[string]cachedToken{}, locks: map[string]*sync.Mutex{}}
+	return &TokenCache{client: redis.NewClient(&redis.Options{Addr: addr, DialTimeout: 100 * time.Millisecond, ReadTimeout: 100 * time.Millisecond, WriteTimeout: 100 * time.Millisecond, MaxRetries: -1}), Resolver: AWSVault{}, tokens: map[string]cachedToken{}, locks: map[string]*keyedLock{}}
 }
 
 func (c *TokenCache) Ping(ctx context.Context) error { return c.client.Ping(ctx).Err() }
@@ -72,24 +92,32 @@ type tokenResponse struct {
 }
 
 func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, providerAccountID string, cfg Config) (string, error) {
-	if c == nil || c.Resolver == nil {
+	if c == nil {
+		return "", fmt.Errorf("secret resolver unavailable")
+	}
+	// The cache identity is computable from the authorized binding/version, so
+	// a valid L1 entry remains usable while the remote vault is unavailable.
+	// Secret values and bearer tokens never enter the key or Redis.
+	material := strings.Join([]string{cfg.Environment, cfg.TenantID, cfg.BindingID, providerAccountID, cfg.TokenURL, cfg.ClientID, cfg.ClientSecretRef, cfg.SecretVersion}, "\x1f")
+	hash := sha256.Sum256([]byte(material))
+	key := "hub:provider-token:" + hex.EncodeToString(hash[:])
+	if token, ok := c.cached(key); ok {
+		return token, nil
+	}
+	keyLock := c.lockFor(key)
+	if err := keyLock.acquire(ctx); err != nil {
+		return "", err
+	}
+	defer keyLock.release()
+	if token, ok := c.cached(key); ok {
+		return token, nil
+	}
+	if c.Resolver == nil {
 		return "", fmt.Errorf("secret resolver unavailable")
 	}
 	secret, err := c.Resolver.Resolve(ctx, cfg.ClientSecretRef, cfg.SecretVersion)
 	if err != nil {
 		return "", err
-	}
-	material := strings.Join([]string{cfg.Environment, cfg.TenantID, cfg.BindingID, providerAccountID, cfg.TokenURL, cfg.ClientID, secret.Version}, "\x1f")
-	hash := sha256.Sum256([]byte(material))
-	key := "hub:provider-token:" + hex.EncodeToString(hash[:])
-	keyLock := c.lockFor(key)
-	keyLock.Lock()
-	defer keyLock.Unlock()
-	c.mu.Lock()
-	cached, ok := c.tokens[key]
-	c.mu.Unlock()
-	if ok && time.Now().Before(cached.expires) {
-		return cached.value, nil
 	}
 	// Redis nunca armazena bearer tokens. Ele permanece disponível somente
 	// para saúde/compatibilidade operacional; a autoridade do token é o L1
@@ -136,21 +164,50 @@ func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, provid
 		}
 	}
 	if len(c.tokens) < 1024 {
-		c.tokens[key] = cachedToken{out.AccessToken, expiry}
+		c.tokens[key] = cachedToken{value: out.AccessToken, environment: cfg.Environment, tenant: cfg.TenantID, binding: cfg.BindingID, version: cfg.SecretVersion, expires: expiry}
 	}
 	return out.AccessToken, nil
 }
 
-func (c *TokenCache) lockFor(key string) *sync.Mutex {
+func (c *TokenCache) cached(key string) (string, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry, ok := c.tokens[key]
+	if !ok {
+		return "", false
+	}
+	if !time.Now().Before(entry.expires) {
+		delete(c.tokens, key)
+		return "", false
+	}
+	return entry.value, true
+}
+
+// InvalidateBinding revokes all local tokens for one exact binding/version.
+// It deliberately cannot fall back to another tenant or binding.
+func (c *TokenCache) InvalidateBinding(environment, tenant, binding, version string) {
+	if c == nil {
+		return
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for key, token := range c.tokens {
+		if !time.Now().Before(token.expires) || (token.environment == environment && token.tenant == tenant && token.binding == binding && token.version == version) {
+			delete(c.tokens, key)
+		}
+	}
+}
+
+func (c *TokenCache) lockFor(key string) *keyedLock {
 	c.locksMu.Lock()
 	defer c.locksMu.Unlock()
 	if c.locks == nil {
-		c.locks = map[string]*sync.Mutex{}
+		c.locks = map[string]*keyedLock{}
 	}
 	if lock, ok := c.locks[key]; ok {
 		return lock
 	}
-	lock := &sync.Mutex{}
+	lock := newKeyedLock()
 	c.locks[key] = lock
 	return lock
 }

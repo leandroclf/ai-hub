@@ -333,6 +333,9 @@ func (s *Server) callbackAfter(id string, delayMs int, result OperationResult, c
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
+	if key := os.Getenv("CALLBACK_INGRESS_KEY"); key != "" {
+		req.Header.Set("X-Provider-Callback-Key", key)
+	}
 	resp, err := s.httpClient.Do(req)
 	if err == nil {
 		resp.Body.Close()

@@ -110,8 +110,11 @@ func main() {
 	srv := httpserver.New(log, readiness, readiness, nil)
 	srv.AuthMiddleware = auth.FromEnv().Middleware
 	mux := http.NewServeMux()
-	handlers.Register(mux)
+	handlers.RegisterInternal(mux)
 	srv.Handle("/internal/", mux)
+	callbackMux := http.NewServeMux()
+	handlers.RegisterCallback(callbackMux)
+	srv.HandlePublic("/callbacks/", callbackMux)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

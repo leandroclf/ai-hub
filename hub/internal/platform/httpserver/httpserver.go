@@ -98,6 +98,12 @@ func (s *Server) Handle(pattern string, handler http.Handler) {
 	s.mux.Handle(pattern, handler)
 }
 
+// HandlePublic registra uma rota que possui autenticação própria do protocolo
+// externo e não deve herdar o JWT de workload das APIs internas.
+func (s *Server) HandlePublic(pattern string, handler http.Handler) {
+	s.mux.Handle(pattern, handler)
+}
+
 // HandleFunc registra uma rota de negocio no mux subjacente.
 func (s *Server) HandleFunc(pattern string, handler http.HandlerFunc) {
 	s.Handle(pattern, handler)
