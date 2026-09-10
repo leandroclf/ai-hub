@@ -9,7 +9,14 @@ export async function api<T>(path:string,init:RequestInit={}):Promise<T>{
  const domain=path.startsWith("/admin/v1/finance")?"libra":path.startsWith("/admin/v1/deliveries")?"pulsar":path.startsWith("/admin/v1/protocols")||path.startsWith("/admin/v1/sla-reports")?"orbita":path.startsWith("/admin/v1/capacity-domains")?"cometa":"atlas";
  const response=await fetch(`/api/${domain}${path}`,{...init,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...init.headers},cache:'no-store'});
  const data=await response.json().catch(()=>({message:'Resposta indisponível. Tente novamente.'}));
- if(!response.ok)throw new APIError(response.status,data);return data as T;
+ if(!response.ok){
+  if(response.status===401){
+   token='';
+   window.dispatchEvent(new Event('session-expired'));
+  }
+  throw new APIError(response.status,data);
+ }
+ return data as T;
 }
 export const resourceURL=(r:Pick<Resource,'kind'|'id'|'version'>)=>`/admin/v1/${r.kind}/${encodeURIComponent(r.id)}/${r.version}`;
 export async function command<T>(path:string,body:unknown,revision?:number,idempotencyKey=crypto.randomUUID()):Promise<T>{
