@@ -172,6 +172,15 @@ func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	if facts != before+1 || receipts != 3 || conflicts != 1 {
 		t.Fatalf("facts=%d before=%d receipts=%d conflicts=%d", facts, before, receipts, conflicts)
 	}
+	if _, err := s.ConserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactFailed, ResponseBody: map[string]string{"marker": "late-duplicate"}}, "CALLBACK_LATE"); err != nil {
+		t.Fatal(err)
+	}
+	var factsAfter, receiptsAfter int
+	s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&factsAfter)
+	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receiptsAfter)
+	if factsAfter != facts || receiptsAfter != receipts+1 {
+		t.Fatalf("late callback changed terminal effect: facts=%d/%d receipts=%d/%d", factsAfter, facts, receiptsAfter, receipts+1)
+	}
 	t.Log("Conflicting poll/callback conserved both observations and produced exactly one terminal outbox fact")
 }
 

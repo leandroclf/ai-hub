@@ -115,6 +115,7 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - O consumidor de fatos da Órbita agora tem prova explícita de que `UNKNOWN` não finaliza nem captura por si só. O teste PostgreSQL também confirmou posterior fato terminal aplicado uma única vez sob redelivery concorrente, com um único outbox.
 - A suíte financeira PostgreSQL recebeu `R2-FIN-UNKNOWN-no_capture`: eventos `UNKNOWN` em custo e receita não geram `economic_facts` nem `ledger_entries`; a suíte R2-FIN-01..06 completa passou em 0,72s.
 - `R2-FIN-05-S02` foi reforçado para distinguir identidade de transporte e unidade econômica: redelivery com novo `event_id` conserva dois inboxes, mas apenas um `economic_fact` e um journal (dois lançamentos balanceados); passou em 0,04s.
+- `TestPostgresPollingCallbackConflictRetainsBoth` foi reforçado: callback tardio adicional cria somente receipt de evidência conflitante; o outbox terminal permanece único. PASS PostgreSQL real em 0,07s.
 
 ## Continuação — horizonte absoluto de retry
 

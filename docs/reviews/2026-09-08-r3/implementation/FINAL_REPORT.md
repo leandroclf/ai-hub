@@ -105,3 +105,5 @@ Essa ligação foi parcialmente reforçada no consumidor de fatos: `UNKNOWN` ago
 No Libra, a suíte PostgreSQL passou com o cenário explícito `R2-FIN-UNKNOWN-no_capture`: eventos incertos não criam fatos econômicos nem lançamentos contábeis. A reconciliação financeira do protocolo real após restore ainda permanece aberta.
 
 A prova de redelivery também foi reforçada: eventos com novo identificador de transporte são preservados no inbox, mas a unidade econômica continua deduplicada e o journal não é repetido.
+
+O ensaio de callback conflitante foi ampliado para uma observação tardia após a disputa inicial: a evidência adicional é conservada em receipt, sem reabrir o terminal nem criar novo evento de outbox.
