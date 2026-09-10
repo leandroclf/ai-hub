@@ -18,11 +18,26 @@ PY
 fi
 if ! "$kind_bin" get clusters | rg -qx 'ai-hub-r2'; then
   "$kind_bin" create cluster --name ai-hub-r2 --image kindest/node:v1.32.2 --config "$root/kind/cluster.yaml" --kubeconfig "$kubeconfig" --wait 90s
+else
+  # Reexporta o contexto para execuções idempotentes após limpeza do diretório
+  # temporário de ferramentas. O cluster existente continua sendo a fonte de
+  # verdade e não é recriado nem tem volumes alterados.
+  "$kind_bin" export kubeconfig --name ai-hub-r2 --kubeconfig "$kubeconfig"
 fi
 for node in $("$kind_bin" get nodes --name ai-hub-r2); do
   compose_network="${compose_project}_default"
   if ! docker inspect "$node" --format '{{json .NetworkSettings.Networks}}' | jq -e --arg network "$compose_network" 'has($network)' >/dev/null; then docker network connect "$compose_network" "$node"; fi
 done
+# Os endpoints das dependências são containers Compose fora do CIDR de pods.
+# Sem masqueradeAll, o retorno desses containers não conhece as redes 10.244/16
+# e os workloads ficam em CrashLoop mesmo com o endpoint acessível no nó.
+if kubectl --kubeconfig "$kubeconfig" -n kube-system get cm kube-proxy -o jsonpath='{.data.config\.conf}' | rg -q 'masqueradeAll: false'; then
+  kubectl --kubeconfig "$kubeconfig" -n kube-system get cm kube-proxy -o json \
+    | python3 -c 'import json,sys; o=json.load(sys.stdin); o["data"]["config.conf"]=o["data"]["config.conf"].replace("masqueradeAll: false","masqueradeAll: true",1); print(json.dumps(o))' \
+    | kubectl --kubeconfig "$kubeconfig" apply -f -
+  kubectl --kubeconfig "$kubeconfig" -n kube-system rollout restart daemonset/kube-proxy
+  kubectl --kubeconfig "$kubeconfig" -n kube-system rollout status daemonset/kube-proxy --timeout=60s
+fi
 curl -fsSL https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml -o "$tool_dir/metrics-server.yaml"
 curl -fsSL https://github.com/kedacore/keda/releases/download/v2.17.2/keda-2.17.2.yaml -o "$tool_dir/keda.yaml"
 kubectl --kubeconfig "$kubeconfig" apply -f "$tool_dir/metrics-server.yaml"

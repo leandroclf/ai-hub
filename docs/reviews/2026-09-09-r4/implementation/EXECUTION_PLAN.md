@@ -10,4 +10,15 @@ Estado: implementação parcial, sem promoção para homologação.
 6. Executar gates Go, banco, broker, objetos, OIDC, Compose/kind e navegador quando as dependências estiverem disponíveis.
 7. Atualizar este diretório com proveniência, evidência e bloqueios; não marcar PASS por inspeção histórica.
 
+## Política permanente de validação frontend
+
+O Playwright permanece o gate determinístico de aceitação. O Browser Harness,
+integrado em `hub/deploy/r2/tests/browser-harness/`, deve ser usado quando a
+demanda exigir exploração com navegador real, diagnóstico visual/acessibilidade
+ou validação de jornada autenticada já preparada pelo operador. Seu resultado
+é `PASS-EXPLORATORY`, `FAIL-EXPLORATORY`, `BLOCKED-ENVIRONMENT` ou
+`NOT-APPLICABLE`; nunca encerra requisito sozinho. Senhas, MFA, tokens,
+cookies, gravações e Browser Use Cloud permanecem sujeitos às regras de
+segurança e consentimento descritas no README do harness.
+
 Nesta execução foram concluídas as etapas 1–4 parcialmente. Permanecem abertas as etapas 5–7 e os gates integrados.

@@ -5,8 +5,8 @@
 # hub/test/e2e para isso); e um script de geracao de evidencia.
 set -uo pipefail
 
-ORBITA=http://localhost:8080
-ATLAS=http://localhost:8081
+ORBITA=${ORBITA_URL:-http://localhost:18080}
+ATLAS=${ATLAS_URL:-http://localhost:18081}
 
 req() {
   local desc="$1"; shift

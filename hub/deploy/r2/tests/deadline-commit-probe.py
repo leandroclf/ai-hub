@@ -6,6 +6,7 @@ The deferred trigger delays COMMIT processing; it does not simulate disk fsync.
 """
 import datetime
 import json
+import os
 import pathlib
 import subprocess
 import uuid
@@ -60,7 +61,8 @@ SELECT jsonb_build_object('postgres',version(),'fsync',current_setting('fsync'),
  'wal_level',current_setting('wal_level'),'cases',jsonb_object_agg(label,observation)) FROM probes;
 DROP SCHEMA {schema} CASCADE;
 """
-command = ["docker", "compose", "-f", str(root / "hub/deploy/r2/compose.yaml"),
+compose_project = os.environ.get("R2_COMPOSE_PROJECT", "ai_hub_r3qual")
+command = ["docker", "compose", "-p", compose_project, "-f", str(root / "hub/deploy/r2/compose.yaml"),
            "exec", "-T", "postgres", "psql", "-X", "-qAt", "-v", "ON_ERROR_STOP=1",
            "-U", "hub", "-d", "hub_core"]
 result = subprocess.run(command, input=sql, text=True, capture_output=True, check=True)

@@ -13,5 +13,7 @@
 | `COMPOSE-INTEGRATED.md` | bootstrap, OIDC, upgrade, probes e testes integrados locais |
 | `git diff --check` | higiene do diff |
 | `docker compose ls`, `docker ps -a` | proveniência do runtime local |
+| `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
+| `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
 
 Nenhuma evidência histórica foi promovida como PASS de integração.
