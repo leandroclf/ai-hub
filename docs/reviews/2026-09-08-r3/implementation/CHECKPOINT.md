@@ -118,6 +118,7 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - `TestPostgresPollingCallbackConflictRetainsBoth` foi reforçado: callback tardio adicional cria somente receipt de evidência conflitante; o outbox terminal permanece único. PASS PostgreSQL real em 0,07s.
 - `TestPostgresPollingClaimsFenceAndAbsoluteDeadline` foi reforçado para comparar o outbox antes/depois da conclusão stale, respeitando o evento durável de aceitação já existente. O stale owner não adicionou fato terminal; fencing, takeover, backoff e deadline passaram em 0,09s.
 - O pacote `pg` passou a oferecer `RuntimeDSN`, fixando `app.tenant_id` via opção de sessão; Órbita aceita `RUNTIME_TENANT_ID` para implantação dedicada. A configuração padrão não muda, pois workloads multi-tenant ainda exigem propagação transacional por request. `go test ./internal/platform/pg` passou.
+- Atlas, Cometa, Pulsar e Libra também aceitam `RUNTIME_TENANT_ID` e derivam DSN com a role/escopo configurados. `go test ./cmd/... ./internal/platform/pg` passou; a execução oficial continua no modo legado até existir propagação dinâmica por request.
 
 ## Continuação — horizonte absoluto de retry
 

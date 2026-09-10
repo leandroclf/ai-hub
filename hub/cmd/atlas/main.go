@@ -18,6 +18,13 @@ func main() {
 	log := logging.New("atlas")
 	addr := config.Env("HTTP_ADDR", ":8081")
 	dsn := config.Env("CONTROL_DSN", "postgres://hub:hub@localhost:5432/hub_control?sslmode=disable")
+	if tenant := config.Env("RUNTIME_TENANT_ID", ""); tenant != "" {
+		var dsnErr error
+		dsn, dsnErr = pg.RuntimeDSN(dsn, tenant)
+		if dsnErr != nil {
+			panic(dsnErr)
+		}
+	}
 
 	db, err := pg.WaitReady(dsn, 30_000_000_000) // 30s
 	if err != nil {

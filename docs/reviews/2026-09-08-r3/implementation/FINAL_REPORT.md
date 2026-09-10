@@ -111,3 +111,5 @@ O ensaio de callback conflitante foi ampliado para uma observação tardia após
 O ensaio de fencing também confirma que um owner stale não acrescenta fato terminal ao outbox existente; somente o takeover vigente pode continuar o polling, preservando a deadline absoluta e a agenda de retry.
 
 Foi preparada a adoção de RLS por sessão com `RuntimeDSN` e `RUNTIME_TENANT_ID` no Órbita. Essa opção cobre workloads dedicados; não fecha o gate de serviços multi-tenant, que ainda precisa propagar o tenant em cada transação usando a credencial não proprietária.
+
+A configuração foi estendida também a Atlas, Cometa, Pulsar e Libra. Todos os processos agora possuem o mesmo caminho opt-in para DSN runtime dedicado; a execução Compose oficial permanece legada até a implementação da propagação transacional dinâmica por request.

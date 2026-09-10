@@ -29,6 +29,13 @@ func main() {
 	addr := config.Env("HTTP_ADDR", ":8082")
 	selfURL := config.Env("SELF_URL", "http://localhost:8082")
 	dsn := config.Env("CORE_DSN", "postgres://hub:hub@localhost:5432/hub_core?sslmode=disable")
+	if tenant := config.Env("RUNTIME_TENANT_ID", ""); tenant != "" {
+		var dsnErr error
+		dsn, dsnErr = pg.RuntimeDSN(dsn, tenant)
+		if dsnErr != nil {
+			panic(dsnErr)
+		}
+	}
 	atlasURL := config.Env("ATLAS_URL", "http://localhost:8081")
 	queueEndpoint := config.Env("QUEUE_ENDPOINT", "http://localhost:4566")
 	queueRegion := config.Env("QUEUE_REGION", "us-east-1")
