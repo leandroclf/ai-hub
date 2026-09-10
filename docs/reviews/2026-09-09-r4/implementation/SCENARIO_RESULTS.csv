@@ -20,12 +20,12 @@ R4-CBK-01-S03;PASS_UNITARIO;chave de ingresso constante e capability por operaç
 R4-CBK-02-S01;PENDENTE;inbox PostgreSQL não executada
 R4-CBK-02-S02;PENDENTE;quota/retenção ainda não qualificados
 R4-CBK-02-S03;PENDENTE;conflito legítimo/órfão não executado
-R4-CBK-03-S01;ABERTO;worker autônomo ainda não implementado
-R4-CBK-03-S02;ABERTO;claim/lease/epoch ainda não implementados
-R4-CBK-03-S03;ABERTO;poison item/justiça de escopo ainda não qualificados
-R4-CBK-04-S01;ABERTO;validação única ainda não ligada a callback
-R4-CBK-04-S02;ABERTO;correlação divergente ainda não dispõe item
-R4-CBK-04-S03;ABERTO;payload completo/snapshot ainda não qualificados
+R4-CBK-03-S01;IMPLEMENTADO_UNITARIO;worker autônomo implementado;integração PostgreSQL pendente
+R4-CBK-03-S02;IMPLEMENTADO_UNITARIO;claim/lease/epoch e SKIP LOCKED implementados;integração PostgreSQL pendente
+R4-CBK-03-S03;IMPLEMENTADO_UNITARIO;poison item isolado após três tentativas;ensaio de justiça pendente
+R4-CBK-04-S01;IMPLEMENTADO_CAMINHO;callback usa validação de snapshot/resultado compartilhada;integração pendente
+R4-CBK-04-S02;IMPLEMENTADO_CAMINHO;correlação divergente é rejeitada sem sobrescrita;integração pendente
+R4-CBK-04-S03;IMPLEMENTADO_CAMINHO;resultado completo é preservado;integração pendente
 R4-QUA-01-S01;PASS_ESTRUTURAL;inventário de união presente no pacote
 R4-QUA-01-S02;PENDENTE;matriz de resultados ainda não regenerada
 R4-QUA-01-S03;PENDENTE;hash final depende do working tree
