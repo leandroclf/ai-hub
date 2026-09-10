@@ -6,32 +6,32 @@ R4-CTR-02-S01;PASS;go test atlas — minimum aplicado
 R4-CTR-02-S02;PASS;go test atlas — integer exato
 R4-CTR-02-S03;PASS;go test atlas — keyword não suportada recusada
 R4-OPE-01-S01;PASS_INTEGRADO;LocalStack secret fixture e teste de cofre versionado
-R4-OPE-01-S02;PENDENTE;revogação/binding distinto requer banco/oráculo
-R4-OPE-01-S03;PENDENTE;ensaio de crescimento/cancelamento não executado
+R4-OPE-01-S02;PASS_UNITARIO;cache por binding, revogação exata e expiração local cobertos por go test -race
+R4-OPE-01-S03;PASS_UNITARIO;coordenação por chave e limite de 1024 locks rastreados cobertos por go test -race, carga prolongada permanece pendente
 R4-OPE-02-S01;PASS_INTEGRADO;bootstrap Compose reconciliou variante persistida e preservou ledger
-R4-OPE-02-S02;PASS_INTEGRADO;instalação/upgrade do projeto Compose concluídos; variante conhecida verificada
+R4-OPE-02-S02;PASS_INTEGRADO;instalação/upgrade do projeto Compose concluídos, variante conhecida verificada
 R4-OPE-02-S03;PASS_ESTRUTURAL;runner mantém falha para hash desconhecido
-R4-OPE-03-S01;IMPLEMENTADO_CAMINHO;consulta filtrada e índice parcial;ensaio de crescimento PostgreSQL pendente
-R4-OPE-03-S02;IMPLEMENTADO_CAMINHO;LIMIT 2 preserva diagnóstico de ambiguidade;ensaio PostgreSQL pendente
+R4-OPE-03-S01;PASS_CAMINHO;consulta filtrada, carga publicada e EXPLAIN confirmando índice parcial quando selecionado
+R4-OPE-03-S02;PASS_CAMINHO;LIMIT 2 preserva diagnóstico de ambiguidade e carga final resolveu oferta publicada
 R4-OPE-03-S03;PENDENTE;projeção/Atlas fora não executados
 R4-CBK-01-S01;PASS_ESTRUTURAL;rota pública /callbacks separada do JWT
-R4-CBK-01-S02;PENDENTE;provedor real/simulador em Compose não executado
+R4-CBK-01-S02;PASS_INTEGRADO_LOCAL;provider-sim em Compose concluiu callback e o efeito foi observado
 R4-CBK-01-S03;PASS_UNITARIO;chave de ingresso constante e capability por operação
-R4-CBK-02-S01;PENDENTE;inbox PostgreSQL não executada
+R4-CBK-02-S01;PASS_INTEGRADO_LOCAL;inbox PostgreSQL foi exercitada pela carga e terminou sem RECEIVED pendente
 R4-CBK-02-S02;PENDENTE;quota/retenção ainda não qualificados
 R4-CBK-02-S03;PENDENTE;conflito legítimo/órfão não executado
-R4-CBK-03-S01;IMPLEMENTADO_UNITARIO;worker autônomo implementado;integração PostgreSQL pendente
-R4-CBK-03-S02;IMPLEMENTADO_UNITARIO;claim/lease/epoch e SKIP LOCKED implementados;integração PostgreSQL pendente
-R4-CBK-03-S03;IMPLEMENTADO_UNITARIO;poison item isolado após três tentativas;ensaio de justiça pendente
-R4-CBK-04-S01;IMPLEMENTADO_CAMINHO;callback usa validação de snapshot/resultado compartilhada;integração pendente
-R4-CBK-04-S02;IMPLEMENTADO_CAMINHO;correlação divergente é rejeitada sem sobrescrita;integração pendente
-R4-CBK-04-S03;IMPLEMENTADO_CAMINHO;resultado completo é preservado;integração pendente
+R4-CBK-03-S01;PASS_INTEGRADO_LOCAL;worker autônomo processou callback no Compose com autoridade PostgreSQL
+R4-CBK-03-S02;PASS_INTEGRADO_LOCAL;claim/lease/epoch e recuperação foram exercitados no fluxo integrado
+R4-CBK-03-S03;IMPLEMENTADO_UNITARIO;poison item isolado após três tentativas, ensaio de justiça pendente
+R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação compartilhada de snapshot e resultado
+R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
+R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;inventário de união presente no pacote
 R4-QUA-01-S02;PENDENTE;matriz de resultados ainda não regenerada
 R4-QUA-01-S03;PENDENTE;hash final depende do working tree
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, logout e viewport 390px
-R4-QUA-02-S02;PARCIAL;criação/leitura persistente de cliente passou; cobertura administrativa completa pendente
-R4-QUA-02-S03;PARCIAL;ausência de token persistido passou; matriz de negativas de autorização pendente
+R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente passou no Playwright e 16 rotas foram percorridas no harness, mutações de cada jornada ainda não são equivalentes
+R4-QUA-02-S03;PARCIAL;ausência de token persistido passou, matriz de negativas de autorização pendente
 R4-QUA-03-S01;PASS;go test ./... verde
 R4-QUA-03-S02;PASS_INTEGRADO;Compose, kind recriado, readiness, métricas/HPA e recuperação de pod
-R4-QUA-03-S03;PARCIAL_INTEGRADO;restore passou; carga autenticada bloqueada por catálogo sem seed e HA completo pendente
+R4-QUA-03-S03;PARCIAL_INTEGRADO;restore, carga autenticada e HA local passaram, kind ainda usa dependências Compose e não representa produção

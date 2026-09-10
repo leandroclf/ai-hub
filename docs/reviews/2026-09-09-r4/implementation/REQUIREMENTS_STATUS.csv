@@ -1,13 +1,13 @@
 requisito;achado;status;codigo;validacao
 R4-CTR-01;F-R4-05;IMPLEMENTADO_UNITARIO;hub/internal/atlas/offers.go;go test ./internal/atlas
 R4-CTR-02;F-R4-06;IMPLEMENTADO_UNITARIO;hub/internal/atlas/offers.go;go test ./internal/atlas
-R4-OPE-01;F-R4-07;IMPLEMENTADO_INTEGRADO;hub/internal/providerauth/client.go;TestAWSVaultLocalStackVersion e go test -race
+R4-OPE-01;F-R4-07;IMPLEMENTADO_INTEGRADO_LOCAL;hub/internal/providerauth/client.go;LocalStack versionado, revogação/expiração e limite de locks com go test -race
 R4-OPE-02;F-R4-08;IMPLEMENTADO_INTEGRADO;hub/migrations/control/0002_provider_auth.sql,hub/deploy/r2/scripts/migrate.sh;bootstrap Compose com upgrade persistido
-R4-CBK-01;F-R4-01;IMPLEMENTADO_CAMINHO_HTTP;hub/internal/cometa/handlers.go,hub/cmd/cometa/main.go;go test ./...
-R4-CBK-02;F-R4-02;PARCIAL;hub/internal/cometa/handlers.go,hub/internal/cometa/custody.go;integração PostgreSQL pendente
-R4-CBK-03;F-R4-03;IMPLEMENTADO_UNITARIO;hub/internal/cometa/custody.go,hub/internal/cometa/worker.go,hub/migrations/core/0036_callback_inbox_leases.sql;go test ./...;integração PostgreSQL ainda pendente
-R4-CBK-04;F-R4-04;IMPLEMENTADO_CAMINHO;hub/internal/cometa/executor.go,hub/internal/cometa/custody.go;go test ./...;qualificação integrada ainda pendente
-R4-OPE-03;F-R4-09;IMPLEMENTADO_CAMINHO;hub/internal/atlas/offers.go,hub/migrations/control/0037_catalog_offer_lookup.sql;go test ./internal/atlas;ensaio PostgreSQL de crescimento pendente
+R4-CBK-01;F-R4-01;IMPLEMENTADO_INTEGRADO_LOCAL;hub/internal/cometa/handlers.go,hub/cmd/cometa/main.go;provider-sim Compose e carga callback autenticada
+R4-CBK-02;F-R4-02;PARCIAL_INTEGRADO_LOCAL;hub/internal/cometa/handlers.go,hub/internal/cometa/custody.go;inbox integrada passou, quota/retenção e órfão conflitante permanecem pendentes
+R4-CBK-03;F-R4-03;PARCIAL_INTEGRADO_LOCAL;hub/internal/cometa/custody.go,hub/internal/cometa/worker.go,hub/migrations/core/0036_callback_inbox_leases.sql;worker integrado passou, justiça/poison prolongado permanecem pendentes
+R4-CBK-04;F-R4-04;IMPLEMENTADO_INTEGRADO_LOCAL;hub/internal/cometa/executor.go,hub/internal/cometa/custody.go;callback válido, negativas 401 e resultado estrito na carga final
+R4-OPE-03;F-R4-09;IMPLEMENTADO_INTEGRADO_LOCAL;hub/internal/atlas/offers.go,hub/migrations/control/0037_catalog_offer_lookup.sql;seed/carga final e EXPLAIN do índice parcial
 R4-QUA-01;F-R4-10;PARCIAL;docs/reviews/2026-09-09-r4/implementation;matriz integral ainda não regenerada
-R4-QUA-02;F-R4-11;PARCIAL_INTEGRADO;hub/admin-ui,hub/internal;smoke Chromium autenticado e readback aprovados; APIs administrativas adicionais e negativas ainda pendentes
-R4-QUA-03;F-R4-12;PARCIAL_INTEGRADO;hub/deploy;Compose, restore, kind local, probes e browser executados; catálogo publicado, HA completo e carga feliz ainda pendentes
+R4-QUA-02;F-R4-11;PARCIAL_INTEGRADO_LOCAL;hub/admin-ui,hub/internal;Playwright e Browser Harness em 16 rotas, mutações e matriz negativa completa ainda pendentes
+R4-QUA-03;F-R4-12;PARCIAL_INTEGRADO_LOCAL;hub/deploy;Compose, seed, carga, restore, kind/HA e probes, dependências kind ainda Compose-linked
