@@ -48,6 +48,8 @@ type Config struct {
 
 type TokenCache struct {
 	client   *redis.Client
+	pools    *egress.Pool
+	poolOnce sync.Once
 	Resolver SecretResolver
 	mu       sync.Mutex
 	locksMu  sync.Mutex
@@ -88,7 +90,26 @@ func NewTokenCache(addr string) *TokenCache {
 
 func (c *TokenCache) Ping(ctx context.Context) error { return c.client.Ping(ctx).Err() }
 
-func (c *TokenCache) Close() error { return c.client.Close() }
+func (c *TokenCache) Close() error {
+	if c == nil {
+		return nil
+	}
+	if c.pools != nil {
+		c.pools.CloseIdleConnections()
+	}
+	if c.client == nil {
+		return nil
+	}
+	return c.client.Close()
+}
+
+func (c *TokenCache) outboundClient(target string, timeout time.Duration) (*http.Client, error) {
+	if c == nil {
+		return nil, fmt.Errorf("secret resolver unavailable")
+	}
+	c.poolOnce.Do(func() { c.pools = egress.NewPool(egress.FromEnv()) })
+	return c.pools.Client(target, timeout)
+}
 
 type tokenResponse struct {
 	AccessToken string `json:"access_token"`
@@ -136,7 +157,7 @@ func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, provid
 		return "", fmt.Errorf("invalid token endpoint")
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	tokenClient, err := egress.NewClient(cfg.TokenURL, 3*time.Second)
+	tokenClient, err := c.outboundClient(cfg.TokenURL, 3*time.Second)
 	if err != nil {
 		return "", err
 	}

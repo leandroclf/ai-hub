@@ -146,7 +146,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-12 Concluir e requalificar R3-INT-03 — Pools HTTP e budgets de concorrência.
-  - Objective: Transports por chamada permanecem; arquivo egress não mudou e chamadas NewClient continuam.
+  - Objective: Pool de transports por origem foi implementado em egress e conectado ao Cometa, polling, autenticação de provedor e entregas; ainda falta qualificar budgets de concorrência e todos os cenários de I/O.
   - Likely files/components: hub/internal/platform/egress, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/providerauth/client.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.

@@ -11,10 +11,13 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
 var ErrDenied = errors.New("destino externo não autorizado")
+
+const maxPooledOrigins = 256
 
 type Policy struct {
 	// Private maps an exact host:port to approved CIDRs; never a blanket bypass.
@@ -106,12 +109,64 @@ func (p Policy) Client(target string, timeout time.Duration) (*http.Client, erro
 	}
 	u, _ := url.Parse(target)
 	origin := u.Scheme + "://" + u.Host
+	return &http.Client{Timeout: timeout, Transport: originTransport{origin: origin, transport: p.transport(u, timeout)}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, nil
+}
+
+// Pool reutiliza transports por origem, mantendo os limites de conexões do
+// próprio http.Transport. O cliente retornado é novo a cada chamada para que
+// timeout e certificados mTLS sejam propriedade da operação; o transporte,
+// que é seguro para uso concorrente, permanece compartilhado. Origens acima
+// do limite usam um transporte efêmero e não fazem o pool crescer sem limite.
+type Pool struct {
+	policy     Policy
+	mu         sync.Mutex
+	transports map[string]*http.Transport
+}
+
+func NewPool(policy Policy) *Pool {
+	return &Pool{policy: policy, transports: make(map[string]*http.Transport)}
+}
+
+func (p *Pool) Client(target string, timeout time.Duration) (*http.Client, error) {
+	if p == nil {
+		return nil, ErrDenied
+	}
+	if err := p.policy.Validate(target); err != nil {
+		return nil, err
+	}
+	u, _ := url.Parse(target)
+	origin := u.Scheme + "://" + u.Host
+	p.mu.Lock()
+	transport := p.transports[origin]
+	if transport == nil {
+		transport = p.policy.transport(u, 0)
+		if len(p.transports) < maxPooledOrigins {
+			p.transports[origin] = transport
+		}
+	}
+	p.mu.Unlock()
+	return &http.Client{Timeout: timeout, Transport: originTransport{origin: origin, transport: transport}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, nil
+}
+
+// CloseIdleConnections libera conexões mantidas pelos transports pooled.
+func (p *Pool) CloseIdleConnections() {
+	if p == nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	for _, transport := range p.transports {
+		transport.CloseIdleConnections()
+	}
+}
+
+func (p Policy) transport(u *url.URL, responseHeaderTimeout time.Duration) *http.Transport {
 	resolver := p.Resolver
 	if resolver == nil {
 		resolver = net.DefaultResolver
 	}
 	dialer := net.Dialer{Timeout: 3 * time.Second, KeepAlive: 30 * time.Second}
-	transport := &http.Transport{Proxy: nil, TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12}, MaxIdleConns: 64, MaxIdleConnsPerHost: 8, MaxConnsPerHost: 16, IdleConnTimeout: 30 * time.Second, TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: timeout}
+	transport := &http.Transport{Proxy: nil, TLSClientConfig: &tls.Config{MinVersion: tls.VersionTLS12}, MaxIdleConns: 64, MaxIdleConnsPerHost: 8, MaxConnsPerHost: 16, IdleConnTimeout: 30 * time.Second, TLSHandshakeTimeout: 5 * time.Second, ResponseHeaderTimeout: responseHeaderTimeout}
 	transport.DialContext = func(ctx context.Context, network, hostport string) (net.Conn, error) {
 		if !strings.EqualFold(hostport, address(u)) {
 			return nil, ErrDenied
@@ -135,7 +190,7 @@ func (p Policy) Client(target string, timeout time.Duration) (*http.Client, erro
 		// Dial the validated address, never resolve the hostname a second time.
 		return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].String(), port))
 	}
-	return &http.Client{Timeout: timeout, Transport: originTransport{origin: origin, transport: transport}, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}, nil
+	return transport
 }
 
 type originTransport struct {

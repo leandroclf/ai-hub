@@ -52,3 +52,39 @@ func TestPrivateScopeAndRedirectDoNotLeak(t *testing.T) {
 		t.Fatal("private profile escaped host/port")
 	}
 }
+
+func TestPoolReusesTransportPerOriginAndKeepsClientsIndependent(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer srv.Close()
+	u, err := url.Parse(srv.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := Policy{HTTPOrigins: map[string]bool{srv.URL: true}, Private: map[string][]netip.Prefix{u.Host: {netip.MustParsePrefix("127.0.0.1/32")}}}
+	pool := NewPool(p)
+	first, err := pool.Client(srv.URL+"/one", time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := pool.Client(srv.URL+"/two", 2*time.Second)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a, ok := first.Transport.(originTransport)
+	if !ok {
+		t.Fatal("first client is not origin constrained")
+	}
+	b, ok := second.Transport.(originTransport)
+	if !ok {
+		t.Fatal("second client is not origin constrained")
+	}
+	if a.transport != b.transport {
+		t.Fatal("clients from one origin did not share the transport pool")
+	}
+	if first == second || first.Timeout == second.Timeout {
+		t.Fatal("per-call clients lost independent timeout ownership")
+	}
+	pool.CloseIdleConnections()
+}

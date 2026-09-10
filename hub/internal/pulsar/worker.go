@@ -25,10 +25,11 @@ type DeliveryWorker struct {
 	store    *Store
 	log      *slog.Logger
 	resolver providerauth.SecretResolver
+	clients  *egress.Pool
 }
 
 func NewDeliveryWorker(store *Store, orbitaURL string, log *slog.Logger) *DeliveryWorker {
-	return &DeliveryWorker{store: store, log: log, resolver: providerauth.AWSVault{}}
+	return &DeliveryWorker{store: store, log: log, resolver: providerauth.AWSVault{}, clients: egress.NewPool(egress.FromEnv())}
 }
 
 func (w *DeliveryWorker) Run(ctx context.Context, interval time.Duration) {
@@ -86,7 +87,7 @@ func (w *DeliveryWorker) attempt(ctx context.Context, d ClaimedDelivery) {
 		finish(0, "signing_key_unavailable")
 		return
 	}
-	client, err := egress.NewClient(d.URL, time.Duration(d.TimeoutSeconds)*time.Second)
+	client, err := w.clients.Client(d.URL, time.Duration(d.TimeoutSeconds)*time.Second)
 	if err != nil {
 		finish(0, "egress_refused")
 		return

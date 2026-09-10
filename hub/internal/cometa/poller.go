@@ -18,7 +18,6 @@ import (
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
-	"ai-hub/hub/internal/platform/egress"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/providersim"
@@ -94,7 +93,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		return unknown("poll_binding_invalid")
 	}
 	endpoint := strings.TrimRight(pa.BaseURL, "/") + "/v1/operations/" + url.PathEscape(c.ProviderRequestID)
-	client, err := egress.NewClient(endpoint, time.Duration(c.TimeoutSeconds)*time.Second)
+	client, err := e.clients.Client(endpoint, time.Duration(c.TimeoutSeconds)*time.Second)
 	if err != nil {
 		return unknown("poll_egress_refused")
 	}

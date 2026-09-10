@@ -32,6 +32,9 @@ reprodutível.
 - Browser Harness: `BLOCKED-ENVIRONMENT`, pois o daemon não encontrou
   `DevToolsActivePort`/CDP no navegador local. Não é falha funcional do portal
   e não substitui o gate Playwright.
+- Carga autorizada pós-rebuild (`r4-authorized-1789081369162`): PASS após a
+  conexão dos pools HTTP; os oito cenários terminaram conforme esperado e a
+  mesma chave produziu quatro observações do mesmo protocolo.
 
 ## Correção implementada
 
@@ -41,11 +44,17 @@ fallback de compatibilidade. O teste PostgreSQL de custódia verifica o prazo
 persistido. Isso evita que o TTL de recuperação de transporte expire um
 polling saudável antes do SLA do passo.
 
+Também foi criado um pool limitado de transports por origem em `egress`. Cada
+consumidor obtém um cliente leve com timeout próprio, enquanto conexões ociosas
+são reutilizadas pelo transport compartilhado; certificados mTLS continuam
+clonando o transport antes da mutação. O teste de egress comprova a
+reutilização por origem e a independência dos clientes.
+
 ## Pendências que impedem declaração integral
 
 Ainda não há evidência suficiente para fechar a missão completa de 201
 requisitos/732 cenários. Permanecem no OpenSpec os itens de executor DAG,
-capacidade ligada a todo I/O, pools HTTP, operações administrativas e
+capacidade ligada a todo I/O, budgets completos de pools HTTP, operações administrativas e
 financeiras completas, FileRefs no fluxo, fencing geral de efeito incerto,
 projeções escaláveis, telemetria bilateral e matriz integral sem lacunas.
 

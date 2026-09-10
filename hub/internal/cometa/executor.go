@@ -44,7 +44,7 @@ type Executor struct {
 	store      *Store
 	atlas      *atlasclient.Client
 	log        *slog.Logger
-	client     *http.Client
+	clients    *egress.Pool
 	selfURL    string
 	tokenCache *providerauth.TokenCache
 }
@@ -53,7 +53,7 @@ type Executor struct {
 // Cometa, usada para montar o endereco de callback informado ao
 // provedor simulado em modo async_callback.
 func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, selfURL string, tokenCache *providerauth.TokenCache) *Executor {
-	return &Executor{store: store, atlas: atlas, log: log, client: &http.Client{Timeout: 15 * time.Second}, selfURL: selfURL, tokenCache: tokenCache}
+	return &Executor{store: store, atlas: atlas, log: log, clients: egress.NewPool(egress.FromEnv()), selfURL: selfURL, tokenCache: tokenCache}
 }
 
 // Execute processa um dispatch.Command: cria a operacao, resolve
@@ -129,7 +129,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	}
 	attemptID := claim.AttemptID
 	sentAt := time.Now()
-	client, err := egress.NewClient(pa.BaseURL, 15*time.Second)
+	client, err := e.clients.Client(pa.BaseURL, 15*time.Second)
 	if err != nil {
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
 	}
