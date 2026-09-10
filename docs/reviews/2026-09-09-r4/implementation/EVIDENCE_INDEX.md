@@ -8,6 +8,8 @@
 | `hub/deploy/r2/scripts/migrate.sh` | reconciliação restrita e falha para hash desconhecido |
 | `hub/migrations/core/0036_callback_inbox_leases.sql` | lease/epoch/claim aditivo para recuperação da inbox |
 | `hub/internal/cometa/worker.go` | worker autônomo, lote limitado e disposição de poison item |
+| `hub/migrations/control/0037_catalog_offer_lookup.sql` | índice parcial do conjunto elegível de ofertas |
+| `hub/internal/atlas/offers.go` | consulta seletiva com limite de ambiguidade |
 | `git diff --check` | higiene do diff |
 | `docker compose ls`, `docker ps -a` | proveniência do runtime local |
 

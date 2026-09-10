@@ -7,7 +7,7 @@ R4-CBK-01;F-R4-01;IMPLEMENTADO_CAMINHO_HTTP;hub/internal/cometa/handlers.go,hub/
 R4-CBK-02;F-R4-02;PARCIAL;hub/internal/cometa/handlers.go,hub/internal/cometa/custody.go;integração PostgreSQL pendente
 R4-CBK-03;F-R4-03;IMPLEMENTADO_UNITARIO;hub/internal/cometa/custody.go,hub/internal/cometa/worker.go,hub/migrations/core/0036_callback_inbox_leases.sql;go test ./...;integração PostgreSQL ainda pendente
 R4-CBK-04;F-R4-04;IMPLEMENTADO_CAMINHO;hub/internal/cometa/executor.go,hub/internal/cometa/custody.go;go test ./...;qualificação integrada ainda pendente
-R4-OPE-03;F-R4-09;ABERTO;hub/internal/atlas/offers.go;índice seletivo e ensaio de crescimento pendentes
+R4-OPE-03;F-R4-09;IMPLEMENTADO_CAMINHO;hub/internal/atlas/offers.go,hub/migrations/control/0037_catalog_offer_lookup.sql;go test ./internal/atlas;ensaio PostgreSQL de crescimento pendente
 R4-QUA-01;F-R4-10;PARCIAL;docs/reviews/2026-09-09-r4/implementation;matriz integral ainda não regenerada
 R4-QUA-02;F-R4-11;ABERTO;hub/admin-ui,hub/internal;console vertical pendente
 R4-QUA-03;F-R4-12;ABERTO;hub/deploy;gates integrados não executados

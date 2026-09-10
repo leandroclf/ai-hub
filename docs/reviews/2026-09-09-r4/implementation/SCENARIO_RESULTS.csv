@@ -11,8 +11,8 @@ R4-OPE-01-S03;PENDENTE;ensaio de crescimento/cancelamento não executado
 R4-OPE-02-S01;PENDENTE;upgrade PostgreSQL não executado
 R4-OPE-02-S02;PENDENTE;instalação limpa/variante conhecida não executadas
 R4-OPE-02-S03;PASS_ESTRUTURAL;runner mantém falha para hash desconhecido
-R4-OPE-03-S01;PENDENTE;ensaio seletivo não executado
-R4-OPE-03-S02;PENDENTE;ambiguidade em banco não executada
+R4-OPE-03-S01;IMPLEMENTADO_CAMINHO;consulta filtrada e índice parcial;ensaio de crescimento PostgreSQL pendente
+R4-OPE-03-S02;IMPLEMENTADO_CAMINHO;LIMIT 2 preserva diagnóstico de ambiguidade;ensaio PostgreSQL pendente
 R4-OPE-03-S03;PENDENTE;projeção/Atlas fora não executados
 R4-CBK-01-S01;PASS_ESTRUTURAL;rota pública /callbacks separada do JWT
 R4-CBK-01-S02;PENDENTE;provedor real/simulador em Compose não executado
