@@ -323,6 +323,12 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		if count(t, s, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 2 {
 			t.Fatal("replay generated entries")
 		}
+		if count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 1 {
+			t.Fatal("semantic redelivery generated a second economic fact")
+		}
+		if count(t, s, `SELECT count(*) FROM finance_inbox WHERE tenant_id=$1`, e.TenantID) != 2 {
+			t.Fatal("redelivery was not durably recorded per event identity")
+		}
 	})
 	t.Run("R2-FIN-05-S03_authorized_compensation", func(t *testing.T) {
 		e := event(tenant())
