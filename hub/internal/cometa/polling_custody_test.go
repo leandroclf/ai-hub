@@ -137,8 +137,8 @@ func TestPostgresPollingClaimsFenceAndAbsoluteDeadline(t *testing.T) {
 	if err = s.db.QueryRow(`SELECT interval_seconds,deadline_at,extract(epoch from next_run_at-clock_timestamp()) FROM polling_schedule WHERE operation_id=$1`, cmd.CommandID).Scan(&interval, &original, &delay); err != nil {
 		t.Fatal(err)
 	}
-	if interval != 2 || delay < 4 || original.Sub(cmd.RetryDeadline) > time.Microsecond || cmd.RetryDeadline.Sub(original) > time.Microsecond {
-		t.Fatalf("policy interval=%d delay=%f deadline=%s", interval, delay, original)
+	if interval != 2 || delay < 4 || original.Sub(cmd.StepDeadline) > time.Microsecond || cmd.StepDeadline.Sub(original) > time.Microsecond {
+		t.Fatalf("policy interval=%d delay=%f deadline=%s want step deadline=%s", interval, delay, original, cmd.StepDeadline)
 	}
 	if _, err = s.db.Exec(`UPDATE polling_schedule SET next_run_at=clock_timestamp()-interval '1 second',deadline_at=clock_timestamp()+interval '500 milliseconds' WHERE operation_id=$1`, cmd.CommandID); err != nil {
 		t.Fatal(err)

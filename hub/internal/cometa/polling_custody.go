@@ -44,9 +44,14 @@ func ScheduleAcceptedPollTx(ctx context.Context, tx *sql.Tx, cmd dispatch.Comman
 	if p.IntervalSeconds < 1 || p.MaxIntervalSeconds < p.IntervalSeconds || p.MaxIntervalSeconds > 3600 || p.TimeoutSeconds < 1 || p.TimeoutSeconds > 60 || p.JitterPercent < 0 || p.JitterPercent > 50 || p.MaxAttempts < 1 || p.MaxAttempts > 100000 {
 		return errors.New("invalid polling policy")
 	}
-	deadline := cmd.RetryDeadline
+	// Uma aceitação externa já criou um efeito e o polling passa a observar
+	// sua conclusão normal dentro do prazo do passo/cliente. O retry TTL
+	// governa recuperação de falhas transitórias de transporte; usá-lo aqui
+	// encerraria polling saudável antes do SLA e permitiria que o timer da
+	// Órbita expirasse uma operação que o provedor ainda podia concluir.
+	deadline := cmd.StepDeadline
 	if deadline.IsZero() {
-		deadline = cmd.StepDeadline
+		deadline = cmd.RetryDeadline
 	}
 	if deadline.IsZero() {
 		return errors.New("missing absolute polling deadline")
