@@ -124,6 +124,7 @@
         "integrations:read",
         "integrations:write",
         "protocols:read",
+        "protocols:reconcile",
         "protocols:write",
         "sla:read"
       ]
@@ -232,6 +233,7 @@
         "integrations:read",
         "integrations:write",
         "protocols:read",
+        "protocols:reconcile",
         "protocols:write",
         "sla:read"
       ]
@@ -897,6 +899,14 @@
       }
     },
     {
+      "name": "protocols:reconcile",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
       "name": "protocols:write",
       "protocol": "openid-connect",
       "attributes": {
@@ -1031,6 +1041,12 @@
         "tenant_reader",
         "tenant_operator",
         "hub_protocol_reader"
+      ]
+    },
+    {
+      "clientScope": "protocols:reconcile",
+      "roles": [
+        "hub_admin"
       ]
     },
     {

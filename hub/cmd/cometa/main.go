@@ -106,6 +106,9 @@ func main() {
 	// Scheduler de polling (EXE-05).
 	go cometa.RunPoller(ctx, store, exec, atlas, 2*time.Second, log)
 	go cometa.RunCallbackInboxWorker(ctx, store, exec, 2*time.Second, log)
+	// Reconciliação administrativa consulta somente o status já correlacionado
+	// no provedor; nunca reenvia a submissão original.
+	go cometa.RunReconciliationWorker(ctx, store, exec, config.Env("CELL_ID", ""), 2*time.Second, log)
 
 	readiness := func(ctx context.Context) error { return store.Ping(ctx) }
 	srv := httpserver.New(log, readiness, readiness, nil)

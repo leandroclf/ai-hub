@@ -38,7 +38,13 @@ reprodutível.
 - Reconciliação administrativa de protocolo: PASS no teste de integração com
   PostgreSQL; a solicitação exige MFA e `protocols:reconcile`, é idempotente
   enquanto aberta, fica auditada na mesma transação e retorna explicitamente
-  `no_provider_replay`.
+  `no_provider_replay`. O worker Cometa também foi exercitado com banco,
+  catálogo e provedor HTTP reais de teste: uma consulta GET terminal produziu
+  evidência, resolveu a solicitação e não gerou nenhum POST de replay.
+- Identidade do laboratório: PASS na reconciliação idempotente do realm; o
+  escopo `protocols:reconcile` está declarado nos clientes administrativos,
+  mapeado somente para `hub_admin` e entregue aos usuários do console após
+  MFA.
 
 ## Correção implementada
 
@@ -54,13 +60,21 @@ são reutilizadas pelo transport compartilhado; certificados mTLS continuam
 clonando o transport antes da mutação. O teste de egress comprova a
 reutilização por origem e a independência dos clientes.
 
+A reconciliação administrativa agora tem custódia de lease/epoch em uma
+migração aditiva, seleção por tenant/célula, consulta somente de status com o
+snapshot de conta/vínculo da operação e resolução após a evidência terminal
+ser gravada. O bootstrap do Cometa inicia esse worker junto do polling e da
+inbox de callbacks; a cobertura PostgreSQL comprova takeover seguro no fluxo
+normal e zero submissão durante a reconciliação.
+
 ## Pendências que impedem declaração integral
 
 Ainda não há evidência suficiente para fechar a missão completa de 201
 requisitos/732 cenários. Permanecem no OpenSpec os itens de executor DAG,
-capacidade ligada a todo I/O, budgets completos de pools HTTP, operações administrativas e
-financeiras completas além da reconciliação de protocolos, FileRefs no fluxo, fencing geral de efeito incerto,
-projeções escaláveis, telemetria bilateral e matriz integral sem lacunas.
+capacidade ligada a todo I/O, budgets completos de pools HTTP, operações
+administrativas e financeiras completas além da reconciliação de protocolos,
+FileRefs no fluxo, fencing geral de efeito incerto, projeções escaláveis,
+telemetria bilateral e matriz integral sem lacunas.
 
 O resultado desta execução deve ser lido como `PASS` dos gates listados e
 `OPEN` dos requisitos não demonstrados, nunca como promoção automática para

@@ -152,13 +152,13 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-13 Concluir e requalificar R3-ADM-01 — Fronteira administrativa e aplicação.
-  - Objective: Papel hub_protocol_reader e MFA agora obrigatórios no admin; avanço de autorização constatado. Requalificar política de aplicação/mascaramento e browser sem afirmar bypass corrigido ainda existente.
+  - Objective: Papel hub_protocol_reader, MFA e o escopo OIDC protocols:reconcile agora são obrigatórios no admin; o fixture hub_admin entrega o novo escopo. Requalificar política de aplicação/mascaramento e browser sem afirmar bypass corrigido ainda existente.
   - Likely files/components: hub/internal/orbita/admin.go, hub/internal/platform/auth/auth.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-14 Concluir e requalificar R3-ADM-02 — Ações operacionais com API efetiva.
-  - Objective: A ação de reconciliação de protocolos agora possui API Orbita durável, idempotente, auditada e sem replay de provedor; ainda faltam as demais ações operacionais, IDs de entrega e rotas SLA compatíveis.
+  - Objective: A ação de reconciliação de protocolos agora possui API Orbita e worker Cometa duráveis, idempotentes, auditados e sem replay de provedor; ainda faltam as demais ações operacionais, IDs de entrega e rotas SLA compatíveis.
   - Likely files/components: hub/admin-ui/src/pages/OperationsPage.tsx, hub/internal/pulsar/handlers.go, hub/internal/orbita/admin.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
