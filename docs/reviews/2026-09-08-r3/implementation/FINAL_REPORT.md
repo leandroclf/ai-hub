@@ -99,3 +99,5 @@ Foi adicionada uma injeção controlada de queda entre efeito externo e resposta
 No ensaio HTTP real após reconstrução da imagem atual, a primeira chamada perdeu a resposta e a repetição retornou `SUCCEEDED` com o mesmo identificador externo; o oráculo permaneceu em um único efeito. A prova ainda é do provider-sim; a integração completa com protocolo do Hub e oráculo financeiro permanece aberta.
 
 O ensaio integrado do Executor Cometa passou contra PostgreSQL real: uma queda pós-efeito produziu `UNKNOWN` durável e a execução seguinte reutilizou a operação sem novo efeito no provider-sim. A ligação desse resultado à finalização do protocolo Orbita e à obrigação financeira ainda precisa de qualificação específica.
+
+Essa ligação foi parcialmente reforçada no consumidor de fatos: `UNKNOWN` agora é verificado explicitamente sem terminalização, enquanto um fato terminal posterior é aplicado sob redelivery concorrente com um único outbox. A captura financeira e a jornada completa do protocolo continuam exigindo ensaio específico.

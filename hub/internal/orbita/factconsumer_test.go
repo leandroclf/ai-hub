@@ -83,6 +83,16 @@ func TestOperationFactPostgresCustody(t *testing.T) {
 	if IsTerminal(got.Status) {
 		t.Fatal("invalid observation finalized protocol")
 	}
+	unknown := fact
+	unknown.Kind = "UNKNOWN"
+	unknown.EvidenceID = idgen.New()
+	if err = s.ConsumeOperationFact(ctx, message(unknown, idgen.New()), f); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.Get(ctx, p.TenantID, p.ProtocolID)
+	if err != nil || IsTerminal(got.Status) {
+		t.Fatalf("UNKNOWN finalized protocol: %+v %v", got, err)
+	}
 	var wg sync.WaitGroup
 	for i := 0; i < 12; i++ {
 		wg.Add(1)

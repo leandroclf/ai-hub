@@ -112,6 +112,7 @@ Prioridade: conectar o executor a um DAG persistido e concluir o cenário de res
 - O provider-sim aceita a injeção `drop_after_effect`; a chave e o efeito são persistidos antes do fechamento da conexão. Cometa propaga `force_drop_after_effect` do payload sintético para esse ensaio, permitindo observar `UNKNOWN` sem apagar a evidência externa.
 - Após reconstrução correta da imagem, o ensaio HTTP real `qualification-drop-after-effect-v4-20260909` confirmou a recuperação: a primeira chamada perdeu a resposta, a repetição retornou `prov-req-000001`/`SUCCEEDED` e o oráculo permaneceu em `effects=1, protocols=1`.
 - O teste integrado PostgreSQL `TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted` passou: Cometa recebeu queda pós-efeito, persistiu `UNKNOWN`/`transport_error`, a segunda execução reutilizou a operação e o oráculo HTTP confirmou exatamente um efeito.
+- O consumidor de fatos da Órbita agora tem prova explícita de que `UNKNOWN` não finaliza nem captura por si só. O teste PostgreSQL também confirmou posterior fato terminal aplicado uma única vez sob redelivery concorrente, com um único outbox.
 
 ## Continuação — horizonte absoluto de retry
 
