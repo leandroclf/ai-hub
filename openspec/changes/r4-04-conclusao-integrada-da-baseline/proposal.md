@@ -2,7 +2,7 @@
 ## Change ID
 r4-04-conclusao-integrada-da-baseline
 ## Status
-Draft — pronta para implementação; não implementada nesta entrega.
+Em execução — gates integrados parciais; conclusão da baseline pendente.
 ## Why
 As specs têm 189 requisitos e 696 cenários (416 v4+205 R2+75 R3), mas matriz registra 280, omitindo cenários v4. FINAL_REPORT diz OpenSpec não executado; CHECKPOINT informa strict 17/17 e novas mudanças. Título do merge afirma conclusão, incompatível com gates ainda abertos.
 Nenhum arquivo de hub/admin-ui mudou entre os snapshots. Permanecem a escolha incorreta de delivery_id, SLA/reconcile sem rota efetiva e comandos financeiros incompatíveis. Domínios financeiro, DAG, capacidade, objetos e kind também não receberam fechamento funcional neste delta.

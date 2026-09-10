@@ -1,6 +1,6 @@
 # Tasks: Callbacks autenticados e recuperáveis
 ## 1. Revalidação
-- [ ] 1.1 Confirmar HEAD/diff e fontes atuais.
+- [x] 1.1 Confirmar HEAD/diff e fontes atuais.
   - Objective: preservar correções e verificar mudanças posteriores ao snapshot.
   - Likely files/components: explore.md e arquivos citados.
   - Depends on: AGENTS e prompt R4.

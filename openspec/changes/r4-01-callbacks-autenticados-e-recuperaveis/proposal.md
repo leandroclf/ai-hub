@@ -2,7 +2,7 @@
 ## Change ID
 r4-01-callbacks-autenticados-e-recuperaveis
 ## Status
-Draft — pronta para implementação; não implementada nesta entrega.
+Em execução — implementação parcial; qualificação integral pendente.
 ## Why
 O handler ganhou capability por operação e custódia antes de 2xx. Entretanto, toda a rota /internal/ continua envolvida pelo JWT do Hub; a URL entregue ao provedor contém apenas capability. O simulador não envia JWT Hub. A correção do handler não fecha o caminho de rede. Isso é incompatibilidade de composição, não prova de endpoint publicamente desprotegido.
 Quando a operação não existe, qualquer token não vazio que alcance o handler permite inserir body e receber 202. A chave única usa operação+hash do body, sem identidade autenticada/token: primeira tentativa com token incorreto pode ocupar a identidade de posterior recibo correto, que só incrementa occurrences. A tabela também não registra tenant/conta/célula, TTL ou quota. Exploração externa depende da rota/autenticação atual; o risco permanece ao corrigir essa rota.

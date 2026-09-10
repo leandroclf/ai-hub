@@ -13,6 +13,8 @@
 | `COMPOSE-INTEGRATED.md` | bootstrap, OIDC, upgrade, probes e testes integrados locais |
 | `git diff --check` | higiene do diff |
 | `docker compose ls`, `docker ps -a` | proveniência do runtime local |
+| `../evidence/openspec-strict-20260910.json` | OpenSpec strict atual: 21 changes, 0 falhas, SHA `7cd4a39f` |
+| `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
 

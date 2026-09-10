@@ -1,0 +1,9 @@
+{
+  "command": "npx --yes @fission-ai/openspec@latest validate --all --strict --no-interactive --json",
+  "date": "2026-09-10",
+  "head": "7cd4a39fdbf4375cc0f246305c3220ec0b2bd9a3",
+  "items": 21,
+  "passed": 21,
+  "failed": 0,
+  "status": "PASS"
+}

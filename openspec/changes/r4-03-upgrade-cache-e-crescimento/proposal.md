@@ -2,7 +2,7 @@
 ## Change ID
 r4-03-upgrade-cache-e-crescimento
 ## Status
-Draft — pronta para implementação; não implementada nesta entrega.
+Em execução — upgrade/migração qualificados; cache e crescimento ainda parciais.
 ## Why
 Tokens deixaram Redis e lock passou a ser por chave. Contudo, Resolve é chamado antes do L1; prova com L1 válido e cofre indisponível falha. locks cresce sem remoção por binding/versão e mutex não respeita cancelamento durante espera.
 0002_provider_auth.sql já existente na R2 foi alterada para API_KEY e header. O runner checksum-guardado para em 0002 de um banco previamente migrado, antes de executar a nova 0004. Comparação dos bytes/hashes comprova alteração; falha SQL integrada ainda não foi executada nesta auditoria.

@@ -1,6 +1,6 @@
 # Tasks: Upgrade, cache e crescimento
 ## 1. Revalidação
-- [ ] 1.1 Confirmar HEAD/diff e fontes atuais.
+- [x] 1.1 Confirmar HEAD/diff e fontes atuais.
   - Objective: preservar correções e verificar mudanças posteriores ao snapshot.
   - Likely files/components: explore.md e arquivos citados.
   - Depends on: AGENTS e prompt R4.
@@ -28,19 +28,19 @@
   - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
 
 ## 3. R4-OPE-02 — Upgrade com migração histórica imutável
-- [ ] 3.1 Fixar contrato e reproduzir contraexemplos.
+- [x] 3.1 Fixar contrato e reproduzir contraexemplos.
   - Objective: tornar F-R4-08 observável sem enfraquecer regra.
   - Likely files/components: hub/migrations/control/0002_provider_auth.sql, hub/migrations/control/0004_provider_api_key.sql, hub/deploy/r2/scripts/migrate.sh.
   - Depends on: 1.1.
   - Validation: R4-OPE-02-S01/S02/S03 e regressão herdada.
   - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
-- [ ] 3.2 Implementar fluxo, dados e integração.
+- [x] 3.2 Implementar fluxo, dados e integração.
   - Objective: A entrega SHALL preservar migrações aplicadas e implementar mudanças por migrações aditivas. Qualificar instalação limpa e upgrade de volume com checksum R2 anterior sem apagar dados ou desabilitar verificação. Bancos já inicializados com variante modificada precisam reconciliação explícita e restrita a hashes/estados conhecidos, não atualização cega do ledger.
   - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
   - Depends on: 3.1 e dependências do backlog R4.
   - Validation: integração real e negativas de autorização/erro.
   - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
-- [ ] 3.3 Qualificar e anexar evidência.
+- [x] 3.3 Qualificar e anexar evidência.
   - Objective: fechar cenários e requisitos herdados R3-OPE-02, R3-OPE-04, R2-OPE-08, R2-DAD-05.
   - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
   - Depends on: 3.2.
