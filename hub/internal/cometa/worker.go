@@ -5,13 +5,49 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"os"
 	"time"
 
 	"ai-hub/hub/internal/dispatch"
+	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/providersim"
 	"ai-hub/hub/internal/queue"
 )
+
+// RunCallbackInboxWorker recupera callbacks órfãos sem depender de novo
+// tráfego HTTP. Cada ciclo reivindica lote limitado; leases/epochs impedem
+// que réplicas concorrentes ou workers atrasados apliquem o mesmo item.
+func RunCallbackInboxWorker(ctx context.Context, store *Store, exec *Executor, interval time.Duration, log *slog.Logger) {
+	if interval <= 0 {
+		interval = time.Second
+	}
+	owner := "callback-reconciler-" + idgen.New()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			_, err := store.ReconcileCallbackInboxBatch(ctx, owner, 25, func(ctx context.Context, id string, observed dispatch.Result) error {
+				status := "FAILED"
+				if observed.Kind == dispatch.FactSucceeded {
+					status = "SUCCEEDED"
+				}
+				if observed.Kind != dispatch.FactSucceeded && observed.Kind != dispatch.FactFailed {
+					return errors.New("invalid reconciled callback status")
+				}
+				_, err := exec.ApplyExternalObservation(ctx, id, providersim.OperationResult{ProviderRequestID: observed.ProviderRequestID, Status: status, Detail: observed.ErrorMessage})
+				return err
+			})
+			if err != nil {
+				log.Error("callback inbox reconciliation failed", "error", err)
+			}
+		}
+	}
+}
 
 // RunCommandWorker consome comandos QUEUED (ASYNC/AUTO) da fila
 // dedicada da celula (COM-01) e executa exatamente a mesma logica do

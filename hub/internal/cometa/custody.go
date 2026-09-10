@@ -129,54 +129,102 @@ func (s *Store) StoreOrphanCallback(ctx context.Context, operationID, token stri
 // correlation. Invalid capabilities are retained as rejected evidence and
 // never reach the external-observation state machine.
 func (s *Store) ReconcileCallbackInbox(ctx context.Context, apply func(context.Context, string, dispatch.Result) error) (int, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT i.inbox_id, i.operation_id, i.token_hash, i.body,
-		       o.callback_token_hash, o.command
-		FROM callback_inbox i
-		JOIN operations o ON o.operation_id=i.operation_id
-		WHERE i.disposition='RECEIVED'
-		ORDER BY i.received_at
-	`)
+	return s.ReconcileCallbackInboxBatch(ctx, idgen.New(), 50, apply)
+}
+
+// ReconcileCallbackInboxBatch claims a bounded set before doing any nested
+// SQL/application work. Expired leases can be reclaimed by another replica;
+// epoch prevents a stale worker from disposing a newer claim.
+func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, limit int, apply func(context.Context, string, dispatch.Result) error) (int, error) {
+	if owner == "" || limit < 1 {
+		return 0, errors.New("claim de inbox inválido")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, err
 	}
-	defer rows.Close()
-	count := 0
+	defer tx.Rollback()
+	rows, err := tx.QueryContext(ctx, `
+		SELECT i.inbox_id, i.operation_id, i.token_hash, i.body,
+		       o.callback_token_hash, o.command, i.claim_epoch + 1, i.processing_attempts + 1
+		FROM callback_inbox i
+		JOIN operations o ON o.operation_id=i.operation_id
+		WHERE i.disposition='RECEIVED' AND (i.lease_until IS NULL OR i.lease_until < clock_timestamp())
+		ORDER BY i.received_at
+		FOR UPDATE OF i SKIP LOCKED LIMIT $1`, limit)
+	if err != nil {
+		return 0, err
+	}
+	type item struct {
+		inboxID, operationID, receivedHash, expectedHash string
+		body, commandRaw                                 []byte
+		epoch, processingAttempts                       int64
+	}
+	items := make([]item, 0, limit)
 	for rows.Next() {
+		var v item
+		if err := rows.Scan(&v.inboxID, &v.operationID, &v.receivedHash, &v.body, &v.expectedHash, &v.commandRaw, &v.epoch, &v.processingAttempts); err != nil {
+			rows.Close()
+			return 0, err
+		}
+		items = append(items, v)
+	}
+	if err := rows.Close(); err != nil {
+		return 0, err
+	}
+	for _, v := range items {
+		if _, err := tx.ExecContext(ctx, `UPDATE callback_inbox SET claim_owner=$2,claim_epoch=$3,lease_until=clock_timestamp()+interval '30 seconds',processing_attempts=processing_attempts+1 WHERE inbox_id=$1`, v.inboxID, owner, v.epoch); err != nil {
+			return 0, err
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	count := 0
+	for _, v := range items {
 		var inboxID, operationID, receivedHash, expectedHash string
-		var body, commandRaw []byte
-		if err := rows.Scan(&inboxID, &operationID, &receivedHash, &body, &expectedHash, &commandRaw); err != nil {
-			return count, err
+		inboxID, operationID, receivedHash, expectedHash = v.inboxID, v.operationID, v.receivedHash, v.expectedHash
+		body, commandRaw := v.body, v.commandRaw
+		dispose := func(disposition, lastError string) error {
+			_, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition=$1,processed_at=CASE WHEN $1<>'RECEIVED' THEN clock_timestamp() ELSE processed_at END,claim_owner=NULL,lease_until=NULL,last_error=$4 WHERE inbox_id=$2 AND disposition='RECEIVED' AND claim_owner=$3 AND claim_epoch=$5`, disposition, inboxID, owner, lastError, v.epoch)
+			return err
 		}
 		if subtle.ConstantTimeCompare([]byte(receivedHash), []byte(expectedHash)) != 1 {
-			if _, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition='REJECTED',processed_at=clock_timestamp() WHERE inbox_id=$1 AND disposition='RECEIVED'`, inboxID); err != nil {
+			if err := dispose("REJECTED", "callback capability mismatch"); err != nil {
 				return count, err
 			}
 			continue
 		}
 		var result providersimOperationResult
 		if err := json.Unmarshal(body, &result); err != nil {
-			return count, err
+			_ = dispose("REJECTED", "invalid callback JSON")
+			continue
 		}
 		if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
-			if _, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition='REJECTED',processed_at=clock_timestamp() WHERE inbox_id=$1 AND disposition='RECEIVED'`, inboxID); err != nil {
+			if err := dispose("REJECTED", "non-terminal callback status"); err != nil {
 				return count, err
 			}
 			continue
 		}
 		var command dispatch.Command
 		if err := json.Unmarshal(commandRaw, &command); err != nil {
-			return count, err
+			_ = dispose("REJECTED", "invalid stored command")
+			continue
 		}
 		if err := apply(ctx, operationID, result.toDispatchResult()); err != nil {
-			return count, err
+			disposition := "RECEIVED"
+			if v.processingAttempts >= 3 {
+				disposition = "REJECTED"
+			}
+			_ = dispose(disposition, err.Error())
+			continue
 		}
-		if _, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition='APPLIED',processed_at=clock_timestamp() WHERE inbox_id=$1 AND disposition='RECEIVED'`, inboxID); err != nil {
+		if err := dispose("APPLIED", ""); err != nil {
 			return count, err
 		}
 		count++
 	}
-	return count, rows.Err()
+	return count, nil
 }
 
 // providersimOperationResult is kept local to avoid coupling custody to the

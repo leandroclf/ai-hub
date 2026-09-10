@@ -336,14 +336,37 @@ func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID str
 		return dispatch.Result{}, errors.New("callback pending is not a final observation")
 	}
 	var raw []byte
-	if err = e.store.db.QueryRowContext(ctx, "SELECT command FROM operations WHERE operation_id=$1", operationID).Scan(&raw); err != nil {
+	var storedCorrelation string
+	if err = e.store.db.QueryRowContext(ctx, "SELECT command,COALESCE(provider_request_id,'') FROM operations WHERE operation_id=$1", operationID).Scan(&raw, &storedCorrelation); err != nil {
 		return dispatch.Result{}, err
+	}
+	if storedCorrelation != "" && storedCorrelation != result.ProviderRequestID {
+		return dispatch.Result{}, errors.New("callback provider correlation mismatch")
 	}
 	var command dispatch.Command
 	if json.Unmarshal(raw, &command) != nil {
 		return dispatch.Result{}, errors.New("invalid stored callback command")
 	}
-	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: map[string]any{"detail": result.Detail}}
+	var snapshot atlas.OfferSnapshot
+	if json.Unmarshal(command.ConfigSnapshot, &snapshot) != nil {
+		return dispatch.Result{}, errors.New("callback snapshot unavailable")
+	}
+	target, err := atlas.DecodeCatalogData(snapshot.Target)
+	if err != nil {
+		return dispatch.Result{}, errors.New("callback target unavailable")
+	}
+	resultRaw, err := json.Marshal(result)
+	if err != nil || len(target.OutputSchema) == 0 {
+		return dispatch.Result{}, errors.New("callback result unavailable")
+	}
+	if _, err := atlas.TransformJSON(resultRaw, nil, target.OutputSchema); err != nil {
+		return dispatch.Result{}, errors.New("callback output contract failed")
+	}
+	var fullResult map[string]any
+	if json.Unmarshal(resultRaw, &fullResult) != nil {
+		return dispatch.Result{}, errors.New("callback result encoding failed")
+	}
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: fullResult}
 	if result.Status == "SUCCEEDED" {
 		response.Kind = dispatch.FactSucceeded
 	} else if result.Status == "FAILED" {

@@ -167,27 +167,6 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
 		return
 	}
-	// A callback conhecida também funciona como gatilho seguro para recuperar
-	// callbacks que chegaram antes da correlação. Cada item é reaplicado pelo
-	// mesmo caminho de custódia e permanece idempotente no estado terminal.
-	if _, err := h.store.ReconcileCallbackInbox(r.Context(), func(ctx context.Context, id string, observed dispatch.Result) error {
-		providerResult := providersim.OperationResult{
-			ProviderRequestID: observed.ProviderRequestID,
-			Detail:            observed.ErrorMessage,
-		}
-		if observed.Kind == dispatch.FactSucceeded {
-			providerResult.Status = "SUCCEEDED"
-		} else if observed.Kind == dispatch.FactFailed {
-			providerResult.Status = "FAILED"
-		} else {
-			return errors.New("invalid reconciled callback status")
-		}
-		_, err := h.exec.ApplyExternalObservation(ctx, id, providerResult)
-		return err
-	}); err != nil {
-		http.Error(w, "callback reconciliation unavailable", http.StatusServiceUnavailable)
-		return
-	}
 	w.WriteHeader(http.StatusOK)
 }
 
