@@ -78,7 +78,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		return unknown("poll_snapshot_invalid")
 	}
 	target, err := atlas.DecodeCatalogData(snap.Target)
-	if err != nil || target.AdapterID != "synthetic-provider" {
+	if err != nil || target.AdapterID == "" {
 		return unknown("poll_adapter_unavailable")
 	}
 	var pa atlasclient.ProviderAccount

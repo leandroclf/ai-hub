@@ -246,7 +246,11 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	if req.Fail {
 		status = "FAILED"
 	}
-	result := OperationResult{ProviderRequestID: id, Status: status, Detail: "simulado"}
+	// O contrato sintético publicado pelo seed é estrito e declara apenas
+	// provider_request_id/status. O simulador não deve produzir campos fora
+	// dessa fronteira, pois a validação de saída é feita em Cometa também nos
+	// caminhos de polling e callback.
+	result := OperationResult{ProviderRequestID: id, Status: status}
 
 	switch req.Mode {
 	case ModeAsyncPoll:

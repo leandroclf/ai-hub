@@ -241,6 +241,9 @@ services:
       LIBRA_URL: http://libra:8084
       COMETA_URL: http://cometa:8082
       SELF_URL: http://cometa:8082
+      # Chave sintética exclusiva da fixture local; em produção deve vir de
+      # secret manager e ser compartilhada apenas com o provedor homologado.
+      CALLBACK_INGRESS_KEY: ${R2_CALLBACK_INGRESS_KEY:-r4-callback-ingress-fixture}
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566
@@ -399,6 +402,8 @@ services:
       OTEL_SERVICE_NAME: provider-sim
       OTEL_EXPORTER_OTLP_ENDPOINT: http://alloy:4318
       PROVIDER_STATE_FILE: /var/lib/provider-sim/state.json
+      # Deve coincidir com CALLBACK_INGRESS_KEY do Cometa nesta fixture.
+      CALLBACK_INGRESS_KEY: ${R2_CALLBACK_INGRESS_KEY:-r4-callback-ingress-fixture}
     ports:
     - 127.0.0.1:18090:8090
     stop_grace_period: 30s

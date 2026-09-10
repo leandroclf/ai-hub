@@ -78,3 +78,56 @@ func TestOAuthWorksWithoutRedisAndScopesTokensByBinding(t *testing.T) {
 		t.Fatalf("token requests=%d; wanted reuse only within binding", calls.Load())
 	}
 }
+
+func TestOAuthCacheRevocationAndExpiry(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		fmt.Fprint(w, `{"access_token":"revocable-token","expires_in":6}`)
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	t.Setenv("ENVIRONMENT", "local")
+	t.Setenv("EGRESS_HTTP_ORIGINS", server.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", u.Host+"=127.0.0.1/32")
+	c := NewTokenCache("127.0.0.1:1")
+	defer c.Close()
+	c.Resolver = testResolver{"oauth-secret": {Value: "actual-client-secret", Version: "v1"}}
+	cfg := Config{AuthType: OAuthClientCredentials, TokenURL: server.URL, ClientID: "fixture-client", ClientSecretRef: "oauth-secret", SecretVersion: "v1", BindingID: "binding-a", TenantID: "tenant-a", Environment: "local"}
+	request := func() {
+		req, _ := http.NewRequest("GET", "https://provider.example", nil)
+		if err := c.Apply(context.Background(), http.DefaultClient, "account", cfg, req); err != nil {
+			t.Fatal(err)
+		}
+	}
+	request()
+	request()
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("token requests before revocation=%d; wanted 1", got)
+	}
+	c.InvalidateBinding("local", "tenant-a", "binding-a", "v1")
+	request()
+	if got := calls.Load(); got != 2 {
+		t.Fatalf("token requests after revocation=%d; wanted 2", got)
+	}
+	time.Sleep(1100 * time.Millisecond)
+	request()
+	if got := calls.Load(); got != 3 {
+		t.Fatalf("token requests after local expiry=%d; wanted 3", got)
+	}
+}
+
+func TestOAuthLockTrackingIsBounded(t *testing.T) {
+	c := NewTokenCache("127.0.0.1:1")
+	defer c.Close()
+	for i := 0; i < maxTrackedLocks*2; i++ {
+		key := fmt.Sprintf("key-%d", i)
+		lock := c.retainLock(key)
+		c.releaseLock(lock)
+	}
+	c.locksMu.Lock()
+	defer c.locksMu.Unlock()
+	if len(c.locks) > maxTrackedLocks {
+		t.Fatalf("tracked locks=%d; limit=%d", len(c.locks), maxTrackedLocks)
+	}
+}

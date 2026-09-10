@@ -27,6 +27,7 @@ const (
 	Basic                  = "BASIC"
 	OAuthClientCredentials = "OAUTH_CLIENT_CREDENTIALS"
 	MTLSOAuth              = "MTLS_OAUTH"
+	maxTrackedLocks        = 1024
 )
 
 type Config struct {
@@ -54,7 +55,10 @@ type TokenCache struct {
 	tokens   map[string]cachedToken
 }
 
-type keyedLock struct{ gate chan struct{} }
+type keyedLock struct {
+	gate chan struct{}
+	refs int
+}
 
 func newKeyedLock() *keyedLock {
 	l := &keyedLock{gate: make(chan struct{}, 1)}
@@ -104,11 +108,15 @@ func (c *TokenCache) bearer(ctx context.Context, httpClient *http.Client, provid
 	if token, ok := c.cached(key); ok {
 		return token, nil
 	}
-	keyLock := c.lockFor(key)
+	keyLock := c.retainLock(key)
 	if err := keyLock.acquire(ctx); err != nil {
+		c.releaseLock(keyLock)
 		return "", err
 	}
-	defer keyLock.release()
+	defer func() {
+		keyLock.release()
+		c.releaseLock(keyLock)
+	}()
 	if token, ok := c.cached(key); ok {
 		return token, nil
 	}
@@ -198,18 +206,42 @@ func (c *TokenCache) InvalidateBinding(environment, tenant, binding, version str
 	}
 }
 
-func (c *TokenCache) lockFor(key string) *keyedLock {
+// retainLock mantém no máximo maxTrackedLocks de chaves ociosas/ativas. Um
+// lock efêmero é usado quando todas as chaves rastreadas estão ocupadas; ele
+// não entra no mapa e é liberado ao fim da chamada, evitando crescimento
+// ilimitado sem remover lock que ainda pode estar sendo aguardado.
+func (c *TokenCache) retainLock(key string) *keyedLock {
 	c.locksMu.Lock()
 	defer c.locksMu.Unlock()
 	if c.locks == nil {
 		c.locks = map[string]*keyedLock{}
 	}
 	if lock, ok := c.locks[key]; ok {
+		lock.refs++
 		return lock
 	}
+	if len(c.locks) >= maxTrackedLocks {
+		for trackedKey, lock := range c.locks {
+			if lock.refs == 0 {
+				delete(c.locks, trackedKey)
+				break
+			}
+		}
+	}
 	lock := newKeyedLock()
-	c.locks[key] = lock
+	lock.refs = 1
+	if len(c.locks) < maxTrackedLocks {
+		c.locks[key] = lock
+	}
 	return lock
+}
+
+func (c *TokenCache) releaseLock(lock *keyedLock) {
+	c.locksMu.Lock()
+	defer c.locksMu.Unlock()
+	if lock.refs > 0 {
+		lock.refs--
+	}
 }
 
 func (c *TokenCache) applyCertificate(ctx context.Context, client *http.Client, cfg Config) error {

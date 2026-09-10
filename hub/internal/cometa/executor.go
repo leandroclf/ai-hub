@@ -87,7 +87,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "invalid_snapshot"}
 	}
 	target, err := atlas.DecodeCatalogData(snapshot.Target)
-	if err != nil || target.AdapterID != "synthetic-provider" {
+	if err != nil || target.AdapterID == "" {
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "adapter_not_qualified"}
 	}
 
