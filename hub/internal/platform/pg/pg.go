@@ -32,6 +32,31 @@ func RuntimeDSN(dsn, tenant string) (string, error) {
 	return u.String(), nil
 }
 
+// WithTenantTx inicia uma transação cujo tenant é LOCAL à transação. O
+// contexto não fica preso na conexão do pool e o callback só pode confirmar
+// depois que o escopo RLS foi aplicado. Repositórios multi-tenant devem usar
+// este primitivo em vez de SET global ou de confiar apenas em WHERE.
+func WithTenantTx(ctx context.Context, db *sql.DB, tenant string, fn func(*sql.Tx) error) error {
+	if db == nil || strings.TrimSpace(tenant) == "" || strings.ContainsAny(tenant, "\x00\r\n") {
+		return fmt.Errorf("pg: transação runtime sem tenant válido")
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, `SELECT set_config('app.tenant_id',$1,true)`, tenant); err != nil {
+		return fmt.Errorf("pg: aplicar tenant runtime: %w", err)
+	}
+	if fn == nil {
+		return fmt.Errorf("pg: callback da transação runtime ausente")
+	}
+	if err = fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // Config controla o orcamento de conexoes do pool, conforme OPE-02:
 // concorrencia maxima por pod/servico deve caber no orcamento do banco.
 type Config struct {

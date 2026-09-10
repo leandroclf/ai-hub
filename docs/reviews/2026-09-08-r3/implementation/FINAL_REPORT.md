@@ -113,3 +113,5 @@ O ensaio de fencing também confirma que um owner stale não acrescenta fato ter
 Foi preparada a adoção de RLS por sessão com `RuntimeDSN` e `RUNTIME_TENANT_ID` no Órbita. Essa opção cobre workloads dedicados; não fecha o gate de serviços multi-tenant, que ainda precisa propagar o tenant em cada transação usando a credencial não proprietária.
 
 A configuração foi estendida também a Atlas, Cometa, Pulsar e Libra. Todos os processos agora possuem o mesmo caminho opt-in para DSN runtime dedicado; a execução Compose oficial permanece legada até a implementação da propagação transacional dinâmica por request.
+
+Foi adicionado `pg.WithTenantTx` como primitivo para essa migração: o tenant é aplicado com `SET LOCAL` dentro da transação e nunca fica como estado residual de conexão. O helper está validado, mas os repositórios de cada domínio ainda precisam ser migrados individualmente antes de ativar a role runtime no fluxo multi-tenant.

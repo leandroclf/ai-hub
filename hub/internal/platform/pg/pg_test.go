@@ -15,6 +15,12 @@ func TestRuntimeDSNFixesTenantSessionSetting(t *testing.T) {
 	}
 }
 
+func TestWithTenantTxRejectsMissingScopeBeforeOpeningDatabase(t *testing.T) {
+	if err := WithTenantTx(nil, nil, "", nil); err == nil {
+		t.Fatal("missing tenant accepted")
+	}
+}
+
 func contains(s, part string) bool {
 	for i := 0; i+len(part) <= len(s); i++ {
 		if s[i:i+len(part)] == part {
