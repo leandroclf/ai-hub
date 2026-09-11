@@ -1,0 +1,24 @@
+[
+  {
+    "check": "Admin reads materialized protocol result without provider call",
+    "status": "PASS",
+    "protocol": "01a09075-f9e2-7003-8717-f86a731af566",
+    "provider_effects_before": {
+      "effects": 0,
+      "protocols": 0
+    },
+    "provider_effects_after": {
+      "effects": 0,
+      "protocols": 0
+    }
+  },
+  {
+    "check": "Tenant reader cannot reveal another tenant through protocol filter",
+    "status": "PASS",
+    "requested_tenant": "beta",
+    "effective_scope": "acme",
+    "requests": [
+      "http://localhost:13000/api/orbita/admin/v1/protocols?tenant_id=acme&limit=25"
+    ]
+  }
+]

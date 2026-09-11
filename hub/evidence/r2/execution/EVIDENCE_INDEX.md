@@ -45,6 +45,7 @@
 | `admin-product-simulation-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; DAG/tabela, ausência de efeitos no provider-sim e ciclo bloqueado | Não executa chamadas faturáveis nem substitui qualificação de carga |
 | `admin-integration-health-smoke.json` | Ensaio Chromium curto: 3 verificações `PASS`; binding/pagador sem segredo, rotação v2 com vigência e domínio `r4-sync` com pressão adaptativa | Consulta local; não autoriza alteração comercial de limite |
 | `admin-technical-policy-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; TTL efetivo e incompatibilidade SYNC/async_poll | Contrato legado com prova GET/webhook ainda não qualificado |
+| `admin-protocol-scope-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; resultado materializado sem provider e isolamento de filtro tenant-only | Não substitui ensaio comercial de todas as timelines |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026
