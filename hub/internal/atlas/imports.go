@@ -150,7 +150,7 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		scope = "catalog:write"
 	}
-	if !auth.Authorize(r.Context(), scope, tenant) {
+	if !roleAllows(p, scope) || !auth.Authorize(r.Context(), scope, tenant) {
 		writeErr(w, 403, "forbidden", "ação não autorizada")
 		return
 	}

@@ -33,6 +33,22 @@ func adminPermission(kind, action string) string {
 	}
 	return "catalog:" + action
 }
+
+func roleAllows(p auth.Principal, permission string) bool {
+	read := p.HasRole("hub_admin") || p.HasRole("tenant_reader") || p.HasRole("tenant_operator") || p.HasRole("hub_protocol_reader")
+	write := p.HasRole("hub_admin") || p.HasRole("tenant_operator")
+	switch permission {
+	case "catalog:read", "integrations:read", "finance:read":
+		return read
+	case "catalog:write", "integrations:write":
+		return write
+	case "catalog:publish", "finance:write":
+		return p.HasRole("hub_admin")
+	default:
+		return false
+	}
+}
+
 func adminScope(r *http.Request) (string, bool) {
 	p, ok := auth.FromContext(r.Context())
 	if !ok {
@@ -120,7 +136,8 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 	if len(parts) == 4 && parts[3] == "publish" {
 		action = "publish"
 	}
-	if !auth.Authorize(r.Context(), adminPermission(kind, action), tenant) {
+	permission := adminPermission(kind, action)
+	if !roleAllows(p, permission) || !auth.Authorize(r.Context(), permission, tenant) {
 		writeErr(w, 403, "forbidden", "ação não autorizada")
 		return
 	}

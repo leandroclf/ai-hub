@@ -182,6 +182,30 @@ func TestAdminScopeRequiresInteractiveMFA(t *testing.T) {
 	}
 }
 
+func TestCatalogPermissionRequiresCompatibleRole(t *testing.T) {
+	tests := []struct {
+		name       string
+		role       string
+		permission string
+		want       bool
+	}{
+		{name: "reader read", role: "tenant_reader", permission: "catalog:read", want: true},
+		{name: "reader write", role: "tenant_reader", permission: "catalog:write"},
+		{name: "protocol reader publish", role: "hub_protocol_reader", permission: "catalog:publish"},
+		{name: "operator integrations write", role: "tenant_operator", permission: "integrations:write", want: true},
+		{name: "operator finance write", role: "tenant_operator", permission: "finance:write"},
+		{name: "admin finance write", role: "hub_admin", permission: "finance:write", want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			principal := auth.Principal{Roles: []string{tt.role}}
+			if got := roleAllows(principal, tt.permission); got != tt.want {
+				t.Fatalf("role=%s permission=%s: got=%v want=%v", tt.role, tt.permission, got, tt.want)
+			}
+		})
+	}
+}
+
 func integrationStore(t *testing.T) *Store {
 	t.Helper()
 	dsn := os.Getenv("ATLAS_TEST_DSN")
