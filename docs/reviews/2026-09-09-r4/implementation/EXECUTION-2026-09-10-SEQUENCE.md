@@ -72,6 +72,10 @@ reprodutível.
   `alerts.yml`. Alloy fora elevou `hub_telemetry_dropped_total`, o alerta
   disparou e foi recuperado. Disparos live de outbox/DLQ/SLA continuam
   pendentes.
+- Reinício de nó Kind: PARCIAL integrado; `ai-hub-r2-worker2` voltou a
+  `Ready` em 1.641 ms e os cinco workloads/endpoints foram revalidados com
+  dependências cluster-owned. Recriação completa em máquina limpa permanece
+  fora do ensaio.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos

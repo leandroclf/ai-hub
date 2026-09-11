@@ -1,0 +1,6 @@
+KIND_NODE_RESTART_PROOF=START
+/ai-hub-r2-worker2 running
+node_before=ai-hub-r2-worker2 ready=True
+node_after=ai-hub-r2-worker2 ready=True rto_ms=1641
+CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
+KIND_NODE_RESTART_PROOF=PASS node=ai-hub-r2-worker2 workloads_revalidated=true dependencies=cluster-owned
