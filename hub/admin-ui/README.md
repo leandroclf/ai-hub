@@ -39,6 +39,11 @@ backend continua sendo a autoridade para tenant, papel, MFA e escopo. A UI
 não deve ser exposta fora de um ambiente protegido apenas porque o build
 passou.
 
+Respostas administrativas precisam ser objetos JSON. Corpo inválido, vazio ou
+com tipo incompatível é exibido como erro de autoridade mesmo quando o HTTP
+retorna 200; a tela conserva os dados anteriores e não apresenta falso
+sucesso.
+
 Para validar a fixture de identidade sem copiar token para arquivos, execute
 `python3 hub/deploy/r2/scripts/token.py operadora-a --claims` a partir da raiz
 do repositório. No login visual, o TOTP é uma janela de 30 segundos: gere o

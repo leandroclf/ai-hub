@@ -41,6 +41,14 @@ try {
  evidence.push({check:'Admin service editor exposes declarative REST adapter contract',status:'PASS'});
  await page.getByRole('link',{name:'Voltar à lista',exact:true}).click();
  await page.waitForURL('http://localhost:13000/services');
+ phase='resposta JSON inválida da autoridade';
+ await page.route('**/api/atlas/admin/v1/services**',route=>route.fulfill({status:200,contentType:'application/json',body:'{not-json'}));
+ await page.getByRole('button',{name:'Atualizar',exact:true}).click();
+ await page.getByRole('alert').filter({hasText:'Resposta inválida da autoridade'}).waitFor();
+ await page.unroute('**/api/atlas/admin/v1/services**');
+ evidence.push({check:'Admin rejects invalid JSON response without false success',status:'PASS'});
+ await page.getByRole('button',{name:'Atualizar',exact:true}).click();
+ await page.getByRole('link',{name:/Abrir Consulta cadastral fixture/}).first().waitFor();
  phase='pesquisa local de referencias';
  await page.getByRole('link',{name:'Ofertas',exact:true}).click();
  await page.waitForURL('http://localhost:13000/offers');

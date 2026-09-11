@@ -8,18 +8,22 @@
     "status": "PASS"
   },
   {
+    "check": "Admin rejects invalid JSON response without false success",
+    "status": "PASS"
+  },
+  {
     "check": "Admin reference editor filters loaded catalog options locally",
     "status": "PASS"
   },
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789119598326"
+    "resource": "browser-client-1789120156404"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789119630915"
+    "resource": "browser-product-1789120200930"
   },
   {
     "check": "URL navigation and real authenticated provider list",

@@ -11,15 +11,16 @@ export class APIError extends Error {
 }
 let token='';
 export function setToken(value:string){token=value}
+function isRecord(value:unknown):value is Record<string,unknown>{return typeof value==='object'&&value!==null&&!Array.isArray(value)}
+function expireSessionIfNeeded(status:number){if(status===401){token='';window.dispatchEvent(new Event('session-expired'))}}
 export async function api<T>(path:string,init:RequestInit={}):Promise<T>{
  const domain=path.startsWith("/admin/v1/finance")?"libra":path.startsWith("/admin/v1/deliveries")||path.startsWith("/admin/v1/destinations")?"pulsar":path.startsWith("/admin/v1/protocols")||path.startsWith("/admin/v1/sla-reports")?"orbita":path.startsWith("/admin/v1/capacity-domains")?"cometa":"atlas";
  const response=await fetch(`/api/${domain}${path}`,{...init,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...init.headers},cache:'no-store'});
- const data=await response.json().catch(()=>({message:'Resposta indisponível. Tente novamente.'}));
+ let data:unknown;
+ try{data=await response.json()}catch{expireSessionIfNeeded(response.status);throw new APIError(response.status,{code:'invalid_response',message:'Resposta inválida da autoridade. Tente novamente.'})}
+ if(!isRecord(data)){expireSessionIfNeeded(response.status);throw new APIError(response.status,{code:'invalid_response',message:'Resposta inválida da autoridade. Tente novamente.'})}
  if(!response.ok){
-  if(response.status===401){
-   token='';
-   window.dispatchEvent(new Event('session-expired'));
-  }
+  expireSessionIfNeeded(response.status);
   throw new APIError(response.status,data);
  }
  return data as T;
