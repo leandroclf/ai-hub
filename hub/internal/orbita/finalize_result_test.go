@@ -176,6 +176,79 @@ func TestFinalizeLateSuccessBecomesExpired(t *testing.T) {
 	t.Logf("late success was arbitrated as EXPIRED with SLA_EXCEEDED and no provider result: protocol=%s", p.ProtocolID)
 }
 
+func TestFinalizeCommitCrossingDeadlineDoesNotEscapeAsSuccess(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(8)
+	ctx := context.Background()
+	store := NewStore(db)
+	now := time.Now().UTC()
+	tenant := "commit-crosses-deadline-" + idgen.New()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "commit-crosses-deadline-cell", IdempotencyKey: "commit-crosses-deadline-key", RequestHash: "commit-crosses-deadline-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(350 * time.Millisecond)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"fixture":true}`), EconomicSnapshot: json.RawMessage(`{}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+	})
+
+	lockTx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer lockTx.Rollback()
+	if err = lockTx.QueryRowContext(ctx, "SELECT protocol_id FROM protocols WHERE protocol_id=$1 FOR UPDATE", p.ProtocolID).Scan(new(string)); err != nil {
+		t.Fatal(err)
+	}
+
+	finalizer := NewFinalizer(store, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	result := make(chan struct {
+		applied bool
+		err     error
+	}, 1)
+	go func() {
+		applied, finalizeErr := finalizer.Finalize(ctx, "commit-crosses-deadline", tenant, p.ProtocolID, 0, StatusSucceeded, FinalBody{Result: map[string]any{"provider": "started-before-deadline"}}, "")
+		result <- struct {
+			applied bool
+			err     error
+		}{applied: applied, err: finalizeErr}
+	}()
+
+	time.Sleep(600 * time.Millisecond)
+	if err = lockTx.Commit(); err != nil {
+		t.Fatal(err)
+	}
+	completed := <-result
+	if completed.err != nil || !completed.applied {
+		t.Fatalf("finalização bloqueada pelo commit: applied=%v err=%v", completed.applied, completed.err)
+	}
+	got, err := store.Get(ctx, tenant, p.ProtocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != StatusExpired || got.TerminalReason.String != "REJECTED_LATE_SLA" || strings.Contains(string(got.FinalBody), "started-before-deadline") {
+		t.Fatalf("commit após deadline escapou como sucesso: status=%s reason=%s body=%s", got.Status, got.TerminalReason.String, got.FinalBody)
+	}
+	var facts int
+	if err = db.QueryRowContext(ctx, "SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND event_type='protocol.finalized'", p.ProtocolID).Scan(&facts); err != nil {
+		t.Fatal(err)
+	}
+	if facts != 1 {
+		t.Fatalf("commit após deadline publicou %d fatos terminais, esperado 1", facts)
+	}
+	t.Logf("PostgreSQL: lock iniciado antes do deadline e liberado depois dele produziu somente EXPIRED/REJECTED_LATE_SLA, com um fato terminal")
+}
+
 func TestFinalizeAndExpiryRaceProducesOneTerminalFact(t *testing.T) {
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
 	if dsn == "" {

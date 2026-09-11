@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "profile": "r2-exe-06-s02-commit-crosses-deadline",
+  "environment": "ai_hub_r3qual / PostgreSQL 16 local",
+  "test": "TestFinalizeCommitCrossingDeadlineDoesNotEscapeAsSuccess",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -count=1 -v ./internal/orbita -run ^TestFinalizeCommitCrossingDeadlineDoesNotEscapeAsSuccess$",
+  "oracle": {
+    "row_lock_started_before_deadline": true,
+    "lock_released_after_deadline": true,
+    "final_status": "EXPIRED",
+    "terminal_reason": "REJECTED_LATE_SLA",
+    "late_provider_result_absent": true,
+    "protocol_finalized_facts": 1
+  },
+  "qualification": "O início da transação antes do prazo não tornou o sucesso elegível; a confirmação durável após o deadline foi arbitrada como expiração e não escapou pelo outbox."
+}
