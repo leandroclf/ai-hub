@@ -1,0 +1,25 @@
+[
+  {
+    "check": "Admin binding diagnosis shows published version/payer and only vault reference",
+    "status": "PASS",
+    "binding": "bind-r4-sync",
+    "version": 1,
+    "secret_ref_displayed_as_reference": "vault://r4/fixture/sync"
+  },
+  {
+    "check": "Admin binding rotation publishes v2 while preserving v1 history without secret read",
+    "status": "PASS",
+    "binding": "browser-binding-rotation-1789135487700",
+    "versions": [
+      "/credential-bindings/browser-binding-rotation-1789135487700/1",
+      "/credential-bindings/browser-binding-rotation-1789135487700/2"
+    ],
+    "valid_until": "2027-09-11T12:00"
+  },
+  {
+    "check": "Admin capacity health shows effective reduced limit, ceiling, pressure reason and evidence",
+    "status": "PASS",
+    "domain": "r4-sync",
+    "row": "r4-sync\nepoch 52 · vr4-fixture-v1\t5\t8\t5\t100\t0\t0\t1\tUNAVAILABLE\tr4-local-capacity-fixture\nválido até 31/12/2099, 20:59:59"
+  }
+]

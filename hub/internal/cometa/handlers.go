@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/auth"
@@ -34,6 +35,84 @@ func NewHandlers(exec *Executor, store *Store) *Handlers {
 func (h *Handlers) Register(mux *http.ServeMux) {
 	h.RegisterInternal(mux)
 	h.RegisterCallback(mux)
+}
+
+// RegisterAdmin expõe somente diagnósticos de capacidade já persistidos. A
+// tela administrativa não instala, altera ou recompõe políticas: limites são
+// autoridade qualificada do runtime e mudanças exigem o fluxo operacional
+// próprio.
+func (h *Handlers) RegisterAdmin(mux *http.ServeMux) {
+	mux.HandleFunc("/admin/v1/capacity-domains", h.handleAdminCapacityDomains)
+}
+
+type capacityDomainView struct {
+	Domain                 string    `json:"domain"`
+	Version                string    `json:"version"`
+	EvidenceRef            string    `json:"evidence_ref"`
+	ValidUntil             time.Time `json:"valid_until"`
+	MaxConcurrent          int       `json:"max_concurrent"`
+	MinConcurrent          int       `json:"min_concurrent"`
+	EffectiveLimit         int       `json:"effective_limit"`
+	LatencyThresholdMillis int64     `json:"latency_threshold_millis"`
+	TransportOpen          int       `json:"transport_open"`
+	PendingExternal        int       `json:"pending_external"`
+	RateUsed               int       `json:"rate_used"`
+	LastFeedback           string    `json:"last_feedback"`
+	Epoch                  int64     `json:"epoch"`
+}
+
+func (h *Handlers) handleAdminCapacityDomains(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	p, ok := auth.FromContext(r.Context())
+	if !ok || p.Workload || !auth.Authorize(r.Context(), "integrations:read", "") {
+		auth.Error(w, http.StatusForbidden, "forbidden")
+		return
+	}
+	domain := strings.TrimSpace(r.URL.Query().Get("domain"))
+	query := `SELECT d.domain_id,d.policy,d.current_limit,d.epoch,d.rate_used,d.last_feedback,
+        (SELECT count(*) FROM capacity_permits p WHERE p.domain_id=d.domain_id AND p.transport_open),
+        (SELECT count(*) FROM capacity_permits p WHERE p.domain_id=d.domain_id AND p.pending_external)
+        FROM capacity_domains d`
+	args := []any{}
+	if domain != "" {
+		query += " WHERE d.domain_id=$1"
+		args = append(args, domain)
+	}
+	query += " ORDER BY d.domain_id"
+	rows, err := h.store.db.QueryContext(r.Context(), query, args...)
+	if err != nil {
+		auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
+		return
+	}
+	defer rows.Close()
+	items := make([]capacityDomainView, 0)
+	for rows.Next() {
+		var (
+			id, rawPolicy, lastFeedback           string
+			currentLimit, open, pending, rateUsed int
+			epoch                                 int64
+		)
+		if err := rows.Scan(&id, &rawPolicy, &currentLimit, &epoch, &rateUsed, &lastFeedback, &open, &pending); err != nil {
+			auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
+			return
+		}
+		var policy CapacityPolicy
+		if err := json.Unmarshal([]byte(rawPolicy), &policy); err != nil {
+			auth.Error(w, http.StatusServiceUnavailable, "capacity_policy_invalid")
+			return
+		}
+		items = append(items, capacityDomainView{Domain: id, Version: policy.Version, EvidenceRef: policy.EvidenceRef, ValidUntil: policy.ValidUntil, MaxConcurrent: policy.MaxConcurrent, MinConcurrent: policy.MinConcurrent, EffectiveLimit: currentLimit, LatencyThresholdMillis: policy.LatencyThresholdMillis, TransportOpen: open, PendingExternal: pending, RateUsed: rateUsed, LastFeedback: lastFeedback, Epoch: epoch})
+	}
+	if err := rows.Err(); err != nil {
+		auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"items": items, "next_cursor": ""})
 }
 
 func (h *Handlers) RegisterInternal(mux *http.ServeMux) {

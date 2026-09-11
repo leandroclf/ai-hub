@@ -1,0 +1,11 @@
+import {useEffect,useState} from 'react';
+import {api} from '../api/admin';
+
+type CapacityDomain={domain:string;version:string;evidence_ref:string;valid_until:string;max_concurrent:number;min_concurrent:number;effective_limit:number;latency_threshold_millis:number;transport_open:number;pending_external:number;rate_used:number;last_feedback:string;epoch:number};
+type CapacityResponse={items:CapacityDomain[];next_cursor:string};
+
+export default function CapacityDomainsPage(){
+ const [items,setItems]=useState<CapacityDomain[]>([]);const [error,setError]=useState('');const [loading,setLoading]=useState(true);
+ useEffect(()=>{const abort=new AbortController();setLoading(true);setError('');void api<CapacityResponse>('/admin/v1/capacity-domains',{signal:abort.signal}).then(result=>setItems(result.items)).catch(reason=>{if(!abort.signal.aborted)setError(`Saúde de capacidade indisponível; preserve a decisão operacional. ${String(reason)}`)}).finally(()=>{if(!abort.signal.aborted)setLoading(false)});return()=>abort.abort()},[]);
+ return <section><div className="page-title"><h2>Saúde de capacidade</h2><button onClick={()=>location.reload()}>Atualizar</button></div><p>Consulta somente-leitura da autoridade adaptativa. O limite efetivo pode reduzir após timeout/erro e voltar gradualmente ao teto após estabilidade; não é uma quota fixa definida pelo portal.</p>{loading&&<p role="status">Carregando…</p>}{error&&<p role="alert" className="error">{error}</p>}{!loading&&!error&&!items.length&&<p>Nenhum domínio de capacidade disponível.</p>}{items.length>0&&<div className="table-scroll" tabIndex={0}><table><thead><tr><th>Domínio</th><th>Limite efetivo</th><th>Teto</th><th>Mínimo</th><th>Latência limite (ms)</th><th>Transportes</th><th>Pendências</th><th>Uso da janela</th><th>Motivo atual</th><th>Evidência</th></tr></thead><tbody>{items.map(item=><tr key={item.domain}><td>{item.domain}<br/><small>epoch {item.epoch} · v{item.version}</small></td><td>{item.effective_limit}</td><td>{item.max_concurrent}</td><td>{item.min_concurrent}</td><td>{item.latency_threshold_millis}</td><td>{item.transport_open}</td><td>{item.pending_external}</td><td>{item.rate_used}</td><td>{item.last_feedback}</td><td>{item.evidence_ref}<br/><small>válido até {new Date(item.valid_until).toLocaleString('pt-BR')}</small></td></tr>)}</tbody></table></div>}</section>
+}
