@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"sync"
 	"testing"
 	"time"
@@ -149,6 +150,58 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 		t.Fatalf("pin missing from acceptance: %d %v", count, e)
 	}
 	t.Log("24 simultaneous requests: one protocol+intent; conflicting payload refused; application keys independent; reservation not released; failed intent insertion rolls back protocol")
+}
+
+func TestAdmissionFreezesConfigSnapshotAtAcceptance(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	ctx := context.Background()
+	tenant := "snapshot-admission-" + idgen.New()
+	protocolID := idgen.New()
+	now := time.Now().UTC()
+	p := Protocol{ProtocolID: protocolID, TenantID: tenant, ApplicationID: "app-snapshot", CellID: "snapshot-cell", IdempotencyKey: "snapshot-key", RequestHash: "snapshot-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	v1 := json.RawMessage(`{"profile_version":1,"output_field":"legacy_status"}`)
+	command := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: v1, AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, command, "snapshot-fixture", false); err != nil || !created {
+		t.Fatalf("admit snapshot: created=%v err=%v", created, err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+	})
+	command.ConfigSnapshot = json.RawMessage(`{"profile_version":2,"output_field":"new_status"}`)
+	var protocolSnapshot, intentRaw []byte
+	if err := db.QueryRowContext(ctx, `SELECT config_snapshot FROM protocols WHERE protocol_id=$1`, protocolID).Scan(&protocolSnapshot); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.QueryRowContext(ctx, `SELECT command FROM command_intents WHERE protocol_id=$1`, protocolID).Scan(&intentRaw); err != nil {
+		t.Fatal(err)
+	}
+	var protocolValue, expectedValue map[string]any
+	var intent struct {
+		ConfigSnapshot map[string]any `json:"config_snapshot"`
+	}
+	if err := json.Unmarshal(protocolSnapshot, &protocolValue); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(v1, &expectedValue); err != nil {
+		t.Fatal(err)
+	}
+	if err := json.Unmarshal(intentRaw, &intent); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(protocolValue, expectedValue) || !reflect.DeepEqual(intent.ConfigSnapshot, expectedValue) {
+		t.Fatalf("snapshot pós-aceite foi reinterpretado: protocol=%s intent=%s", protocolSnapshot, intentRaw)
+	}
+	t.Logf("PostgreSQL congelou config_snapshot v1 em protocol=%s; alterar a fonte local para v2 não reescreveu protocolo nem intent", protocolID)
 }
 
 func TestRecoverOrphanedIntentRequeuesSameDurableObligation(t *testing.T) {

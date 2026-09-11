@@ -1,0 +1,20 @@
+AI Hub R4 — evidência R2-CAT-06-S01 — 2026-09-11
+
+Comando:
+R2_CORE_TEST_DSN=postgres://hub:r2-local-fixture@127.0.0.1:15432/hub_core?sslmode=disable \
+go test -race -count=1 -v ./internal/orbita -run TestAdmissionFreezesConfigSnapshotAtAcceptance
+
+Resultado:
+=== RUN   TestAdmissionFreezesConfigSnapshotAtAcceptance
+    admission_test.go:204: PostgreSQL congelou config_snapshot v1 em protocol=<UUID sanitizado>; alterar a fonte local para v2 não reescreveu protocolo nem intent
+--- PASS: TestAdmissionFreezesConfigSnapshotAtAcceptance (0.04s)
+PASS
+
+Oráculos:
+- aceite durável recebeu `config_snapshot` contendo perfil v1;
+- a intenção durável recebeu a mesma projeção v1;
+- a alteração posterior apenas na fonte local para v2 não reescreveu protocolo nem intenção;
+- a comparação foi estrutural em JSON, independente de ordenação/serialização do JSONB.
+
+Classificação: PARCIAL_INTEGRADO.
+Limite: esta prova isola a fronteira PostgreSQL do aceite; ainda não altera uma versão publicada no Atlas durante uma execução pendente nem prova cache limitado/retirada de credencial.
