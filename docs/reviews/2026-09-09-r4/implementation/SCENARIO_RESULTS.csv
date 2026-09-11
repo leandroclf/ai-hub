@@ -130,6 +130,8 @@ R2-ADM-12-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — Playwright cria, publi
 R2-ADM-12-S01;PASS_INTEGRADO_LOCAL;admin-usability-recovery-smoke.json — operador submeteu formulário inválido por teclado, resumo recebeu foco, campo foi identificado e JSON permaneceu preenchido
 R2-ADM-12-S02;PASS_INTEGRADO_LOCAL;admin-usability-recovery-smoke.json — revisão obsoleta produziu HTTP 412, preservou texto local e exibiu diff da revisão do servidor sem falso sucesso
 R2-QUA-01-S01;PASS_ESTRUTURAL;r2-cat-dad-qualification.log + r2-int-exe-qualification.log — cenários com prova ligam comando, ambiente, SHA e limite na matriz
+R2-QUA-02-S02;PASS_UNITARIO;qualification-echo-regression-latest.log — fixture HTTP devolveu SUCCEEDED com input ecoado em SYNC e ASYNC, e o oráculo de conteúdo rejeitou a resposta
+R2-QUA-02-S03;PASS_INTEGRADO_LOCAL;qualification-finance-regression-latest.log — PostgreSQL confirmou duas capturas consumidas no limite, terceira tentativa bloqueada antes da chamada externa e saldo disponível zero
 R2-QUA-01-S03;PASS_ESTRUTURAL;OPENSPEC-AUDIT-2026-09-10.md + FINAL_REPORT.md — pendências de aprovação e cenários não exercitados permanecem abertas
 R2-QUA-03-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — gate distingue build do portal de jornada autenticada no backend real, sem promover mock
 R2-QUA-04-S01;PASS_ESTRUTURAL;OPENSPEC-AUDIT-2026-09-10.md — changes R2 e histórico v4 permanecem separados, com validação OpenSpec strict

@@ -491,3 +491,36 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		}
 	})
 }
+
+// TestQualificationCapturedBalanceBlocksThirdExternalAttempt implementa o
+// oráculo de QUA-02-S03: duas capturas consomem o limite e a terceira é
+// bloqueada antes de qualquer tentativa externa.
+func TestQualificationCapturedBalanceBlocksThirdExternalAttempt(t *testing.T) {
+	s := financeDB(t)
+	tenantID := tenant()
+	limit(t, s, tenantID, "2")
+	captureCalls := 0
+	capture := func(protocolID string) error {
+		if err := s.ReserveExact(context.Background(), tenantID, protocolID, "1", "BRL"); err != nil {
+			return err
+		}
+		captureCalls++
+		return s.ReconcileReservation(context.Background(), tenantID, protocolID, "CAPTURED", "qualification-capture-oracle")
+	}
+	for i := 0; i < 2; i++ {
+		if err := capture(uuid.NewString()); err != nil {
+			t.Fatalf("captura %d não deveria falhar: %v", i+1, err)
+		}
+	}
+	if err := capture(uuid.NewString()); !errors.Is(err, ErrLimitExceeded) {
+		t.Fatalf("terceira captura deveria exceder limite: %v", err)
+	}
+	if captureCalls != 2 {
+		t.Fatalf("terceira chamada externa foi alcançada: calls=%d", captureCalls)
+	}
+	accounts, err := s.Accounts(context.Background(), tenantID)
+	if err != nil || len(accounts) != 1 || accounts[0].Captured != "2.00000000" || accounts[0].Available != "0.00000000" {
+		t.Fatalf("saldo capturado inesperado: accounts=%+v err=%v", accounts, err)
+	}
+	t.Logf("oráculo financeiro confirmou duas capturas, saldo capturado=%s, terceira chamada externa bloqueada", accounts[0].Captured)
+}

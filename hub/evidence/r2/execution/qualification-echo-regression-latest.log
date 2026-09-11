@@ -1,0 +1,9 @@
+R2_QUA_02_S02=START
+command=go test -race -count=1 -v ./internal/cometa -run 'TestQualificationEchoRegression'
+fixture=httptest provider independente; input={"cpf":"input-echo"}
+sync_provider_status=SUCCEEDED
+sync_content_oracle=REJECTED_ECHO
+async_poll_provider_status=SUCCEEDED
+async_poll_content_oracle=REJECTED_ECHO
+result=PASS; status superficial nao substituiu oraculo de conteudo
+R2_QUA_02_S02=PASS

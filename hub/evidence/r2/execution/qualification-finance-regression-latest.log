@@ -1,0 +1,9 @@
+R2_QUA_02_S03=START
+command=R2_FINANCE_DSN=<fixture hub_finance> go test -race -count=1 -v ./internal/libra -run TestQualificationCapturedBalanceBlocksThirdExternalAttempt
+limit=2 BRL
+captured=2.00000000 BRL
+available=0.00000000 BRL
+external_capture_calls=2
+third_attempt=ErrLimitExceeded before external call
+result=PASS; saldo capturado permaneceu contado no limite
+R2_QUA_02_S03=PASS
