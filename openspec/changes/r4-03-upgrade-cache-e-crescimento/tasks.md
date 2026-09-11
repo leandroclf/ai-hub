@@ -60,12 +60,13 @@
   - Depends on: 4.1 e dependências do backlog R4.
   - Validation: integração real e negativas de autorização/erro.
   - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
-- [ ] 4.3 Qualificar e anexar evidência.
+- [x] 4.3 Qualificar e anexar evidência.
   - Objective: fechar cenários e requisitos herdados R3-CAT-04, R3-INT-03, R2-CAT-06.
   - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
   - Depends on: 4.2.
   - Validation: cenários completos, sem skip obrigatório.
   - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
+  - Evidence: `hub/evidence/r2/execution/r4-ope-03-latest.log` e `EVIDENCE_INDEX.md`; PostgreSQL/race exercitou resolução indexada, limite de candidatos, ambiguidade, projeção válida durante indisponibilidade e recusa após vencimento. Carga produtiva prolongada e provedor comercial permanecem fora.
 
 ## 5. Rollout
 - [ ] 5.1 Ensaiar upgrade/rollback e revisar o diff.

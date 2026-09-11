@@ -1,29 +1,32 @@
 # Tasks: Arquivos, propriedade de dados, retenção e recuperação
 
-Status: **parcialmente concluído**. Upload, custódia de resultado e retenção/replay (R2-DAD-03) têm prova local atualizada; RLS/continuidade, restore completo e cenários regionais permanecem abertos onde faltam provas completas. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **contratos, comportamentos locais e parte da qualificação concluídos; continuidade regional e promoção permanecem abertas**. Upload, custódia, retenção/replay e isolamento da autoridade têm provas locais atualizadas; restore regional, fencing e HA continuam fora do envelope. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `hub/internal/objectstore`; `hub/internal/orbita`; `hub/migrations`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
   - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
+  - Evidence: `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md` e `EXECUTION-2026-09-10.md`; o estado local, as limitações de réplica/writer regional e os limites de promoção foram revalidados.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `hub/internal/objectstore`; `hub/internal/orbita`; `hub/migrations`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
   - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
+  - Evidence: `hub/api/openapi.yaml`, `hub/api/openapi-internal.yaml`, `hub/api/asyncapi.yaml`, `hub/evidence/r2/execution/r2-dad-03-runtime-latest.log` e `r2-dad-04-read-authority-latest.log`; FileRef, custódia, retenção, estados de leitura e erros de autoridade foram conferidos.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 1.2.
   - Validation: Aplicação em ambiente limpo e existente, rollback compatível, validação de unicidade/proveniência; não editar migration aplicada.
   - Completion criteria: Estrutura suporta as regras sem perda de histórico; para UI/qualificação, registrar explicitamente ausência de mudança de esquema quando confirmada.
+  - Evidence: `hub/migrations/core/0030_objects_retention.sql`, `0038_protocol_reconciliation.sql`, `0039_protocol_reconciliation_leases.sql` e fixtures descartáveis de `hub/evidence/r2/execution/`; migrations aplicadas não foram editadas.
 
 ## 2. Comportamentos
 
@@ -89,12 +92,13 @@ Status: **parcialmente concluído**. Upload, custódia de resultado e retenção
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
   - Evidence: `hub/evidence/r2/execution/r2-dad-03-runtime-latest.log`; S01, S02 e S03 = PASS, sem novo efeito no replay e com tombstone/quarentena observáveis.
 
-- [ ] 3.4 Qualificar R2-DAD-04 com oráculos independentes
+- [x] 3.4 Qualificar R2-DAD-04 com oráculos independentes
   - Objective: Executar R2-DAD-04-S01, R2-DAD-04-S02, R2-DAD-04-S03. Caso indispensável: Isolamento de domínio; esperado: nega escrita fora da autoridade mesmo que aplicação tenha bug.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/objectstore`; `hub/internal/orbita`.
   - Depends on: 2.4; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
+  - Evidence: `hub/evidence/r2/execution/r2-dad-04-read-authority-latest.log`; S01/S02/S03 passaram com custódia pendente/expirada, `503/protocol_unavailable` sem falso `404` e RLS cross-tenant nas três bases. Réplica atrasada e writer alternativo regional permanecem limitação explícita.
 
 - [ ] 3.5 Qualificar R2-DAD-05 com oráculos independentes
   - Objective: Executar R2-DAD-05-S01, R2-DAD-05-S02, R2-DAD-05-S03. Caso indispensável: Falha regional; esperado: perfil não é qualificado nem ativado até prova de custódia e fencing compatíveis.

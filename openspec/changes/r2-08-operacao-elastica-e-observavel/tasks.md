@@ -4,26 +4,29 @@ Status: **parcialmente concluído**. Probes de capacidade/drenagem, placement e 
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `hub/deploy`; `hub/cmd`; `hub/internal/platform`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
   - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
+  - Evidence: `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md` e `EXECUTION-2026-09-10.md`; Compose, Kind, cinco overlays, observabilidade e limites de promoção foram revalidados no HEAD.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `hub/deploy`; `hub/cmd`; `hub/internal/platform`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
   - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
+  - Evidence: manifests/overlays em `hub/deploy/r2`, contratos HTTP/telemetria e `kustomize-overlay-latest.log`, `environment-boundary-latest.log` e `kind-continuity-latest.log`; namespaces, imagens, gate de produção e recuperação local foram confrontados.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 1.2.
   - Validation: Aplicação em ambiente limpo e existente, rollback compatível, validação de unicidade/proveniência; não editar migration aplicada.
   - Completion criteria: Estrutura suporta as regras sem perda de histórico; para UI/qualificação, registrar explicitamente ausência de mudança de esquema quando confirmada.
+  - Evidence: `hub/deploy/r2/k8s`, `hub/deploy/r2/kind`, `hub/evidence/r2/execution/compose-bootstrap-current.log` e `optional-dependency-runtime-latest.log`; fixtures locais são separadas e dependências opcionais não são pré-requisito de negócio.
 
 ## 2. Comportamentos
 
