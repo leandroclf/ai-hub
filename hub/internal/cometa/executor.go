@@ -75,6 +75,13 @@ func (e *Executor) acquireCapacity(ctx context.Context, cmd dispatch.Command, sn
 	return permit, true, err
 }
 
+func (e *Executor) validateCapacity(ctx context.Context, permit CapacityPermit, enabled bool) error {
+	if !enabled {
+		return nil
+	}
+	return e.capacity.Validate(ctx, permit)
+}
+
 func (e *Executor) releaseCapacity(ctx context.Context, permit CapacityPermit, evidence string) {
 	if e.capacity == nil || permit.ID == "" {
 		return
@@ -251,6 +258,10 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("capacity-fence-before-provider-auth")
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
+	}
 	if err := e.tokenCache.Apply(ctx, client, pa.ProviderAccountID, providerauth.Config{
 		BindingID: cred.BindingID, TenantID: cmd.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion,
 		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader,
@@ -260,6 +271,10 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	}, httpReq); err != nil {
 		releaseCapacity("provider-authentication-failed")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", err)
+	}
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("capacity-fence-before-submit")
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
 	}
 
 	resp, err := client.Do(httpReq)

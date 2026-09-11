@@ -138,14 +138,17 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if err != nil {
 		return dispatch.Result{}, fmt.Errorf("reconciliation request invalid: %w", err)
 	}
-	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: claim.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
-		return dispatch.Result{}, fmt.Errorf("reconciliation authentication unavailable: %w", err)
-	}
 	capacityPermit, capacityEnabled, err := e.acquireCapacity(ctx, claim.Command, snap, "STATUS", "reconcile-"+claim.RequestID+"-"+idgen.New(), claim.Owner)
 	if err != nil {
 		return dispatch.Result{}, fmt.Errorf("reconciliation capacity unavailable: %w", err)
 	}
 	capacitySettled := false
+	releaseCapacity := func(evidence string) {
+		if capacityEnabled && !capacitySettled {
+			e.releaseCapacity(ctx, capacityPermit, evidence)
+			capacitySettled = true
+		}
+	}
 	transportStarted := time.Now()
 	settleCapacity := func(result dispatch.Result) dispatch.Result {
 		if capacityEnabled && !capacitySettled {
@@ -156,6 +159,18 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	}
 	unknown := func(code string) dispatch.Result {
 		return dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: claim.ProviderRequestID, Kind: dispatch.FactUnknown, ErrorCode: code}
+	}
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("reconciliation-capacity-fence-before-provider-auth")
+		return dispatch.Result{}, fmt.Errorf("reconciliation capacity fence: %w", err)
+	}
+	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: claim.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
+		releaseCapacity("reconciliation-provider-authentication-failed")
+		return dispatch.Result{}, fmt.Errorf("reconciliation authentication unavailable: %w", err)
+	}
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("reconciliation-capacity-fence-before-status")
+		return dispatch.Result{}, fmt.Errorf("reconciliation capacity fence: %w", err)
 	}
 	resp, err := client.Do(req)
 	if err != nil {

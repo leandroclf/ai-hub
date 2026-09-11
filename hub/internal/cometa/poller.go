@@ -109,10 +109,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil {
 		return unknown("poll_request_invalid")
 	}
-	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: c.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
-		return unknown("poll_authentication_failed")
-	}
-	// Recheck the committed fence after credential resolution, before HTTP I/O.
+	// Recheck the committed polling fence before obtaining capacity and credentials.
 	var owned bool
 	err = e.store.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM polling_schedule WHERE operation_id=$1 AND lease_owner=$2 AND epoch=$3 AND lease_expires_at>clock_timestamp()+make_interval(secs=>timeout_seconds) AND deadline_at>clock_timestamp()+make_interval(secs=>timeout_seconds))`, c.Command.CommandID, c.Owner, c.Epoch).Scan(&owned)
 	if err != nil || !owned {
@@ -123,6 +120,12 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		return unknown("poll_capacity_unavailable")
 	}
 	capacitySettled := false
+	releaseCapacity := func(evidence string) {
+		if capacityEnabled && !capacitySettled {
+			e.releaseCapacity(ctx, capacityPermit, evidence)
+			capacitySettled = true
+		}
+	}
 	var transportStarted time.Time
 	settleCapacity := func(result dispatch.Result) dispatch.Result {
 		if capacityEnabled && !capacitySettled {
@@ -131,13 +134,27 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		}
 		return result
 	}
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("poll-capacity-fence-before-provider-auth")
+		return unknown("poll_capacity_fence")
+	}
+	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: c.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
+		releaseCapacity("poll-provider-authentication-failed")
+		return unknown("poll_authentication_failed")
+	}
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("poll-capacity-fence-before-status")
+		return unknown("poll_capacity_fence")
+	}
 	if _, err = e.store.db.ExecContext(ctx, `UPDATE attempts SET sent_at=clock_timestamp() WHERE attempt_id=$1 AND operation_id=$2`, c.AttemptID, c.Command.CommandID); err != nil {
-		if capacityEnabled {
-			e.releaseCapacity(ctx, capacityPermit, "poll-attempt-unavailable")
-		}
+		releaseCapacity("poll-attempt-unavailable")
 		return unknown("poll_attempt_unavailable")
 	}
 	transportStarted = time.Now()
+	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
+		releaseCapacity("poll-capacity-fence-immediately-before-status")
+		return unknown("poll_capacity_fence")
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		r, retryAfter := unknown("poll_transport_failed")

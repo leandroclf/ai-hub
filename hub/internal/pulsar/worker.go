@@ -113,6 +113,16 @@ func (w *DeliveryWorker) attempt(ctx context.Context, d ClaimedDelivery) {
 			finish(0, "capacity_lease_too_short")
 			return
 		}
+		if err := w.capacity.Validate(call, permit); err != nil {
+			releaseCtx, releaseCancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+			releaseErr := w.capacity.Release(releaseCtx, permit, "webhook-capacity-fence-before-secret")
+			releaseCancel()
+			if releaseErr != nil {
+				w.log.Error("webhook capacity release unavailable", "delivery_id", d.ID, "error", releaseErr)
+			}
+			finish(0, "capacity_fence")
+			return
+		}
 	}
 	releaseCapacity := func(evidence string) {
 		if !capacityActive {
@@ -159,6 +169,13 @@ func (w *DeliveryWorker) attempt(ctx context.Context, d ClaimedDelivery) {
 	request.Header.Set("X-Hub-Timestamp", timestamp)
 	request.Header.Set("X-Hub-Event-Id", d.EventID)
 	request.Header.Set("X-Hub-Delivery-Id", d.ID)
+	if capacityActive {
+		if err := w.capacity.Validate(call, permit); err != nil {
+			releaseCapacity("webhook-capacity-fence-immediately-before-delivery")
+			finish(0, "capacity_fence")
+			return
+		}
+	}
 	response, err := client.Do(request)
 	if err != nil {
 		completeCapacity("TIMEOUT", "webhook-transport-unconfirmed:"+d.ID, time.Since(started))
