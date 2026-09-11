@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "profile": "r2-exe-09-s01-orphan-dispatch",
+  "environment": "ai_hub_r3qual / PostgreSQL 16 local",
+  "test": "TestRecoverOrphanedIntentRequeuesSameDurableObligation",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -count=1 -v ./internal/orbita -run ^TestRecoverOrphanedIntentRequeuesSameDurableObligation$",
+  "oracle": {
+    "stale_ready_intent_detected": true,
+    "expired_lease_detected": true,
+    "same_command_id_recovered": true,
+    "same_protocol_id_recovered": true,
+    "dispatch_mode_preserved": "QUEUED",
+    "diagnostic": "orphan_recovered",
+    "audit_action": "ORPHAN_DISPATCH_RECOVERED",
+    "new_obligation_created": false
+  },
+  "qualification": "Aceite sem executor foi recuperado para o publisher com a mesma identidade durável e diagnóstico auditável; nenhuma nova operação foi inventada."
+}

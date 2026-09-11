@@ -150,3 +150,54 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	}
 	t.Log("24 simultaneous requests: one protocol+intent; conflicting payload refused; application keys independent; reservation not released; failed intent insertion rolls back protocol")
 }
+
+func TestRecoverOrphanedIntentRequeuesSameDurableObligation(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	ctx := context.Background()
+	tenant := "orphan-recovery-" + idgen.New()
+	cell := "orphan-recovery-cell-" + idgen.New()
+	now := time.Now().UTC()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app-orphan", CellID: cell, IdempotencyKey: "orphan-recovery-key", RequestHash: "orphan-recovery-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"fixture":true}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "orphan-fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM protocol_audit WHERE protocol_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+	})
+	if _, err = db.ExecContext(ctx, `UPDATE command_intents SET created_at=clock_timestamp()-interval '5 seconds',next_attempt_at=clock_timestamp()-interval '1 second',lease_owner='dead-executor',lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1`, p.CommandID); err != nil {
+		t.Fatal(err)
+	}
+
+	recovered, ok, err := store.RecoverOrphanedIntent(ctx, cell, 2*time.Second)
+	if err != nil || !ok || recovered.Command.CommandID != p.CommandID || recovered.Command.ProtocolID != p.ProtocolID {
+		t.Fatalf("orphan recovery did not preserve identity: ok=%v intent=%+v err=%v", ok, recovered, err)
+	}
+	var state, lastError string
+	if err = db.QueryRowContext(ctx, "SELECT state,last_error FROM command_intents WHERE command_id=$1", p.CommandID).Scan(&state, &lastError); err != nil {
+		t.Fatal(err)
+	}
+	if state != "READY" || lastError != "orphan_recovered" {
+		t.Fatalf("orphan intent was not requeued diagnostically: state=%s error=%s", state, lastError)
+	}
+	var audits int
+	if err = db.QueryRowContext(ctx, "SELECT count(*) FROM protocol_audit WHERE protocol_id=$1 AND action='ORPHAN_DISPATCH_RECOVERED'", p.ProtocolID).Scan(&audits); err != nil || audits != 1 {
+		t.Fatalf("orphan recovery audit count=%d err=%v", audits, err)
+	}
+	claimed, err := store.ClaimIntent(ctx, cell, "publisher-after-orphan")
+	if err != nil || claimed.Command.CommandID != p.CommandID || claimed.Epoch <= recovered.Epoch {
+		t.Fatalf("publisher did not reclaim same intent: claim=%+v err=%v", claimed, err)
+	}
+	t.Logf("PostgreSQL: aceito órfão foi diagnosticado e reencaminhado com o mesmo command_id=%s, sem criar nova obrigação", p.CommandID)
+}

@@ -132,6 +132,7 @@ func main() {
 	// Temporizador de deadline (EXE-11).
 	go orbita.RunDeadlineTimer(ctx, store, finalizer, 1*time.Second, log)
 	go orbita.RunIntentPublisher(ctx, store, dispatcher, config.Env("CELL_ID", ""), log)
+	go orbita.RunOrphanRecovery(ctx, store, config.Env("CELL_ID", ""), log)
 	go orbita.RunDirectRecovery(ctx, store, dispatcher, finalizer, config.Env("CELL_ID", ""), log)
 	go orbita.RunReservationRecovery(ctx, store, libra, config.Env("CELL_ID", ""), log)
 

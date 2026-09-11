@@ -21,6 +21,81 @@ type Intent struct {
 	Epoch   int64
 }
 
+// RecoverOrphanedIntent torna novamente elegível uma intenção READY que ficou
+// sem executor após a expiração de seu lease. A identidade do comando não é
+// recriada: somente next_attempt_at/diagnóstico são atualizados, permitindo
+// que o publisher normal faça a única entrega autorizada.
+func (s *Store) RecoverOrphanedIntent(ctx context.Context, cell string, minAge time.Duration) (Intent, bool, error) {
+	if cell == "" || minAge <= 0 {
+		return Intent{}, false, errors.New("missing orphan recovery scope")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Intent{}, false, err
+	}
+	defer tx.Rollback()
+	var raw []byte
+	var protocolID, tenantID string
+	var result Intent
+	err = tx.QueryRowContext(ctx, `
+		SELECT i.command,i.epoch,p.protocol_id,p.tenant_id
+		FROM command_intents i
+		JOIN protocols p ON p.protocol_id=i.protocol_id AND p.tenant_id=i.tenant_id
+		WHERE i.cell_id=$1 AND i.state='READY'
+		  AND i.next_attempt_at<=clock_timestamp()
+		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
+		  AND i.created_at<=clock_timestamp()-($2 * interval '1 millisecond')
+		  AND p.client_deadline_at>clock_timestamp()
+		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		ORDER BY i.next_attempt_at,i.command_id
+		FOR UPDATE OF i SKIP LOCKED LIMIT 1`, cell, minAge.Milliseconds()).Scan(&raw, &result.Epoch, &protocolID, &tenantID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return Intent{}, false, err
+	}
+	if err != nil {
+		return Intent{}, false, err
+	}
+	if err = json.Unmarshal(raw, &result.Command); err != nil || result.Command.CommandID == "" || result.Command.ProtocolID != protocolID || result.Command.TenantID != tenantID || result.Command.CellID != cell {
+		return Intent{}, false, errors.New("invalid orphan intent")
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE command_intents SET next_attempt_at=clock_timestamp(),last_error='orphan_recovered',lease_owner=NULL,lease_until=NULL WHERE command_id=$1 AND state='READY'`, result.Command.CommandID); err != nil {
+		return Intent{}, false, err
+	}
+	details, _ := json.Marshal(map[string]any{"command_id": result.Command.CommandID, "dispatch_mode": result.Command.DispatchMode, "previous_epoch": result.Epoch})
+	if _, err = tx.ExecContext(ctx, `INSERT INTO protocol_audit(protocol_id,tenant_id,subject,action,details) VALUES($1,$2,'orphan-recovery','ORPHAN_DISPATCH_RECOVERED',$3)`, protocolID, tenantID, details); err != nil {
+		return Intent{}, false, err
+	}
+	if err = tx.Commit(); err != nil {
+		return Intent{}, false, err
+	}
+	return result, true, nil
+}
+
+// RunOrphanRecovery mantém a recuperação de aceites órfãos separada do
+// publisher: o scanner apenas registra o diagnóstico e reabre a mesma
+// intenção; não há conversão de modo nem criação de novo comando.
+func RunOrphanRecovery(ctx context.Context, s *Store, cell string, log *slog.Logger) {
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			for n := 0; n < 16; n++ {
+				_, recovered, err := s.RecoverOrphanedIntent(ctx, cell, 2*time.Second)
+				if errors.Is(err, sql.ErrNoRows) || !recovered {
+					break
+				}
+				if err != nil {
+					log.Error("orphan intent recovery unavailable", "error", err)
+					break
+				}
+			}
+		}
+	}
+}
+
 // ClaimIntent only takes QUEUED work. Direct recovery must query Cometa using
 // the original command identity; it must never convert transport modes.
 func (s *Store) ClaimIntent(ctx context.Context, cell, owner string) (Intent, error) {

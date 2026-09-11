@@ -60,6 +60,7 @@
 | `webhook-retry-representation-smoke.json` | R2-EXE-08-S01; teste PostgreSQL/HTTP: `PASS`; primeira tentativa 500 e segunda 204 reutilizaram os mesmos bytes, identidade, hash e HMAC | A igualdade com POST/GET é coberta por testes Orbita separados; jornada única ainda não promovida |
 | `result-reconciliation-smoke.json` | R2-DAD-02-S03; teste PostgreSQL/LocalStack: `PASS`; objeto em `VALIDATING` foi reconciliado para `ORPHAN`, obrigação incorreta recusada e obrigação original ligada como `READY` com pin | Fixture local de storage; não substitui falha regional ou banco distribuído |
 | `finalize-expiry-race-smoke.json` | R2-EXE-06-S03; teste PostgreSQL: `PASS`; disputa de finalização/expiração produziu uma única transição terminal e um único fato final | Deadline futuro; não substitui ensaio de commit lento na fronteira exata |
+| `orphan-dispatch-recovery-smoke.json` | R2-EXE-09-S01; scanner PostgreSQL recuperou intenção `READY` com lease expirado usando o mesmo `command_id`/protocolo, gravou diagnóstico e auditoria, sem criar nova obrigação | Fixture local; não substitui pane regional ou recuperação entre células |
 | `final-representation-immutable-smoke.json` | R2-EXE-08-S02; teste PostgreSQL: `PASS`; tentativa de troca v1→v2 após terminal foi recusada e os bytes históricos foram preservados | Não substitui upgrade real de software/perfil |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
