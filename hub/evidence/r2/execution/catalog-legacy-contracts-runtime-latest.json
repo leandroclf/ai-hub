@@ -1,0 +1,87 @@
+{
+  "status": "PASS",
+  "profile": "r2-cat-05-s01-legacy-contracts",
+  "suffix": 1789149851073,
+  "profiles": {
+    "a": {
+      "id": "legacy-profile-a-1789149851073",
+      "content_hash": "c84371b902115051854b626342c3dd2b707ef495d1c3ed2b0e42d152429ead9b",
+      "input_fields": [
+        "cpf_legado",
+        "espera_ms"
+      ],
+      "mapping": {
+        "cpf": "cpf_legado",
+        "delay_ms": "espera_ms"
+      }
+    },
+    "b": {
+      "id": "legacy-profile-b-1789149851073",
+      "content_hash": "2115885acd1c07d52e96ef4691c33b70a2f9faf51ff5ba0cc8af08e5e46d9da5",
+      "input_fields": [
+        "documento",
+        "atraso"
+      ],
+      "mapping": {
+        "cpf": "documento",
+        "delay_ms": "atraso"
+      }
+    }
+  },
+  "bindings": {
+    "a": {
+      "account": "legacy-account-a-1789149851073",
+      "binding": "legacy-binding-a-1789149851073",
+      "account_hash": "308df5a5d87cc4a08b35c7a4803f0ed026eef3c28c134550ff76b8ab6b8166f1",
+      "binding_hash": "1ee34474efb187494fa525c2ac0122a789792fb21f3ee199022f4eb6d953ac28"
+    },
+    "b": {
+      "account": "legacy-account-b-1789149851073",
+      "binding": "legacy-binding-b-1789149851073",
+      "account_hash": "00c50e00a01e43c7122960cda2ad2a177a503e0769f129b55df64f5fc2850724",
+      "binding_hash": "c3a7255958540e6263cdba04ba6e51de9232bda81d80f2d7d900a6dec3ed5e93"
+    }
+  },
+  "offers": {
+    "a": "legacy-offer-a-1789149851073",
+    "b": "legacy-offer-b-1789149851073"
+  },
+  "admissions": [
+    {
+      "profile": "legacy-profile-a-1789149851073",
+      "account": "legacy-account-a-1789149851073",
+      "protocol_id": "01a091a4-2eee-76fb-95da-cfc096188646",
+      "client_input": {
+        "cpf_legado": "11111111111",
+        "espera_ms": 3000
+      },
+      "provider_input": {
+        "cpf": "11111111111",
+        "delay_ms": 3000
+      },
+      "final_status": "SUCCEEDED",
+      "delivery_id": "302a5d4c-d0cb-4746-a1df-e351ade76ea7",
+      "get_webhook_body_equality": "canonical-json-equal",
+      "representation_sha256": "d1b707ea02ad67b7cab27247539be201e1accf4297d9e2f24d08c378c0d43f0d"
+    },
+    {
+      "profile": "legacy-profile-b-1789149851073",
+      "account": "legacy-account-b-1789149851073",
+      "protocol_id": "01a091a4-5821-78d8-8158-3828a03e9059",
+      "client_input": {
+        "documento": "11111111111",
+        "atraso": 3000
+      },
+      "provider_input": {
+        "cpf": "11111111111",
+        "delay_ms": 3000
+      },
+      "final_status": "SUCCEEDED",
+      "delivery_id": "7e963043-71a8-4375-aec5-5f5ae295e70d",
+      "get_webhook_body_equality": "canonical-json-equal",
+      "representation_sha256": "58f9fe9113ff908ed3847b5a1ba64fee92a7534c6c0b08f2cbe071adbf2afec0"
+    }
+  ],
+  "semantic_equivalence": "ambos os contratos normalizaram para cpf/delay_ms e terminaram SUCCEEDED",
+  "finished_at": "2026-09-11T18:04:31.934Z"
+}
