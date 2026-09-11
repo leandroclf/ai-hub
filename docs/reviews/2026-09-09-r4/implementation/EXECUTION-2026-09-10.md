@@ -16,7 +16,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Cache de autenticação | `go test -race -count=1 ./internal/providerauth` | PASS; isolamento por binding, revogação, expiração, coordenação cancelável e máximo de 1024 locks rastreados |
 | Redis opcional | Compose profile `cache`, `redis-cli ping` e `INFO keyspace` | PASS; `PONG`, keyspace vazio; Cometa permanece sem dependência autoritativa de Redis e sem token persistido |
 | Ofertas | consulta `LIMIT 2` + `EXPLAIN (ANALYZE, BUFFERS)` | PASS de caminho; índice parcial `catalog_offer_eligibility_lookup` confirmado quando o planner usa índice; catálogo pequeno pode escolher seq scan por custo |
-| Restore | `R2_RESTORE_SUFFIX=r4_sequence_20260910b bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; oito efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
+| Restore | `R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_sequence_20260910c bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; oito efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
 | Kind/HA | cluster `ai-hub-r2`, três nós, réplicas e exclusão controlada de pods | PASS local; Atlas, Órbita, Cometa, Pulsar e Libra recuperaram réplicas em workers distintos; métricas, HPA e KEDA disponíveis |
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |

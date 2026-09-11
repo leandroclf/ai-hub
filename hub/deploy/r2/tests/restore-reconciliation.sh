@@ -5,7 +5,9 @@ set -euo pipefail
 # dumps lógicos e compara obrigações. Não remove bancos, buckets ou volumes;
 # o inventário produzido permite a limpeza manual do recurso exato depois da
 # revisão da evidência.
-container=${R2_PG_CONTAINER:-ai_hub_r3qual-postgres-1}
+compose_project=${R2_COMPOSE_PROJECT:-ai_hub_r3qual}
+container=${R2_PG_CONTAINER:-${compose_project}-postgres-1}
+localstack_container=${R2_LOCALSTACK_CONTAINER:-${compose_project}-localstack-1}
 suffix=${R2_RESTORE_SUFFIX:-$(date -u +%Y%m%d%H%M%S)}
 case "$suffix" in *[!a-zA-Z0-9_]*) echo "invalid restore suffix" >&2; exit 2;; esac
 psql_hub=(docker exec -i "$container" psql -U hub -v ON_ERROR_STOP=1 -X)
@@ -47,14 +49,14 @@ done
 
 bucket_suffix=${suffix//_/-}
 bucket=${R2_RESTORE_BUCKET:-r2-custody-restore-${bucket_suffix}}
-if docker exec ai_hub_r3qual-localstack-1 awslocal s3api head-bucket --bucket "$bucket" >/dev/null 2>&1; then
+if docker exec "$localstack_container" awslocal s3api head-bucket --bucket "$bucket" >/dev/null 2>&1; then
   echo "restore target bucket already exists: $bucket; choose a new R2_RESTORE_SUFFIX or R2_RESTORE_BUCKET" >&2
   exit 2
 fi
-docker exec ai_hub_r3qual-localstack-1 awslocal s3 mb "s3://$bucket" >/dev/null
-docker exec ai_hub_r3qual-localstack-1 awslocal s3 sync s3://r2-custody "s3://$bucket" >/dev/null
-source_objects=$(docker exec ai_hub_r3qual-localstack-1 awslocal s3api list-objects-v2 --bucket r2-custody --query 'length(Contents || `[]`)' --output text)
-restored_objects=$(docker exec ai_hub_r3qual-localstack-1 awslocal s3api list-objects-v2 --bucket "$bucket" --query 'length(Contents || `[]`)' --output text)
+docker exec "$localstack_container" awslocal s3 mb "s3://$bucket" >/dev/null
+docker exec "$localstack_container" awslocal s3 sync s3://r2-custody "s3://$bucket" >/dev/null
+source_objects=$(docker exec "$localstack_container" awslocal s3api list-objects-v2 --bucket r2-custody --query 'length(Contents || `[]`)' --output text)
+restored_objects=$(docker exec "$localstack_container" awslocal s3api list-objects-v2 --bucket "$bucket" --query 'length(Contents || `[]`)' --output text)
 test "$source_objects" = "$restored_objects" || { echo "object restore mismatch: $source_objects != $restored_objects" >&2; exit 1; }
 printf 'restore objects: %s\n' "$source_objects"
 

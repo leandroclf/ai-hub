@@ -16,7 +16,7 @@ limites arquiteturais.
 | `hub/internal/cometa/capacity.go` + executor/poller/reconciliation | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS` e reconciliação, budgets integrais ainda abertos |
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` | Snapshot de destino webhook | PASS de teste PostgreSQL; versão aceita é congelada e entregue sem lookup dinâmico posterior |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
-| `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixo `r4_sequence_20260910b`; digest/contagem sem replay e colisão de alvos recusada |
+| `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixo `r4_sequence_20260910c`; digest/contagem sem replay e colisão de alvos recusada |
 | Kind `ai-hub-r2` | Prontidão, métricas, HPA/KEDA e recuperação | PASS local; dependências ainda Compose-linked |
 
 ## Evidências históricas

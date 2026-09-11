@@ -25,7 +25,7 @@ reprodutível.
   vezes para o mesmo protocolo.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
-- Restore/reconciliation com sufixo `r4_sequence_20260910b`: PASS para bancos
+- Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos
   control/core/finance, objetos e oracle de efeitos externos sem replay. O
   script também recusa alvos de banco/bucket já existentes antes de iniciar.
 - Kind existente `ai-hub-r2`: workloads atlas, orbita, cometa, pulsar e libra
