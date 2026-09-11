@@ -144,7 +144,7 @@ docs.append({
                         {"name": "KEYCLOAK_ADMIN_USER", "value": "r2-bootstrap"},
                         {"name": "KEYCLOAK_ADMIN_PASSWORD", "value": "r2-bootstrap-fixture"},
                         {"name": "R2_FIXTURE_PASSWORD", "value": "R2-fixture-password!"},
-                        {"name": "R2_FIXTURE_OTP", "value": "JBSWY3DPEHPK3PXP"},
+                        {"name": "R2_FIXTURE_OTP", "value": "IFES2SCVIIWVEMRNJVDECLKLIVMS2MBR"},
                     ],
                     "volumeMounts": [{"name": "reconcile-script", "mountPath": "/scripts/reconcile_identity.py", "subPath": "reconcile_identity.py", "readOnly": True}],
                 }],

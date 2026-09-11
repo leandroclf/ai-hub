@@ -49,7 +49,10 @@ Não use para:
    A instalação oficial e o procedimento de conexão estão no
    [guia upstream](https://github.com/browser-use/browser-harness/blob/main/install.md).
 
-5. Uma sessão de teste autenticada no navegador. Senha, MFA e consentimento
+5. Uma sessão de teste autenticada no navegador. Para a fixture local R2, o
+   usuário é `operadora-a` e o segredo TOTP público para cadastro manual é
+   `IFES2SCVIIWVEMRNJVDECLKLIVMS2MBR`; a senha permanece a credencial local
+   configurada no Compose e não é capturada pelo cenário. MFA e consentimento
    devem ser fornecidos interativamente pelo operador; o cenário não os captura
    nem os escreve em arquivo.
 

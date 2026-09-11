@@ -32,7 +32,7 @@ async function authenticate(username,expectedURL){
   for(const skew of [0,-1,1]){
    if(!await page.locator('#otp').count())break;
    const counter=Buffer.alloc(8);counter.writeBigUInt64BE(BigInt(Math.floor(Date.now()/30000)+skew));
-   const digest=createHmac('sha1',Buffer.from('JBSWY3DPEHPK3PXP')).update(counter).digest();
+   const digest=createHmac('sha1',Buffer.from('AI-HUB-R2-MFA-KEY-01')).update(counter).digest();
    const offset=digest[digest.length-1]&15;
    const otp=((digest.readUInt32BE(offset)&0x7fffffff)%1000000).toString().padStart(6,'0');
    await page.locator('#otp').fill(otp);await page.locator('#kc-login').click();

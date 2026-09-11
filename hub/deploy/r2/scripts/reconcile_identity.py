@@ -13,7 +13,27 @@ REALM=os.environ.get("KEYCLOAK_REALM","ai-hub-r2")
 ADMIN_USER=os.environ.get("KEYCLOAK_ADMIN_USER","r2-bootstrap")
 ADMIN_PASSWORD=os.environ.get("KEYCLOAK_ADMIN_PASSWORD","r2-bootstrap-fixture")
 PASSWORD=os.environ.get("R2_FIXTURE_PASSWORD","R2-fixture-password!")
-OTP_SECRET=os.environ.get("R2_FIXTURE_OTP","JBSWY3DPEHPK3PXP")
+OTP_SECRET=os.environ.get("R2_FIXTURE_OTP","IFES2SCVIIWVEMRNJVDECLKLIVMS2MBR")
+
+def decode_fixture_secret(public_secret):
+    """Converte o segredo Base32 público nos bytes usados pelo Keycloak.
+
+    O Keycloak mantém a credencial importada como valor literal quando a
+    codificação da credencial não é informada. O valor armazenado é, portanto,
+    a forma ASCII decodificada; o operador cadastra a forma Base32 pública no
+    autenticador. A chave escolhida é ASCII para ser estável no JSON/UTF-8.
+    """
+    padded=public_secret+"="*((8-len(public_secret)%8)%8)
+    try:
+        decoded=base64.b32decode(padded,casefold=True)
+    except (ValueError, base64.binascii.Error) as error:
+        raise RuntimeError("R2_FIXTURE_OTP deve ser Base32 válido") from error
+    try:
+        return decoded.decode("ascii")
+    except UnicodeDecodeError as error:
+        raise RuntimeError("R2_FIXTURE_OTP deve decodificar para uma chave ASCII") from error
+
+OTP_KEY=decode_fixture_secret(OTP_SECRET)
 USERS=[
     ("operadora-a","acme","app-acme","r2-cell-a","hub_admin"),
     ("leitor-a","acme","app-acme","r2-cell-a","tenant_reader"),
@@ -39,12 +59,25 @@ def users(t, username):
     return data
 
 def partial_user(t, username, tenant, app, cell, role):
-    user={"username":username,"enabled":True,"emailVerified":True,"firstName":username,"lastName":"Fixture R2","email":username+"@r2.invalid","attributes":{"tenant_id":[tenant],"application_id":[app],"cell_id":[cell]},"credentials":[{"type":"password","value":PASSWORD,"temporary":False},{"type":"otp","userLabel":"R2 synthetic TOTP","secretData":json.dumps({"value":OTP_SECRET}),"credentialData":json.dumps({"subType":"totp","digits":6,"counter":0,"period":30,"algorithm":"HmacSHA1"})}]}
+    user={"username":username,"enabled":True,"emailVerified":True,"firstName":username,"lastName":"Fixture R2","email":username+"@r2.invalid","attributes":{"tenant_id":[tenant],"application_id":[app],"cell_id":[cell]},"credentials":[{"type":"password","value":PASSWORD,"temporary":False},{"type":"otp","userLabel":"R2 manual TOTP (Base32)","secretData":json.dumps({"value":OTP_KEY}),"credentialData":json.dumps({"subType":"totp","digits":6,"counter":0,"period":30,"algorithm":"HmacSHA1"})}]}
     request("/admin/realms/%s/partialImport"%REALM,"POST",{"ifResourceExists":"FAIL","users":[user]},t)
+
+def fixture_otp_is_current(t, uid):
+    credentials=request("/admin/realms/%s/users/%s/credentials"%(REALM,uid),token=t)[1]
+    otp=next((item for item in credentials if item.get("type") in ("otp","totp")),None)
+    if not otp: return False
+    try:
+        secret=json.loads(otp.get("secretData") or "{}").get("value")
+        data=json.loads(otp.get("credentialData") or "{}")
+    except (TypeError, ValueError):
+        return False
+    return secret==OTP_KEY and otp.get("userLabel")=="R2 manual TOTP (Base32)" and data.get("subType")=="totp"
 
 def reconcile_user(t, username, tenant, app, cell, role):
     found=users(t,username)
-    if found and not found[0].get("totp",False):
+    if found and (not found[0].get("totp",False) or not fixture_otp_is_current(t,found[0]["id"])):
+        # O Admin REST não oferece criação genérica de OTP; recriamos somente
+        # a identidade sintética cuja credencial está desatualizada.
         request("/admin/realms/%s/users/%s"%(REALM,found[0]["id"]),"DELETE",token=t)
         partial_user(t,username,tenant,app,cell,role); found=users(t,username)
     if not found: partial_user(t,username,tenant,app,cell,role); found=users(t,username)

@@ -97,7 +97,8 @@ services:
       KEYCLOAK_ADMIN_USER: r2-bootstrap
       KEYCLOAK_ADMIN_PASSWORD: r2-bootstrap-fixture
       R2_FIXTURE_PASSWORD: R2-fixture-password!
-      R2_FIXTURE_OTP: JBSWY3DPEHPK3PXP
+      # Segredo público Base32 para cadastro em Google Authenticator/Authy.
+      R2_FIXTURE_OTP: IFES2SCVIIWVEMRNJVDECLKLIVMS2MBR
     volumes:
     - ./scripts/reconcile_identity.py:/scripts/reconcile_identity.py:ro
     depends_on:

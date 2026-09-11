@@ -544,8 +544,8 @@
         },
         {
           "type": "otp",
-          "userLabel": "R2 synthetic TOTP",
-          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "userLabel": "R2 manual TOTP (Base32)",
+          "secretData": "{\"value\": \"AI-HUB-R2-MFA-KEY-01\"}",
           "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
         }
       ]
@@ -579,8 +579,8 @@
         },
         {
           "type": "otp",
-          "userLabel": "R2 synthetic TOTP",
-          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "userLabel": "R2 manual TOTP (Base32)",
+          "secretData": "{\"value\": \"AI-HUB-R2-MFA-KEY-01\"}",
           "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
         }
       ]
@@ -614,8 +614,8 @@
         },
         {
           "type": "otp",
-          "userLabel": "R2 synthetic TOTP",
-          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "userLabel": "R2 manual TOTP (Base32)",
+          "secretData": "{\"value\": \"AI-HUB-R2-MFA-KEY-01\"}",
           "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
         }
       ]
@@ -649,8 +649,8 @@
         },
         {
           "type": "otp",
-          "userLabel": "R2 synthetic TOTP",
-          "secretData": "{\"value\": \"JBSWY3DPEHPK3PXP\"}",
+          "userLabel": "R2 manual TOTP (Base32)",
+          "secretData": "{\"value\": \"AI-HUB-R2-MFA-KEY-01\"}",
           "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
         }
       ]

@@ -24,6 +24,27 @@ Ações distintas: retomar timer; republicar evento; reprocessar inbox em quaren
 
 Clientes de máquina usam OAuth2 client credentials como padrão, com JWT de emissor/audiência/escopos homologados. Usuários administrativos usam OIDC e MFA; sessões e privilégios têm prazo. API keys só são admitidas em integração legada explicitamente aprovada, com rotação e escopo. Comunicação HTTPS entre aplicações usa identidade de workload e mTLS; broker, banco e S3 usam TLS e os mecanismos de autenticação/menor privilégio suportados por cada serviço.
 
+### MFA do laboratório local R2
+
+O usuário administrativo sintético `operadora-a` usa a senha de fixture definida
+no Compose e TOTP de 6 dígitos, SHA-1, período de 30 segundos. Para cadastro
+manual em Google Authenticator, Authy ou aplicativo compatível, use o segredo
+Base32 público abaixo, sem espaços:
+
+`IFES2SCVIIWVEMRNJVDECLKLIVMS2MBR`
+
+O valor Base32 é a representação de cadastro; o Keycloak armazena a chave ASCII
+equivalente para manter compatibilidade com a credencial importada do fixture.
+O gerador de token e a prova de compatibilidade derivam os mesmos bytes a partir
+do segredo Base32, enquanto os smokes de navegador usam essa chave equivalente,
+para que o acesso manual e os gates usem exatamente o mesmo algoritmo.
+
+Após reiniciar o Compose, sempre comece em `http://localhost:13000/` e clique em
+**Entrar**. Não reutilize uma URL antiga de `login-actions`; ela pertence a uma
+transação OIDC expirada e causa `Invalid authenticator code` mesmo com um OTP
+correto. Se a conta tiver sido alterada localmente, execute a reconciliação da
+fixture para restaurar a credencial sintética antes de testar novamente.
+
 Gateway elimina cabeçalhos de identidade fornecidos pelo cliente e transmite contexto confiável. Serviços validam identidade de workload e autorização de tenant/recurso; não confiam só na rede interna. Permissões separam administrar catálogo, contrato, credenciais, executar, consultar, diagnosticar, ajustar financeiro, aprovar e confirmar liquidação. Operador de runtime não pode editar ledger publicado.
 
 ## SEG-02 · Destinos, callbacks e dados — proprietário: Segurança / Integrações
