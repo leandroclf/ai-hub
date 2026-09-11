@@ -99,6 +99,7 @@ R2-OPE-04-S01;PARCIAL_ESTRUTURAL;scaling-policy-latest.log — KEDA consulta bac
 R2-OPE-04-S02;PASS_ESTRUTURAL;scaling-policy-latest.log — ppd declara envelope 3→6 réplicas, PDB e placement por hostname; provisionamento cloud e nova célula permanecem fora
 R2-OPE-05-S01;PASS_INTEGRADO_LOCAL;placement-relocation-latest.log — consulta pública do mesmo tenant resolveu protocolos antigos na célula A e novos na B após realocação; workload da célula B foi impedido de cruzar o fence da célula A
 R2-OPE-05-S02;PASS_ESTRUTURAL;environment-cell-boundary-latest.log — nomes de recursos SNS/SQS ficaram distintos para dev/hom e células A/B pelo prefixo QUEUE_NAMESPACE; entrega runtime entre ambientes/células permanece pendente no laboratório de célula única
+R2-OPE-05-S03;PASS_INTEGRADO_LOCAL;provisioning-readiness-latest.log — célula sem headroom qualificado ficou em PROVISIONING sem placement de tráfego e duas reconciliações mantiveram uma única solicitação de provisionamento
 R2-OPE-03-S02;PASS_UNITARIO;go test ./internal/platform/httpserver — TestShutdownWaitsForAcceptedRequest drena requisição aceita antes de encerrar
 R2-OPE-07-S03;PASS_UNITARIO;go test ./internal/platform/httpserver — TestTelemetryDropsWithoutBlockingBusiness limita buffer e sinaliza descarte sem bloquear negócio
 R2-ADM-11-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal recusa fechamento com obrigações pendentes e mantém o estado financeiro não conciliado

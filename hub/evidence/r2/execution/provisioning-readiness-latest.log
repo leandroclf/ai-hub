@@ -1,0 +1,4 @@
+=== RUN   TestRequestCapacityKeepsPartialCellOutOfPlacementAndIsIdempotent
+--- PASS: TestRequestCapacityKeepsPartialCellOutOfPlacementAndIsIdempotent (0.06s)
+PASS
+ok  	ai-hub/hub/internal/atlas	0.062s

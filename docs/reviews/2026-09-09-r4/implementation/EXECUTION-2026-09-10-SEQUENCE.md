@@ -64,6 +64,9 @@ reprodutível.
   recebe prefixos distintos para ambiente/célula (`dev-cell-a`, `hom-cell-a` e
   `dev-cell-b`). O laboratório de célula única ainda não qualifica entrega
   runtime entre ambientes/células.
+- Readiness de provisionamento: PASS integrado local; sem headroom
+  qualificado, o onboarding fica em `PROVISIONING`, não cria placement ativo e
+  reconciliação repetida mantém uma única solicitação de provisionamento.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos
