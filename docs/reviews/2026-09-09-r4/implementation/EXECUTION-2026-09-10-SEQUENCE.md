@@ -44,6 +44,10 @@ reprodutível.
 - Dependência opcional: PASS local; Alloy ficou indisponível, Órbita e Cometa
   mantiveram readiness/liveness e os demais workloads não sofreram cascata de
   reinícios. O runner restaurou Alloy antes de terminar.
+- Provedor fora: PASS local; o provider-sim foi interrompido, a tentativa SYNC
+  retornou 504 sem anunciar sucesso, o GET preservou o protocolo e a concessão
+  ficou fechada para transporte com pendência externa. Os demais containers não
+  reiniciaram; o provider foi restaurado e a fixture reconciliada por 404.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos
