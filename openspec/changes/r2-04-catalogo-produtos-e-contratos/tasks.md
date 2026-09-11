@@ -41,7 +41,7 @@ Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação t�
   - Validation: Teste de domínio/contrato dos limites de R2-CAT-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Agregação paralela limitada
+- [x] 2.3 Agregação paralela limitada
   - Objective: Entregar o comportamento R2-CAT-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CAT-03, CAT-05, CAT-08, EXE-13.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/migrations/control`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.

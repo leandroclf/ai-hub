@@ -12,8 +12,10 @@ import (
 
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/dispatch"
+	"ai-hub/hub/internal/libra"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/queue"
+	_ "github.com/lib/pq"
 )
 
 func TestProductPlanPersistsDependenciesAndConsolidatesAfterAllSteps(t *testing.T) {
@@ -271,6 +273,147 @@ func TestProductOptionalFailureFinalizesPartialWithDurableStepStates(t *testing.
 	if states != "A:SUCCEEDED,B:FAILED" {
 		t.Fatalf("durable optional step states=%s", states)
 	}
+}
+
+func TestProductOptionalFailurePublishesEligibleFinanceFacts(t *testing.T) {
+	coreDSN := os.Getenv("R2_CORE_TEST_DSN")
+	financeDSN := os.Getenv("R2_FINANCE_DSN")
+	if coreDSN == "" || financeDSN == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN and R2_FINANCE_DSN")
+	}
+	coreDB, err := sql.Open("postgres", coreDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer coreDB.Close()
+	financeDB, err := sql.Open("postgres", financeDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer financeDB.Close()
+	if err = coreDB.Ping(); err != nil {
+		t.Fatal(err)
+	}
+	if err = financeDB.Ping(); err != nil {
+		t.Fatal(err)
+	}
+
+	cell := "product-finance-cell-" + idgen.New()
+	t.Setenv("CELL_ID", cell)
+	ctx := context.Background()
+	core := NewStore(coreDB)
+	finance := libra.NewStore(financeDB)
+	now := time.Now().UTC()
+	protocolID := idgen.New()
+	tenant := "product-finance-tenant-" + idgen.New()
+	commands := []dispatch.Command{
+		productTestCommand(protocolID, tenant, cell, "A", "service-a", now),
+		productTestCommand(protocolID, tenant, cell, "B", "service-b", now),
+	}
+	economicSnapshot := json.RawMessage(`{"contract_id":"product-partial-sale-v1","version":1,"currency":"BRL","settlement_party":"HUB","buy":[{"meter":"step-success","amount":"0.2","incidence":["SUCCEEDED"],"unit_scope":"STEP"}],"sell":[{"meter":"product","amount":"1","incidence":["PARTIALLY_SUCCEEDED"],"unit_scope":"PROTOCOL"}]}`)
+	for i := range commands {
+		commands[i].EconomicSnapshot = economicSnapshot
+	}
+	plan := ProductPlan{TargetID: "product-partial-finance", TargetVersion: 1, MaxParallel: 2, AllowPartial: true, Consolidation: "ALL_REQUIRED", FailurePolicy: "STOP", Steps: []ProductPlanStep{
+		{StepID: "A", ServiceID: "service-a", ServiceVersion: 1, Required: true, CommandID: commands[0].CommandID},
+		{StepID: "B", ServiceID: "service-b", ServiceVersion: 1, Required: false, CommandID: commands[1].CommandID},
+	}}
+	p := Protocol{ProtocolID: protocolID, TenantID: tenant, ApplicationID: "app", CellID: cell, IdempotencyKey: "partial-finance-key", RequestHash: "partial-finance-hash", RequestBody: json.RawMessage(`{"marker":"input"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: commands[0].CommandID, Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	if _, created, err := core.AdmitProduct(ctx, p, commands, plan, "fixture", false); err != nil || !created {
+		t.Fatalf("admit product: created=%v err=%v", created, err)
+	}
+	defer func() {
+		coreDB.Exec("DELETE FROM outbox WHERE aggregate_id=$1", protocolID)
+		coreDB.Exec("DELETE FROM orbita_fact_inbox WHERE protocol_id=$1", protocolID)
+		coreDB.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
+		coreDB.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+		coreDB.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
+		coreDB.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+	}()
+	for _, command := range commands {
+		intent, claimErr := core.ClaimIntent(ctx, cell, "publisher-"+command.StepID)
+		if claimErr != nil {
+			t.Fatal(claimErr)
+		}
+		if _, completeErr := core.CompleteIntent(ctx, intent, true); completeErr != nil {
+			t.Fatal(completeErr)
+		}
+	}
+	finalizer := NewFinalizer(core, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	consume := func(command dispatch.Command, kind string, response map[string]any, message string) error {
+		fact := operationFact{ProtocolID: protocolID, TenantID: tenant, ApplicationID: "app", CellID: cell, StepID: command.StepID, OperationID: command.CommandID, EvidenceID: idgen.New(), Kind: kind, ResponseBody: response, ErrorMessage: message}
+		payload, marshalErr := json.Marshal(fact)
+		if marshalErr != nil {
+			return marshalErr
+		}
+		envelope := queue.Envelope{EventID: idgen.New(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: payload}
+		raw, marshalErr := json.Marshal(envelope)
+		if marshalErr != nil {
+			return marshalErr
+		}
+		return core.ConsumeOperationFact(ctx, queue.ReceivedMessage{Envelope: envelope, RawBody: raw}, finalizer)
+	}
+	if err := consume(commands[0], "SUCCEEDED", map[string]any{"marker": "a"}, ""); err != nil {
+		t.Fatalf("consume required success: %v", err)
+	}
+	if err := consume(commands[1], "FAILED", map[string]any{"detail": "optional failure"}, "optional step failed"); err != nil {
+		t.Fatalf("consume optional failure: %v", err)
+	}
+
+	if _, err := financeDB.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,'2','BRL')`, tenant); err != nil {
+		t.Fatal(err)
+	}
+	if err := finance.ReserveExact(ctx, tenant, protocolID, "1", "BRL"); err != nil {
+		t.Fatal(err)
+	}
+	applyCost := func(command dispatch.Command, kind, status string) error {
+		payload, marshalErr := json.Marshal(map[string]any{
+			"protocol_id": protocolID, "tenant_id": tenant, "operation_id": command.CommandID, "step_id": command.StepID,
+			"status": status, "kind": kind, "evidence_id": idgen.New(), "occurred_at": now,
+			"economic_snapshot": json.RawMessage(economicSnapshot),
+		})
+		if marshalErr != nil {
+			return marshalErr
+		}
+		envelope := queue.Envelope{EventID: idgen.New(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: payload}
+		return finance.ProcessEnvelope(ctx, "cost", envelope)
+	}
+	if err := applyCost(commands[0], "SUCCEEDED", "SUCCEEDED"); err != nil {
+		t.Fatalf("apply eligible cost: %v", err)
+	}
+	if err := applyCost(commands[1], "FAILED", "FAILED"); err != nil {
+		t.Fatalf("apply ineligible cost: %v", err)
+	}
+
+	var finalPayload []byte
+	if err := coreDB.QueryRowContext(ctx, `SELECT payload FROM outbox WHERE aggregate_id=$1 AND event_type='protocol.finalized'`, protocolID).Scan(&finalPayload); err != nil {
+		t.Fatal(err)
+	}
+	finalEnvelope := queue.Envelope{EventID: idgen.New(), Type: "protocol.finalized", SchemaVersion: 1, Producer: "orbita", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: finalPayload}
+	if err := finance.ProcessEnvelope(ctx, "revenue", finalEnvelope); err != nil {
+		t.Fatalf("apply finalized revenue: %v", err)
+	}
+	var costFacts, revenueFacts, ledgerEntries int
+	if err := financeDB.QueryRowContext(ctx, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND kind='COST'`, tenant).Scan(&costFacts); err != nil {
+		t.Fatal(err)
+	}
+	if err := financeDB.QueryRowContext(ctx, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND kind='REVENUE'`, tenant).Scan(&revenueFacts); err != nil {
+		t.Fatal(err)
+	}
+	if err := financeDB.QueryRowContext(ctx, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, tenant).Scan(&ledgerEntries); err != nil {
+		t.Fatal(err)
+	}
+	if costFacts != 1 || revenueFacts != 1 || ledgerEntries != 4 {
+		t.Fatalf("financial incidence cost=%d revenue=%d ledger=%d, want 1/1/4", costFacts, revenueFacts, ledgerEntries)
+	}
+	var reservationState string
+	if err := financeDB.QueryRowContext(ctx, `SELECT state FROM reservations WHERE tenant_id=$1 AND protocol_id=$2`, tenant, protocolID).Scan(&reservationState); err != nil {
+		t.Fatal(err)
+	}
+	if reservationState != "CAPTURED" {
+		t.Fatalf("reservation state=%s, want CAPTURED", reservationState)
+	}
+	t.Logf("core final outbox consumed by Libra: protocol=%s status=PARTIALLY_SUCCEEDED cost_facts=%d revenue_facts=%d ledger_entries=%d reservation=%s; optional FAILED step generated no cost fact", protocolID, costFacts, revenueFacts, ledgerEntries, reservationState)
 }
 
 func productTestCommand(protocolID, tenant, cell, step, serviceID string, accepted time.Time) dispatch.Command {

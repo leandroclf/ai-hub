@@ -1,0 +1,25 @@
+AI Hub R4 — evidência R2-CAT-03-S02 — 2026-09-11
+
+Comando:
+R2_CORE_TEST_DSN=postgres://hub:r2-local-fixture@127.0.0.1:15432/hub_core?sslmode=disable \
+R2_FINANCE_DSN=postgres://hub:r2-local-fixture@127.0.0.1:15432/hub_finance?sslmode=disable \
+AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test AWS_SESSION_TOKEN=test AWS_REGION=us-east-1 \
+go test -race -count=1 -v ./internal/orbita -run TestProductOptionalFailurePublishesEligibleFinanceFacts
+
+Resultado:
+=== RUN   TestProductOptionalFailurePublishesEligibleFinanceFacts
+    product_store_test.go:416: core final outbox consumed by Libra: protocol=<UUID sanitizado> status=PARTIALLY_SUCCEEDED cost_facts=1 revenue_facts=1 ledger_entries=4 reservation=CAPTURED; optional FAILED step generated no cost fact
+--- PASS: TestProductOptionalFailurePublishesEligibleFinanceFacts (0.23s)
+PASS
+
+Oráculos:
+- produto composto persistido em PostgreSQL com etapa A obrigatória SUCCEEDED e etapa B opcional FAILED;
+- finalização do Orbita publicou protocol.finalized na outbox real;
+- Libra consumiu o evento terminal pelo envelope de receita do Orbita;
+- a regra de compra por STEP com incidência SUCCEEDED gerou exatamente um fato COST para A;
+- B com incidência FAILED não gerou fato COST;
+- a regra de venda por PROTOCOL com incidência PARTIALLY_SUCCEEDED gerou exatamente um fato REVENUE;
+- os dois fatos produziram quatro lançamentos balanceados e a reserva do protocolo foi CAPTURED.
+
+Classificação: PASS_INTEGRADO_LOCAL.
+Limite: a prova usa PostgreSQL e contratos locais do laboratório; não substitui homologação comercial, carga prolongada ou qualificação de produção.
