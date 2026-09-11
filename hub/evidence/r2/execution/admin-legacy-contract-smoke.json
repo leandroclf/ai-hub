@@ -1,0 +1,30 @@
+[
+  {
+    "check": "Perfil técnico expõe input/output JSON e polling persistidos",
+    "status": "PASS",
+    "resource": "profile-r4-json/1"
+  },
+  {
+    "check": "Oferta publicada conserva rotas polling e callback",
+    "status": "PASS",
+    "resource": "offer-r4-async/1",
+    "routes": [
+      "prov-poll-1",
+      "prov-poll-2",
+      "prov-callback-1"
+    ],
+    "provider_modes": [
+      "async_callback",
+      "async_poll",
+      "async_poll"
+    ]
+  },
+  {
+    "check": "GET do protocolo e detalhe do webhook expõem o mesmo corpo final",
+    "status": "PASS",
+    "protocol": "01a09075-f9e2-7003-8717-f86a731af566",
+    "delivery": "00f2740f-a836-4e4b-bbc8-9a6dc2570e54",
+    "body_sha256": "213b9e591da8860912889d3e04ac7ea219021de6fc10fa3cf7d1001edc98e885",
+    "marker": "protocol_id"
+  }
+]

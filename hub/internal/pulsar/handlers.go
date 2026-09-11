@@ -192,6 +192,33 @@ func (h *Handlers) deliveries(w http.ResponseWriter, r *http.Request) {
 		auth.Error(w, 405, "method_not_allowed")
 		return
 	}
+	if id != "" {
+		var deliveryID, protocol, state, hash string
+		var dest sql.NullString
+		var version sql.NullInt64
+		var count int
+		var next time.Time
+		var representation []byte
+		err := h.store.db.QueryRowContext(r.Context(), `SELECT delivery_id,protocol_id,state,attempts_count,next_attempt_at,destination_id,destination_version,body_sha256,representation FROM deliveries WHERE tenant_id=$1 AND delivery_id::text=$2`, tenant, id).Scan(&deliveryID, &protocol, &state, &count, &next, &dest, &version, &hash, &representation)
+		if err == sql.ErrNoRows {
+			auth.Error(w, 404, "not_found")
+			return
+		}
+		if err != nil {
+			auth.Error(w, 503, "deliveries_unavailable")
+			return
+		}
+		var destinationID any
+		if dest.Valid {
+			destinationID = dest.String
+		}
+		var destinationVersion any
+		if version.Valid {
+			destinationVersion = version.Int64
+		}
+		respond(w, 200, map[string]any{"delivery_id": deliveryID, "protocol_id": protocol, "tenant_id": tenant, "state": state, "attempts_count": count, "next_attempt_at": next, "destination_id": destinationID, "destination_version": destinationVersion, "body_sha256": hash, "representation": string(representation)})
+		return
+	}
 	limit := 25
 	if v := r.URL.Query().Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
@@ -236,14 +263,6 @@ func (h *Handlers) deliveries(w http.ResponseWriter, r *http.Request) {
 	}
 	if rows.Err() != nil {
 		auth.Error(w, 503, "deliveries_unavailable")
-		return
-	}
-	if id != "" {
-		if len(items) != 1 {
-			auth.Error(w, 404, "not_found")
-			return
-		}
-		respond(w, 200, items[0])
 		return
 	}
 	next := ""

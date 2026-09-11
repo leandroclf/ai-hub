@@ -174,6 +174,7 @@ R2-ADM-06-S02;PASS_INTEGRADO_LOCAL;admin-integration-health-smoke.json — rota�
 R2-ADM-06-S03;PASS_INTEGRADO_LOCAL;admin-integration-health-smoke.json — saúde de r4-sync mostrou limite efetivo 5, teto 8, latência, transportes, pendências, motivo UNAVAILABLE e evidência da política
 R2-ADM-07-S02;PASS_INTEGRADO_LOCAL;admin-technical-policy-smoke.json — perfil técnico com retry_ttl=300s e SLA=30s exibiu TTL efetivo de 28s sem sugerir renovação
 R2-ADM-07-S03;PASS_INTEGRADO_LOCAL;admin-technical-policy-smoke.json — perfil com SYNC e provedor async_poll foi bloqueado com erro de incompatibilidade explícito
+R2-ADM-07-S01;PASS_INTEGRADO_LOCAL;admin-legacy-contract-smoke.json — Chromium confirmou perfil JSON com polling, oferta com rotas polling/callback e o mesmo corpo final exposto no GET do protocolo e no detalhe do webhook
 R2-ADM-08-S02;PASS_INTEGRADO_LOCAL;admin-protocol-scope-smoke.json — detalhe de protocolo com final_body materializado não chamou provider-sim e manteve effects/protocols inalterados
 R2-ADM-08-S03;PASS_INTEGRADO_LOCAL;admin-protocol-scope-smoke.json — leitor tenant_reader tentou beta, mas a requisição efetiva foi normalizada para tenant_id=acme sem revelar registros alheios
 R2-ADM-10-S02;PASS_INTEGRADO_LOCAL;admin-sla-freshness-smoke.json — painel exibiu generated_at, watermark_at e atraso observado de 63077.047s, mantendo o aviso de que atraso não significa ausência de violações
