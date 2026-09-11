@@ -330,4 +330,20 @@ de sucesso e expiração com a mesma versão esperada. O lock e a condição de
 versão do PostgreSQL permitiram somente uma transição terminal, com
 `result_version=1`, `version=1` e um único `protocol.finalized`; nesta rodada,
 o vencedor observado foi `EXPIRED`. O resultado não é usado como prova do
-cenário de commit lento na fronteira exata do deadline.
+ cenário de commit lento na fronteira exata do deadline.
+
+### Cache de projeção Atlas em indisponibilidade — 11/09/2026
+
+O ensaio `atlas-outage-runtime-latest.json` aqueceu uma oferta pelo caminho
+HTTP real da Órbita, parou somente o serviço `atlas` do Compose oficial e
+submeteu uma nova admissão ASYNC para a mesma combinação de tenant, aplicação,
+serviço e conta. A admissão retornou `202/ACCEPTED` e permaneceu durável no
+PostgreSQL. Após o TTL de 30 segundos, uma nova tentativa durante a mesma
+indisponibilidade foi recusada com `403/offer_not_eligible`; o Atlas foi
+restaurado pelo `finally` da prova.
+
+Esse resultado promove R2-CAT-06-S02 para `PASS_INTEGRADO_LOCAL` e complementa
+a prova unitária de resolução seletiva. O limite é intencional: a projeção de
+oferta é cacheada, mas a política atual não cacheia a resolução de credencial
+para preservar revogação emergencial; portanto o ensaio qualifica resolução e
+admissão durante a indisponibilidade, não execução posterior com o Atlas fora.

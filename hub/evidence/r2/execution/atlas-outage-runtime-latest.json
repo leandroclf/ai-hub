@@ -1,0 +1,23 @@
+[
+  {
+    "check": "Warm-up stores a valid offer projection through the real admission path",
+    "status": "PASS",
+    "protocol": "01a0917f-2358-701c-a801-f75aefc0c0aa",
+    "final_status": "SUCCEEDED"
+  },
+  {
+    "check": "Eligible admission reuses a valid local projection while Atlas is unavailable",
+    "status": "PASS",
+    "protocol": "01a0917f-3565-7a8b-8f6f-71b2e67a8129",
+    "http_status": 202,
+    "accepted_status": "ACCEPTED",
+    "durable_status": "ACCEPTED",
+    "limitation": "A continuidade qualificada neste cenário é a resolução/admissão com projeção válida; a execução posterior ainda depende da política de credencial sem cache."
+  },
+  {
+    "check": "Expired projection is rejected while Atlas remains unavailable",
+    "status": "PASS",
+    "http_status": 403,
+    "error_code": "offer_not_eligible"
+  }
+]
