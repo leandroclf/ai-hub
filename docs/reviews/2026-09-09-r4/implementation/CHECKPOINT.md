@@ -52,6 +52,11 @@ foi coberta com PostgreSQL fechado, e o RLS cross-tenant foi revalidado nas trê
 bases. A implementação local está corrigida, mas réplica atrasada e writer
 alternativo regional continuam fora do perfil de laboratório.
 
+R2-DAD-05/2.5 foi promovido como comportamento local implementado: o restore
+isolado compara contagens e digests, bloqueia egress/readmissão durante a
+reconciliação e consulta o oráculo externo sem replay. A prova de falha
+regional/fencing de R2-DAD-05-S03 permanece aberta.
+
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A

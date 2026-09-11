@@ -13,6 +13,7 @@
 | `catalog-migration-rollback-latest.log` | R2-CAT-04.1: em três bancos temporários, a migration aditiva converteu dois serviços legados em drafts com IDs/proveniência preservados; recuo suspendeu v2, manteve v1 e um protocolo aceito com snapshot v1; replay idempotente: PASS | Bancos temporários PostgreSQL locais; não substitui rollback de versão publicada em ambiente produtivo ou recuperação regional |
 | `r2-dad-03-runtime-latest.log` | R2-DAD-03-S01/S02/S03: retenção por classe com pin, expurgo auditado com tombstone, falha de storage reconciliável e replay antigo deduplicado sem novo efeito: PASS em PostgreSQL/LocalStack | Fixture local; retenção regional, arquivamento produtivo e continuidade multi-região permanecem fora |
 | `r2-dad-04-read-authority-latest.log` | R2-DAD-04: custódia local de representação e indisponibilidade da autoridade retornando 503 explícito, além de RLS cross-tenant em control/core/finance: PASS | Réplica atrasada, writer alternativo regional e HA de leitura permanecem fora |
+| `restore-reconciliation-latest.log` | R2-DAD-05-S01/S02 no perfil local: bancos e objetos restaurados em alvo isolado por contagem/digest, egress/readmissão bloqueados até confronto e oráculo externo observado sem replay: PASS | Não qualifica falha regional, PITR/AWS, réplica atrasada ou fencing de produção; R2-DAD-05-S03 permanece aberto |
 
 ## Atualização da rodada R4 — 10/09/2026
 
