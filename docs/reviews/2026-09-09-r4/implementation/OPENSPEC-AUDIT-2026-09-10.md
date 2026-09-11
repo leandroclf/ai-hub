@@ -47,10 +47,12 @@ textual isolada.
 - Inventário de fonte: `generate-openspec-inventory.py` derivou 201 requisitos e
   732 cenários das 29 specs, recusando duplicidades e registrando o digest
   `sha256:363db7fd0613b909c75beaeb9eb7dfe1e3cb52c8f4ecbbbbb697241e381dde9b`.
-- Fronteira administrativa: Atlas e Libra agora rejeitam principal de workload
-  ou sessão sem MFA mesmo com escopo compatível; operações financeiras de
-  escrita exigem `hub_admin`. Os testes novos passaram em RED→GREEN e a suíte
-  Go completa, race dos módulos críticos e `go vet` permaneceram verdes.
+- Fronteira administrativa: Atlas, Libra e Pulsar agora rejeitam principal de
+  workload ou sessão sem MFA mesmo com escopo compatível. O Atlas confronta
+  papel e permissão da ação, a escrita financeira exige `hub_admin` e o Pulsar
+  limita redelivery/publicação a `tenant_operator` ou `hub_admin`. Os testes
+  passaram em RED→GREEN e a suíte Go completa, race dos módulos críticos e
+  `go vet` permaneceram verdes.
 - Rastreamento integral: `generate-openspec-results.py` gerou 732 linhas a
   partir do inventário; 36 foram associados às evidências existentes e 696
   receberam `NAO_QUALIFICADO_NESTA_RODADA`. O resultado não é aprovação dos

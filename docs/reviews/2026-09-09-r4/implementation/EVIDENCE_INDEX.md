@@ -16,7 +16,7 @@ limites arquiteturais.
 | `hub/internal/cometa/capacity.go` + executor/poller/reconciliation + `hub/internal/pulsar/worker.go` | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS`, reconciliação e `FETCH` de webhook; fencing validado antes da autenticação e do I/O externo; budget efetivo limitado por snapshot, contexto, lease e margem |
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` + `custody_test.go` | Snapshot de destino webhook e orçamento de entrega | PASS de teste PostgreSQL; versão aceita é congelada, entrega usa o snapshot persistido e o permit é encerrado com sinal/evidência |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
-| `hub/internal/atlas/catalog_handlers.go` + `hub/internal/libra/handlers.go` | Fronteira administrativa Atlas/Libra | PASS local; rotas administrativas exigem sessão humana com MFA, papel administrativo e bloqueiam workload; escritas financeiras exigem `hub_admin`, com regressão unitária/integrada |
+| `hub/internal/atlas/catalog_handlers.go` + `hub/internal/atlas/imports.go` + `hub/internal/libra/handlers.go` + `hub/internal/pulsar/handlers.go` | Fronteira administrativa Atlas/Libra/Pulsar | PASS local; rotas exigem sessão humana com MFA, papel compatível com a ação e bloqueiam workload; publicação e escritas financeiras exigem `hub_admin`, redelivery/destino exigem operador ou `hub_admin`, com regressão unitária/integrada |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
 | `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; 12 ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
 | `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
@@ -81,8 +81,11 @@ histórico está ausente, preservando a confirmação durável.
 As rotas administrativas Atlas, Libra e Pulsar também foram endurecidas: principal de
 workload ou sessão sem MFA não alcança a administração mesmo com escopo
 compatível; as escritas financeiras exigem adicionalmente o papel `hub_admin`.
-O comportamento foi reproduzido por testes RED→GREEN e validado na suíte Go
-completa, race dos módulos críticos e `go vet`.
+No Atlas, o papel também é confrontado com a permissão da ação; publicação e
+escrita financeira não são concedidas a leitores. No Pulsar, redelivery e
+publicação de destino exigem `tenant_operator` ou `hub_admin`. O comportamento
+foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race dos
+módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
 fonte: 732 cenários, dos quais 36 possuem resultado/evidência já registrada e
