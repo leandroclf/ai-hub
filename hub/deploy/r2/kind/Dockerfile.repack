@@ -1,0 +1,5 @@
+# Reempacota imagens locais para o runtime kind quando o registry externo não
+# está acessível e a imagem original contém manifestos/attestations que o
+# containerd do laboratório não consegue importar.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}

@@ -200,8 +200,8 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-21 Concluir e requalificar R3-OPE-02 — Kind completo e ambientes reprodutíveis.
-  - Objective: Kind/overlays não mudaram; dependências ligadas a Compose não equivalem a cluster completo.
-  - Likely files/components: hub/deploy/r2/kind/render-runtime.py, hub/deploy/r2/k8s/base/workloads.yaml, hub/deploy/r2/k8s/overlays/prd/kustomization.yaml.
+  - Objective: O perfil independente do Kind materializa dependências cluster-owned e foi qualificado localmente; permanecem fora deste gate a IaC dos ambientes remotos e a HA regional contratada.
+  - Likely files/components: hub/deploy/r2/kind/bootstrap-independent.sh, hub/deploy/r2/kind/render-independent-dependencies.py, hub/deploy/r2/kind/render-runtime.py, hub/deploy/r2/k8s/base/workloads.yaml, hub/deploy/r2/k8s/overlays/prd/kustomization.yaml.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.

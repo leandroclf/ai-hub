@@ -13,6 +13,12 @@ O relatório detalhado, com comandos, limites e proveniência, está em
 [`EXECUTION-2026-09-10.md`](EXECUTION-2026-09-10.md). Os artefatos dinâmicos
 estão em `hub/evidence/r2/execution/`.
 
+O laboratório Kind também foi qualificado em perfil independente: o bootstrap
+carrega as imagens offline, executa migrações/reconciliação OIDC e materializa
+dependências, UI e gateway dentro do cluster. O gate de continuidade removeu
+controladamente um pod de Cometa e um de Pulsar, observando retorno a 2/2 em
+4,453 ms e 4,481 ms.
+
 Na requalificação posterior, a suíte Go normal e com `-race`, o build do
 portal, Playwright, RLS, carga autorizada e restore passaram novamente. O
 bootstrap passou a preservar os IPs descobertos das fixtures após o build; as
@@ -45,8 +51,8 @@ custo/receita, inbox e journal balanceado no workload autorizado.
 Este resultado não declara conclusão integral dos 201 requisitos/732 cenários
 nem homologação de produção. O backlog herdado do R4-04 ainda contém cortes
 arquiteturais abertos, incluindo DAG conectado, capacidade e budgets em todo
-I/O, fencing geral, financeiro/webhooks/FileRefs completos, kind independente
-de Compose, telemetria bilateral e matriz integral. O estado detalhado permanece em
+I/O, fencing geral, financeiro/webhooks/FileRefs completos, telemetria bilateral,
+IaC/HA regional e matriz integral. O estado detalhado permanece em
 `REQUIREMENTS_STATUS.csv`, `SCENARIO_RESULTS.csv`, `CHECKPOINT.md` e
 `OPENSPEC-AUDIT-2026-09-10.md`; nenhum desses itens foi fechado somente por
 documentação.

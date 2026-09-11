@@ -1,0 +1,26 @@
+logging {
+  level  = "info"
+  format = "json"
+}
+
+otelcol.receiver.otlp "hub" {
+  grpc { endpoint = "0.0.0.0:4317" }
+  http { endpoint = "0.0.0.0:4318" }
+  output { traces = [otelcol.processor.batch.hub.input] }
+}
+
+otelcol.processor.batch "hub" {
+  send_batch_size     = 128
+  send_batch_max_size = 256
+  timeout             = "2s"
+  output { traces = [otelcol.exporter.otlp.tempo.input] }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls { insecure = true }
+  }
+  sending_queue { queue_size = 128 }
+  retry_on_failure { max_elapsed_time = "10s" }
+}

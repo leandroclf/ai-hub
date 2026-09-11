@@ -1,0 +1,20 @@
+AI Hub R2 — restore/reconciliação local — 2026-09-11
+Comando: R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual1 bash hub/deploy/r2/tests/restore-reconciliation.sh
+
+control.catalog_resources count=54 digest=0a4eece70c71a16e5f59ded24dd2d665
+control.catalog_publications count=19 digest=c19411070e091d85e77f50bf4d2afbf2
+core.protocols count=218 digest=5a4f3c1095d5eff6a1cc856784756b7d
+core.operations count=183 digest=9ab9b3095d106ad56288c0f3ebae67dc
+core.attempts count=231 digest=2bba2e74e83069c5d67c71c6345f9e82
+core.callback_inbox count=38 digest=9700391275bb087be09ad30c033d00d3
+core.deliveries count=0 digest=d41d8cd98f00b204e9800998ecf8427e
+core.outbox count=420 digest=3aba2cdaa025c33e9ed0f1c46a4cdec6
+finance.economic_facts count=803 digest=26946a49e99d336229595d210804764f
+finance.reservations count=92 digest=bdb20c7740dedfa1e66fdf4ad37eb90d
+finance.ledger_entries count=1604 digest=be70a5f83609a6c2988087ac2e626162
+finance.finance_inbox count=1208 digest=220f9cce60546a70877554c3cc65c481
+finance.finance_snapshots count=676 digest=ab77277bbd64c1f7afbe38723c2f1642
+restore objects: 0
+external effect oracle before reconciliation: {"effects":8,"protocols":8}
+RESTORE_RECONCILIATION=PASS databases=control,core,finance suffix=r4_20260911qual1 bucket=r2-custody-restore-r4-20260911qual1
+The provider oracle was observed without replay; re-admission remains disabled during restore.

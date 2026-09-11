@@ -19,7 +19,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Redis opcional | Compose profile `cache`, `redis-cli ping` e `INFO keyspace` | PASS; `PONG`, keyspace vazio; Cometa permanece sem dependência autoritativa de Redis e sem token persistido |
 | Ofertas | consulta `LIMIT 2` + `EXPLAIN (ANALYZE, BUFFERS)` | PASS de caminho; índice parcial `catalog_offer_eligibility_lookup` confirmado quando o planner usa índice; catálogo pequeno pode escolher seq scan por custo |
 | Restore | `R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual2 bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
-| Kind/HA | cluster `ai-hub-r2`, três nós, réplicas e exclusão controlada de pods | PASS local; Atlas, Órbita, Cometa, Pulsar e Libra recuperaram réplicas em workers distintos; métricas, HPA e KEDA disponíveis |
+| Kind/HA | `hub/deploy/r2/kind/bootstrap-independent.sh` + `continuity-runtime-proof.sh` | PASS local independente; PostgreSQL, LocalStack, Keycloak, Alloy, provider-sim, webhook-sink, observabilidade, Kong e UI materializados no cluster; cinco workloads em duas réplicas; Cometa/Pulsar recuperados após exclusão controlada com RTO observado de 4,453 ms/4,481 ms |
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
@@ -63,7 +63,8 @@ provedores reais, AWS regional, multi-célula ou produção.
 Ainda permanecem fora do fechamento integral, entre outros, o executor de DAG
 conectado ao atendimento, capacidade adaptativa e budgets em todo I/O,
 integração completa de FileRefs/financeiro/webhooks, fencing geral de efeito
-incerto, projeção de catálogo em escala, dependências próprias do kind sem
-endpoints Compose e a matriz integral de requisitos/cenários.
+incerto, projeção de catálogo em escala e a matriz integral de
+requisitos/cenários. O perfil Kind independente fecha o gate local de
+dependências e endpoints; não substitui IaC/HA regional dos ambientes remotos.
 Esses itens continuam marcados como abertos no backlog R4 e não foram
 convertidos em PASS por inferência a partir desta execução local.

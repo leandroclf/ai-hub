@@ -45,9 +45,11 @@
 
 ## Bloqueios e limites ainda reproduzíveis
 
-- O kind local ainda resolve Postgres, LocalStack, IdP, telemetria, provider e
-  sink por Endpoints apontados para containers do Compose; isso é um laboratório
-  integrado, não um cluster independente de produção.
+- O perfil Kind independente agora materializa Postgres, LocalStack, IdP,
+  telemetria, provider, sink, gateway e UI dentro do cluster, sem Endpoints
+  apontados ao Compose. O perfil Compose-linked continua disponível para
+  compatibilidade. Ambos são laboratórios locais: não constituem HA regional,
+  volumes duráveis ou IaC dos ambientes remotos.
 - O OpenSpec strict `21/21` valida a forma das changes, mas não encerra as
   tarefas funcionais nem os 25 itens herdados de R4-04.
 - Permanecem sem homologação provedores comerciais, AWS regional, decisões

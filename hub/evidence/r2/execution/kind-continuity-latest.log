@@ -1,0 +1,16 @@
+AI Hub R2 — qualificação local Kind independente — 2026-09-11
+Comando: R2_KIND_NAMESPACE=ai-hub-local-kind R2_REQUIRE_KIND_OWNED_DEPS=1 R2_CONTINUITY_DELETE_PODS=1 bash hub/deploy/r2/tests/continuity-runtime-proof.sh
+
+KIND_INDEPENDENT_BOOTSTRAP=PASS namespace=ai-hub-local-kind dependencies=cluster-owned workloads=5 ui=admin-ui gateway=kong
+Jobs: hub-migrate=Complete; identity-reconcile=Complete
+Dependências: postgres=10.244.2.30; localstack=10.244.1.26; identity=10.244.1.27; alloy=10.244.2.27; provider-sim=10.244.2.17; webhook-sink=10.244.1.19
+Porta administrativa alternativa para não conflitar com o Compose: admin-ui 23000->8080; identity 28085->8080; Kong 28000->8000.
+Admin UI estática: HTTP 200.
+OIDC discovery: PASS; issuer interno/externo da fixture retornado.
+Kong sem credencial: HTTP 401; nenhuma rota administrativa foi aceita anonimamente.
+
+pod_recovery workload=cometa rto_ms=4453 available=2/2
+pod_recovery workload=pulsar rto_ms=4481 available=2/2
+CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
+
+Limites: Kind continua sendo laboratório local; os volumes são efêmeros, não representam multi-AZ, e RPO é coberto pelo gate de restore por digest, não por uma promessa de réplica regional.
