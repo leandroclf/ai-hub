@@ -89,7 +89,7 @@ R2-CAT-01-S03;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogP
 R2-CAT-02-S01;PASS_INTEGRADO_LOCAL;offer-resolution-runtime-latest.json — Atlas resolveu oferta publicada para app-acme/serviço assíncrono e selecionou prov-poll-2 com prioridade, versão, vínculo e hash registrados
 R2-CAT-02-S02;PASS_INTEGRADO_LOCAL;offer-resolution-runtime-latest.json — conta prov-sync-1 fora da oferta foi recusada por HTTP 403/offer_not_eligible antes do efeito e o escopo cross-tenant também foi recusado
 R2-CAT-02-S03;PASS_INTEGRADO_LOCAL;offer-resolution-runtime-latest.json — ofertas negativas com SLA/modalidade incompatíveis e vínculo de credencial divergente receberam field_errors específicos e permaneceram em DRAFT, sem ativação
-R2-CAT-03-S03;PASS_UNITARIO;r2-cat-dad-qualification.log — TestDAGContract rejeita fan-out acima do limite autorizado
+R2-CAT-03-S03;PASS_INTEGRADO_LOCAL;admin-product-simulation-smoke.json — Chromium criou rascunho com 21 etapas, a autoridade retornou valid=false/"máximo de 20 passos" antes da publicação e provider-sim não sofreu efeitos
 R2-CAT-04-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestProductPlanPersistsDependenciesAndConsolidatesAfterAllSteps mantém C pendente até A/B e materializa o mapeamento
 R2-CAT-04-S02;PASS_UNITARIO;r2-cat-dad-qualification.log — TestDAGContract rejeita ciclos e referências inválidas
 R2-CAT-04-S03;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestProductPlanCompensationIsASeparateTrackedOperation cria compensação rastreável sem rollback fictício

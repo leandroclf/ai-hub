@@ -99,7 +99,7 @@ Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação t�
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-CAT-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-CAT-03 com oráculos independentes
   - Objective: Executar R2-CAT-03-S01, R2-CAT-03-S02, R2-CAT-03-S03. Caso indispensável: Fan-out abusivo; esperado: configuração/pedido é recusado antes de exceder recursos de outros clientes.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/atlas`; `hub/internal/atlasclient`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.

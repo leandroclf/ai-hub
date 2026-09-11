@@ -2,22 +2,37 @@
   {
     "check": "Admin product simulation shows parallel/dependent graph and tabular order without provider effects",
     "status": "PASS",
-    "product": "browser-product-simulation-1789134715461",
+    "product": "browser-product-simulation-1789146821745",
     "layers": "Após o grupo anterior: etapa_a, etapa_b\nApós o grupo anterior: etapa_c",
     "fixture": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls",
     "provider_effects_before": {
-      "effects": 0,
-      "protocols": 0
+      "effects": 3,
+      "protocols": 3
     },
     "provider_effects_after": {
-      "effects": 0,
-      "protocols": 0
+      "effects": 3,
+      "protocols": 3
     }
   },
   {
     "check": "Admin product validation identifies cycle members and blocks publication",
     "status": "PASS",
-    "product": "browser-product-simulation-1789134715461",
+    "product": "browser-product-simulation-1789146821745",
     "error": "ciclo entre passos: etapa_a, etapa_c"
+  },
+  {
+    "check": "Admin rejects product fan-out above the authorized limit before publication or external effects",
+    "status": "PASS",
+    "product": "browser-product-fanout-1789146822941",
+    "steps": 21,
+    "error": "máximo de 20 passos",
+    "provider_effects_before": {
+      "effects": 3,
+      "protocols": 3
+    },
+    "provider_effects_after": {
+      "effects": 3,
+      "protocols": 3
+    }
   }
 ]
