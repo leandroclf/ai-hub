@@ -1,0 +1,15 @@
+R2-EXE-06-S04 — resultado tardio custoso
+Data: 2026-09-11
+Ambiente: PostgreSQL local migrado, Orbita e Libra
+Teste: TestLateCostlyResultKeepsErrorRepresentationAndFinanceContest
+
+Resultado observado:
+- final técnico recebido depois do client_deadline_at foi arbitrado como EXPIRED/SLA_EXCEEDED;
+- GET e a representação persistida para o webhook conservaram o erro e não expuseram o resultado tardio;
+- Libra recebeu a confirmação externa tardia e registrou somente o custo elegível de 0,20000000 BRL;
+- nenhuma receita de sucesso foi criada;
+- uma contestação com evidência do final expirado foi registrada;
+- o diário financeiro permaneceu balanceado com duas entradas.
+
+Oráculo: PASS_INTEGRADO_LOCAL
+Limitação: o ensaio usa PostgreSQL local e não substitui homologação comercial, regional ou relógio distribuído.

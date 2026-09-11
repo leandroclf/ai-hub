@@ -62,7 +62,7 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-05; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.5; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.6 Deadline por confirmação durável e final tardio
+- [x] 2.6 Deadline por confirmação durável e final tardio
   - Objective: Entregar o comportamento R2-EXE-06 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-11, EXE-12, FIN-10, OPE-10.
   - Likely files/components: `hub/internal/orbita/store.go`; `hub/internal/orbita/deadline_timer.go`; `hub/internal/orbita/finalize.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -127,7 +127,7 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.6 Qualificar R2-EXE-06 com oráculos independentes
+- [x] 3.6 Qualificar R2-EXE-06 com oráculos independentes
   - Objective: Executar R2-EXE-06-S01, R2-EXE-06-S02, R2-EXE-06-S03, R2-EXE-06-S04. Caso indispensável: Resultado tardio custoso; esperado: GET e webhook conservam o erro final; Libra considera apenas o custo elegível e a contestação.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/orbita/store.go`; `hub/internal/orbita/deadline_timer.go`.
   - Depends on: 2.6; fixtures de r2-09; dependências de integração pertinentes.

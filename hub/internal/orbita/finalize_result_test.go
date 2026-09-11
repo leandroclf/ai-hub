@@ -15,9 +15,11 @@ import (
 	"time"
 
 	"ai-hub/hub/internal/dispatch"
+	"ai-hub/hub/internal/libra"
 	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/queue"
 )
 
 type resultCatalogFixture struct {
@@ -174,6 +176,136 @@ func TestFinalizeLateSuccessBecomesExpired(t *testing.T) {
 		t.Fatalf("late success escaped as terminal success: status=%s body=%s", got.Status, got.FinalBody)
 	}
 	t.Logf("late success was arbitrated as EXPIRED with SLA_EXCEEDED and no provider result: protocol=%s", p.ProtocolID)
+}
+
+func TestLateCostlyResultKeepsErrorRepresentationAndFinanceContest(t *testing.T) {
+	coreDSN := os.Getenv("R2_CORE_TEST_DSN")
+	financeDSN := os.Getenv("R2_FINANCE_DSN")
+	if coreDSN == "" || financeDSN == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN and R2_FINANCE_DSN")
+	}
+	coreDB, err := sql.Open("postgres", coreDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer coreDB.Close()
+	financeDB, err := sql.Open("postgres", financeDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = financeDB.Close() })
+	if err = coreDB.Ping(); err != nil {
+		t.Fatal(err)
+	}
+	if err = financeDB.Ping(); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := context.Background()
+	core := NewStore(coreDB)
+	finance := libra.NewStore(financeDB)
+	now := time.Now().UTC()
+	tenant := "late-costly-" + idgen.New()
+	protocolID := idgen.New()
+	commandID := idgen.New()
+	economic := libra.Snapshot{
+		ContractID: "late-costly-v1", Version: 1, Currency: "BRL", SettlementParty: "HUB",
+		Buy:  []libra.PricingRule{{Meter: "external-execution", Amount: "0.2", Incidence: []string{"SUCCEEDED"}, UnitScope: "OPERATION"}},
+		Sell: []libra.PricingRule{{Meter: "customer-result", Amount: "1", Incidence: []string{"SUCCEEDED"}, UnitScope: "PROTOCOL"}},
+	}
+	economicRaw, _ := json.Marshal(economic)
+	p := Protocol{ProtocolID: protocolID, TenantID: tenant, ApplicationID: "app", CellID: "late-costly-cell", IdempotencyKey: "late-costly-key", RequestHash: "late-costly-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: commandID, Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: protocolID, TenantID: tenant, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: commandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"fixture":true}`), EconomicSnapshot: economicRaw, AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := core.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	coreCleanup := func() {
+		_, _ = coreDB.Exec("DELETE FROM outbox WHERE aggregate_id=$1", protocolID)
+		_, _ = coreDB.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+		_, _ = coreDB.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+	}
+	t.Cleanup(coreCleanup)
+	financeCleanup := func() {
+		_, _ = financeDB.Exec("DELETE FROM finance_disputes WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM finance_quarantine WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM finance_inbox WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM ledger_entries WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM economic_facts WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM finance_snapshots WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM reservations WHERE tenant_id=$1", tenant)
+		_, _ = financeDB.Exec("DELETE FROM credit_limits WHERE tenant_id=$1", tenant)
+	}
+	t.Cleanup(financeCleanup)
+	if _, err = coreDB.ExecContext(ctx, "UPDATE protocols SET client_deadline_at=clock_timestamp()-interval '1 second' WHERE protocol_id=$1", protocolID); err != nil {
+		t.Fatal(err)
+	}
+
+	finalizer := NewFinalizer(core, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if applied, err := finalizer.Finalize(ctx, "late-costly-trace", tenant, protocolID, 0, StatusSucceeded, FinalBody{Result: map[string]any{"provider_result": "late"}}, ""); err != nil || !applied {
+		t.Fatalf("late finalization: applied=%v err=%v", applied, err)
+	}
+	got, err := core.Get(ctx, tenant, protocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != StatusExpired || !strings.Contains(string(got.FinalBody), "SLA_EXCEEDED") || strings.Contains(string(got.FinalBody), "provider_result") {
+		t.Fatalf("resultado tardio escapou na consulta GET: status=%s body=%s", got.Status, got.FinalBody)
+	}
+
+	var finalPayload []byte
+	if err = coreDB.QueryRowContext(ctx, "SELECT payload FROM outbox WHERE aggregate_id=$1 AND event_type='protocol.finalized'", protocolID).Scan(&finalPayload); err != nil {
+		t.Fatal(err)
+	}
+	var finalFact ProtocolFinalizedFact
+	if err = json.Unmarshal(finalPayload, &finalFact); err != nil {
+		t.Fatal(err)
+	}
+	if finalFact.Status != string(StatusExpired) || !strings.Contains(string(finalFact.Representation), "SLA_EXCEEDED") || string(finalFact.Representation) != string(got.FinalRepresentation) {
+		t.Fatalf("representação para webhook divergiu do GET: status=%s representation=%s", finalFact.Status, finalFact.Representation)
+	}
+
+	if _, err = financeDB.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,'2','BRL')`, tenant); err != nil {
+		t.Fatal(err)
+	}
+	if err = finance.ReserveExact(ctx, tenant, protocolID, "1", "BRL"); err != nil {
+		t.Fatal(err)
+	}
+	lateCost := libra.EconomicEvent{ProtocolID: protocolID, TenantID: tenant, OperationID: idgen.New(), AttemptID: idgen.New(), Status: "SUCCEEDED", Kind: "SUCCEEDED", EvidenceID: idgen.New(), OccurredAt: now, EconomicSnapshot: economic}
+	lateCostPayload, _ := json.Marshal(lateCost)
+	if err = finance.ProcessEnvelope(ctx, "cost", queue.Envelope{EventID: idgen.New(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: lateCostPayload}); err != nil {
+		t.Fatalf("custo tardio elegível: %v", err)
+	}
+	lateRevenue := libra.EconomicEvent{ProtocolID: protocolID, TenantID: tenant, OperationID: lateCost.OperationID, Status: "EXPIRED", Kind: "EXPIRED", EvidenceID: finalFact.EvidenceID, OccurredAt: now, ExternalState: "SUCCEEDED", SafeToRelease: true, EconomicSnapshot: economic}
+	lateRevenuePayload, _ := json.Marshal(lateRevenue)
+	if err = finance.ProcessEnvelope(ctx, "revenue", queue.Envelope{EventID: finalFact.EventID, Type: "protocol.finalized", SchemaVersion: 1, Producer: "orbita", TenantID: tenant, ProtocolID: protocolID, OccurredAt: finalFact.OccurredAt, RecordedAt: finalFact.OccurredAt, Payload: lateRevenuePayload}); err != nil {
+		t.Fatalf("final expirado na receita: %v", err)
+	}
+
+	costFacts, err := finance.Facts(ctx, tenant, "COST", 0, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	revenueFacts, err := finance.Facts(ctx, tenant, "REVENUE", 0, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(costFacts) != 1 || costFacts[0].Amount != "0.20000000" || len(revenueFacts) != 0 {
+		t.Fatalf("incidência tardia incorreta: custos=%+v receitas=%+v", costFacts, revenueFacts)
+	}
+	if _, err = finance.Dispute(ctx, tenant, costFacts[0].ID, "0.2", "resultado tardio fora do SLA", finalFact.EvidenceID, "auditor-late"); err != nil {
+		t.Fatalf("contestação do custo tardio: %v", err)
+	}
+	var disputes, ledgerEntries int
+	if err = financeDB.QueryRowContext(ctx, "SELECT count(*) FROM finance_disputes WHERE tenant_id=$1", tenant).Scan(&disputes); err != nil {
+		t.Fatal(err)
+	}
+	if err = financeDB.QueryRowContext(ctx, "SELECT count(*) FROM ledger_entries WHERE tenant_id=$1", tenant).Scan(&ledgerEntries); err != nil {
+		t.Fatal(err)
+	}
+	if disputes != 1 || ledgerEntries != 2 {
+		t.Fatalf("contestação/razão financeira inesperadas: disputes=%d ledger_entries=%d", disputes, ledgerEntries)
+	}
+	t.Logf("resultado tardio custoso: GET/webhook preservaram EXPIRED/SLA_EXCEEDED, Libra registrou somente custo de 0.2 BRL e uma contestação, sem receita de sucesso")
 }
 
 func TestFinalizeCommitCrossingDeadlineDoesNotEscapeAsSuccess(t *testing.T) {
