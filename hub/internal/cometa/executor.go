@@ -50,13 +50,14 @@ type Executor struct {
 	capacity   *CapacityController
 	selfURL    string
 	tokenCache *providerauth.TokenCache
+	adapters   *AdapterRegistry
 }
 
 // NewExecutor cria um Executor. selfURL e a base URL publica deste
 // Cometa, usada para montar o endereco de callback informado ao
 // provedor simulado em modo async_callback.
 func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, selfURL string, tokenCache *providerauth.TokenCache) *Executor {
-	return &Executor{store: store, atlas: atlas, log: log, clients: egress.NewPool(egress.FromEnv()), selfURL: selfURL, tokenCache: tokenCache}
+	return &Executor{store: store, atlas: atlas, log: log, clients: egress.NewPool(egress.FromEnv()), selfURL: selfURL, tokenCache: tokenCache, adapters: AdapterRegistryFromEnv()}
 }
 
 // SetCapacityController conecta a autoridade global de capacidade ao caminho
@@ -154,6 +155,9 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	target, err := atlas.DecodeCatalogData(snapshot.Target)
 	if err != nil || target.AdapterID == "" {
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "adapter_not_qualified"}
+	}
+	if !e.adapters.Supports(target.AdapterID) {
+		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactRejected, ErrorCode: "adapter_unavailable"}
 	}
 
 	cred, err := e.atlas.BoundCredential(ctx, cmd.TenantID, snapshot.Binding.ID, snapshot.Binding.Version)

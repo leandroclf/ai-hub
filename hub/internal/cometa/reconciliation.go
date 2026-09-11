@@ -101,6 +101,9 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if err != nil || target.AdapterID == "" {
 		return dispatch.Result{}, errors.New("reconciliation adapter unavailable")
 	}
+	if !e.adapters.Supports(target.AdapterID) {
+		return dispatch.Result{}, ErrAdapterUnavailable
+	}
 	var pa struct {
 		BaseURL            string `json:"base_url"`
 		ProviderMode       string `json:"provider_mode"`

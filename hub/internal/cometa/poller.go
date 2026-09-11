@@ -85,6 +85,9 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil || target.AdapterID == "" {
 		return unknown("poll_adapter_unavailable")
 	}
+	if !e.adapters.Supports(target.AdapterID) {
+		return unknown("poll_adapter_unavailable")
+	}
 	var pa atlasclient.ProviderAccount
 	if json.Unmarshal(snap.Account.Data, &pa) != nil || snap.Account.ID != c.Command.ProviderAccountID {
 		return unknown("poll_account_invalid")
