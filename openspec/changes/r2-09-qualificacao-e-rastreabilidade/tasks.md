@@ -1,29 +1,29 @@
 # Tasks: Qualificação por requisito e evidência reproduzível
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.
+Status: **preparação e evidências parciais concluídas**. A revisão atualiza o snapshot, contratos compartilhados e fixtures isoladas; os comportamentos e a qualificação integral permanecem abertos. A matriz atual contém 732 cenários, com 230 associados a resultados/evidências e 502 `NAO_QUALIFICADO_NESTA_RODADA`. Dependências de change: Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `openspec/changes/hub-interoperabilidade-v4`; `IMPLEMENTATION_AUDIT.md`; `hub/test/e2e/e2e_test.go`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
-  - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
+  - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação. Evidência: `docs/reviews/2026-09-09-r4/implementation/OPENSPEC-AUDIT-2026-09-10.md`, `INVENTORY-732-CENARIOS.csv` e `RESULT-MATRIX-732-CENARIOS.csv` no SHA atual.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `openspec/changes/hub-interoperabilidade-v4`; `IMPLEMENTATION_AUDIT.md`; `hub/test/e2e/e2e_test.go`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
-  - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
+  - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1. Evidência: revisão dos contratos `hub/api/openapi.yaml`, `openapi-internal.yaml` e `asyncapi.yaml`, com validação OpenSpec strict 21/21 e provas de contrato registradas no índice de evidências.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `openspec/changes/hub-interoperabilidade-v4`; `IMPLEMENTATION_AUDIT.md`; `hub/test/e2e/e2e_test.go`.
   - Depends on: 1.2.
   - Validation: Aplicação em ambiente limpo e existente, rollback compatível, validação de unicidade/proveniência; não editar migration aplicada.
-  - Completion criteria: Estrutura suporta as regras sem perda de histórico; para UI/qualificação, registrar explicitamente ausência de mudança de esquema quando confirmada.
+  - Completion criteria: Estrutura suporta as regras sem perda de histórico; para UI/qualificação, registrar explicitamente ausência de mudança de esquema quando confirmada. Evidência: migrações aditivas e provas de recuo em `hub/evidence/r2/execution`, com fixtures de qualificação separadas do volume oficial.
 
 ## 2. Comportamentos
 

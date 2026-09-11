@@ -8,13 +8,13 @@
   - Completion criteria: cada achado tem estado atual verificável.
 
 ## 2. R4-QUA-01 — Inventário integral e evidência coerente com o conteúdo
-- [ ] 2.1 Fixar contrato e reproduzir contraexemplos.
+- [x] 2.1 Fixar contrato e reproduzir contraexemplos.
   - Objective: tornar F-R4-10 observável sem enfraquecer regra.
   - Likely files/components: docs/reviews/2026-09-08-r3/implementation/SCENARIO_RESULTS.csv, docs/reviews/2026-09-08-r3/implementation/FINAL_REPORT.md, docs/reviews/2026-09-08-r3/implementation/CHECKPOINT.md.
   - Depends on: 1.1.
   - Validation: R4-QUA-01-S01/S02/S03 e regressão herdada.
   - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
-- [ ] 2.2 Implementar fluxo, dados e integração.
+- [x] 2.2 Implementar fluxo, dados e integração.
   - Objective: A engenharia SHALL gerar inventário diretamente de todas as specs, preservar os 696 cenários herdados e acrescentar R4 sem omissões. Relatório/checkpoint/matrizes devem ser consistentes e vinculados a commit+hash de conteúdo/digests. PASS exige resultado verificável; histórico e evidência do working tree devem ter proveniência distinguível.
   - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
   - Depends on: 2.1 e dependências do backlog R4.
@@ -224,7 +224,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-25 Concluir e requalificar R3-QUA-01 — Qualificação integral do SHA sem skips ocultos.
-  - Objective: OpenSpec strict 21/21, build, vet, race, browser determinístico, carga autorizada, RLS e restore passam nesta iteração; a matriz integral tem 732 linhas explícitas, com 133 cenários associados a resultados/evidências e 599 marcados `NAO_QUALIFICADO_NESTA_RODADA`; Browser Harness continua exploratório e skips/gaps arquiteturais permanecem explícitos.
+  - Objective: OpenSpec strict 21/21, build, vet, race, browser determinístico, carga autorizada, RLS e restore passam nesta iteração; a matriz integral tem 732 linhas explícitas, com 230 cenários associados a resultados/evidências e 502 marcados `NAO_QUALIFICADO_NESTA_RODADA`; Browser Harness continua exploratório e skips/gaps arquiteturais permanecem explícitos.
   - Likely files/components: hub/internal/atlas/catalog_test.go, hub/internal/cometa/custody_test.go, docs/reviews/2026-09-07-r2/implementation/FINAL_REPORT.md.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.

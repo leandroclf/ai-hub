@@ -128,8 +128,8 @@ nem homologação de produção. O backlog herdado do R4-04 ainda contém cortes
 arquiteturais abertos, incluindo provedor comercial, carga e budgets completos
 em todo I/O, fencing geral, financeiro/webhooks/FileRefs produtivos, telemetria
 bilateral, IaC/HA regional e qualificação dos cenários sem evidência. A matriz
-integral de rastreabilidade está em `RESULT-MATRIX-732-CENARIOS.csv`: 143 linhas
-estão associadas a resultados existentes e 589 permanecem
+integral de rastreabilidade está em `RESULT-MATRIX-732-CENARIOS.csv`: 230 linhas
+estão associadas a resultados existentes e 502 permanecem
 `NAO_QUALIFICADO_NESTA_RODADA`. O estado detalhado permanece em
 `REQUIREMENTS_STATUS.csv`, `SCENARIO_RESULTS.csv`, `RESULT-MATRIX-732-CENARIOS.csv`, `CHECKPOINT.md` e
 `OPENSPEC-AUDIT-2026-09-10.md`; nenhum desses itens foi fechado somente por

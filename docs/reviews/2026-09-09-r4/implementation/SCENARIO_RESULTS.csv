@@ -165,7 +165,7 @@ R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação com
 R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
 R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;generate-openspec-inventory.py derivou 201 requisitos e 732 cenários das 29 specs, sem IDs duplicados e com digest de fonte
-R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 143 resultados associados e 589 explicitamente NAO_QUALIFICADO_NESTA_RODADA
+R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 230 resultados associados e 502 explicitamente NAO_QUALIFICADO_NESTA_RODADA
 R4-QUA-01-S03;PARCIAL;matriz e digest de fonte registrados; hash final do working tree permanece dependente do commit e do artefato de proveniência da rodada
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes
