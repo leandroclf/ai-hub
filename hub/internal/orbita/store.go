@@ -237,8 +237,9 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 	res, err := tx.ExecContext(ctx, `
 		UPDATE protocols
 		SET status = $1, final_body = $2, terminal_reason = NULLIF($3, ''), final_event_id = $4,
-		    final_representation=$7, final_sha256=$8, final_media_type='application/json', finalized_at = now(), result_version = result_version + 1, version = version + 1, updated_at = now()
+		    final_representation=$7, final_sha256=$8, final_media_type='application/json', finalized_at = clock_timestamp(), result_version = result_version + 1, version = version + 1, updated_at = clock_timestamp()
 		WHERE protocol_id = $5 AND version = $6 AND status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		  AND ($1 NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED') OR clock_timestamp() < client_deadline_at)
 	`, string(p.Status), body, p.TerminalReason, p.FinalEventID, p.ProtocolID, p.ExpectedVersion, representation, hex.EncodeToString(sum[:]))
 	if err != nil {
 		return false, fmt.Errorf("orbita: finalizar protocolo: %w", err)
@@ -248,6 +249,17 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 		return false, err
 	}
 	if rows == 0 {
+		// A condição de prazo pode perder a corrida entre a leitura acima e a
+		// atualização. Diferencie esse caso de uma finalização concorrente para
+		// que o chamador materialize EXPIRED, sem publicar sucesso tardio.
+		if p.Status == StatusSucceeded || p.Status == StatusPartiallySucceeded {
+			var currentStatus string
+			var currentVersion int
+			var currentDeadline, currentNow time.Time
+			if scanErr := tx.QueryRowContext(ctx, "SELECT status,version,client_deadline_at,clock_timestamp() FROM protocols WHERE protocol_id=$1", p.ProtocolID).Scan(&currentStatus, &currentVersion, &currentDeadline, &currentNow); scanErr == nil && currentVersion == p.ExpectedVersion && currentStatus != string(StatusSucceeded) && currentStatus != string(StatusPartiallySucceeded) && currentStatus != string(StatusFailed) && currentStatus != string(StatusExpired) && currentStatus != string(StatusCancelled) && !currentNow.Before(currentDeadline) {
+				return false, ErrResultLate
+			}
+		}
 		// Ja finalizado por outro caminho (ex.: deadline concorrente) —
 		// nao ha segunda transicao terminal (EXE-11).
 		return false, nil
