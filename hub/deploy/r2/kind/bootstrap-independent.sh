@@ -29,6 +29,24 @@ else
   "$kind_bin" export kubeconfig --name ai-hub-r2 --kubeconfig "$kubeconfig"
 fi
 
+# O perfil independente deve preparar os operadores que seus manifests
+# declaram. Sem estes CRDs, um cluster novo falha somente no apply do
+# ScaledObject e deixa um laboratório parcialmente materializado. Os
+# manifestos e versões são fixos no diretório de ferramentas para permitir
+# reexecuções idempotentes; métricas-server usa TLS inseguro apenas no kind.
+metrics_server_manifest="$tool_dir/metrics-server.yaml"
+keda_manifest="$tool_dir/keda.yaml"
+if [[ ! -s "$metrics_server_manifest" ]]; then
+  curl -fsSL https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.7.2/components.yaml -o "$metrics_server_manifest"
+fi
+if [[ ! -s "$keda_manifest" ]]; then
+  curl -fsSL https://github.com/kedacore/keda/releases/download/v2.17.2/keda-2.17.2.yaml -o "$keda_manifest"
+fi
+"${kubectl_cmd[@]}" apply -f "$metrics_server_manifest"
+"${kubectl_cmd[@]}" -n kube-system patch deployment metrics-server --type=strategic -p '{"spec":{"template":{"spec":{"containers":[{"name":"metrics-server","args":["--cert-dir=/tmp","--secure-port=10250","--kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname","--kubelet-use-node-status-port","--metric-resolution=15s","--kubelet-insecure-tls"]}]}}}}'
+"${kubectl_cmd[@]}" apply --server-side -f "$keda_manifest"
+"${kubectl_cmd[@]}" wait --for=condition=Established crd/scaledobjects.keda.sh --timeout=180s
+
 apply_configmap_file() {
   local name=$1 key=$2 file=$3
   "${kubectl_cmd[@]}" -n "$namespace" create configmap "$name" --from-file="$key=$file" --dry-run=client -o yaml | "${kubectl_cmd[@]}" apply -f -
