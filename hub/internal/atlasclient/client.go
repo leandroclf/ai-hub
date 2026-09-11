@@ -13,14 +13,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
 	"time"
 )
 
 // Offer resolves a published, tenant/application scoped snapshot. Authorization
 // decisions are never served past the validity returned by its owner.
-func (c *Client) Offer(ctx context.Context, tenant, application, service, account string) (atlas.OfferSnapshot, error) {
-	q := url.Values{"tenant_id": {tenant}, "application_id": {application}, "service_code": {service}, "provider_account_id": {account}}
+func (c *Client) Offer(ctx context.Context, tenant, application, service string, serviceVersion int, account string) (atlas.OfferSnapshot, error) {
+	q := url.Values{"tenant_id": {tenant}, "application_id": {application}, "service_code": {service}, "service_version": {strconv.Itoa(serviceVersion)}, "provider_account_id": {account}}
 	var out atlas.OfferSnapshot
 	_, err := c.getJSON(ctx, "/v1/offers/resolve?"+q.Encode(), &out)
 	if err == nil && (!time.Now().Before(out.ValidUntil) || out.Hash == "") {

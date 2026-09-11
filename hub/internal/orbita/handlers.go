@@ -151,6 +151,10 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "invalid_mode", "mode deve ser SYNC, ASYNC ou AUTO")
 		return
 	}
+	if req.ServiceVersion < 1 {
+		writeErr(w, http.StatusBadRequest, "invalid_service_version", "service_version deve ser inteiro positivo")
+		return
+	}
 	req.Mode = mode
 
 	// Hash semantico de idempotencia (EXE-01): nao inclui
@@ -199,7 +203,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		fileRefs = append(fileRefs, ref)
 	}
-	snapshot, err := h.atlas.Offer(ctx, tenantID, principal.ApplicationID, req.ServiceCode, req.ProviderAccountID)
+	snapshot, err := h.atlas.Offer(ctx, tenantID, principal.ApplicationID, req.ServiceCode, req.ServiceVersion, req.ProviderAccountID)
 	if err != nil {
 		writeErr(w, 403, "offer_not_eligible", "oferta publicada indisponível para aplicação e serviço")
 		return

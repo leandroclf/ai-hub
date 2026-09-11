@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"reflect"
 	"sort"
+	"strconv"
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
@@ -31,11 +32,14 @@ type OfferSnapshot struct {
 	ValidUntil       time.Time  `json:"valid_until"`
 }
 
-func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service, account string) (OfferSnapshot, error) {
+func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service string, serviceVersion int, account string) (OfferSnapshot, error) {
+	if serviceVersion < 1 {
+		return OfferSnapshot{}, ErrNotFound
+	}
 	// Resolve no banco pelo conjunto elegível. O LIMIT 2 é intencional:
 	// basta distinguir zero, uma oferta ou ambiguidade, sem materializar o
 	// portfólio inteiro no caminho crítico.
-	resources, err := s.listEligibleOffers(ctx, tenant, application, service, account)
+	resources, err := s.listEligibleOffers(ctx, tenant, application, service, serviceVersion, account)
 	if err != nil {
 		return OfferSnapshot{}, err
 	}
@@ -113,14 +117,14 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service, 
 	return snapshot, nil
 }
 
-func (s *Store) listEligibleOffers(ctx context.Context, tenant, application, service, account string) ([]Resource, error) {
+func (s *Store) listEligibleOffers(ctx context.Context, tenant, application, service string, serviceVersion int, account string) ([]Resource, error) {
 	rows, err := s.db.QueryContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources
 		WHERE kind='offers' AND state='PUBLISHED' AND (tenant_id=$1 OR tenant_id='')
-		  AND data->>'application_id'=$2 AND data->>'target_id'=$3
+		  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
 		  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
 		  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
-		  AND ($4='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$4))
-		ORDER BY id,version LIMIT 2`, tenant, application, service, account)
+		  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
+		ORDER BY id,version LIMIT 2`, tenant, application, service, strconv.Itoa(serviceVersion), account)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +170,12 @@ func (h *Handlers) handleOfferResolve(w http.ResponseWriter, r *http.Request) {
 		auth.Error(w, 403, "application_outside_scope")
 		return
 	}
-	snapshot, err := h.store.ResolveOffer(r.Context(), tenant, application, r.URL.Query().Get("service_code"), r.URL.Query().Get("provider_account_id"))
+	serviceVersion, err := strconv.Atoi(r.URL.Query().Get("service_version"))
+	if err != nil || serviceVersion < 1 {
+		writeErr(w, http.StatusBadRequest, "invalid_service_version", "service_version deve ser inteiro positivo")
+		return
+	}
+	snapshot, err := h.store.ResolveOffer(r.Context(), tenant, application, r.URL.Query().Get("service_code"), serviceVersion, r.URL.Query().Get("provider_account_id"))
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			writeErr(w, 403, "offer_not_eligible", "nenhuma oferta elegível para aplicação, serviço e conta")
