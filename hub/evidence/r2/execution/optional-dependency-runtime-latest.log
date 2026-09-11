@@ -1,0 +1,8 @@
+OPTIONAL_DEPENDENCY_PROOF=START
+service=atlas id_unchanged=true restart_count_before=0 restart_count_after=0
+service=pulsar id_unchanged=true restart_count_before=0 restart_count_after=0
+service=libra id_unchanged=true restart_count_before=0 restart_count_after=0
+service=provider-sim id_unchanged=true restart_count_before=0 restart_count_after=0
+service=webhook-sink id_unchanged=true restart_count_before=0 restart_count_after=0
+alloy_status=exited alloy_probe_http=000 ready=1 live=1 unaffected_workloads=1
+OPTIONAL_DEPENDENCY_PROOF=PASS dependency=telemetry workload_restart_cascade=false

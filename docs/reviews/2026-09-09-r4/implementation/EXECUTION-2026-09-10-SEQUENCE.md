@@ -41,6 +41,9 @@ reprodutível.
   distintos e referências de segredo sem valores materializados. O gate bloqueou
   `prd` sem perfil/aprovações P-01/P-08/P-10 e permitiu `dev`; o isolamento
   cross-environment com IdP e credenciais efetivas ainda é parcial.
+- Dependência opcional: PASS local; Alloy ficou indisponível, Órbita e Cometa
+  mantiveram readiness/liveness e os demais workloads não sofreram cascata de
+  reinícios. O runner restaurou Alloy antes de terminar.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos
