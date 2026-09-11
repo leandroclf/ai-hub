@@ -31,7 +31,7 @@ também foram repetidos com resultado PASS.
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A
-matriz agora possui 142 resultados associados e 590 cenários explicitamente não
+matriz agora possui 143 resultados associados e 589 cenários explicitamente não
 qualificados. A prova estrutural de R3-OPE-02-S03 renderizou os cinco overlays
 Kustomize e confirmou imagens fixadas, namespaces determinísticos e ausência de
 modo local no `prd`; ela não promove os cenários de máquina limpa ou recriação

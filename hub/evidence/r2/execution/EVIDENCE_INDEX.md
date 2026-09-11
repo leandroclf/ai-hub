@@ -21,6 +21,7 @@
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
 | `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789127362271`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
+| `compose-recreation-latest.log` + `product-http-latest.log` | R2-OPE-01-S02: recriação sem reset | PASS; Atlas foi recriado sem remoção de volumes, catálogo/protocolos preservaram contagens e a jornada HTTP voltou a concluir (`r4-product-http-1789129264735`) |
 | `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
 | `browser-smoke.json` | PASS; portal persiste e relê mapeamento de entrada entre etapas e a API retorna HTTP 401 após logout sem credencial | Não substitui matriz completa de autorização e negativos |
 | `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
