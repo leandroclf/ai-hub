@@ -48,13 +48,13 @@
   - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
 
 ## 4. R4-OPE-03 — Consulta de oferta seletiva sem materializar o portfólio
-- [ ] 4.1 Fixar contrato e reproduzir contraexemplos.
+- [x] 4.1 Fixar contrato e reproduzir contraexemplos.
   - Objective: tornar F-R4-09 observável sem enfraquecer regra.
   - Likely files/components: hub/internal/atlas/offers.go, hub/internal/atlas/catalog.go, hub/internal/atlasclient/client.go.
   - Depends on: 1.1.
   - Validation: R4-OPE-03-S01/S02/S03 e regressão herdada.
   - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
-- [ ] 4.2 Implementar fluxo, dados e integração.
+- [x] 4.2 Implementar fluxo, dados e integração.
   - Objective: O Hub SHALL resolver pelo conjunto elegível indexado de tenant/aplicação/alvo/versão/vigência, sem materializar catálogo inteiro por pedido, e usar projeção válida conforme a baseline. A prova de crescimento deve medir round-trips/memória/latência e ambiguidade verdadeira, não apenas capacidade de encontrar registro 101.
   - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
   - Depends on: 4.1 e dependências do backlog R4.

@@ -11,7 +11,12 @@ válido durante indisponibilidade do resolver, isolamento por binding/versão,
 limite de locks e cancelamento durante espera; a validação de cofre/AWS regional
 e crescimento sob tráfego produtivo ainda não foi realizada.
 0002_provider_auth.sql já existente na R2 foi alterada para API_KEY e header. O runner checksum-guardado para em 0002 de um banco previamente migrado, antes de executar a nova 0004. Comparação dos bytes/hashes comprova alteração; falha SQL integrada ainda não foi executada nesta auditoria.
-Paginação eliminou recusa acima de 100, mas agrega todas as páginas em resources antes de filtrar aplicação/serviço. Portanto CPU/memória/round-trips continuam proporcionais ao total de ofertas do tenant e o control plane ainda é consultado por pedido.
+O achado histórico de paginação que agregava todas as páginas antes de filtrar
+aplicação/serviço foi corrigido no HEAD atual: a resolução consulta o conjunto
+elegível diretamente no PostgreSQL, separa ofertas do tenant e globais para
+permitir uso do índice e limita a dois candidatos. A prova de crescimento sob
+tráfego produtivo, incluindo memória/latência e dependências comerciais, ainda
+permanece aberta.
 ## Context
 Brownfield do commit b9d0f90ce02aa0c27cad546745153d160ff5867f. A baseline tem 189 requisitos/696 cenários.
 ## Problem
