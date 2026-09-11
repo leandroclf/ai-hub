@@ -31,8 +31,11 @@ também foram repetidos com resultado PASS.
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A
-matriz agora possui 133 resultados associados e 599 cenários explicitamente não
-qualificados. Permanecem explícitos os gaps
+matriz agora possui 134 resultados associados e 598 cenários explicitamente não
+qualificados. A prova estrutural de R3-OPE-02-S03 renderizou os cinco overlays
+Kustomize e confirmou imagens fixadas, namespaces determinísticos e ausência de
+modo local no `prd`; ela não promove os cenários de máquina limpa ou recriação
+de nós. Permanecem explícitos os gaps
 arquiteturais do backlog herdado, dependências Compose no renderer do kind,
 ausência de homologação de provedores/AWS reais, carga prolongada/expiração de
 I/O e matriz integral ainda não fechada. O adapter REST foi qualificado somente

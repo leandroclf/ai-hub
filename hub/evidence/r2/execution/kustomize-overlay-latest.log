@@ -1,0 +1,10 @@
+KUSTOMIZE_OVERLAY_PROOF=START
+root=/home/leandro/IdeaProjects/lfsolucoes/ai-hub
+kubectl={   "clientVersion": {     "major": "1",     "minor": "32",     "gitVersion": "v1.32.3",     "gitCommit": "32cc146f75aad04beaaa245a7157eb35063a9f99",     "gitTreeState": "clean",     "buildDate": "2025-03-11T19:58:53Z",     "goVersion": "go1.23.6",     "compiler": "gc",     "platform": "linux/amd64"   },   "kustomizeVersion": "v5.5.0" }
+overlay=local-kind PASS namespace=ai-hub-local-kind resources=20 images=5 sha256=c27ba801d7bc9597f6b31f667934f5245171a9673af9dd66facf99570af0fd61
+overlay=dev PASS namespace=ai-hub-dev resources=20 images=5 sha256=7d451ab7213fc6f037b33e57281b6d12fa59bfedaf0da2390942ebf2f3cf168e
+overlay=hom PASS namespace=ai-hub-hom resources=20 images=5 sha256=a886a975be0b4a81b79a0f42dea942eafb585414623b1619cc48aca330acba29
+overlay=ppd PASS namespace=ai-hub-ppd resources=20 images=5 sha256=8b4b6254b1e23346a5c64d3154ce8b3b704c2075bcb13191db1a99013a61deb9
+overlay=prd PASS namespace=ai-hub-prd resources=20 images=5 sha256=607ef642e9b6a9ca93c23662e0daeb19c64d758b7e334c4748533d8de50d971c
+KUSTOMIZE_OVERLAY_PROOF=PASS overlays=5 production_local_mode=absent
+evidence=hub/evidence/r2/execution/kustomize-overlay-latest.log

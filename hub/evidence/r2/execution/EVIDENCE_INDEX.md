@@ -4,6 +4,7 @@
 
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
+| `kustomize-overlay-latest.log` | `hub/deploy/r2/tests/kustomize-overlay-proof.sh`: PASS estrutural; cinco overlays (`local-kind`, `dev`, `hom`, `ppd`, `prd`) renderizaram 20 recursos e cinco imagens fixadas, com namespaces determinísticos e modo local ausente em `prd` | Não aplica os manifests nem qualifica máquina limpa, recriação de nós ou dependências gerenciadas |
 | `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos (`r4-authorized-1789123114890`), `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
 | `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, editor de contrato REST declarativo, CRUD/readback, navegação, SLA, redelivery administrativo com recibo/auditoria durável, reconciliação segura sem correlação externa, destinos versionados, preparação financeira com bloqueio visual de autoaprovação, logout, leitor global cross-tenant com finalidade, `tenant_reader` sem mutações de destinos/protocolos/financeiro, HTTP 401 pós-logout e 390 px: PASS | Não substitui matriz completa de autorização nem entrega externa ponta a ponta |
 | Browser Harness | Runner instalado; com `BU_CDP_URL=http://127.0.0.1:9222` percorreu 16 rotas e viewport 390×844: `PASS-EXPLORATORY` | Descoberta automática do daemon headless continua indisponível; Playwright é o gate determinístico |

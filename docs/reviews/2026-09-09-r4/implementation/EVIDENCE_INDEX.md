@@ -38,6 +38,7 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/capacity-budget-latest.log` | Budget efetivo de I/O externo | PASS; snapshot de oferta, contexto, lease e margem limitam a janela; carga prolongada e provedor comercial continuam fora do gate local |
 | `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | `hub/evidence/r2/execution/kind-continuity-latest.log` | Kind independente, bootstrap offline, UI/gateway, dependências, perda controlada de Cometa/Pulsar | PASS; três nós, seis dependências cluster-owned, cinco workloads, Jobs de migração/OIDC, RTO observado de 4,453 ms/4,481 ms; volume efêmero de laboratório |
+| `hub/deploy/r2/tests/kustomize-overlay-proof.sh` + `hub/evidence/r2/execution/kustomize-overlay-latest.log` | R3-OPE-02-S03: renderização dos ambientes local-kind/dev/hom/ppd/prd | PASS estrutural; cada overlay renderiza 20 recursos e cinco imagens `ai-hub-r2-<serviço>:r2`, com namespace determinístico; o manifesto `prd` não contém modo local |
 | `hub/evidence/r2/execution/browser-harness-latest.log` | Browser Harness em CDP explícito | PASS-EXPLORATORY; 16 rotas e viewport 390×844, sem cloud auth ou gravação |
 | Kind `ai-hub-r2` compatibilidade Compose | Prontidão, métricas, HPA/KEDA e recuperação | PASS histórico do perfil Compose-linked; o perfil independente agora é o gate de continuidade principal |
 
@@ -59,7 +60,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 133 com evidência existente e 599 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 134 com evidência existente e 598 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -103,8 +104,8 @@ foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race do
 módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
-fonte: 732 cenários, dos quais 133 possuem resultado/evidência já registrada e
-599 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
+fonte: 732 cenários, dos quais 134 possuem resultado/evidência já registrada e
+598 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
 e não substitui a execução dos cenários restantes.
 
 Na continuação de 11/09/2026, `r2-int-exe-qualification.log` registrou as
