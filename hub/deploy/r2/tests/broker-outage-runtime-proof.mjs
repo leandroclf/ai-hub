@@ -129,11 +129,12 @@ try{
  const protocolID=admission.body?.protocol_id||'';
  const get=protocolID?await request(`${orbitaOrigin}/v1/protocols/${encodeURIComponent(protocolID)}`,{method:'GET',headers:{authorization:`Bearer ${token}`,'X-Tenant-Id':'acme'}}):{status:0,body:{},duration_ms:0};
  const persisted=sql(`SELECT status FROM protocols WHERE idempotency_key='${key}' AND tenant_id='acme' LIMIT 1`);
+ const finalizedOutbox=protocolID?sql(`SELECT count(*) FROM outbox WHERE aggregate_id='${protocolID}' AND event_type='protocol.finalized'`):'0';
  const logs=compose(['logs','--no-color','--since','90s','orbita','cometa']);
  const brokerUnavailable=/broker bootstrap unavailable|falha ao localizar fila|falha ao criar fila/i.test(logs);
  const brokerNotFatal=!/panic:|fatal error|server stopped/i.test(logs);
  result={
-  status:admission.status===200&&admission.body?.status==='SUCCEEDED'&&get.status===200&&get.body?.protocol_id===protocolID&&persisted==='SUCCEEDED'&&brokerUnavailable&&brokerNotFatal?'PASS':'FAIL',
+  status:admission.status===200&&admission.body?.status==='SUCCEEDED'&&get.status===200&&get.body?.protocol_id===protocolID&&persisted==='SUCCEEDED'&&finalizedOutbox==='1'&&brokerUnavailable&&brokerNotFatal?'PASS':'FAIL',
   profile:'r2-ope-06-s01-broker-outage',
   started_at:startedAt,
   finished_at:new Date().toISOString(),
@@ -142,7 +143,7 @@ try{
   workloads:{orbita_ready:true,cometa_ready:true,recreated_without_dependencies:true},
   sync:{http_status:admission.status,status:admission.body?.status||null,duration_ms:admission.duration_ms,protocol_id_observed:Boolean(protocolID)},
   get:{http_status:get.status,status:get.body?.status||null,duration_ms:get.duration_ms,protocol_id_observed:get.body?.protocol_id===protocolID},
-  persistence:{protocol_status:persisted},
+  persistence:{protocol_status:persisted,finalized_outbox:Number(finalizedOutbox)},
   oracle:{broker_error_observed:brokerUnavailable,process_remained_healthy:brokerNotFatal}
  };
 }finally{

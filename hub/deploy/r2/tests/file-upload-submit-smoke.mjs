@@ -90,13 +90,19 @@ try{
     state=sql(`SELECT status FROM protocols WHERE protocol_id='${protocolID}'`);
    }
    if(['SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED'].includes(state)){
-    sql(`DELETE FROM polling_schedule WHERE operation_id IN (SELECT operation_id FROM operations WHERE protocol_id='${protocolID}')`);
-    sql(`DELETE FROM attempts WHERE operation_id IN (SELECT operation_id FROM operations WHERE protocol_id='${protocolID}')`);
-    sql(`DELETE FROM operations WHERE protocol_id='${protocolID}'`);
-    sql(`DELETE FROM command_intents WHERE protocol_id='${protocolID}'`);
-    sql(`DELETE FROM orbita_fact_inbox WHERE protocol_id='${protocolID}'`);
-    sql(`DELETE FROM outbox WHERE aggregate_id='${protocolID}'`);
-    sql(`DELETE FROM protocols WHERE protocol_id='${protocolID}'`);
+    const pendingCapacity=Number(sql(`SELECT count(*) FROM capacity_permits p JOIN operations o ON o.operation_id=p.permit_id::uuid WHERE o.protocol_id='${protocolID}' AND p.pending_external`));
+    if(pendingCapacity>0){
+     protocolCleanupAllowed=false;
+     console.error(`cleanup protocolo preservado por obrigação externa pendente: ${protocolID} pending_capacity=${pendingCapacity}`);
+    }else{
+     sql(`DELETE FROM polling_schedule WHERE operation_id IN (SELECT operation_id FROM operations WHERE protocol_id='${protocolID}')`);
+     sql(`DELETE FROM attempts WHERE operation_id IN (SELECT operation_id FROM operations WHERE protocol_id='${protocolID}')`);
+     sql(`DELETE FROM operations WHERE protocol_id='${protocolID}'`);
+     sql(`DELETE FROM command_intents WHERE protocol_id='${protocolID}'`);
+     sql(`DELETE FROM orbita_fact_inbox WHERE protocol_id='${protocolID}'`);
+     sql(`DELETE FROM outbox WHERE aggregate_id='${protocolID}'`);
+     sql(`DELETE FROM protocols WHERE protocol_id='${protocolID}'`);
+    }
    }else{protocolCleanupAllowed=false;console.error(`cleanup protocolo preservado por não estar terminal: ${protocolID} state=${state}`)}
   }catch(error){protocolCleanupAllowed=false;console.error(`cleanup protocolo falhou: ${error.message}`)}
  }
