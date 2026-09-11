@@ -40,6 +40,7 @@
 | `continuity-runtime-proof.sh` | `PASS`: 3 nós, 5 workloads cluster-owned; reexecução mais recente com RTO Cometa 4398ms e Pulsar 4421ms | Ensaio Kind local; recriação de nó/contêiner Kind permanece fora |
 | `browser-smoke.json` | Execução mais recente: 24 verificações, 23 `PASS` e 1 `OBSERVED`, sem `FAIL`; inclui conflito concorrente `If-Match` com diff local/servidor | Não substitui matriz integral |
 | `admin-client-lifecycle-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; pendência de capacidade e suspensão com 1 protocolo `RUNNING` sintético | Fixture local; não substitui aprovação de capacidade cloud nem operação comercial |
+| `admin-import-preview-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; preview `STAGED`, diff de endpoints e `IMPORTED_NOT_EXECUTABLE` sem retenção de segredo | Não publica serviço nem qualifica adapter externo |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026

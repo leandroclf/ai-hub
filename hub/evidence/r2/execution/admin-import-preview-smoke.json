@@ -1,0 +1,13 @@
+[
+  {
+    "check": "Admin import preview shows sanitized existing/new endpoint diff without publication",
+    "status": "PASS",
+    "operations": 2,
+    "state": "STAGED"
+  },
+  {
+    "check": "Admin imported endpoint remains explicitly unavailable without adapter",
+    "status": "PASS",
+    "state": "IMPORTED_NOT_EXECUTABLE"
+  }
+]

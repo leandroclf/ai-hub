@@ -1,0 +1,8 @@
+{
+  "info": {"name": "AI Hub lifecycle fixture"},
+  "item": [
+    {"name": "endpoint existente", "request": {"method": "GET", "url": "https://partner.invalid/analise", "auth": {"type": "bearer"}}},
+    {"name": "endpoint novo", "request": {"method": "POST", "url": "https://partner.invalid/novo", "auth": {"type": "apikey"}}}
+  ],
+  "variable": [{"key": "token", "value": "segredo-que-nao-pode-ser-retido"}]
+}
