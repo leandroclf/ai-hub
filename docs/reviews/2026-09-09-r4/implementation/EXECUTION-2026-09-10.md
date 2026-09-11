@@ -11,7 +11,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Catálogo versionado | `node hub/deploy/r2/tests/catalog-seed.mjs` | PASS; seed idempotente via `admin/v1`, validação/publicação com `If-Match`, qualificação/célula sintéticas somente no fixture autorizado |
 | Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789118415310`) |
 | Callback | Carga acima + testes focados de inbox/validação terminal | PASS parcial; callback concluiu, ingress key/capability inválidos retornaram 401, deduplicação por capability, quota e retenção têm implementação e testes focados; cenários externos completos ainda abertos |
-| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, erro de JSON inválido sem falso sucesso, editor de contrato REST declarativo, filtro local de referências, criação/leitura durável, editor de produto com mapeamento, SLA, destinos versionados, navegação, logout, HTTP 401 pós-logout sem credencial, storage sem sessão persistida e viewport móvel sem overflow |
+| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, erro de JSON inválido sem falso sucesso, editor de contrato REST declarativo, filtro local de referências, criação/leitura durável, editor de produto com mapeamento, SLA, destinos versionados, navegação, logout, HTTP 401 pós-logout sem credencial, storage sem sessão persistida, viewport móvel sem overflow e `tenant_reader` sem formulário de escrita |
 | Entrega webhook com capacidade | `bash hub/deploy/r2/tests/webhook-capacity-runtime.sh` | PASS; worker Pulsar real entregou no sink local e encerrou o permit `r4-webhook` sem concessão aberta ou obrigação pendente; fixture removida ao final |
 | Incidência financeira integrada | `bash hub/deploy/r2/tests/finance-runtime-proof.sh` após carga autorizada | PASS; `SUBMITTED`/`STATUS` com `attempt_id`, fatos de custo/receita, inbox persistida, journal balanceado por moeda e zero quarentena de incidência inválida; log em `hub/evidence/r2/execution/finance-runtime-latest.log` |
 | Browser Harness | `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh` | PASS-EXPLORATORY; 16 rotas em viewport 390×844; descoberta automática do daemon headless requer CDP explícito |
@@ -162,6 +162,13 @@ O mesmo smoke validou a troca de identidade após logout OIDC com
 seguida, informa tenant e finalidade, consulta protocolo de outro tenant e
 abre seu detalhe sem receber ação de escrita. A finalidade é preservada na
 rota do detalhe/timeline e a API continua exigindo a mesma auditoria.
+
+Na mesma rodada, `leitor-a` consultou a página de destinos webhook com a
+permissão `deliveries:read`. O portal exibiu os destinos persistidos em modo
+somente leitura e não renderizou o formulário `Publicar versão`; a regra de
+escrita continua aplicada também pela API, que exige `deliveries:write`.
+Isso cobre a fronteira de autorização na experiência do usuário sem tratar a
+visibilidade da interface como substituta da autorização do servidor.
 
 O cliente HTTP administrativo também passou a rejeitar corpo vazio, JSON
 malformado ou tipo JSON incompatível, inclusive em respostas HTTP 200. O smoke

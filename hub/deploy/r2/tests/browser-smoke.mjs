@@ -176,6 +176,16 @@ try {
  if(unauthenticatedStatus!==401)throw new Error(`API administrativa sem sessão retornou HTTP ${unauthenticatedStatus}`);
  evidence.push({check:'R2-SEG-05-S02 logout revokes browser access to administrative API',status:'PASS',httpStatus:unauthenticatedStatus});
  evidence.push({check:'R2-SEG-05-S02 logout navigation',status:'OBSERVED',origin:new URL(page.url()).origin});
+ phase='leitor de tenant sem escrita de destinos';
+ await page.goto('http://localhost:13000/destinations');
+ await authenticate('leitor-a','http://localhost:13000/destinations');
+ await page.getByRole('heading',{name:'Destinos de webhook versionados',exact:true}).waitFor();
+ await page.getByRole('note').filter({hasText:'não pode publicar novas versões'}).waitFor();
+ if(await page.getByRole('button',{name:'Publicar versão',exact:true}).count())throw new Error('tenant_reader recebeu formulário de publicação de destino');
+ await page.getByRole('heading',{name:'Destinos persistidos',exact:true}).waitFor();
+ evidence.push({check:'Tenant reader sees destinations read-only and no write form',status:'PASS'});
+ await page.getByRole('button',{name:'Sair',exact:true}).click();
+ await page.waitForURL('http://localhost:13000/services',{timeout:5000});
  phase='leitor global cross-tenant';
  await page.goto('http://localhost:13000/protocols');
  await authenticate('auditor-global','http://localhost:13000/protocols');

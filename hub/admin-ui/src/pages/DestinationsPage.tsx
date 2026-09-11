@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
-import { api, command } from "../api/admin";
+import { api, command, Principal } from "../api/admin";
 import { Status, describeError } from "./shared";
 
 type Destination = {
@@ -25,11 +25,12 @@ const emptyForm = {
   reason: "publicação de destino versionado",
 };
 
-export default function DestinationsPage({ tenant }: { tenant: string }) {
+export default function DestinationsPage({ tenant, principal }: { tenant: string; principal: Principal }) {
   const [form, setForm] = useState(emptyForm);
   const [items, setItems] = useState<Destination[]>([]);
   const [status, setStatus] = useState<Status>(null);
   const [busy, setBusy] = useState(false);
+  const canWrite = principal.scopes.includes("deliveries:write");
 
   async function load() {
     setBusy(true);
@@ -86,7 +87,8 @@ export default function DestinationsPage({ tenant }: { tenant: string }) {
           O aceite congela URL, aplicação, referência do segredo e política de
           tentativas. A tela nunca recebe o segredo em claro.
         </p>
-        <form className="grid" onSubmit={publish}>
+        {!canWrite && <p role="note">Seu perfil pode consultar destinos autorizados, mas não pode publicar novas versões.</p>}
+        {canWrite && <form className="grid" onSubmit={publish}>
           <label>
             ID (vazio gera UUID)
             <input value={form.id} onChange={(e) => setForm({ ...form, id: e.target.value })} />
@@ -131,7 +133,7 @@ export default function DestinationsPage({ tenant }: { tenant: string }) {
             <input minLength={8} required value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
           </label>
           <button className="primary" type="submit" disabled={busy}>Publicar versão</button>
-        </form>
+        </form>}
       </section>
       {status && <p className={status.kind === "ok" ? "status-ok" : "status-error"}>{status.text}</p>}
       <section className="panel">

@@ -131,9 +131,10 @@ Use os gates nesta ordem quando a demanda envolver o portal:
 
    O smoke cobre OIDC/OTP, contrato REST declarativo, pesquisa local de
    referências, criação e readback durável, navegação autenticada, SLA,
-   publicação/readback de destino, ausência de token persistido, logout e
-   viewport de 390 px. A execução cria apenas dados sintéticos no laboratório;
-   não use contas ou endpoints reais.
+   publicação/readback de destino, distinção de formulário para
+   `tenant_reader`, ausência de token persistido, logout e viewport de 390 px.
+   A execução cria apenas dados sintéticos no laboratório; não use contas ou
+   endpoints reais.
 
 3. Browser Harness, quando a demanda exigir exploração visual, acessibilidade
    ou diagnóstico assistido. Ele é opcional, exploratório e não substitui o
