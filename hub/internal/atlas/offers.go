@@ -131,13 +131,21 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 }
 
 func (s *Store) listEligibleOffers(ctx context.Context, tenant, application, service string, serviceVersion int, account string) ([]Resource, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources
-		WHERE kind='offers' AND state='PUBLISHED' AND (tenant_id=$1 OR tenant_id='')
+	rows, err := s.db.QueryContext(ctx, `SELECT `+resourceColumns+` FROM (
+		SELECT `+resourceColumns+` FROM catalog_resources
+		WHERE kind='offers' AND state='PUBLISHED' AND tenant_id=$1
 		  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
 		  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
 		  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
 		  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
-		ORDER BY id,version LIMIT 2`, tenant, application, service, strconv.Itoa(serviceVersion), account)
+		UNION ALL
+		SELECT `+resourceColumns+` FROM catalog_resources
+		WHERE kind='offers' AND state='PUBLISHED' AND tenant_id=''
+		  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
+		  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
+		  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
+		  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
+	) eligible ORDER BY id,version LIMIT 2`, tenant, application, service, strconv.Itoa(serviceVersion), account)
 	if err != nil {
 		return nil, err
 	}
