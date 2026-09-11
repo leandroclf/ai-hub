@@ -130,7 +130,12 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 		return dispatch.Result{}, errors.New("reconciliation binding invalid")
 	}
 	endpoint := strings.TrimRight(pa.BaseURL, "/") + "/v1/operations/" + url.PathEscape(claim.ProviderRequestID)
-	client, err := e.clients.Client(endpoint, 15*time.Second)
+	providerBudget := providerHTTPBudget(snap, 15*time.Second)
+	clientBudget := effectiveHTTPBudget(ctx, providerBudget, CapacityPermit{}, false)
+	if clientBudget <= 0 {
+		return dispatch.Result{}, fmt.Errorf("reconciliation request budget exhausted")
+	}
+	client, err := e.clients.Client(endpoint, clientBudget)
 	if err != nil {
 		return dispatch.Result{}, fmt.Errorf("reconciliation egress unavailable for %q: %w", endpoint, err)
 	}
@@ -149,6 +154,18 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 			capacitySettled = true
 		}
 	}
+	clientBudget = effectiveHTTPBudget(ctx, providerBudget, capacityPermit, capacityEnabled)
+	if clientBudget <= 0 {
+		releaseCapacity("reconciliation-capacity-lease-budget-exhausted")
+		return dispatch.Result{}, fmt.Errorf("reconciliation capacity fence: %w", ErrCapacityFence)
+	}
+	if clientBudget != providerBudget {
+		client, err = e.clients.Client(endpoint, clientBudget)
+		if err != nil {
+			releaseCapacity("reconciliation-egress-refused")
+			return dispatch.Result{}, fmt.Errorf("reconciliation egress unavailable for %q: %w", endpoint, err)
+		}
+	}
 	transportStarted := time.Now()
 	settleCapacity := func(result dispatch.Result) dispatch.Result {
 		if capacityEnabled && !capacitySettled {
@@ -164,9 +181,17 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 		releaseCapacity("reconciliation-capacity-fence-before-provider-auth")
 		return dispatch.Result{}, fmt.Errorf("reconciliation capacity fence: %w", err)
 	}
-	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: claim.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
+	authBudget := effectiveHTTPBudget(ctx, minDuration(providerBudget, 3*time.Second), capacityPermit, capacityEnabled)
+	if authBudget <= 0 {
+		releaseCapacity("reconciliation-capacity-lease-auth-budget-exhausted")
+		return dispatch.Result{}, fmt.Errorf("reconciliation capacity fence: %w", ErrCapacityFence)
+	}
+	authCtx, authCancel := context.WithTimeout(ctx, authBudget)
+	authErr := e.tokenCache.Apply(authCtx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: claim.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req)
+	authCancel()
+	if authErr != nil {
 		releaseCapacity("reconciliation-provider-authentication-failed")
-		return dispatch.Result{}, fmt.Errorf("reconciliation authentication unavailable: %w", err)
+		return dispatch.Result{}, fmt.Errorf("reconciliation authentication unavailable: %w", authErr)
 	}
 	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
 		releaseCapacity("reconciliation-capacity-fence-before-status")

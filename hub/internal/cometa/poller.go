@@ -119,6 +119,23 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil {
 		return unknown("poll_capacity_unavailable")
 	}
+	pollBudget := time.Duration(c.TimeoutSeconds) * time.Second
+	effectiveBudget := effectiveHTTPBudget(ctx, pollBudget, capacityPermit, capacityEnabled)
+	if effectiveBudget <= 0 {
+		if capacityEnabled {
+			e.releaseCapacity(ctx, capacityPermit, "poll-capacity-lease-budget-exhausted")
+		}
+		return unknown("poll_capacity_fence")
+	}
+	if effectiveBudget != pollBudget {
+		client, err = e.clients.Client(endpoint, effectiveBudget)
+		if err != nil {
+			if capacityEnabled {
+				e.releaseCapacity(ctx, capacityPermit, "poll-egress-refused")
+			}
+			return unknown("poll_egress_refused")
+		}
+	}
 	capacitySettled := false
 	releaseCapacity := func(evidence string) {
 		if capacityEnabled && !capacitySettled {
@@ -138,7 +155,15 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		releaseCapacity("poll-capacity-fence-before-provider-auth")
 		return unknown("poll_capacity_fence")
 	}
-	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: c.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
+	authBudget := effectiveHTTPBudget(ctx, minDuration(pollBudget, 3*time.Second), capacityPermit, capacityEnabled)
+	if authBudget <= 0 {
+		releaseCapacity("poll-capacity-lease-auth-budget-exhausted")
+		return unknown("poll_capacity_fence")
+	}
+	authCtx, authCancel := context.WithTimeout(ctx, authBudget)
+	authErr := e.tokenCache.Apply(authCtx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: c.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req)
+	authCancel()
+	if authErr != nil {
 		releaseCapacity("poll-provider-authentication-failed")
 		return unknown("poll_authentication_failed")
 	}

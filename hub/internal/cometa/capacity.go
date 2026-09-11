@@ -131,6 +131,40 @@ type CapacityState struct {
 	LastFeedback                                    string
 }
 
+const capacitySafetyMargin = time.Second
+
+// effectiveHTTPBudget keeps a transport inside both the configured operation
+// budget and the currently owned capacity lease. A lease is never renewed as a
+// side effect of an HTTP call; when no positive window remains, the caller must
+// release the permit before starting external I/O.
+func effectiveHTTPBudget(ctx context.Context, requested time.Duration, permit CapacityPermit, enabled bool) time.Duration {
+	if requested <= 0 {
+		requested = 15 * time.Second
+	}
+	if enabled {
+		remaining := time.Until(permit.LeaseUntil) - capacitySafetyMargin
+		if remaining <= 0 {
+			return 0
+		}
+		if remaining < requested {
+			requested = remaining
+		}
+	}
+	if deadline, ok := ctx.Deadline(); ok {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return 0
+		}
+		if remaining < requested {
+			requested = remaining
+		}
+	}
+	if requested < time.Millisecond {
+		return 0
+	}
+	return requested
+}
+
 func (c *CapacityController) Acquire(ctx context.Context, domain, id, tenant, cell, owner, action string) (CapacityPermit, error) {
 	permit := CapacityPermit{Domain: domain, ID: id, Tenant: tenant, Cell: cell, Owner: owner, Action: action}
 	if id == "" || tenant == "" || cell == "" || owner == "" || (action != "SUBMIT" && action != "STATUS" && action != "FETCH" && action != "CANCEL") {

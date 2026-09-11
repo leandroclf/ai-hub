@@ -226,7 +226,13 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	}
 	attemptID := claim.AttemptID
 	sentAt = time.Now()
-	client, err := e.clients.Client(pa.BaseURL, 15*time.Second)
+	providerBudget := providerHTTPBudget(snapshot, 15*time.Second)
+	effectiveBudget := effectiveHTTPBudget(ctx, providerBudget, capacityPermit, capacityEnabled)
+	if effectiveBudget <= 0 {
+		releaseCapacity("capacity-lease-budget-exhausted")
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
+	}
+	client, err := e.clients.Client(pa.BaseURL, effectiveBudget)
 	if err != nil {
 		result := e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
 		releaseCapacity("egress-refused-before-provider")
@@ -262,15 +268,23 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		releaseCapacity("capacity-fence-before-provider-auth")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
 	}
-	if err := e.tokenCache.Apply(ctx, client, pa.ProviderAccountID, providerauth.Config{
+	authBudget := effectiveHTTPBudget(ctx, minDuration(providerBudget, 3*time.Second), capacityPermit, capacityEnabled)
+	if authBudget <= 0 {
+		releaseCapacity("capacity-lease-auth-budget-exhausted")
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
+	}
+	authCtx, authCancel := context.WithTimeout(ctx, authBudget)
+	authErr := e.tokenCache.Apply(authCtx, client, pa.ProviderAccountID, providerauth.Config{
 		BindingID: cred.BindingID, TenantID: cmd.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion,
 		AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader,
 		TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID,
 		ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef,
 		TokenTTLSeconds: pa.TokenTTLSeconds,
-	}, httpReq); err != nil {
+	}, httpReq)
+	authCancel()
+	if authErr != nil {
 		releaseCapacity("provider-authentication-failed")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", err)
+		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", authErr)
 	}
 	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
 		releaseCapacity("capacity-fence-before-submit")
