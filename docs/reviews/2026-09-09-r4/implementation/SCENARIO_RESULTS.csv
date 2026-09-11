@@ -95,6 +95,7 @@ R2-CAT-04-S02;PASS_UNITARIO;r2-cat-dad-qualification.log — TestDAGContract rej
 R2-CAT-04-S03;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestProductPlanCompensationIsASeparateTrackedOperation cria compensação rastreável sem rollback fictício
 R2-CAT-05-S02;PASS_UNITARIO;r2-cat-dad-qualification.log — TestTechnicalProjectionRejectsInvalidJSONDocumentsAndTypes e TestTechnicalProjectionEnforcesPublishedDialectAndBounds rejeitam transformação inválida
 R2-CAT-07-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogImportDiffStates identifica NEW/CHANGED/UNCHANGED sem duplicar catálogo
+R2-CAT-07-S02;PASS_INTEGRADO_LOCAL;catalog-import-failure-postgres.log — PostgreSQL recusou inventário anterior inválido antes de persistir novo lote, preservou o staging anterior e manteve catálogo executável vazio
 R2-CAT-07-S03;PASS_UNITARIO;r2-cat-dad-qualification.log — TestImportSecretSanitization remove tokens e headers sensíveis do preview
 R2-CAT-08-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogPostgresPaginationAndStaging limita página, conserva cursor e filtra no servidor
 R2-DAD-02-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestFinalizeMaterializesLargeResultAndLinksAfterCommit e TestPostgresS3MultipartFileRef custodeiam resultado volumoso via FileRef

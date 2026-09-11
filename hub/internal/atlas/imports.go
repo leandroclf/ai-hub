@@ -199,7 +199,6 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 	}
 	hash := contentHash(items)
 	id := hash[:32]
-	body, _ := json.Marshal(items)
 	var previous []byte
 	err = h.store.db.QueryRowContext(r.Context(), `SELECT items FROM catalog_imports WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`, tenant).Scan(&previous)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -208,13 +207,6 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 		catalogError(w, err)
 		return
 	}
-	var storedID string
-	err = h.store.db.QueryRowContext(r.Context(), `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES($1,$2,'sanitized-inventory',$3,$4,$5) ON CONFLICT(tenant_id,source_hash) DO UPDATE SET source_hash=EXCLUDED.source_hash RETURNING id`, contentHash([]string{tenant, id})[:32], hash, p.Subject, tenant, body).Scan(&storedID)
-	if err != nil {
-		catalogError(w, err)
-		return
-	}
-	_ = storedID
 	// Compare only the sanitized inventory against the latest prior batch;
 	// executable catalog rows are never created or modified by an import.
 	var prior []ImportItem
@@ -237,5 +229,13 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 			items[i].Difference = "CHANGED"
 		}
 	}
+	body, _ := json.Marshal(items)
+	var storedID string
+	err = h.store.db.QueryRowContext(r.Context(), `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES($1,$2,'sanitized-inventory',$3,$4,$5) ON CONFLICT(tenant_id,source_hash) DO UPDATE SET source_hash=EXCLUDED.source_hash RETURNING id`, contentHash([]string{tenant, id})[:32], hash, p.Subject, tenant, body).Scan(&storedID)
+	if err != nil {
+		catalogError(w, err)
+		return
+	}
+	_ = storedID
 	writeJSON(w, 201, ImportBatch{ID: contentHash([]string{tenant, id})[:32], SourceHash: hash, State: "STAGED", Items: items})
 }

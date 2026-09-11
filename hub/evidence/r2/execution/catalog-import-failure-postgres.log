@@ -1,0 +1,22 @@
+AI Hub R4 — evidência R2-CAT-07-S02 — 2026-09-11
+
+Comando:
+ATLAS_TEST_DSN=postgres://hub:r2-local-fixture@127.0.0.1:15432/hub_control?sslmode=disable \
+go test -race -count=1 -v ./internal/atlas -run 'TestCatalogImport(FailurePreservesPreviousBatchAndExecutableCatalog|DiffStates)'
+
+Resultado:
+=== RUN   TestCatalogImportDiffStates
+--- PASS: TestCatalogImportDiffStates (0.34s)
+=== RUN   TestCatalogImportFailurePreservesPreviousBatchAndExecutableCatalog
+--- PASS: TestCatalogImportFailurePreservesPreviousBatchAndExecutableCatalog (0.32s)
+PASS
+
+Oráculos:
+- importação anterior inválida foi detectada antes da persistência do novo lote;
+- resposta retornou `503/catalog_unavailable` de forma explícita;
+- o lote anterior permaneceu único e íntegro como registro de staging;
+- nenhum recurso executável foi criado ou alterado;
+- a regressão `NEW/CHANGED/UNCHANGED` continuou passando.
+
+Classificação: PASS_INTEGRADO_LOCAL.
+Limite: a prova usa schema PostgreSQL local descartável; não substitui importação em escala produtiva nem homologação de coleções comerciais.

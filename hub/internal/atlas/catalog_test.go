@@ -521,3 +521,30 @@ func TestCatalogImportDiffStates(t *testing.T) {
 		t.Fatalf("importação criou catálogo executável: %d", resources)
 	}
 }
+
+func TestCatalogImportFailurePreservesPreviousBatchAndExecutableCatalog(t *testing.T) {
+	s := integrationStore(t)
+	ctx := context.Background()
+	p := auth.Principal{Subject: "operator-a", TenantID: "acme", MFA: true, Roles: []string{"tenant_operator"}, Scopes: []string{"catalog:read", "catalog:write"}, ExpiresAt: time.Now().Add(time.Hour)}
+	if _, err := s.db.ExecContext(ctx, `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES('prior-batch','prior-hash','fixture','operator-a','acme','{}')`); err != nil {
+		t.Fatal(err)
+	}
+	mux := http.NewServeMux()
+	NewHandlers(s).Register(mux)
+	req := httptest.NewRequest(http.MethodPost, "/admin/v1/imports?tenant_id=acme", strings.NewReader(`{"collection":{"item":[{"request":{"method":"GET","url":"https://api.example.test/retry"}}]}}`)).WithContext(auth.WithPrincipal(ctx, p))
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, req)
+	if rec.Code != http.StatusServiceUnavailable || !strings.Contains(rec.Body.String(), "catalog_unavailable") {
+		t.Fatalf("falha de lote não foi explicitada: status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var imports, executable int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM catalog_imports WHERE tenant_id='acme'`).Scan(&imports); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM catalog_resources WHERE tenant_id='acme'`).Scan(&executable); err != nil {
+		t.Fatal(err)
+	}
+	if imports != 1 || executable != 0 {
+		t.Fatalf("lote parcial ou catálogo executável criado: imports=%d executable=%d", imports, executable)
+	}
+}
