@@ -9,16 +9,13 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
-	"ai-hub/hub/internal/providersim"
 )
 
 // ReconciliationClaim representa uma solicitação administrativa já
@@ -101,7 +98,8 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if err != nil || target.AdapterID == "" {
 		return dispatch.Result{}, errors.New("reconciliation adapter unavailable")
 	}
-	if !e.adapters.Supports(target.AdapterID) {
+	adapter, err := e.adapters.Get(target.AdapterID)
+	if err != nil {
 		return dispatch.Result{}, ErrAdapterUnavailable
 	}
 	var pa struct {
@@ -129,7 +127,11 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if err != nil {
 		return dispatch.Result{}, errors.New("reconciliation binding invalid")
 	}
-	endpoint := strings.TrimRight(pa.BaseURL, "/") + "/v1/operations/" + url.PathEscape(claim.ProviderRequestID)
+	req, err := adapter.BuildStatusRequest(ctx, pa.BaseURL, claim.ProviderRequestID)
+	if err != nil {
+		return dispatch.Result{}, fmt.Errorf("reconciliation request invalid: %w", err)
+	}
+	endpoint := req.URL.String()
 	providerBudget := providerHTTPBudget(snap, 15*time.Second)
 	clientBudget := effectiveHTTPBudget(ctx, providerBudget, CapacityPermit{}, false)
 	if clientBudget <= 0 {
@@ -138,10 +140,6 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	client, err := e.clients.Client(endpoint, clientBudget)
 	if err != nil {
 		return dispatch.Result{}, fmt.Errorf("reconciliation egress unavailable for %q: %w", endpoint, err)
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return dispatch.Result{}, fmt.Errorf("reconciliation request invalid: %w", err)
 	}
 	capacityPermit, capacityEnabled, err := e.acquireCapacity(ctx, claim.Command, snap, "STATUS", "reconcile-"+claim.RequestID+"-"+idgen.New(), claim.Owner)
 	if err != nil {
@@ -209,8 +207,8 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if readErr != nil || len(body) > 256*1024 {
 		return settleCapacity(unknown("reconciliation_response_invalid")), errors.New("reconciliation response invalid")
 	}
-	var result providersim.OperationResult
-	if json.Unmarshal(body, &result) != nil || result.ProviderRequestID != claim.ProviderRequestID {
+	result, decodeErr := adapter.DecodeResult(resp.StatusCode, body)
+	if decodeErr != nil || result.ProviderRequestID != claim.ProviderRequestID {
 		return settleCapacity(unknown("reconciliation_response_invalid")), errors.New("reconciliation response invalid")
 	}
 	if result.Status == "PENDING" {

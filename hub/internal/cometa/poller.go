@@ -8,10 +8,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -20,7 +18,6 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
-	"ai-hub/hub/internal/providersim"
 )
 
 // Each replica has bounded workers; PostgreSQL coordinates ownership across replicas.
@@ -85,7 +82,8 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil || target.AdapterID == "" {
 		return unknown("poll_adapter_unavailable")
 	}
-	if !e.adapters.Supports(target.AdapterID) {
+	adapter, err := e.adapters.Get(target.AdapterID)
+	if err != nil {
 		return unknown("poll_adapter_unavailable")
 	}
 	var pa atlasclient.ProviderAccount
@@ -100,14 +98,14 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil {
 		return unknown("poll_binding_invalid")
 	}
-	endpoint := strings.TrimRight(pa.BaseURL, "/") + "/v1/operations/" + url.PathEscape(c.ProviderRequestID)
+	req, err := adapter.BuildStatusRequest(ctx, pa.BaseURL, c.ProviderRequestID)
+	if err != nil {
+		return unknown("poll_request_invalid")
+	}
+	endpoint := req.URL.String()
 	client, err := e.clients.Client(endpoint, time.Duration(c.TimeoutSeconds)*time.Second)
 	if err != nil {
 		return unknown("poll_egress_refused")
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
-	if err != nil {
-		return unknown("poll_request_invalid")
 	}
 	// Recheck the committed polling fence before obtaining capacity and credentials.
 	var owned bool
@@ -196,8 +194,8 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		r, _ := unknown("poll_http_" + strconv.Itoa(resp.StatusCode))
 		return settleCapacity(r), retryAfter
 	}
-	var result providersim.OperationResult
-	if json.Unmarshal(body, &result) != nil || result.ProviderRequestID != c.ProviderRequestID {
+	result, decodeErr := adapter.DecodeResult(resp.StatusCode, body)
+	if decodeErr != nil || result.ProviderRequestID != c.ProviderRequestID {
 		r, retryAfter := unknown("poll_response_invalid")
 		return settleCapacity(r), retryAfter
 	}

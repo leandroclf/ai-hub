@@ -3,7 +3,6 @@ package cometa
 import (
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/platform/egress"
-	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -130,8 +129,8 @@ func (e *Executor) resolveCapacityPending(ctx context.Context, cmd dispatch.Comm
 }
 
 // Execute processa um dispatch.Command: cria a operacao, resolve
-// credencial (SEG-05), chama o provedor simulado segundo seu
-// provider_mode homologado e persiste evidencia. Retorna o
+// credencial (SEG-05), chama o adapter versionado homologado segundo seu
+// provider_mode e persiste evidencia. Retorna o
 // dispatch.Result que a Orbita usa (via HTTP em SYNC, via evento em
 // ASYNC) para decidir a conclusao do passo (EXE-03: "Cometa decide
 // apenas o fato externo; Orbita decide a conclusao").
@@ -163,7 +162,8 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	if err != nil || target.AdapterID == "" {
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "adapter_not_qualified"}
 	}
-	if !e.adapters.Supports(target.AdapterID) {
+	adapter, err := e.adapters.Get(target.AdapterID)
+	if err != nil {
 		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactRejected, ErrorCode: "adapter_unavailable"}
 	}
 
@@ -243,35 +243,19 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		return result
 	}
 
-	fail := shouldFail(cmd.RequestBody)
-	delayMs := requestedDelayMs(cmd.RequestBody)
-
-	req := providersim.SubmitRequest{
-		// O protocolo é a chave externa de uma operação simples. Em um
-		// produto, porém, várias etapas compartilham o mesmo protocolo e
-		// precisam de efeitos externos independentes; o command_id continua
-		// estável entre retries e é a chave de idempotência da etapa.
-		ProtocolID:      externalIdempotencyKey(cmd),
-		FileRefs:        cmd.FileRefs,
-		Mode:            providersim.Mode(pa.ProviderMode),
-		DelayMs:         delayMs,
-		Fail:            fail,
-		DropAfterEffect: shouldDropAfterEffect(cmd.RequestBody),
-	}
+	callbackURL := ""
 	if pa.ProviderMode == string(providersim.ModeAsyncCallback) {
-		req.CallbackURL = e.callbackURLFor(operationID, claim.CallbackToken)
+		callbackURL = e.callbackURLFor(operationID, claim.CallbackToken)
 	}
 
 	e.log.Debug("enviando chamada ao provedor", "trace_id", cmd.TraceID, "operation_id", operationID,
 		"provider_base_url", pa.BaseURL, "provider_mode", pa.ProviderMode, "attempt_id", attemptID)
 
-	body, _ := json.Marshal(req)
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, pa.BaseURL+"/v1/operations", bytes.NewReader(body))
+	httpReq, err := adapter.BuildSubmitRequest(ctx, pa.BaseURL, cmd, pa.ProviderMode, callbackURL)
 	if err != nil {
 		releaseCapacity("request-build-failed")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)
 	}
-	httpReq.Header.Set("Content-Type", "application/json")
 	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
 		releaseCapacity("capacity-fence-before-provider-auth")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
@@ -312,8 +296,9 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	defer resp.Body.Close()
 
 	receivedAt := time.Now()
-	var result providersim.OperationResult
-	if err := json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&result); err != nil || result.ProviderRequestID == "" || (result.Status != "SUCCEEDED" && result.Status != "FAILED" && result.Status != "PENDING") {
+	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 256*1024+1))
+	result, decodeErr := adapter.DecodeResult(resp.StatusCode, body)
+	if readErr != nil || len(body) > 256*1024 || decodeErr != nil {
 		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_provider_response", fmt.Errorf("invalid provider response")), true)
 	}
 	if _, err := e.store.db.ExecContext(ctx, "UPDATE attempts SET sent_at=$2,received_at=$3 WHERE attempt_id=$1", attemptID, sentAt, receivedAt); err != nil {
