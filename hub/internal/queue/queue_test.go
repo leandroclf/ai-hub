@@ -25,3 +25,24 @@ func TestNormalizeQueueURLLeavesProductionURLUntouched(t *testing.T) {
 		t.Fatalf("production queue URL changed from %q to %q", input, got)
 	}
 }
+
+func TestResourceNameIsolatesEnvironmentAndCell(t *testing.T) {
+	logicalName := "cometa-commands"
+	devCellA := &Client{namespace: "dev-cell-a"}
+	homCellA := &Client{namespace: "hom-cell-a"}
+	devCellB := &Client{namespace: "dev-cell-b"}
+
+	got := map[string]bool{
+		devCellA.resourceName(logicalName): true,
+		homCellA.resourceName(logicalName): true,
+		devCellB.resourceName(logicalName): true,
+	}
+	if len(got) != 3 {
+		t.Fatalf("broker resources collided across environment/cell namespaces: %#v", got)
+	}
+	for _, want := range []string{"dev-cell-a-cometa-commands", "hom-cell-a-cometa-commands", "dev-cell-b-cometa-commands"} {
+		if !got[want] {
+			t.Fatalf("missing namespaced broker resource %q in %#v", want, got)
+		}
+	}
+}

@@ -1,0 +1,8 @@
+=== RUN   TestNormalizeLocalQueueURLUsesInternalEndpoint
+--- PASS: TestNormalizeLocalQueueURLUsesInternalEndpoint (0.00s)
+=== RUN   TestNormalizeQueueURLLeavesProductionURLUntouched
+--- PASS: TestNormalizeQueueURLLeavesProductionURLUntouched (0.00s)
+=== RUN   TestResourceNameIsolatesEnvironmentAndCell
+--- PASS: TestResourceNameIsolatesEnvironmentAndCell (0.00s)
+PASS
+ok  	ai-hub/hub/internal/queue	0.004s
