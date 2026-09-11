@@ -128,7 +128,7 @@ func TestPostgresPollingClaimsFenceAndAbsoluteDeadline(t *testing.T) {
 	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&staleFacts); err != nil || staleFacts != beforeStale {
 		t.Fatalf("stale owner published terminal fact: facts=%d before=%d err=%v", staleFacts, beforeStale, err)
 	}
-	if err = s.CompletePoll(ctx, newer, dispatch.Result{Kind: dispatch.FactUnknown, ErrorCode: "poll_pending"}, 5*time.Second); err != nil {
+	if err = s.CompletePoll(ctx, newer, dispatch.Result{Kind: dispatch.FactUnknown, ProviderRequestID: "provider-correlation", ErrorCode: "poll_pending"}, 5*time.Second); err != nil {
 		t.Fatal(err)
 	}
 	var interval int
@@ -148,6 +148,42 @@ func TestPostgresPollingClaimsFenceAndAbsoluteDeadline(t *testing.T) {
 	}
 	t.Log("24 contenders: one committed STATUS preparation; takeover fenced stale final while retaining receipt; backoff and Retry-After persisted; original deadline unchanged; insufficient budget and foreign cell denied")
 }
+
+func TestPostgresPollingRejectsProviderCorrelationMismatch(t *testing.T) {
+	s, cmd := pollDB(t)
+	acceptPoll(t, s, cmd)
+	ctx := context.Background()
+	claim, err := s.ClaimPoll(ctx, cmd.CellID, "poll-mismatch")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var beforeFacts, beforeReceipts int
+	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&beforeFacts); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&beforeReceipts); err != nil {
+		t.Fatal(err)
+	}
+	err = s.CompletePoll(ctx, claim, dispatch.Result{Kind: dispatch.FactSucceeded, ProviderRequestID: "another-operation"}, 0)
+	if !errors.Is(err, ErrProviderCorrelationMismatch) {
+		t.Fatalf("correlation mismatch accepted: %v", err)
+	}
+	var state string
+	if err = s.db.QueryRow(`SELECT state FROM operations WHERE operation_id=$1`, cmd.CommandID).Scan(&state); err != nil || state != string(StateAcceptedExternal) {
+		t.Fatalf("mismatch changed state=%s err=%v", state, err)
+	}
+	var afterFacts, afterReceipts int
+	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&afterFacts); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&afterReceipts); err != nil {
+		t.Fatal(err)
+	}
+	if afterFacts != beforeFacts || afterReceipts != beforeReceipts+1 {
+		t.Fatalf("mismatch custody facts=%d/%d receipts=%d/%d", afterFacts, beforeFacts, afterReceipts, beforeReceipts+1)
+	}
+}
+
 func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	s, cmd := pollDB(t)
 	acceptPoll(t, s, cmd)
@@ -162,13 +198,13 @@ func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	wg.Add(2)
 	go func() {
 		defer wg.Done()
-		if err := s.CompletePoll(ctx, claim, dispatch.Result{Kind: dispatch.FactSucceeded, ResponseBody: map[string]string{"marker": "poll"}}, 0); err != nil {
+		if err := s.CompletePoll(ctx, claim, dispatch.Result{Kind: dispatch.FactSucceeded, ProviderRequestID: "provider-correlation", ResponseBody: map[string]string{"marker": "poll"}}, 0); err != nil {
 			t.Error(err)
 		}
 	}()
 	go func() {
 		defer wg.Done()
-		if _, err := s.ConserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactFailed, ResponseBody: map[string]string{"marker": "callback"}}, "CALLBACK_TEST"); err != nil {
+		if _, err := s.ConserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactFailed, ProviderRequestID: "provider-correlation", ResponseBody: map[string]string{"marker": "callback"}}, "CALLBACK_TEST"); err != nil {
 			t.Error(err)
 		}
 	}()

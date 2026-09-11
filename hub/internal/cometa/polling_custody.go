@@ -14,7 +14,10 @@ import (
 	"ai-hub/hub/internal/platform/idgen"
 )
 
-var ErrPollFence = errors.New("poll lease no longer authoritative")
+var (
+	ErrPollFence                   = errors.New("poll lease no longer authoritative")
+	ErrProviderCorrelationMismatch = errors.New("provider correlation mismatch")
+)
 
 type PollPolicy struct {
 	IntervalSeconds    int `json:"interval_seconds"`
@@ -129,6 +132,33 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 	}
 	if tenant != c.Command.TenantID || cell != c.Command.CellID {
 		return errors.New("poll outside scope")
+	}
+	if c.ProviderRequestID == "" || r.ProviderRequestID != c.ProviderRequestID {
+		r.CommandID = c.Command.CommandID
+		r.OperationID = c.Command.CommandID
+		r.Kind = dispatch.FactUnknown
+		r.ErrorCode = "provider_correlation_mismatch"
+		r.Durable = true
+		r.EvidenceID = idgen.New()
+		raw, err := json.Marshal(r)
+		if err != nil {
+			return err
+		}
+		if _, err = tx.ExecContext(ctx, `INSERT INTO operation_receipts(evidence_id,operation_id,tenant_id,source,body) VALUES($1,$2,$3,'POLL_CORRELATION_MISMATCH',$4)`, r.EvidenceID, c.Command.CommandID, tenant, raw); err != nil {
+			return err
+		}
+		if r.ProviderRequestID != "" {
+			if err = insertProviderReceiptTx(ctx, tx, c.Command, r, "POLL_CORRELATION_MISMATCH"); err != nil {
+				return err
+			}
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE attempts SET received_at=clock_timestamp(),error_code=$2 WHERE attempt_id=$1 AND operation_id=$3 AND owner=$4 AND epoch=$5`, c.AttemptID, r.ErrorCode, c.Command.CommandID, c.Owner, c.Epoch); err != nil {
+			return err
+		}
+		if err = tx.Commit(); err != nil {
+			return err
+		}
+		return ErrProviderCorrelationMismatch
 	}
 	var valid bool
 	err = tx.QueryRowContext(ctx, `SELECT lease_owner=$2 AND epoch=$3 AND lease_expires_at>clock_timestamp() FROM polling_schedule WHERE operation_id=$1 FOR UPDATE`, c.Command.CommandID, c.Owner, c.Epoch).Scan(&valid)
