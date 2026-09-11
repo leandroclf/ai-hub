@@ -1,6 +1,8 @@
 package egress
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"net/http"
 	"net/http/httptest"
 	"net/netip"
@@ -87,4 +89,108 @@ func TestPoolReusesTransportPerOriginAndKeepsClientsIndependent(t *testing.T) {
 		t.Fatal("per-call clients lost independent timeout ownership")
 	}
 	pool.CloseIdleConnections()
+}
+
+func TestR2Seg04Scenarios(t *testing.T) {
+	t.Run("R2-SEG-04-S01_destino_homologado", func(t *testing.T) {
+		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/health" {
+				t.Fatalf("path inesperado: %s", r.URL.Path)
+			}
+			w.WriteHeader(http.StatusNoContent)
+		}))
+		defer server.Close()
+		u, err := url.Parse(server.URL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		policy := Policy{Private: map[string][]netip.Prefix{u.Host: {netip.MustParsePrefix("127.0.0.1/32")}}}
+		if err := policy.Validate(server.URL + "/health"); err != nil {
+			t.Fatalf("HTTPS homologado recusado: %v", err)
+		}
+		client, err := policy.Client(server.URL, time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		certificate := x509.NewCertPool()
+		certificate.AddCert(server.Certificate())
+		if err := WithCertificate(client, tls.Certificate{}, &tls.Config{RootCAs: certificate}); err != nil {
+			t.Fatal(err)
+		}
+		response, err := client.Get(server.URL + "/health")
+		if err != nil {
+			t.Fatalf("HTTPS homologado não conectou: %v", err)
+		}
+		defer response.Body.Close()
+		if response.StatusCode != http.StatusNoContent {
+			t.Fatalf("status HTTPS inesperado: %d", response.StatusCode)
+		}
+		transport, ok := client.Transport.(originTransport)
+		if !ok || transport.origin != "https://"+u.Host {
+			t.Fatalf("transporte não preservou origem homologada: %#v", client.Transport)
+		}
+	})
+
+	t.Run("R2-SEG-04-S02_ssrf_e_rebinding", func(t *testing.T) {
+		for _, target := range []string{
+			"https://169.254.169.254/latest/meta-data",
+			"https://127.0.0.1/internal",
+			"https://user:password@example.com",
+			"file:///etc/passwd",
+		} {
+			if (Policy{}).Validate(target) == nil {
+				t.Fatalf("destino inseguro aceito: %s", target)
+			}
+		}
+		leaked := false
+		destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { leaked = true }))
+		defer destination.Close()
+		redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, destination.URL, http.StatusTemporaryRedirect)
+		}))
+		defer redirector.Close()
+		u, _ := url.Parse(redirector.URL)
+		policy := Policy{HTTPOrigins: map[string]bool{redirector.URL: true}, Private: map[string][]netip.Prefix{u.Host: {netip.MustParsePrefix("127.0.0.1/32")}}}
+		client, err := policy.Client(redirector.URL, time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		request, _ := http.NewRequest(http.MethodGet, redirector.URL, nil)
+		request.Header.Set("Authorization", "Bearer fixture")
+		response, err := client.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response.Body.Close()
+		if response.StatusCode != http.StatusTemporaryRedirect || leaked {
+			t.Fatal("redirect foi seguido ou credencial vazou para outra origem")
+		}
+	})
+
+	t.Run("R2-SEG-04-S03_rede_privada_legitima", func(t *testing.T) {
+		allowedServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) }))
+		defer allowedServer.Close()
+		otherServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusNoContent) }))
+		defer otherServer.Close()
+		u, err := url.Parse(allowedServer.URL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		policy := Policy{HTTPOrigins: map[string]bool{allowedServer.URL: true}, Private: map[string][]netip.Prefix{u.Host: {netip.MustParsePrefix("127.0.0.1/32")}}}
+		client, err := policy.Client(allowedServer.URL, time.Second)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response, err := client.Get(allowedServer.URL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response.Body.Close()
+		if response.StatusCode != http.StatusNoContent {
+			t.Fatalf("destino privado homologado falhou: %d", response.StatusCode)
+		}
+		if _, err := policy.Client(otherServer.URL, time.Second); err == nil {
+			t.Fatal("whitelist privada escapou para outro host/porta")
+		}
+	})
 }
