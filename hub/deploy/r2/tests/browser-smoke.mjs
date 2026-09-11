@@ -1,4 +1,6 @@
 import {createHmac} from 'node:crypto';
+import {randomUUID} from 'node:crypto';
+import {execFileSync} from 'node:child_process';
 import {writeFile} from 'node:fs/promises';
 const playwright=await import(process.env.PLAYWRIGHT_MODULE||'playwright-core');
 const chromium=playwright.chromium||playwright.default?.chromium;
@@ -6,6 +8,9 @@ if(!chromium) throw new Error('playwright-core sem export chromium');
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome'});
 const page=await browser.newPage({viewport:{width:1365,height:900}});
 const evidence=[];
+const postgres=`${process.env.R2_COMPOSE_PROJECT||'ai_hub_r3qual'}-postgres-1`;
+let seededDelivery='';
+function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_core','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
 let phase='inicialização';
 async function authenticate(username,expectedURL){
  await page.getByRole('button',{name:'Entrar',exact:true}).click();
@@ -117,6 +122,25 @@ try {
  await page.getByRole('heading',{name:'SLA bilateral',exact:true}).waitFor();
  await page.locator('table').waitFor();
  evidence.push({check:'Admin bilateral SLA report reads persisted protocol snapshots',status:'PASS'});
+ phase='redelivery administrativo';
+ seededDelivery=randomUUID();
+ const seededProtocol=randomUUID();
+ const seededEvent=randomUUID();
+ sql(`INSERT INTO deliveries(delivery_id,protocol_id,event_id,destination_url,state,next_attempt_at,tenant_id,cell_id,representation,body_sha256) VALUES('${seededDelivery}','${seededProtocol}','${seededEvent}','http://redelivery-fixture.invalid/webhook','EXHAUSTED',clock_timestamp(),'acme','r2-cell-a',decode('7b2266697874757265223a22726564656c6976657279227d','hex'),'browser-redelivery-fixture')`);
+ await page.getByRole('link',{name:'Entregas',exact:true}).click();
+ await page.waitForURL('http://localhost:13000/deliveries');
+ await page.evaluate(id=>{history.pushState({},'',`/deliveries/${id}`);window.dispatchEvent(new PopStateEvent('popstate'))},seededDelivery);
+ await page.waitForURL(`http://localhost:13000/deliveries/${seededDelivery}`);
+ await page.getByRole('heading',{name:'Detalhe persistido',exact:true}).waitFor();
+ await page.getByLabel('Justificativa',{exact:true}).fill('ensaio de redelivery administrativo');
+ await page.getByRole('button',{name:'Reentregar mesmos bytes do webhook',exact:true}).click();
+ const redeliveryStatus=page.getByRole('status').filter({hasText:'Ação registrada'});
+ await redeliveryStatus.waitFor();
+ const redeliveryReceipt=await redeliveryStatus.innerText();
+ if(!redeliveryReceipt.includes(seededDelivery)||!redeliveryReceipt.includes('RETRY_SCHEDULED'))throw new Error('redelivery sem recibo RETRY_SCHEDULED');
+ const auditCount=sql(`SELECT count(*) FROM webhook_audit WHERE tenant_id='acme' AND resource='${seededDelivery}' AND action='REDELIVER_SAME_BYTES' AND length(trim(subject))>0`);
+ if(auditCount!=='1')throw new Error(`redelivery sem auditoria durável: ${auditCount}`);
+ evidence.push({check:'Admin redelivery changes exhausted delivery and records durable audit',status:'PASS',delivery:seededDelivery});
  await page.getByRole('link',{name:'Destinos webhook',exact:true}).click();
  await page.waitForURL('http://localhost:13000/destinations');
  await page.getByRole('heading',{name:'Destinos de webhook versionados',exact:true}).waitFor();
@@ -236,4 +260,7 @@ try {
  await page.waitForTimeout(500);
  console.log(JSON.stringify(evidence,null,2));
 } catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
-finally {await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()}
+finally {
+ if(seededDelivery){try{sql(`DELETE FROM webhook_audit WHERE resource='${seededDelivery}'`);sql(`DELETE FROM deliveries WHERE delivery_id='${seededDelivery}'`)}catch(error){console.error(`cleanup da fixture de redelivery falhou: ${error.message}`)}}
+ await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()
+}

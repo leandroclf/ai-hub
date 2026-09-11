@@ -27,7 +27,7 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
 
  useEffect(()=>{
   const abort=new AbortController();
-  setBusy(true);setError('');setMessage('');setDetail(null);setTimeline([]);
+  setBusy(true);setError('');setDetail(null);setTimeline([]);
   if(requiresReadReason&&(query.get('reason')||'').trim().length<8){setBusy(false);setError('Informe a finalidade da consulta cross-tenant antes de consultar.');return()=>abort.abort()}
   if(id){
    void api<RecordData>(`/admin/v1/${kind}/${encodeURIComponent(id)}?${scope}`,{signal:abort.signal}).then(async value=>{
@@ -43,6 +43,8 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
   }
   return()=>abort.abort();
  },[kind,tenant,route,refresh]);
+
+ useEffect(()=>{setMessage('')},[kind,tenant,route]);
 
  async function act(action:string){
   if(!id||busy)return;

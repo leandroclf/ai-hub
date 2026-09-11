@@ -1,6 +1,7 @@
 package pulsar
 
 import (
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -211,14 +212,24 @@ func (h *Handlers) deliveries(w http.ResponseWriter, r *http.Request) {
 	items := []map[string]any{}
 	last := ""
 	for rows.Next() {
-		var id, protocol, state, dest, hash string
-		var count, version int
+		var id, protocol, state, hash string
+		var dest sql.NullString
+		var version sql.NullInt64
+		var count int
 		var next time.Time
 		if rows.Scan(&id, &protocol, &state, &count, &next, &dest, &version, &hash) != nil {
 			auth.Error(w, 503, "deliveries_unavailable")
 			return
 		}
-		items = append(items, map[string]any{"delivery_id": id, "protocol_id": protocol, "tenant_id": tenant, "state": state, "attempts_count": count, "next_attempt_at": next, "destination_id": dest, "destination_version": version, "body_sha256": hash})
+		var destinationID any
+		if dest.Valid {
+			destinationID = dest.String
+		}
+		var destinationVersion any
+		if version.Valid {
+			destinationVersion = version.Int64
+		}
+		items = append(items, map[string]any{"delivery_id": id, "protocol_id": protocol, "tenant_id": tenant, "state": state, "attempts_count": count, "next_attempt_at": next, "destination_id": destinationID, "destination_version": destinationVersion, "body_sha256": hash})
 		if len(items) == limit {
 			last = id
 		}
