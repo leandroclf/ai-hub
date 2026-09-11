@@ -3,6 +3,7 @@
 package auth
 
 import (
+	"ai-hub/hub/internal/platform/idgen"
 	"context"
 	"crypto"
 	"crypto/rsa"
@@ -243,10 +244,31 @@ func (v *Verifier) key(ctx context.Context, id string) (*rsa.PublicKey, error) {
 }
 
 func Error(w http.ResponseWriter, status int, code string) {
+	ErrorWithMessage(w, status, code, http.StatusText(status))
+}
+
+// CorrelationID returns the response correlation identifier, creating one only
+// when the handler has not already established a trace for the request. It is
+// safe to expose to the caller and never contains tenant, credential or error
+// details.
+func CorrelationID(w http.ResponseWriter) string {
+	if id := strings.TrimSpace(w.Header().Get("X-Trace-Id")); id != "" {
+		return id
+	}
+	id := idgen.New()
+	w.Header().Set("X-Trace-Id", id)
+	return id
+}
+
+// ErrorWithMessage writes the stable public error envelope. Internal errors
+// must be logged by the owning domain and mapped to a public message before
+// reaching this helper.
+func ErrorWithMessage(w http.ResponseWriter, status int, code, message string) {
+	correlationID := CorrelationID(w)
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(map[string]string{"error": code, "message": http.StatusText(status)})
+	_ = json.NewEncoder(w).Encode(map[string]string{"error": code, "message": message, "correlation_id": correlationID})
 }
 
 func (v *Verifier) Middleware(next http.Handler) http.Handler {

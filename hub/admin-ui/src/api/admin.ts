@@ -2,7 +2,13 @@ export interface Principal { subject:string; tenant_id:string; application_id:st
 export interface Resource {kind:string;id:string;version:number;tenant_id:string;name:string;state:string;revision:number;data:Record<string,unknown>;content_hash:string;author:string;updated_at:string}
 export interface Page<T>{items:T[];next_cursor:string}
 export interface Validation {valid:boolean;field_errors:Record<string,string>;layers:string[][];effective_retry_seconds:number;content_hash:string;fixture:string}
-export class APIError extends Error { constructor(public status:number,public body:Record<string,unknown>){super(String(body.error??body.message??`HTTP ${status}`))} }
+export class APIError extends Error {
+ constructor(public status:number,public body:Record<string,unknown>){
+  const base=String(body.error??body.message??`HTTP ${status}`);
+  const correlation=typeof body.correlation_id==='string'?body.correlation_id:'';
+  super(correlation?`${base} (correlação ${correlation})`:base);
+ }
+}
 let token='';
 export function setToken(value:string){token=value}
 export async function api<T>(path:string,init:RequestInit={}):Promise<T>{

@@ -56,6 +56,11 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		auth.Error(w, 403, "global_reader_mfa_required")
 		return
 	}
+	reason := strings.TrimSpace(r.URL.Query().Get("reason"))
+	if r.Method == http.MethodGet && cross && (len(reason) < 8 || len(reason) > 512) {
+		auth.Error(w, 422, "reason_required")
+		return
+	}
 	id := parts[0]
 	if r.Method == http.MethodPost {
 		if id == "" || len(parts) != 2 || parts[1] != "reconcile" || !p.HasScope("protocols:reconcile") || !p.MFA || (!p.HasRole("hub_protocol_reader") && !p.HasRole("hub_admin")) {
@@ -72,7 +77,12 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		}
 		decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 64*1024))
 		decoder.DisallowUnknownFields()
-		if decoder.Decode(&input) != nil || decoder.Decode(&struct{}{}) != io.EOF || len(strings.TrimSpace(input.Reason)) < 8 {
+		if decoder.Decode(&input) != nil || decoder.Decode(&struct{}{}) != io.EOF {
+			auth.Error(w, 422, "reason_required")
+			return
+		}
+		input.Reason = strings.TrimSpace(input.Reason)
+		if len(input.Reason) < 8 || len(input.Reason) > 512 {
 			auth.Error(w, 422, "reason_required")
 			return
 		}
@@ -109,7 +119,7 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		if missingCorrelation {
 			auditAction = "RECONCILIATION_REJECTED"
 		}
-		if _, err = tx.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,$3,$4,$5)", p.Subject, tenant, id, auditAction, p.MFA); err != nil {
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa,reason) VALUES($1,$2,$3,$4,$5,$6)", p.Subject, tenant, id, auditAction, p.MFA, input.Reason); err != nil {
 			auth.Error(w, 503, "audit_unavailable")
 			return
 		}
@@ -126,7 +136,7 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	// Audit is a prerequisite of diagnostic access, including empty/global reads.
-	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,$3,'READ',$4)", p.Subject, tenant, id, p.MFA); err != nil {
+	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa,reason) VALUES($1,$2,$3,'READ',$4,$5)", p.Subject, tenant, id, p.MFA, reason); err != nil {
 		auth.Error(w, 503, "audit_unavailable")
 		return
 	}
@@ -263,7 +273,13 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		auth.Error(w, 403, "global_reader_mfa_required")
 		return
 	}
-	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,'sla-reports','READ',$3)", p.Subject, tenant, p.MFA); err != nil {
+	cross := tenant != p.TenantID || tenant == "*"
+	reason := strings.TrimSpace(r.URL.Query().Get("reason"))
+	if cross && (len(reason) < 8 || len(reason) > 512) {
+		auth.Error(w, 422, "reason_required")
+		return
+	}
+	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa,reason) VALUES($1,$2,'sla-reports','READ',$3,$4)", p.Subject, tenant, p.MFA, reason); err != nil {
 		auth.Error(w, 503, "audit_unavailable")
 		return
 	}

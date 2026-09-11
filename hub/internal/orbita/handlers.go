@@ -102,7 +102,7 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 }
 
 func writeErr(w http.ResponseWriter, status int, code, msg string) {
-	writeJSON(w, status, map[string]string{"error": code, "message": msg})
+	auth.ErrorWithMessage(w, status, code, msg)
 }
 
 // handleCreate implementa EXE-01 (admissao duravel) e EXE-02/EXE-14

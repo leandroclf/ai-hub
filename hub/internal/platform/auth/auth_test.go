@@ -126,3 +126,35 @@ func TestReaderDoesNotGrantWritesAndWorkloadIsCellBound(t *testing.T) {
 		t.Fatal("expired context accepted")
 	}
 }
+
+func TestPublicErrorsCarryCorrelationWithoutInternalDetails(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	ErrorWithMessage(recorder, http.StatusServiceUnavailable, "catalog_unavailable", "catálogo indisponível; tente novamente")
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("status=%d", recorder.Code)
+	}
+	correlation := recorder.Header().Get("X-Trace-Id")
+	if correlation == "" || recorder.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("resposta sem correlação/cache-control: headers=%v", recorder.Header())
+	}
+	var body map[string]string
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["error"] != "catalog_unavailable" || body["correlation_id"] != correlation {
+		t.Fatalf("envelope inválido: %#v", body)
+	}
+	for _, secret := range []string{"postgres://", "token", "stack", "password"} {
+		if strings.Contains(recorder.Body.String(), secret) {
+			t.Fatalf("detalhe interno exposto: %q", secret)
+		}
+	}
+
+	withExisting := httptest.NewRecorder()
+	withExisting.Header().Set("X-Trace-Id", "trace-fixture")
+	Error(withExisting, http.StatusForbidden, "forbidden")
+	if withExisting.Header().Get("X-Trace-Id") != "trace-fixture" {
+		t.Fatal("correlação previamente estabelecida foi substituída")
+	}
+}

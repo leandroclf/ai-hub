@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -135,4 +136,80 @@ func TestAdminReconciliationRejectsUnknownWithoutProviderCorrelation(t *testing.
 	if state != "REJECTED" || lastError == "" {
 		t.Fatalf("rejection was not durable: state=%s error=%q", state, lastError)
 	}
+}
+
+func TestR2Seg03Scenarios(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	tenantA, tenantB, protocolID := "r2-seg03-a-"+idgen.New(), "r2-seg03-b-"+idgen.New(), idgen.New()
+	if _, err = db.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at,final_representation) VALUES($1,$2,'app-seg03','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'SUCCEEDED',clock_timestamp()+interval '1 hour','{"status":"SUCCEEDED","safe":"value"}')`, protocolID, tenantB, idgen.New(), idgen.New()); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM protocol_access_audit WHERE resource=$1 OR requested_tenant IN ($2,$3)", protocolID, tenantA, tenantB)
+		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+	})
+
+	principal := auth.Principal{Subject: "developer-seg03", TenantID: tenantA, MFA: true, Roles: []string{"hub_protocol_reader"}, Scopes: []string{"protocols:read", "admin:cross_tenant"}, ExpiresAt: time.Now().Add(time.Hour)}
+	mux := http.NewServeMux()
+	NewHandlers(store, nil, nil, nil, nil, nil).RegisterAdmin(mux)
+	request := func(query string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(http.MethodGet, "/admin/v1/protocols/"+protocolID+"?tenant_id="+tenantB+query, nil).WithContext(auth.WithPrincipal(context.Background(), principal))
+		response := httptest.NewRecorder()
+		mux.ServeHTTP(response, req)
+		return response
+	}
+
+	t.Run("R2-SEG-03-S01_diagnostico_de_desenvolvedor", func(t *testing.T) {
+		response := request("&reason=triagem+de+incidente")
+		if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), protocolID) {
+			t.Fatalf("diagnóstico cross-tenant recusado: status=%d body=%s", response.Code, response.Body.String())
+		}
+		var reason string
+		if err := db.QueryRow("SELECT reason FROM protocol_access_audit WHERE subject=$1 AND resource=$2 ORDER BY id DESC LIMIT 1", principal.Subject, protocolID).Scan(&reason); err != nil {
+			t.Fatal(err)
+		}
+		if reason != "triagem de incidente" {
+			t.Fatalf("justificativa não auditada: %q", reason)
+		}
+	})
+
+	t.Run("R2-SEG-03-S02_sem_elevacao_implicita", func(t *testing.T) {
+		response := request("")
+		if response.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("leitura sem justificativa status=%d body=%s", response.Code, response.Body.String())
+		}
+		noWrite := principal
+		noWrite.Scopes = []string{"protocols:read", "admin:cross_tenant"}
+		post := httptest.NewRequest(http.MethodPost, "/admin/v1/protocols/"+protocolID+"/reconcile?tenant_id="+tenantB, strings.NewReader(`{"reason":"não deve elevar"}`)).WithContext(auth.WithPrincipal(context.Background(), noWrite))
+		record := httptest.NewRecorder()
+		mux.ServeHTTP(record, post)
+		if record.Code != http.StatusForbidden {
+			t.Fatalf("leitor administrativo recebeu escrita: status=%d body=%s", record.Code, record.Body.String())
+		}
+	})
+
+	t.Run("R2-SEG-03-S03_auditoria_indisponivel", func(t *testing.T) {
+		unavailable, err := sql.Open("postgres", "postgres://hub:r2-local-fixture@127.0.0.1:1/hub_core?sslmode=disable&connect_timeout=1")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer unavailable.Close()
+		unavailableMux := http.NewServeMux()
+		NewHandlers(NewStore(unavailable), nil, nil, nil, nil, nil).RegisterAdmin(unavailableMux)
+		response := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodGet, "/admin/v1/protocols/"+protocolID+"?tenant_id="+tenantB+"&reason=incidente+testado", nil).WithContext(auth.WithPrincipal(context.Background(), principal))
+		unavailableMux.ServeHTTP(response, req)
+		if response.Code != http.StatusServiceUnavailable || !strings.Contains(response.Body.String(), "audit_unavailable") || strings.Contains(response.Body.String(), dsn) {
+			t.Fatalf("falha de auditoria não sanitizada: status=%d body=%s", response.Code, response.Body.String())
+		}
+	})
 }
