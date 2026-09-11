@@ -152,6 +152,14 @@ R2-ADM-09-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — reconciliação de UNK
 R2-ADM-09-S03;PASS_INTEGRADO_LOCAL;r2-security.log + browser-smoke.json — leitor administrativo sem escopo de escrita recebe 403 no endpoint de reconciliação e o portal não exibe ação de replay
 R2-ADM-11-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal consulta contas, fatos e journal persistidos pelo Libra, incluindo batch_id e origem financeira
 R2-ADM-11-S03;PARCIAL_INTEGRADO;browser-smoke.json — preparação de ajuste exige razão e aprovador distinto, sem autoaprovação; aprovação compensatória completa permanece pendente
+R2-ADM-01-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — Chromium completou Authorization Code + PKCE, senha e OTP e abriu a área administrativa real
+R2-ADM-01-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — logout removeu a sessão e a API administrativa respondeu 401 sem credencial
+R2-ADM-02-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — listagem real de serviços abriu editor de contrato REST declarativo e preservou readback
+R2-ADM-02-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — resposta 200 não-JSON da autoridade foi recusada sem falso sucesso e a lista anterior foi preservada
+R2-ADM-03-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal criou cliente com placement/capacidade e confirmou persistência após reload
+R2-ADM-05-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — editor de produto criou duas etapas e persistiu dependência/mapeamento entre etapas
+R2-ADM-08-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — operador consultou detalhe persistido de protocolo e o leitor global consultou UUID cross-tenant com justificativa auditada
+R2-ADM-10-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — painel de SLA bilateral leu snapshots persistidos e foi exibido em Chromium autenticado
 R2-CAT-03-S01;PARCIAL_INTEGRADO;product-dag-latest.log + product-http-latest.log — A/B independentes respeitam max_parallel=2 e dois efeitos reais são consolidados; medição de sobreposição de traces permanece pendente
 R2-DAD-01-S01;PARCIAL_INTEGRADO;admission-postgres.log + r2-cat-dad-qualification.log — admissão fixa versão/hash e cria pin na mesma transação, mas o encadeamento HTTP upload→submit ainda não foi exercitado
 R2-DAD-01-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — FileRef pronto de tenant-a não pode ser baixado por tenant-b e a admissão consulta tenant_id sem revelar referência alheia
