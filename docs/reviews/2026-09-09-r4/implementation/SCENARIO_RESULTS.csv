@@ -42,6 +42,7 @@ R2-INT-02-S02;PASS_UNITARIO;r2-int-exe-qualification.log — TestBasicUsesDecryp
 R2-INT-02-S03;PASS_UNITARIO;r2-int-exe-qualification.log — TestOAuthCacheRevocationAndExpiry invalida versão antiga e respeita expiração
 R2-INT-03-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestMTLSOAuthUsesClientCertificateAndPinnedCA com handshake HTTPS real
 R2-INT-03-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestOAuthWorksWithoutRedisAndScopesTokensByBinding com cache L1 e Redis indisponível
+R2-INT-03-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues recusa material revogado sem header e mantém binding saudável
 R2-INT-04-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingAuthenticatedHTTP conserva agenda e autenticação
 R2-INT-04-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingClaimsFenceAndAbsoluteDeadline preserva deadline e bloqueia orçamento insuficiente
 R2-INT-04-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingCallbackConflictRetainsBoth classifica observações concorrentes
@@ -52,10 +53,15 @@ R2-INT-05-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgres
 R2-INT-05-S04;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted
 R2-INT-06-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresCapacityAdaptiveAndPending reduz limite sob timeout/latência
 R2-INT-06-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresCapacityAdaptiveAndPending recupera gradualmente após estabilidade
+R2-INT-06-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant limita três réplicas, nega réplica particionada e preserva reserva de B
+R2-INT-06-S04;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresCapacityRollingRateIsolation e TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant contêm ruído de A sem consumir quota de B
 R2-INT-07-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresVersionedWebhookCustody separa chaves por tenant com mesma URL
 R2-INT-07-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresVersionedWebhookCustody congela versão histórica para reentrega
+R2-INT-07-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresSlowWebhookTenantDoesNotBlockHealthyDelivery agenda retry, expõe EXHAUSTED e entrega B em paralelo
+R2-INT-07-S04;PASS_INTEGRADO_LOCAL;webhook-retry-representation-smoke.json + r2-int-exe-qualification.log — TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC simula perda do recibo e verifica mesma identidade, bytes e HMAC
 R2-INT-08-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestFinalizeMonitorOnlyPreservesClientSuccessAndReportsProviderBreach
 R2-INT-08-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestFinalizeRejectsSuccessAfterProviderSLABreach
+R2-INT-08-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestAdminSLAReportSeparatesOpenFulfilledExpiredAndExcludedCohort expõe resumo de coorte no endpoint consumido pelo portal
 R2-EXE-02-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAdmissionPostgresAtomicIdempotency disputa concorrente e converge em um protocolo
 R2-EXE-02-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAdmissionPostgresAtomicIdempotency recusa hash divergente sem substituir o aceite
 R2-EXE-03-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresSubmissionAndObservationCustody conserva tentativa e posse única

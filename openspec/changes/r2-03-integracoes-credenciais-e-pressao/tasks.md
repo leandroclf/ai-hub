@@ -99,7 +99,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-INT-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-INT-03 com oráculos independentes
   - Objective: Executar R2-INT-03-S01, R2-INT-03-S02, R2-INT-03-S03. Caso indispensável: Cofre indisponível; esperado: operação afetada aguarda/recusa dentro da política sem credencial inválida; outras contas elegíveis continuam.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/providerauth/client.go`; `hub/cmd/cometa/main.go`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.
@@ -120,21 +120,21 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.6 Qualificar R2-INT-06 com oráculos independentes
+- [x] 3.6 Qualificar R2-INT-06 com oráculos independentes
   - Objective: Executar R2-INT-06-S01, R2-INT-06-S02, R2-INT-06-S03, R2-INT-06-S04. Caso indispensável: Ruído de cliente; esperado: B mantém SLO do perfil e reservas; A recebe contenção/recusa explícita em vez de consumir capacidade de B.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa`; `hub/internal/atlas/store.go`.
   - Depends on: 2.6; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.7 Qualificar R2-INT-07 com oráculos independentes
+- [x] 3.7 Qualificar R2-INT-07 com oráculos independentes
   - Objective: Executar R2-INT-07-S01, R2-INT-07-S02, R2-INT-07-S03, R2-INT-07-S04. Caso indispensável: Duplicata no receptor; esperado: event_id/result_version identificam o mesmo final e assinatura/timestamp são verificáveis.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/pulsar`; `hub/migrations/core`.
   - Depends on: 2.7; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.8 Qualificar R2-INT-08 com oráculos independentes
+- [x] 3.8 Qualificar R2-INT-08 com oráculos independentes
   - Objective: Executar R2-INT-08-S01, R2-INT-08-S02, R2-INT-08-S03. Caso indispensável: Coorte ainda aberta; esperado: painel mostra elegíveis, abertos, cumpridos, vencidos e exclusões, sem contar abertos como sucesso.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa`; `hub/internal/orbita`.
   - Depends on: 2.8; fixtures de r2-09; dependências de integração pertinentes.

@@ -1,6 +1,6 @@
 AI Hub R2 — qualificação de integrações e execução durável
 date=2026-09-11
-source_commit=9a68953
+source_commit=5bf5bd8
 environment=local-compose-postgres-fixture-and-local-httptest
 secrets=omitted
 
@@ -24,11 +24,21 @@ result=PASS
 observed=admissão idempotente concorrente, tentativa antes do efeito, fencing de submission, UNKNOWN sem reenvio, recibo bruto separado do resultado, quarentena/inbox, reconciliação sem POST, AUTO limitado, fatos financeiros e entrega versionada
 scope=suíte de integração local com PostgreSQL por domínio; cenários sem injeção normativa específica permanecem não qualificados
 
+[r4-qualification-extension]
+command=R2_CORE_TEST_DSN=<fixture> go test -race -count=1 ./internal/providerauth ./internal/cometa ./internal/pulsar ./internal/orbita -run 'TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues|TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant|TestPostgresCapacityRollingRateIsolation|TestPostgresSlowWebhookTenantDoesNotBlockHealthyDelivery|TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC|TestAdminSLAReportSeparatesOpenFulfilledExpiredAndExcludedCohort'
+result=PASS
+observed=cofre revogado após expiração do L1 recusado sem credencial inválida; binding saudável renovado; três réplicas não multiplicaram quota; B preservou reserva
+observed=destino lento produziu RETRY_SCHEDULED e EXHAUSTED, enquanto B recebeu DELIVERED em paralelo; perda de conexão antes do 2xx repetiu os mesmos bytes, event_id, delivery_id e HMAC
+observed=endpoint administrativo expôs coorte elegíveis=4, abertos=1, cumpridos=1, vencidos=1 e exclusões=1; o portal renderiza o resumo e explicita que abertos não são sucesso
+scope=PostgreSQL real do laboratório, httptest HTTP local e build TypeScript/Vite do portal; segredos omitidos
+
 [explicit-boundaries]
 not_qualified=R2-INT-01-S01 (adapter/provedor comercial distinto do simulador)
-not_qualified=R2-INT-03-S03 (cofre indisponível com L1 expirado/revogado e isolamento de outras contas)
-not_qualified=R2-INT-06-S03/S04 (partição do coordenador e janela de ruído de 15 minutos)
-not_qualified=R2-INT-07-S03/S04 (destino lento independente e perda de recibo 2xx no receptor)
-not_qualified=R2-INT-08-S03 (coorte completa com abertos, vencidos, cumpridos e exclusões)
+qualified=R2-INT-03-S03 — TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues recusou o binding com L1 expirado/revogado sem emitir Authorization; o binding saudável renovou normalmente
+qualified=R2-INT-06-S03 — TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant limitou três réplicas, não reciclou quota na partição e manteve B elegível
+qualified=R2-INT-06-S04 — TestPostgresCapacityRollingRateIsolation e o ensaio de ruído limitaram A por tenant/rate sem consumir a reserva de B
+qualified=R2-INT-07-S03 — TestPostgresSlowWebhookTenantDoesNotBlockHealthyDelivery produziu retry e EXHAUSTED para A enquanto B recebeu DELIVERED em paralelo
+qualified=R2-INT-07-S04 — TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC fechou a conexão após o receptor conservar os bytes; a retransmissão manteve event_id, delivery_id, representação e HMAC
+qualified=R2-INT-08-S03 — TestAdminSLAReportSeparatesOpenFulfilledExpiredAndExcludedCohort expôs elegíveis=4, abertos=1, cumpridos=1, vencidos=1 e exclusões=1
 not_qualified=R2-EXE-01 e demais cenários sem teste de crash/broker/commit ou deadline específico
 limitation=httptest e provider-sim são oráculos locais; não equivalem à homologação comercial, regional ou de produção
