@@ -32,7 +32,7 @@ textual isolada.
 
 - OpenSpec strict: 21/21 changes válidas.
 - `npm run build` do portal administrativo: PASS.
-- `go test ./...`, `go test -race ./...` e validações de migração: evidências registradas na rodada.
+- `go test ./...`, `go test -race ./...`, `go vet ./...` e validações de migração: evidências registradas na rodada.
 - Compose oficial `ai_hub_r3qual`: bootstrap, probes e testes integrados locais executados.
 - Restore lógico: três bancos, contagens e digests consistentes; S3 restaurado sem divergência.
 - Browser smoke: evidência atual PASS com OIDC/OTP, readback, SLA, destinos versionados, logout e viewport 390px.
@@ -47,6 +47,10 @@ textual isolada.
 - Inventário de fonte: `generate-openspec-inventory.py` derivou 201 requisitos e
   732 cenários das 29 specs, recusando duplicidades e registrando o digest
   `sha256:363db7fd0613b909c75beaeb9eb7dfe1e3cb52c8f4ecbbbbb697241e381dde9b`.
+- Fronteira administrativa: Atlas e Libra agora rejeitam principal de workload
+  ou sessão sem MFA mesmo com escopo compatível; operações financeiras de
+  escrita exigem `hub_admin`. Os testes novos passaram em RED→GREEN e a suíte
+  Go completa, race dos módulos críticos e `go vet` permaneceram verdes.
 
 ## Regra de conclusão
 

@@ -152,7 +152,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-13 Concluir e requalificar R3-ADM-01 — Fronteira administrativa e aplicação.
-  - Objective: Papel `hub_protocol_reader`, MFA e o escopo OIDC `protocols:reconcile` estão aplicados no admin; o fixture `hub_admin` entrega o escopo. A política de tenant/cross-tenant e a ausência de segredo em claro têm cobertura local; ainda falta a matriz completa de revogação, mascaramento e negativa por jornada.
+  - Objective: Papel `hub_protocol_reader`, MFA e o escopo OIDC `protocols:reconcile` estão aplicados no admin; Atlas e Libra exigem sessão humana com MFA e papel administrativo, e escritas financeiras exigem `hub_admin`; o fixture `hub_admin` entrega o escopo. A política de tenant/cross-tenant e a ausência de segredo em claro têm cobertura local; ainda falta a matriz completa de revogação, mascaramento e negativa por jornada.
   - Likely files/components: hub/internal/orbita/admin.go, hub/internal/platform/auth/auth.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.

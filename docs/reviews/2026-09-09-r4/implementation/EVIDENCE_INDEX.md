@@ -16,6 +16,7 @@ limites arquiteturais.
 | `hub/internal/cometa/capacity.go` + executor/poller/reconciliation + `hub/internal/pulsar/worker.go` | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS`, reconciliação e `FETCH` de webhook; fencing validado antes da autenticação e do I/O externo; budget efetivo limitado por snapshot, contexto, lease e margem |
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` + `custody_test.go` | Snapshot de destino webhook e orçamento de entrega | PASS de teste PostgreSQL; versão aceita é congelada, entrega usa o snapshot persistido e o permit é encerrado com sinal/evidência |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
+| `hub/internal/atlas/catalog_handlers.go` + `hub/internal/libra/handlers.go` | Fronteira administrativa Atlas/Libra | PASS local; rotas administrativas exigem sessão humana com MFA, papel administrativo e bloqueiam workload; escritas financeiras exigem `hub_admin`, com regressão unitária/integrada |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
 | `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; 12 ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
 | `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
@@ -75,6 +76,12 @@ chave sem aumento de efeitos. A reconciliação administrativa agora rejeita e
 audita `UNKNOWN` sem `provider_request_id`, em vez de sugerir replay sem
 correlação. O finalizador também usa o snapshot do protocolo quando o intent
 histórico está ausente, preservando a confirmação durável.
+
+As rotas administrativas Atlas e Libra também foram endurecidas: principal de
+workload ou sessão sem MFA não alcança a administração mesmo com escopo
+compatível; as escritas financeiras exigem adicionalmente o papel `hub_admin`.
+O comportamento foi reproduzido por testes RED→GREEN e validado na suíte Go
+completa, race dos módulos críticos e `go vet`.
 
 Esses resultados fecham os gates locais correspondentes, mas não promovem como
 concluídos o adapter/provedor comercial, a qualificação regional ou a matriz
