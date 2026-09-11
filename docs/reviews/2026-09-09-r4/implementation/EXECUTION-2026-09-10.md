@@ -9,9 +9,9 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Gate | Comando/artefato | Resultado |
 |---|---|---|
 | Catálogo versionado | `node hub/deploy/r2/tests/catalog-seed.mjs` | PASS; seed idempotente via `admin/v1`, validação/publicação com `If-Match`, qualificação/célula sintéticas somente no fixture autorizado |
-| Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789103863389`) |
+| Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789118415310`) |
 | Callback | Carga acima + testes focados de inbox/validação terminal | PASS parcial; callback concluiu, ingress key/capability inválidos retornaram 401, deduplicação por capability, quota e retenção têm implementação e testes focados; cenários externos completos ainda abertos |
-| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, criação/leitura durável, SLA, destinos versionados, navegação, logout, HTTP 401 pós-logout sem credencial, storage sem sessão persistida e viewport móvel sem overflow |
+| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, editor de contrato REST declarativo, criação/leitura durável, editor de produto com mapeamento, SLA, destinos versionados, navegação, logout, HTTP 401 pós-logout sem credencial, storage sem sessão persistida e viewport móvel sem overflow |
 | Entrega webhook com capacidade | `bash hub/deploy/r2/tests/webhook-capacity-runtime.sh` | PASS; worker Pulsar real entregou no sink local e encerrou o permit `r4-webhook` sem concessão aberta ou obrigação pendente; fixture removida ao final |
 | Incidência financeira integrada | `bash hub/deploy/r2/tests/finance-runtime-proof.sh` após carga autorizada | PASS; `SUBMITTED`/`STATUS` com `attempt_id`, fatos de custo/receita, inbox persistida, journal balanceado por moeda e zero quarentena de incidência inválida; log em `hub/evidence/r2/execution/finance-runtime-latest.log` |
 | Browser Harness | `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh` | PASS-EXPLORATORY; 16 rotas em viewport 390×844; descoberta automática do daemon headless requer CDP explícito |
@@ -150,7 +150,8 @@ vazio.
 
 O teste `r2-rest-adapter-latest.log` percorreu a fronteira `ProviderAdapter`
 com um endpoint HTTP local independente do `provider-sim`. O adapter
-`rest-json-v1` construiu `POST /v1/operations` e `GET /v1/operations/{id}`,
+`rest-json-v1` agora constrói os paths declarativos limitados da oferta (na prova,
+`POST /analise` e `GET /consulta/{id}`; sem host, query, fragmento ou código),
 preservou `idempotency_key`, `mode`, `input` e `file_refs`, aplicou API Key
 resolvida pelo binding e validou o fluxo `202/PENDING` → `200/SUCCEEDED` com
 marcador de resposta externo. O decoder recusou campos desconhecidos,
@@ -158,7 +159,7 @@ documentos concatenados, estados inválidos e status HTTP fora do contrato.
 
 Executor, polling e reconciliação passaram a consumir essa fronteira para
 submit/status/decodificação. A imagem `ai-hub-r2-cometa:r2` foi reconstruída a
-partir do commit `cabc3b1`, o container oficial foi recriado com `--no-deps` e
+partir do commit `ac9b346`, o container oficial foi recriado com `--no-deps` e
 `/metrics` respondeu HTTP 200. A prova é seletiva de contrato e integração
 local; não cobre provedor comercial, autenticação regional, crash/partição ou
 produção.

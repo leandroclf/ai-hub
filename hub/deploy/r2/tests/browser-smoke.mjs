@@ -6,6 +6,7 @@ if(!chromium) throw new Error('playwright-core sem export chromium');
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome'});
 const page=await browser.newPage({viewport:{width:1365,height:900}});
 const evidence=[];
+let phase='inicialização';
 async function authenticate(expectedURL){
  await page.getByRole('button',{name:'Entrar',exact:true}).click();
  await page.locator('#username').fill('operadora-a');
@@ -25,11 +26,22 @@ async function authenticate(expectedURL){
  throw new Error('OIDC OTP não foi aceito após oito tentativas');
 }
 try {
+ phase='autenticação inicial';
  await page.goto('http://localhost:13000/services');
  await authenticate('http://localhost:13000/services');
  await page.waitForURL('http://localhost:13000/services');
  await page.getByRole('heading',{name:'Serviços',exact:true}).waitFor();
  evidence.push({check:'OIDC Authorization Code PKCE + password + OTP in Chromium',status:'PASS'});
+ const seededService=page.getByRole('link',{name:/Abrir Consulta cadastral fixture/}).first();
+ phase='editor do serviço seedado';
+ await seededService.waitFor();
+ await seededService.click();
+ await page.waitForURL('http://localhost:13000/services/consulta-cadastral/1');
+ await page.locator('#field-adapter_contract').waitFor();
+ evidence.push({check:'Admin service editor exposes declarative REST adapter contract',status:'PASS'});
+ await page.getByRole('link',{name:'Voltar à lista',exact:true}).click();
+ await page.waitForURL('http://localhost:13000/services');
+ phase='criação e readback do cliente';
  const clientCode=`browser-client-${Date.now()}`;
  await page.getByRole('link',{name:'Clientes',exact:true}).click();
  await page.getByRole('heading',{name:'Clientes',exact:true}).waitFor();
@@ -48,6 +60,7 @@ try {
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.locator(`input[value="Browser ${clientCode}"]`).waitFor();
  evidence.push({check:'Admin resource save, reload and durable readback',status:'PASS',resource:clientCode});
+ phase='editor de produto e mapeamento dependente';
  const productCode=`browser-product-${Date.now()}`;
  await page.getByRole('link',{name:'Produtos',exact:true}).click();
  await page.waitForURL('http://localhost:13000/products');
@@ -73,6 +86,7 @@ try {
  await authenticate(/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  if(await page.locator('#step-1-input-mapping').inputValue()!=='{\n  "marker": "etapa_a.marker"\n}')throw new Error('input_mapping do produto não reapareceu no readback');
  evidence.push({check:'Admin product editor persists dependent input mapping',status:'PASS',resource:productCode});
+ phase='navegação e relatórios administrativos';
  await page.getByRole('link',{name:'Provedores',exact:true}).click();
  await page.waitForURL('http://localhost:13000/providers');
  await page.getByRole('heading',{name:'Provedores',exact:true}).waitFor();
@@ -142,5 +156,5 @@ try {
  evidence.push({check:'R2-SEG-05-S02 logout revokes browser access to administrative API',status:'PASS',httpStatus:unauthenticatedStatus});
  evidence.push({check:'R2-SEG-05-S02 logout navigation',status:'OBSERVED',origin:new URL(page.url()).origin});
  console.log(JSON.stringify(evidence,null,2));
-} catch(error) {evidence.push({check:'browser flow',status:'FAIL',error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
+} catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
 finally {await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()}

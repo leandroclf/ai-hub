@@ -3,7 +3,7 @@
 Data: 2026-09-11 (America/Sao_Paulo)
 
 HEAD do checkpoint: commit de consolidação desta rodada; o SHA final deve ser
-consultado no log após o commit. O código do adapter REST está em `cabc3b1`.
+consultado no log após o commit. O código do adapter REST está em `ac9b346`.
 
 Executado: OpenSpec strict `21/21` — PASS; `npm run build` no portal — PASS;
 `go test -race -count=1 ./...`, `go vet ./...` e `git diff --check` — PASS. O

@@ -4,14 +4,18 @@
     "status": "PASS"
   },
   {
+    "check": "Admin service editor exposes declarative REST adapter contract",
+    "status": "PASS"
+  },
+  {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789117179948"
+    "resource": "browser-client-1789118872625"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789117230932"
+    "resource": "browser-product-1789118910916"
   },
   {
     "check": "URL navigation and real authenticated provider list",

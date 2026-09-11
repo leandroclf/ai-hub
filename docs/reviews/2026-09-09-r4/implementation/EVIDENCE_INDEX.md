@@ -10,7 +10,7 @@ limites arquiteturais.
 | Evidência | Escopo | Resultado |
 |---|---|---|
 | `hub/evidence/r2/execution/authorized-load-latest.log` | Carga autenticada com seed versionado | PASS; oito caminhos, falha controlada e idempotência |
-| `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout, HTTP 401 pós-logout e viewport móvel |
+| `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, editor de contrato REST declarativo, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout, HTTP 401 pós-logout e viewport móvel |
 | Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP explícito `BU_CDP_URL=http://127.0.0.1:9222` | PASS-EXPLORATORY; descoberta automática do daemon headless ainda não funciona, evidência em `hub/evidence/r2/execution/browser-harness-latest.log` |
 | `hub/evidence/r2/execution/r2-rest-adapter-latest.log` | Fronteira `ProviderAdapter` e contrato `rest-json-v1` | PASS seletivo; endpoint REST local independente, API Key por binding, SYNC/ASYNC, resposta estrita, submit/poll/reconciliação ligados ao adapter e Cometa reconstruído; provedor comercial permanece fora |
 | `hub/internal/cometa/custody.go` + migração `0041` | Inbox de callback | PASS de implementação/testes focados; identidade por capability, limites de bytes/itens e retenção periódica; qualificação externa ainda aberta |

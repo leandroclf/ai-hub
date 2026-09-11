@@ -1,10 +1,10 @@
 {
-  "key": "r4-product-http-1789117434176",
+  "key": "r4-product-http-1789118405229",
   "evidence": [
     {
       "check": "admissão HTTP do produto composto",
       "status": "PASS",
-      "protocol_id": "01a08fb5-8e77-79f9-8a7f-fcdcb2e9c729",
+      "protocol_id": "01a08fc4-5f79-7b48-93b0-823674cb3323",
       "initial_status": 202
     },
     {
@@ -12,7 +12,7 @@
       "status": "PASS",
       "final_status": "SUCCEEDED",
       "final_body": {
-        "protocol_id": "01a08fb5-8e77-79f9-8a7f-fcdcb2e9c729",
+        "protocol_id": "01a08fc4-5f79-7b48-93b0-823674cb3323",
         "status": "SUCCEEDED",
         "result_version": 1,
         "result": {
@@ -20,11 +20,11 @@
           "skipped_steps": [],
           "steps": {
             "etapa_a": {
-              "provider_request_id": "prov-req-000011",
+              "provider_request_id": "prov-req-000021",
               "status": "SUCCEEDED"
             },
             "etapa_b": {
-              "provider_request_id": "prov-req-000012",
+              "provider_request_id": "prov-req-000022",
               "status": "SUCCEEDED"
             }
           }
@@ -45,12 +45,12 @@
       "check": "oráculo do provider-sim confirma dois efeitos externos independentes",
       "status": "PASS",
       "before": {
-        "effects": 10,
-        "protocols": 10
+        "effects": 20,
+        "protocols": 20
       },
       "after": {
-        "effects": 12,
-        "protocols": 12
+        "effects": 22,
+        "protocols": 22
       }
     },
     {
@@ -64,8 +64,8 @@
         "protocols": 1
       },
       "external_after_duplicate": {
-        "effects": 12,
-        "protocols": 12
+        "effects": 22,
+        "protocols": 22
       }
     }
   ]

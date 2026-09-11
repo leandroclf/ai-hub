@@ -5,21 +5,21 @@
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
 | `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos, `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
-| `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, CRUD/readback, navegação, logout, HTTP 401 pós-logout e 390 px: PASS | Não substitui matriz completa de autorização |
+| `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, editor de contrato REST declarativo, CRUD/readback, navegação, logout, HTTP 401 pós-logout e 390 px: PASS | Não substitui matriz completa de autorização |
 | Browser Harness | Runner instalado; com `BU_CDP_URL=http://127.0.0.1:9222` percorreu 16 rotas e viewport 390×844: `PASS-EXPLORATORY` | Descoberta automática do daemon headless continua indisponível; Playwright é o gate determinístico |
-| `r2-rest-adapter-latest.log` | `go test -count=1 -race -v ./internal/cometa -run 'TestAdapterRegistry\|TestVersionedRESTAdapter'`: PASS; `rest-json-v1` independente do simulador, API Key por binding, SYNC/ASYNC, resposta estrita e Cometa reconstruído | Contrato local de homologação; não é provedor comercial nem qualificação produtiva |
+| `r2-rest-adapter-latest.log` | `go test -count=1 -race -v ./internal/cometa -run 'TestAdapterRegistry\|TestVersionedRESTAdapter'`: PASS; `rest-json-v1` independente do simulador, paths declarativos `/analise` e `/consulta/{id}`, API Key por binding, SYNC/ASYNC, resposta estrita e Cometa reconstruído | Contrato local de homologação; não é provedor comercial nem qualificação produtiva |
 | cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
 
 ## Atualização da retomada de 11/09/2026
 
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
-| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789117434176`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
+| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789118405229`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
 | `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
 | `browser-smoke.json` | PASS; portal persiste e relê mapeamento de entrada entre etapas e a API retorna HTTP 401 após logout sem credencial | Não substitui matriz completa de autorização e negativos |
 | `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
 
-| `authorized-load-latest.log` | Reexecução após correção de CIDR e rebuild do Cometa: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789117449201`) | Dados sintéticos e provider-sim local |
+| `authorized-load-latest.log` | Reexecução após correção de CIDR e rebuild do Cometa: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789118415310`) | Dados sintéticos e provider-sim local |
 | `webhook-capacity-latest.log` + `finance-runtime-latest.log` | Entrega webhook com `open=0/pending=0` e financeiro balanceado sem quarentena: PASS | Não homologa endpoint comercial ou ERP |
 | `rls-runtime-proof.sh` | Isolamento cross-tenant em control/core/finance com role não proprietária: PASS | Não substitui matriz HTTP completa de autorização |
 

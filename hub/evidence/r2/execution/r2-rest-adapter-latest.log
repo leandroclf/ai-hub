@@ -1,6 +1,6 @@
 AI Hub R4 — qualificação do adapter REST versionado
 date=2026-09-11
-source_commit=cabc3b1
+source_commit=ac9b346
 environment=local-compose-cometa-and-local-httptest
 secrets=omitted
 
@@ -8,8 +8,9 @@ secrets=omitted
 command=go test -count=1 -race -v ./internal/cometa -run 'TestAdapterRegistry|TestVersionedRESTAdapter'
 result=PASS
 observed=registry falha fechado para ID de catálogo sem implementação e permite somente adapters compilados ou explicitamente autorizados
-observed=rest-json-v1 enviou POST /v1/operations com idempotency_key, mode, input e file_refs sem reutilizar o DTO do provider-sim
-observed=consulta de status usa GET e escapa a identidade provider_request_id antes de construir o path
+observed=rest-json-v1 enviou POST /analise conforme o contrato declarativo, com idempotency_key, mode, input e file_refs sem reutilizar o DTO do provider-sim
+observed=consulta de status usa GET /consulta/{id}, substitui somente o placeholder e escapa a identidade provider_request_id antes de construir o path
+observed=Atlas rejeita contrato ausente, parcial, absoluto, com query, fragmento, dupla barra, traversal ou mais de um placeholder; defaults legados continuam limitados ao adapter
 observed=respostas com campo desconhecido, documentos JSON concatenados, HTTP inesperado ou status de negócio inválido foram recusadas
 
 [api-key-and-async]
@@ -20,9 +21,9 @@ scope=contrato HTTP local independente, autenticador API_KEY com resolvedor de f
 
 [cometa-integration]
 result=PASS
-observed=Executor, polling e reconciliação passaram a obter submit/status/decode pela fronteira ProviderAdapter; fencing, capacidade, autenticação e custódia continuam fora do adapter
+observed=Executor, polling e reconciliação passaram a obter submit/status/decode pela fronteira ProviderAdapter e pelo contrato congelado na oferta; fencing, capacidade, autenticação e custódia continuam fora do adapter
 command=docker compose -p ai_hub_r3qual -f hub/deploy/r2/compose.yaml build cometa
-observed=image ai-hub-r2-cometa:r2 reconstruída a partir de cabc3b1
+observed=image ai-hub-r2-cometa:r2 reconstruída a partir de ac9b346
 command=docker compose -p ai_hub_r3qual -f hub/deploy/r2/compose.yaml up -d --no-deps cometa
 observed=container ai_hub_r3qual-cometa-1 recriado e iniciado; GET /metrics respondeu HTTP 200
 observed=na primeira repetição do produto, o recreate isolado restaurou loopback no EGRESS_PRIVATE_RULES e produziu transport_error; a CIDR real 172.19.0.3/32 foi reaplicada antes da qualificação final

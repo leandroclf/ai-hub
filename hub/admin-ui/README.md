@@ -63,6 +63,13 @@ quando exigido pelo contrato, MFA e segregação de funções. Paginação, filt
 de tenant e `If-Match`/idempotência são tratados pelas APIs; o frontend não
 substitui essas verificações.
 
+Para serviços com `adapter_id: rest-json-v1`, o editor exibe o campo JSON
+`adapter_contract`. Preencha somente `submit_path` e `status_path`, por
+exemplo `{"submit_path":"/analise","status_path":"/consulta/{id}"}`.
+O backend rejeita host absoluto, query, fragmento, traversal, placeholders
+adicionais e contrato parcial; a URL base continua sendo propriedade da conta
+externa homologada.
+
 ## Validação de frontend
 
 Use os gates nesta ordem quando a demanda envolver o portal:
