@@ -158,6 +158,8 @@ R2-ADM-02-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — listagem real de servi
 R2-ADM-02-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — resposta 200 não-JSON da autoridade foi recusada sem falso sucesso e a lista anterior foi preservada
 R2-ADM-02-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — revisão concorrente produziu 412 e o portal preservou a edição local exibindo a versão atual do servidor
 R2-ADM-03-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal criou cliente com placement/capacidade e confirmou persistência após reload
+R2-ADM-03-S02;PASS_INTEGRADO_LOCAL;admin-client-lifecycle-smoke.json — cliente sintético com capacidade 999 exibiu bloqueio específico de capacidade qualificada e instrução de provisionamento, sem publicar sucesso fictício
+R2-ADM-03-S03;PASS_INTEGRADO_LOCAL;admin-client-lifecycle-smoke.json — cliente publicado foi suspenso com razão, impacto de novas admissões e histórico preservado enquanto havia um protocolo RUNNING do tenant
 R2-ADM-05-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — editor de produto criou duas etapas e persistiu dependência/mapeamento entre etapas
 R2-ADM-08-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — operador consultou detalhe persistido de protocolo e o leitor global consultou UUID cross-tenant com justificativa auditada
 R2-ADM-10-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — painel de SLA bilateral leu snapshots persistidos e foi exibido em Chromium autenticado

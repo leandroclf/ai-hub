@@ -16,22 +16,26 @@ function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U
 function sqlControl(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_control','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
 let phase='inicialização';
 async function authenticate(username,expectedURL){
- await page.getByRole('button',{name:'Entrar',exact:true}).click();
- await page.locator('#username').fill(username);
- await page.locator('#password').fill('R2-fixture-password!');
- await page.locator('#kc-login').click();
- await page.locator('#otp').waitFor();
- for(let attempt=0;attempt<8;attempt++){
-  if(await page.locator('#otp').count()){
-   const counter=Buffer.alloc(8);counter.writeBigUInt64BE(BigInt(Math.floor(Date.now()/30000)));
+ if(!await page.locator('#otp').count()){
+  await page.getByRole('button',{name:'Entrar',exact:true}).click();
+  await page.locator('#username').fill(username);
+  await page.locator('#password').fill('R2-fixture-password!');
+  await page.locator('#kc-login').click();
+  await page.locator('#otp').waitFor();
+ }
+ for(let attempt=0;attempt<3;attempt++){
+  for(const skew of [0,-1,1]){
+   if(!await page.locator('#otp').count())break;
+   const counter=Buffer.alloc(8);counter.writeBigUInt64BE(BigInt(Math.floor(Date.now()/30000)+skew));
    const digest=createHmac('sha1',Buffer.from('JBSWY3DPEHPK3PXP')).update(counter).digest();
    const offset=digest[digest.length-1]&15;
    const otp=((digest.readUInt32BE(offset)&0x7fffffff)%1000000).toString().padStart(6,'0');
    await page.locator('#otp').fill(otp);await page.locator('#kc-login').click();
+   try{await page.waitForURL(expectedURL,{timeout:1500});return}catch{}
   }
-  try{await page.waitForURL(expectedURL,{timeout:3500});return}catch{await page.waitForTimeout(250)}
+  await page.waitForTimeout(250);
  }
- throw new Error('OIDC OTP não foi aceito após oito tentativas');
+ throw new Error('OIDC OTP não foi aceito após janela de relógio e três ciclos');
 }
 try {
  phase='autenticação inicial';
@@ -84,8 +88,7 @@ try {
  await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.reload({waitUntil:'networkidle'});
- await page.waitForTimeout(31000-(Date.now()%30000));
- await authenticate('operadora-a',/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
+ if(page.url().includes('/realms/')||await page.getByRole('button',{name:'Entrar',exact:true}).count())await authenticate('operadora-a',/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.locator(`input[value="Browser ${clientCode}"]`).waitFor();
  evidence.push({check:'Admin resource save, reload and durable readback',status:'PASS',resource:clientCode});
@@ -119,8 +122,7 @@ sqlControl(`UPDATE catalog_resources SET revision=revision+1,updated_at=clock_ti
  await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
  await page.waitForURL(/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  await page.reload({waitUntil:'networkidle'});
- await page.waitForTimeout(31000-(Date.now()%30000));
- await authenticate('operadora-a',/http:\/\/localhost:13000\/products\/[^/]+\/1/);
+ if(await page.getByRole('button',{name:'Entrar',exact:true}).count())await authenticate('operadora-a',/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  if(await page.locator('#step-1-input-mapping').inputValue()!=='{\n  "marker": "etapa_a.marker"\n}')throw new Error('input_mapping do produto não reapareceu no readback');
  evidence.push({check:'Admin product editor persists dependent input mapping',status:'PASS',resource:productCode});
  phase='navegação e relatórios administrativos';
@@ -286,7 +288,7 @@ sqlControl(`UPDATE catalog_resources SET revision=revision+1,updated_at=clock_ti
  await page.getByRole('button',{name:'Sair',exact:true}).click();
  await page.waitForTimeout(500);
  console.log(JSON.stringify(evidence,null,2));
-} catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0],networkDiagnostics});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
+} catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0],bodyText:(await page.locator('body').innerText().catch(()=>'' )).slice(0,800),networkDiagnostics});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
 finally {
  if(seededDelivery){try{sql(`DELETE FROM webhook_audit WHERE resource='${seededDelivery}'`);sql(`DELETE FROM deliveries WHERE delivery_id='${seededDelivery}'`)}catch(error){console.error(`cleanup da fixture de redelivery falhou: ${error.message}`)}}
  await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()
