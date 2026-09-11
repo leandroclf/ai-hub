@@ -65,6 +65,7 @@ R2-EXE-04-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactP
 R2-EXE-05-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody não confirma mensagem sem finalização durável
 R2-EXE-05-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody deduplica inbox após reentrega
 R2-EXE-05-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody quarentena tipo desconhecido e preserva identidade
+R2-EXE-06-S01;PASS_INTEGRADO;late-success-expiry-smoke.json — finalização bem-sucedida após deadline foi arbitrada como EXPIRED/SLA_EXCEEDED sem persistir resultado do provedor
 R2-EXE-07-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait retorna final rápido ou 202 tardio sem renovar espera
 R2-EXE-07-S04;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait preserva intenção após desconexão
 R2-EXE-09-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestReconciliationWorkerResolvesStatusWithoutReplay reconcilia com GET e zero POST

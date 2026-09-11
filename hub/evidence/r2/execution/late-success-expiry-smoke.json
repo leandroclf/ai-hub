@@ -1,0 +1,11 @@
+{
+  "check": "Finalização tardia não publica sucesso",
+  "status": "PASS",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -count=1 ./internal/orbita -run '^TestFinalizeLateSuccessBecomesExpired$' -v",
+  "oracle": {
+    "late_success_status": "EXPIRED",
+    "error_code": "SLA_EXCEEDED",
+    "provider_result_marker_persisted": false,
+    "database": "PostgreSQL 16"
+  }
+}

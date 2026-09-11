@@ -134,6 +134,48 @@ func TestFinalizeUsesProtocolSnapshotWhenIntentIsMissing(t *testing.T) {
 	}
 }
 
+func TestFinalizeLateSuccessBecomesExpired(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	store := NewStore(db)
+	now := time.Now().UTC()
+	tenant := "late-success-tenant-" + idgen.New()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "late-success-cell", IdempotencyKey: "late-success-key", RequestHash: "late-success-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"fixture":true}`), EconomicSnapshot: json.RawMessage(`{}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	defer func() {
+		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
+		db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+		db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+	}()
+	if _, err = db.ExecContext(ctx, "UPDATE protocols SET client_deadline_at=clock_timestamp()-interval '1 second' WHERE protocol_id=$1", p.ProtocolID); err != nil {
+		t.Fatal(err)
+	}
+
+	finalizer := NewFinalizer(store, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if applied, err := finalizer.Finalize(ctx, "late-trace", tenant, p.ProtocolID, 0, StatusSucceeded, FinalBody{Result: map[string]any{"result_marker": "provider"}}, ""); err != nil || !applied {
+		t.Fatalf("late finalization: applied=%v err=%v", applied, err)
+	}
+	got, err := store.Get(ctx, tenant, p.ProtocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != StatusExpired || !strings.Contains(string(got.FinalBody), "SLA_EXCEEDED") || strings.Contains(string(got.FinalBody), "result_marker") {
+		t.Fatalf("late success escaped as terminal success: status=%s body=%s", got.Status, got.FinalBody)
+	}
+	t.Logf("late success was arbitrated as EXPIRED with SLA_EXCEEDED and no provider result: protocol=%s", p.ProtocolID)
+}
+
 func TestFinalizeRejectsSuccessAfterProviderSLABreach(t *testing.T) {
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
 	if dsn == "" {
