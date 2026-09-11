@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "profile": "r2-exe-01-s03-commit-uncertain",
+  "compose_project": "ai_hub_r3qual",
+  "key": "r4-commit-uncertain-20260911qual3-async-001",
+  "transport": {
+    "client_closed_before_response": true,
+    "post_send_grace_ms": 100
+  },
+  "accepted": {
+    "status": "ACCEPTED",
+    "protocol_id": "01a0914d-36f4-7c16-84f5-ce47fe5ec1e0"
+  },
+  "replay": {
+    "http_status": 200,
+    "protocol_id": "01a0914d-36f4-7c16-84f5-ce47fe5ec1e0",
+    "status": "ACCEPTED"
+  },
+  "durable": {
+    "protocols": 1,
+    "operations": 0
+  },
+  "limitation": "A conexão foi encerrada após o envio do request, mas não há injeção no ponto interno do commit PostgreSQL; o ensaio comprova a recuperação/idempotência observável na fronteira HTTP.",
+  "finished_at": "2026-09-11T16:29:12.092Z"
+}
