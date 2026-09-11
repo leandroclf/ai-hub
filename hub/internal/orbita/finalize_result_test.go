@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -14,6 +16,7 @@ import (
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/objectstore"
+	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
 )
 
@@ -175,4 +178,66 @@ func TestFinalizeRejectsSuccessAfterProviderSLABreach(t *testing.T) {
 		t.Fatalf("late provider result was not rejected: %+v", body)
 	}
 	t.Log("finalização após o prazo do provedor sob REJECT_LATE foi materializada como FAILED, preservando o prazo do cliente e sem sucesso fictício")
+}
+
+func TestFinalizeMonitorOnlyPreservesClientSuccessAndReportsProviderBreach(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	store := NewStore(db)
+	now := time.Now().UTC().Add(-2 * time.Second)
+	tenant := "provider-monitor-tenant-" + idgen.New()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "provider-monitor-cell", IdempotencyKey: "provider-monitor-key", RequestHash: "provider-monitor-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: time.Now().UTC().Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"target":{"data":{"provider_sla_seconds":1,"provider_sla_policy":"MONITOR_ONLY"}}}`), EconomicSnapshot: json.RawMessage(`{}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM protocol_access_audit WHERE requested_tenant=$1", tenant)
+		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
+		db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+		db.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+	})
+
+	finalizer := NewFinalizer(store, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if applied, err := finalizer.Finalize(ctx, "trace", tenant, p.ProtocolID, 0, StatusSucceeded, FinalBody{Result: map[string]any{"provider": "late-but-accepted"}}, ""); err != nil || !applied {
+		t.Fatalf("monitor-only finalization: applied=%v err=%v", applied, err)
+	}
+	got, err := store.Get(ctx, tenant, p.ProtocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Status != StatusSucceeded {
+		t.Fatalf("monitor-only provider breach changed client result to %s", got.Status)
+	}
+	principal := auth.Principal{Subject: "sla-reader", TenantID: tenant, MFA: true, Roles: []string{"hub_protocol_reader"}, Scopes: []string{"protocols:read"}, ExpiresAt: time.Now().Add(time.Hour)}
+	mux := http.NewServeMux()
+	NewHandlers(store, nil, nil, nil, nil, nil).RegisterAdmin(mux)
+	req := httptest.NewRequest(http.MethodGet, "/admin/v1/sla-reports/"+p.ProtocolID+"?tenant_id="+tenant, nil).WithContext(auth.WithPrincipal(ctx, principal))
+	response := httptest.NewRecorder()
+	mux.ServeHTTP(response, req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("SLA report status=%d body=%s", response.Code, response.Body.String())
+	}
+	var report struct {
+		Status              string `json:"status"`
+		ProviderSLAOutcome  string `json:"provider_sla_outcome"`
+		ProviderSLABreached bool   `json:"provider_sla_breached"`
+		ClientSLABreached   bool   `json:"client_sla_breached"`
+		ProviderSLAPolicy   string `json:"provider_sla_policy"`
+	}
+	if err := json.Unmarshal(response.Body.Bytes(), &report); err != nil {
+		t.Fatal(err)
+	}
+	if report.Status != string(StatusSucceeded) || report.ProviderSLAPolicy != "MONITOR_ONLY" || report.ProviderSLAOutcome != "MONITOR_ONLY_BREACH" || !report.ProviderSLABreached || report.ClientSLABreached {
+		t.Fatalf("monitor-only report lost the bilateral distinction: %+v", report)
+	}
+	t.Log("atraso do provedor sob MONITOR_ONLY preservou SUCCEEDED do cliente e o painel separou MONITOR_ONLY_BREACH de client_sla_breached")
 }

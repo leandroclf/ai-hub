@@ -184,6 +184,33 @@ func TestPostgresPollingRejectsProviderCorrelationMismatch(t *testing.T) {
 	}
 }
 
+func TestPostgresPollingRetryAfterBeyondDeadlineIsNotClaimed(t *testing.T) {
+	s, cmd := pollDB(t)
+	acceptPoll(t, s, cmd)
+	ctx := context.Background()
+	claim, err := s.ClaimPoll(ctx, cmd.CellID, "poll-retry-after")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = s.db.Exec(`UPDATE polling_schedule SET deadline_at=clock_timestamp()+interval '2 seconds' WHERE operation_id=$1`, cmd.CommandID); err != nil {
+		t.Fatal(err)
+	}
+	if err = s.CompletePoll(ctx, claim, dispatch.Result{Kind: dispatch.FactUnknown, ProviderRequestID: "provider-correlation", ErrorCode: "provider_rate_limited"}, 30*time.Second); err != nil {
+		t.Fatal(err)
+	}
+	var nextRun, deadline time.Time
+	if err = s.db.QueryRow(`SELECT next_run_at,deadline_at FROM polling_schedule WHERE operation_id=$1`, cmd.CommandID).Scan(&nextRun, &deadline); err != nil {
+		t.Fatal(err)
+	}
+	if !nextRun.After(deadline) {
+		t.Fatalf("Retry-After was shortened past the provider wait: next=%s deadline=%s", nextRun, deadline)
+	}
+	if _, err = s.ClaimPoll(ctx, cmd.CellID, "poll-too-late"); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("poll was claimed beyond the absolute deadline: %v", err)
+	}
+	t.Log("Retry-After superior à janela foi preservado; o agendador não abriu nova consulta além do deadline absoluto")
+}
+
 func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	s, cmd := pollDB(t)
 	acceptPoll(t, s, cmd)

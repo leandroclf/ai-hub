@@ -3,6 +3,7 @@ package orbita
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -84,4 +85,48 @@ func TestPostgresRetryHorizonStartsOnceAndExpires(t *testing.T) {
 	if state != "EXPIRED" {
 		t.Fatalf("retry horizon renewed or intent remained publishable: state=%s", state)
 	}
+}
+
+func TestPostgresRetryHorizonTTLZeroDoesNotRequeue(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	tenant, protocolID, commandID := "retry-zero-"+idgen.New(), idgen.New(), idgen.New()
+	t.Cleanup(func() {
+		_, _ = db.ExecContext(ctx, "DELETE FROM command_intents WHERE tenant_id=$1", tenant)
+		_, _ = db.ExecContext(ctx, "DELETE FROM protocols WHERE tenant_id=$1", tenant)
+	})
+	now := time.Now().UTC()
+	p := Protocol{ProtocolID: protocolID, TenantID: tenant, ApplicationID: "app-retry", CellID: "cell-retry", IdempotencyKey: "intent-" + idgen.New(), RequestHash: "hash-zero", RequestBody: []byte(`{"mode":"ASYNC"}`), Mode: "ASYNC", DispatchMode: string(dispatch.DispatchQueued), CommandID: commandID, Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	cmd := dispatch.Command{TenantID: tenant, ApplicationID: p.ApplicationID, CellID: p.CellID, ProtocolID: protocolID, StepID: "step-zero", CommandID: commandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: []byte(`{"synthetic":true}`), RequestBody: map[string]any{"x": 1}, AcceptedAt: now, StepDeadline: now.Add(time.Minute), RetryTTLSeconds: 0}
+	store := NewStore(db)
+	if _, created, err := store.Admit(ctx, p, cmd, "subject-retry", false); err != nil || !created {
+		t.Fatalf("admit created=%v err=%v", created, err)
+	}
+	claimed, err := store.ClaimIntent(ctx, p.CellID, "owner-zero")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ok, err := store.CompleteIntent(ctx, claimed, false)
+	if err != nil || !ok {
+		t.Fatalf("complete zero ttl ok=%v err=%v", ok, err)
+	}
+	var state string
+	if err := db.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commandID).Scan(&state); err != nil {
+		t.Fatal(err)
+	}
+	if state != "EXPIRED" {
+		t.Fatalf("zero retry TTL left intent publishable: state=%s", state)
+	}
+	if _, err := store.ClaimIntent(ctx, p.CellID, "owner-again"); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("zero TTL requeued intent: %v", err)
+	}
+	t.Log("primeira falha transitória com retry_ttl_seconds=0 encerrou a intenção como EXPIRED sem novo submit")
 }

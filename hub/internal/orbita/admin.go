@@ -322,7 +322,7 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 	}
 	rows, err := h.store.db.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,accepted_at,client_deadline_at,finalized_at,final_event_id,config_snapshot
 		FROM protocols
-		WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND ($3='' OR protocol_id=$3) AND protocol_id::text>$4
+		WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND ($3='' OR protocol_id::text=$3) AND protocol_id::text>$4
 		  AND ($5='' OR accepted_at>=NULLIF($5,'')::date) AND ($6='' OR accepted_at<NULLIF($6,'')::date+interval '1 day')
 		ORDER BY protocol_id::text LIMIT $7`, tenant, status, id, after, from, to, limit+1)
 	if err != nil {

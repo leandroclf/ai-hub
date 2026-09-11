@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -77,6 +78,57 @@ func TestOAuthWorksWithoutRedisAndScopesTokensByBinding(t *testing.T) {
 	if calls.Load() != 2 {
 		t.Fatalf("token requests=%d; wanted reuse only within binding", calls.Load())
 	}
+}
+
+func TestOAuthSameProviderAccountUsesEachDedicatedBindingCredential(t *testing.T) {
+	var calls atomic.Int32
+	secrets := map[string]string{"client-a": "secret-a", "client-b": "secret-b"}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		_ = r.ParseForm()
+		clientID := r.Form.Get("client_id")
+		if r.Form.Get("client_secret") != secrets[clientID] || r.Form.Get("client_secret_ref") != "" {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		fmt.Fprintf(w, `{"access_token":"token-%s","expires_in":30}`, clientID)
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	t.Setenv("ENVIRONMENT", "local")
+	t.Setenv("EGRESS_HTTP_ORIGINS", server.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", u.Host+"=127.0.0.1/32")
+	cache := NewTokenCache("127.0.0.1:1")
+	defer cache.Close()
+	cache.Resolver = testResolver{
+		"secret-a": {Value: "secret-a", Version: "v1"},
+		"secret-b": {Value: "secret-b", Version: "v1"},
+	}
+	configs := []Config{
+		{AuthType: OAuthClientCredentials, TokenURL: server.URL, ClientID: "client-a", ClientSecretRef: "secret-a", SecretVersion: "v1", BindingID: "binding-a", TenantID: "tenant-a", Environment: "local"},
+		{AuthType: OAuthClientCredentials, TokenURL: server.URL, ClientID: "client-b", ClientSecretRef: "secret-b", SecretVersion: "v1", BindingID: "binding-b", TenantID: "tenant-b", Environment: "local"},
+	}
+	var wg sync.WaitGroup
+	for _, cfg := range configs {
+		cfg := cfg
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			req, _ := http.NewRequest(http.MethodGet, "https://provider.example/resource", nil)
+			if err := cache.Apply(context.Background(), http.DefaultClient, "same-provider-account", cfg, req); err != nil {
+				t.Error(err)
+				return
+			}
+			if got, want := req.Header.Get("Authorization"), "Bearer token-"+cfg.ClientID; got != want {
+				t.Errorf("binding %s received %q, want %q", cfg.BindingID, got, want)
+			}
+		}()
+	}
+	wg.Wait()
+	if got := calls.Load(); got != int32(len(configs)) {
+		t.Fatalf("token requests=%d; wanted one isolated credential resolution per binding", got)
+	}
+	t.Log("duas credenciais dedicadas para a mesma provider_account foram resolvidas simultaneamente; cada principal recebeu somente seu próprio token")
 }
 
 func TestOAuthCacheRevocationAndExpiry(t *testing.T) {
