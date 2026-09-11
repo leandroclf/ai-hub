@@ -130,11 +130,19 @@ custódia/egresso e grava o envelope completo em `message_quarantine` antes de
 remover a mensagem. Rejeições determinísticas são isoladas após quarentena;
 falhas recuperáveis de capacidade/credencial continuam elegíveis a redelivery.
 
-O backlog antigo da fila continha 15 comandos expirados e quatro permits de
+O backlog antigo da fila continha 15 comandos expirados e dez permits de
 submissão com ausência comprovada no oráculo local. Os primeiros foram
 quarentenados como `expired_command_deadline`; os permits foram fechados pelo
 runner de reconciliação somente após HTTP 404 do provider-sim, resultando em
-`closed=4 protected=0`. Depois disso, `product-runtime-proof.mjs` passou com a
-chave `r4-product-http-1789109019646`, duas etapas/operações/efeitos e
+`closed=10 protected=0`. Depois disso, `product-runtime-proof.mjs` passou com a
+chave `r4-product-http-1789127362271`, duas etapas/operações/efeitos e
 duplicata idempotente sem novo efeito. Essa prova permanece limitada à
 fixture local e não encerra o fencing geral nem a matriz integral.
+
+Na mesma qualificação, a carga autorizada passou com o prefixo
+`r4-authorized-1789127281502`; os gates financeiro, webhook, RLS, restore por
+digest, continuidade Kind e smoke Playwright também passaram. O Browser
+Harness percorreu as 16 rotas com sessão OIDC/OTP autenticada, viewport
+390×844 e resultado `PASS-EXPLORATORY`. As correções de runtime incluíram a
+renovação do upstream do `admin-ui` após rebuild da Órbita e a recriação do
+Pulsar com as CIDRs internas reais; nenhum segredo foi versionado.

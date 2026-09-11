@@ -19,14 +19,25 @@
 
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
-| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789118405229`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
+| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789127362271`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
 | `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
 | `browser-smoke.json` | PASS; portal persiste e relê mapeamento de entrada entre etapas e a API retorna HTTP 401 após logout sem credencial | Não substitui matriz completa de autorização e negativos |
 | `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
 
-| `authorized-load-latest.log` | Reexecução após correção de CIDR e rebuild do Cometa: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789118415310`) | Dados sintéticos e provider-sim local |
+| `authorized-load-latest.log` | Reexecução após reconciliação local protegida e correção das CIDRs: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789127281502`) | Dados sintéticos e provider-sim local |
 | `webhook-capacity-latest.log` + `finance-runtime-latest.log` | Entrega webhook com `open=0/pending=0` e financeiro balanceado sem quarentena: PASS | Não homologa endpoint comercial ou ERP |
 | `rls-runtime-proof.sh` | Isolamento cross-tenant em control/core/finance com role não proprietária: PASS | Não substitui matriz HTTP completa de autorização |
+
+### Qualificação integrada adicional — 11/09/2026
+
+| Artefato | Resultado observado | Limite |
+|---|---|---|
+| `finance-runtime-proof.sh` | `FINANCE_RUNTIME_PROOF=PASS`: outbox 58, fatos 21, custo 8, receita 13, inbox 58, journal balanceado e zero quarentena inválida | Janela local de 900s; não homologa ERP |
+| `webhook-capacity-runtime.sh` | `PASS`: delivery `d38017c0-2e2f-4ed1-b46b-5796569733cf`, `open=0`, `pending=0` | Endpoint webhook sintético |
+| `restore-reconciliation.sh` | `PASS`: três bancos restaurados por contagem/digest, 0 objetos S3 e oráculo externo observado sem replay | Restore local; sem AWS/provedor comercial |
+| `continuity-runtime-proof.sh` | `PASS`: 3 nós, 5 workloads cluster-owned; RTO Cometa 4664ms e Pulsar 4445ms | Ensaio Kind local |
+| `browser-smoke.json` | 23 verificações: 22 `PASS` e 1 `OBSERVED`, sem `FAIL` | Não substitui matriz integral |
+| Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026
 
