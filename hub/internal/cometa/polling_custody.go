@@ -164,12 +164,27 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 	if err != nil {
 		return err
 	}
-	if !valid || terminal {
+	// A fenced nonterminal observer must not publish an operational or
+	// financial fact. If the race already reached a terminal state, the HTTP
+	// STATUS call itself remains auditable and billable even though it cannot
+	// change the winner.
+	if !valid && !terminal {
 		if err = tx.Commit(); err != nil {
 			return err
 		}
-		if !valid && !terminal {
-			return ErrPollFence
+		return ErrPollFence
+	}
+	// The provider call itself is a billable STATUS attempt, even when a
+	// callback or a newer lease wins the terminal state race. The operational
+	// kind remains the observed result so Orbita can consolidate a terminal
+	// poll; Libra uses economic_kind=STATUS and the immutable attempt_id.
+	fact := map[string]any{"protocol_id": c.Command.ProtocolID, "tenant_id": tenant, "application_id": c.Command.ApplicationID, "cell_id": cell, "step_id": c.Command.StepID, "operation_id": c.Command.CommandID, "attempt_id": c.AttemptID, "provider_request_id": r.ProviderRequestID, "kind": r.Kind, "economic_kind": "STATUS", "response_body": r.ResponseBody, "error_message": r.ErrorMessage, "evidence_id": r.EvidenceID, "occurred_at": time.Now().UTC(), "economic_snapshot": c.Command.EconomicSnapshot}
+	if err = outbox.Enqueue(ctx, tx, "operation", c.Command.CommandID, "operation.observed", fact); err != nil {
+		return err
+	}
+	if terminal {
+		if err = tx.Commit(); err != nil {
+			return err
 		}
 		return nil
 	}
@@ -180,10 +195,6 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 		}
 		_, err = tx.ExecContext(ctx, `DELETE FROM polling_schedule WHERE operation_id=$1`, c.Command.CommandID)
 		if err != nil {
-			return err
-		}
-		fact := map[string]any{"protocol_id": c.Command.ProtocolID, "tenant_id": tenant, "application_id": c.Command.ApplicationID, "cell_id": cell, "step_id": c.Command.StepID, "operation_id": c.Command.CommandID, "provider_account_id": c.Command.ProviderAccountID, "provider_request_id": r.ProviderRequestID, "kind": r.Kind, "response_body": r.ResponseBody, "error_message": r.ErrorMessage, "evidence_id": r.EvidenceID, "occurred_at": time.Now().UTC(), "economic_snapshot": c.Command.EconomicSnapshot}
-		if err = outbox.Enqueue(ctx, tx, "operation", c.Command.CommandID, "operation.observed", fact); err != nil {
 			return err
 		}
 	} else {

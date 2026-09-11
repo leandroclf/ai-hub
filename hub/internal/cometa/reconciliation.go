@@ -230,7 +230,7 @@ func RunReconciliationWorker(ctx context.Context, store *Store, exec *Executor, 
 				}
 				continue
 			}
-			durable, conserveErr := store.ConserveObservation(ctx, claim.Command, result, "ADMIN_RECONCILIATION")
+			durable, conserveErr := store.ConserveObservation(ctx, claim.Command, result, "ADMIN_RECONCILIATION", claim.RequestID)
 			if conserveErr != nil {
 				_ = store.ReleaseReconciliation(ctx, claim, conserveErr.Error())
 				continue

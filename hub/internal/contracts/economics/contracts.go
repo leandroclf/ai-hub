@@ -94,11 +94,16 @@ type Snapshot struct {
 	Sell            []PricingRule `json:"sell"`
 }
 type EconomicEvent struct {
-	ProtocolID          string    `json:"protocol_id"`
-	TenantID            string    `json:"tenant_id"`
-	OperationID         string    `json:"operation_id,omitempty"`
-	StepID              string    `json:"step_id,omitempty"`
-	AttemptID           string    `json:"attempt_id,omitempty"`
+	ProtocolID  string `json:"protocol_id"`
+	TenantID    string `json:"tenant_id"`
+	OperationID string `json:"operation_id,omitempty"`
+	StepID      string `json:"step_id,omitempty"`
+	AttemptID   string `json:"attempt_id,omitempty"`
+	// EconomicKind separates the financial incidence from the operational
+	// observation. For example, an externally accepted SUBMIT remains
+	// UNKNOWN to Orbita while Libra must record the SUBMITTED incidence.
+	// Empty means that Kind itself is the contracted incidence.
+	EconomicKind        string    `json:"economic_kind,omitempty"`
 	ProviderAccountID   string    `json:"provider_account_id,omitempty"`
 	CredentialBindingID string    `json:"credential_binding_id,omitempty"`
 	Status              string    `json:"status,omitempty"`

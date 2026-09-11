@@ -56,7 +56,7 @@ func pollDB(t *testing.T) (*Store, dispatch.Command) {
 func acceptPoll(t *testing.T, s *Store, cmd dispatch.Command) {
 	t.Helper()
 	ctx := context.Background()
-	if _, err := s.ConserveAcceptance(ctx, cmd, "provider-correlation", true); err != nil {
+	if _, err := s.ConserveAcceptance(ctx, cmd, "provider-correlation", true, idgen.New()); err != nil {
 		t.Fatal(err)
 	}
 	// Current and pre-integration callers both get the intended policy in this fixture.
@@ -177,8 +177,12 @@ func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&facts)
 	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receipts)
 	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1 AND source LIKE '%CONFLICT'`, cmd.CommandID).Scan(&conflicts)
-	if facts != before+1 || receipts != 3 || conflicts != 1 {
+	if facts < before+1 || facts > before+2 || receipts != 3 || conflicts != 1 {
 		t.Fatalf("facts=%d before=%d receipts=%d conflicts=%d", facts, before, receipts, conflicts)
+	}
+	var statusFacts int
+	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND payload->>'economic_kind'='STATUS'`, cmd.CommandID).Scan(&statusFacts); err != nil || statusFacts != 1 {
+		t.Fatalf("status economic fact count=%d err=%v", statusFacts, err)
 	}
 	if _, err := s.ConserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactFailed, ResponseBody: map[string]string{"marker": "late-duplicate"}}, "CALLBACK_LATE"); err != nil {
 		t.Fatal(err)

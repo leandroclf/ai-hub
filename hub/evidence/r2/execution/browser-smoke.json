@@ -6,7 +6,7 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789093691041"
+    "resource": "browser-client-1789095715856"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -22,6 +22,14 @@
   },
   {
     "check": "Admin versioned webhook destinations reads persisted application snapshot policy",
+    "status": "PASS"
+  },
+  {
+    "check": "Admin finance accounts, facts and journal read persisted Libra data",
+    "status": "PASS"
+  },
+  {
+    "check": "Admin finance close refuses unresolved obligations with explicit error",
     "status": "PASS"
   },
   {
@@ -68,17 +76,7 @@
     "overflowInfo": {
       "viewport": 390,
       "scrollWidth": 390,
-      "scrollContainers": [
-        {
-          "element": "div",
-          "className": "table-scroll",
-          "clientWidth": 314,
-          "scrollWidth": 802,
-          "width": 316,
-          "right": 353,
-          "overflowX": "auto"
-        }
-      ]
+      "scrollContainers": []
     }
   },
   {

@@ -1,0 +1,5 @@
+=== Finance runtime qualification — 2026-09-11 ===
+Environment: Compose project ai_hub_r3qual; authorized workload executed immediately before the oracle.
+Command: bash hub/deploy/r2/tests/finance-runtime-proof.sh
+FINANCE_RUNTIME_PROOF=PASS window_seconds=900 outbox=22 missing_attempt=0 invalid_incidence=0 facts=11 cost=4 revenue=7 inbox=22 unbalanced=0 invalid_quarantine=0
+Oracle: fixture tenants acme/acme-strict/acme-dedicated only; SUBMITTED/STATUS/FETCH economic incidences require attempt_id; cost and revenue facts are present; all journal batches balance by currency; no invalid economic incidence was quarantined.

@@ -164,7 +164,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-15 Concluir e requalificar R3-ADM-03 — Comandos financeiros compatíveis.
-  - Objective: Frontend e handlers financeiros agora usam payloads compatíveis, tenant explícito, datas UTC e ações idempotentes de fechamento, ajuste, divergência e recibo de exportação; ainda falta demonstrar o fluxo financeiro ponta a ponta e sua segregação de aprovação.
+  - Objective: Frontend e handlers financeiros agora usam payloads compatíveis, tenant explícito, datas UTC e ações idempotentes de fechamento, ajuste, divergência e recibo de exportação; o gate runtime confirmou fatos/inbox/journal, mas ainda falta demonstrar toda a jornada financeira ponta a ponta e sua segregação de aprovação.
   - Likely files/components: hub/admin-ui/src/pages/FinancePage.tsx, hub/internal/libra/handlers.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -182,7 +182,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-18 Concluir e requalificar R3-FIN-02 — Incidência completa e fechamento operacional.
-  - Objective: Financeiro/contratos econômicos não mudaram; incidência e fechamento integrados continuam pendentes.
+  - Objective: Incidência econômica foi conectada ao fato operacional: aceitação externa publica SUBMITTED, polling publica STATUS por attempt_id e o gate confirmou custo/receita/journal; fechamento operacional, FETCH financeiro e a matriz completa de cenários continuam pendentes.
   - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/polling_custody.go, hub/internal/libra/store.go, hub/internal/libra/handlers.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.

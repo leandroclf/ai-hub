@@ -306,7 +306,8 @@ func TestPostgresPendingCustodyAtomic(t *testing.T) {
 	if _, err = db.Exec("UPDATE operations SET command=$2 WHERE operation_id=$1", id, raw); err != nil {
 		t.Fatal(err)
 	}
-	got, err := s.ConserveAcceptance(ctx, cmd, "provider-pending", true)
+	attemptID := idgen.New()
+	got, err := s.ConserveAcceptance(ctx, cmd, "provider-pending", true, attemptID)
 	if err != nil || !got.Durable || got.EvidenceID == "" {
 		t.Fatalf("acceptance: %+v %v", got, err)
 	}
@@ -315,6 +316,10 @@ func TestPostgresPendingCustodyAtomic(t *testing.T) {
 	}
 	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1", id).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("outbox: %d %v", count, err)
+	}
+	var incidence, payloadAttempt string
+	if err = db.QueryRow("SELECT payload->>'economic_kind',payload->>'attempt_id' FROM outbox WHERE aggregate_id=$1", id).Scan(&incidence, &payloadAttempt); err != nil || incidence != "SUBMITTED" || payloadAttempt != attemptID {
+		t.Fatalf("economic acceptance: incidence=%q attempt=%q err=%v", incidence, payloadAttempt, err)
 	}
 	replay, err := s.DurableResult(ctx, cmd)
 	if err != nil || !replay.Durable || replay.ProviderRequestID != "provider-pending" {

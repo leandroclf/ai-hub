@@ -325,20 +325,27 @@ func (s *Store) DurableResult(ctx context.Context, cmd dispatch.Command) (dispat
 
 // ConserveObservation commits the real observation, aggregate result and outbox
 // together. Concurrent polling/callback replies produce only one terminal fact.
-func (s *Store) ConserveObservation(ctx context.Context, cmd dispatch.Command, r dispatch.Result, source string) (dispatch.Result, error) {
-	return s.conserveObservation(ctx, cmd, r, source, false, false)
+func (s *Store) ConserveObservation(ctx context.Context, cmd dispatch.Command, r dispatch.Result, source string, attemptID ...string) (dispatch.Result, error) {
+	return s.conserveObservation(ctx, cmd, r, source, false, false, firstString(attemptID))
 }
 
 // ConserveAcceptance keeps provider correlation, receipt, result, polling
 // obligation and outbox in one commit. No caller can acknowledge a partial save.
-func (s *Store) ConserveAcceptance(ctx context.Context, cmd dispatch.Command, providerRequestID string, poll bool) (dispatch.Result, error) {
+func (s *Store) ConserveAcceptance(ctx context.Context, cmd dispatch.Command, providerRequestID string, poll bool, attemptID ...string) (dispatch.Result, error) {
 	if providerRequestID == "" {
 		return dispatch.Result{}, errors.New("missing provider correlation")
 	}
-	return s.conserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactUnknown, ProviderRequestID: providerRequestID}, "SUBMIT_ACCEPTED", true, poll)
+	return s.conserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactUnknown, ProviderRequestID: providerRequestID}, "SUBMIT_ACCEPTED", true, poll, firstString(attemptID))
 }
 
-func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r dispatch.Result, source string, pending, poll bool) (dispatch.Result, error) {
+func firstString(values []string) string {
+	if len(values) == 0 {
+		return ""
+	}
+	return values[0]
+}
+
+func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r dispatch.Result, source string, pending, poll bool, attemptID string) (dispatch.Result, error) {
 	if r.Kind != dispatch.FactSucceeded && r.Kind != dispatch.FactFailed && r.Kind != dispatch.FactUnknown {
 		return dispatch.Result{}, errors.New("invalid observed kind")
 	}
@@ -415,7 +422,7 @@ func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r
 			return dispatch.Result{}, err
 		}
 	}
-	fact := map[string]any{"protocol_id": cmd.ProtocolID, "tenant_id": cmd.TenantID, "application_id": cmd.ApplicationID, "cell_id": cmd.CellID, "step_id": cmd.StepID, "operation_id": cmd.CommandID, "provider_account_id": cmd.ProviderAccountID, "provider_request_id": r.ProviderRequestID, "kind": r.Kind, "response_body": r.ResponseBody, "error_message": r.ErrorMessage, "evidence_id": r.EvidenceID, "occurred_at": time.Now().UTC(), "economic_snapshot": cmd.EconomicSnapshot}
+	fact := map[string]any{"protocol_id": cmd.ProtocolID, "tenant_id": cmd.TenantID, "application_id": cmd.ApplicationID, "cell_id": cmd.CellID, "step_id": cmd.StepID, "operation_id": cmd.CommandID, "attempt_id": attemptID, "provider_account_id": cmd.ProviderAccountID, "provider_request_id": r.ProviderRequestID, "kind": r.Kind, "economic_kind": economicKindForSource(source), "response_body": r.ResponseBody, "error_message": r.ErrorMessage, "evidence_id": r.EvidenceID, "occurred_at": time.Now().UTC(), "economic_snapshot": cmd.EconomicSnapshot}
 	if err = outbox.Enqueue(ctx, tx, "operation", cmd.CommandID, "operation.observed", fact); err != nil {
 		return dispatch.Result{}, err
 	}
@@ -423,4 +430,11 @@ func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r
 		return dispatch.Result{}, err
 	}
 	return r, nil
+}
+
+func economicKindForSource(source string) string {
+	if source == "SUBMIT_ACCEPTED" {
+		return "SUBMITTED"
+	}
+	return ""
 }

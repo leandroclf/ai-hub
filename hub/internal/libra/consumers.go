@@ -26,11 +26,28 @@ func (s *Store) ProcessEnvelope(ctx context.Context, consumer string, env queue.
 		reason = "MISSING_OR_INVALID_SNAPSHOT"
 	} else if fact.EvidenceID == "" || fact.OccurredAt.IsZero() {
 		reason = "MISSING_ECONOMIC_EVIDENCE"
+	} else if fact.EconomicKind != "" && !validEconomicKind(fact.EconomicKind) {
+		reason = "INVALID_ECONOMIC_INCIDENCE"
 	}
 	if reason != "" {
 		return s.Quarantine(ctx, consumer, env.EventID, reason, raw)
 	}
+	// The operational fact and the economic incidence are intentionally
+	// separate. UNKNOWN is a valid operational state for Orbita, while a
+	// durable SUBMIT acceptance or STATUS poll is still billable by Libra.
+	if fact.EconomicKind != "" {
+		fact.Kind = fact.EconomicKind
+	}
 	return s.ApplyEvent(ctx, consumer, env.EventID, fact)
+}
+
+func validEconomicKind(kind string) bool {
+	switch kind {
+	case "SUBMITTED", "STATUS", "FETCH", "SUCCEEDED", "PARTIALLY_SUCCEEDED", "FAILED":
+		return true
+	default:
+		return false
+	}
 }
 func RunRevenueConsumer(ctx context.Context, q *queue.Client, queueURL string, store *Store, _ *atlasclient.Client, log *slog.Logger) {
 	runConsumer(ctx, q, queueURL, store, "revenue", log)

@@ -37,6 +37,11 @@
   domínio isolado `r4-webhook`; o lease precisa cobrir o timeout e uma margem
   de segurança antes do POST. Destinos de webhook agora são congelados na
   admissão e transportados no fato final.
+- A custódia financeira preserva a distinção entre estado operacional e
+  incidência: `SUBMIT` aceito externamente continua `UNKNOWN` para a execução,
+  mas chega ao Libra como `SUBMITTED`; todo `STATUS` conservado carrega seu
+  `attempt_id`. O gate local confirmou fatos, inbox e partidas balanceadas sem
+  quarentena de incidência inválida.
 
 ## Bloqueios e limites ainda reproduzíveis
 

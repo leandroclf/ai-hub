@@ -13,6 +13,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Callback | Carga acima + testes focados de inbox/validação terminal | PASS parcial; callback concluiu, ingress key/capability inválidos retornaram 401, deduplicação por capability, quota e retenção têm implementação e testes focados; cenários externos completos ainda abertos |
 | Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, criação/leitura durável, SLA, destinos versionados, navegação, logout, storage sem sessão persistida e viewport móvel sem overflow |
 | Entrega webhook com capacidade | `bash hub/deploy/r2/tests/webhook-capacity-runtime.sh` | PASS; worker Pulsar real entregou no sink local e encerrou o permit `r4-webhook` sem concessão aberta ou obrigação pendente; fixture removida ao final |
+| Incidência financeira integrada | `bash hub/deploy/r2/tests/finance-runtime-proof.sh` após carga autorizada | PASS; `SUBMITTED`/`STATUS` com `attempt_id`, fatos de custo/receita, inbox persistida, journal balanceado por moeda e zero quarentena de incidência inválida; log em `hub/evidence/r2/execution/finance-runtime-latest.log` |
 | Browser Harness | `browser-harness < hub/deploy/r2/tests/browser-harness/scenarios/admin-console.py` | BLOCKED-ENVIRONMENT; executável instalado, mas o daemon local não encontrou `DevToolsActivePort`/CDP utilizável |
 | Cache de autenticação | `go test -race -count=1 ./internal/providerauth` | PASS; isolamento por binding, revogação, expiração, coordenação cancelável e máximo de 1024 locks rastreados |
 | Redis opcional | Compose profile `cache`, `redis-cli ping` e `INFO keyspace` | PASS; `PONG`, keyspace vazio; Cometa permanece sem dependência autoritativa de Redis e sem token persistido |
@@ -44,6 +45,11 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 - O aceite congelou destinos de webhook por tenant/aplicação e o Pulsar
   consumiu somente o snapshot persistido no fato, sem consultar uma versão
   dinâmica posterior.
+- A incidência econômica foi separada do estado operacional: a aceitação
+  externa permanece `UNKNOWN` para a Órbita, mas publica `economic_kind=SUBMITTED`;
+  cada polling publica `economic_kind=STATUS` com `attempt_id`. O oráculo
+  financeiro confirmou fatos de custo/receita e journal balanceado no mesmo
+  workload.
 - O cenário exploratório do Browser Harness continua auxiliar e bloqueado por
   CDP nesta máquina; o gate bloqueador do frontend é o Playwright determinístico.
 

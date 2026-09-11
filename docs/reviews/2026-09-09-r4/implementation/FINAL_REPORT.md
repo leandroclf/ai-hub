@@ -35,6 +35,10 @@ entrega quando o lease cobre o timeout configurado com margem de segurança e
 fecha o permit com sinal, latência e evidência; destinos webhook são congelados
 no aceite e o Pulsar entrega o snapshot persistido. O cache usa L1 privado,
 expiração/revogação e locks limitados; Redis permanece opcional e vazio.
+Na mesma rodada, a incidência econômica foi desacoplada do estado operacional:
+aceitação externa `UNKNOWN` gera incidência `SUBMITTED`, cada polling gera
+incidência `STATUS` por `attempt_id`, e o oráculo financeiro confirmou fatos de
+custo/receita, inbox e journal balanceado no workload autorizado.
 
 ## Limite de conclusão
 

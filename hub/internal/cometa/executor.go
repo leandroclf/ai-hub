@@ -292,7 +292,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		}
 		saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 		defer cancel()
-		durable, err := e.store.ConserveAcceptance(saveCtx, cmd, result.ProviderRequestID, pa.ProviderMode == string(providersim.ModeAsyncPoll))
+		durable, err := e.store.ConserveAcceptance(saveCtx, cmd, result.ProviderRequestID, pa.ProviderMode == string(providersim.ModeAsyncPoll), attemptID)
 		if err != nil {
 			return settleCapacity(dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "acceptance_custody_unavailable"}, true)
 		}
@@ -317,7 +317,7 @@ func (e *Executor) communicationFailure(ctx context.Context, operationID, attemp
 	if _, err := e.store.db.ExecContext(saveCtx, "UPDATE attempts SET received_at=clock_timestamp(),error_code=$2 WHERE attempt_id=$1", attemptID, code); err != nil {
 		return result
 	}
-	durable, err := e.store.ConserveObservation(saveCtx, cmd, result, "SUBMIT")
+	durable, err := e.store.ConserveObservation(saveCtx, cmd, result, "SUBMIT", attemptID)
 	if err != nil {
 		return result
 	}
@@ -348,7 +348,7 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: result}
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer cancel()
-	durable, err := e.store.ConserveObservation(saveCtx, cmd, response, "PROVIDER")
+	durable, err := e.store.ConserveObservation(saveCtx, cmd, response, "PROVIDER", operationID)
 	if err != nil {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "custody_unavailable"}
 	}
@@ -470,7 +470,7 @@ func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID str
 	} else {
 		return dispatch.Result{}, errors.New("invalid callback status")
 	}
-	durable, err := e.store.ConserveObservation(ctx, command, response, "CALLBACK")
+	durable, err := e.store.ConserveObservation(ctx, command, response, "CALLBACK", operationID)
 	if err == nil {
 		e.resolveCapacityPending(ctx, command, snapshot, durable.EvidenceID)
 	}

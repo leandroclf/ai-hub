@@ -167,6 +167,30 @@ func TestFinancePostgresScenarios(t *testing.T) {
 			t.Fatal("poll evidence dedup mismatch")
 		}
 	})
+	t.Run("R2-FIN-02-S04_operational_unknown_has_economic_incidence", func(t *testing.T) {
+		e := event(tenant())
+		e.Status = "PENDING"
+		e.Kind = "UNKNOWN"
+		e.EconomicSnapshot.Buy = append(e.EconomicSnapshot.Buy, PricingRule{Meter: "status", Amount: "0.01", Incidence: []string{"STATUS"}, UnitScope: "ATTEMPT"})
+		e.EconomicKind = "SUBMITTED"
+		raw, _ := json.Marshal(e)
+		env := queue.Envelope{EventID: uuid.NewString(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: e.TenantID, ProtocolID: e.ProtocolID, Payload: raw}
+		if err := s.ProcessEnvelope(ctx, "cost", env); err != nil {
+			t.Fatal(err)
+		}
+		e.AttemptID = uuid.NewString()
+		e.EconomicKind = "STATUS"
+		raw, _ = json.Marshal(e)
+		env.EventID = uuid.NewString()
+		env.Payload = raw
+		if err := s.ProcessEnvelope(ctx, "cost", env); err != nil {
+			t.Fatal(err)
+		}
+		facts, err := s.Facts(ctx, e.TenantID, "COST", 0, 50)
+		if err != nil || len(facts) != 2 || facts[0].Meter != "submit" || facts[1].Meter != "status" {
+			t.Fatalf("economic incidences: %+v %v", facts, err)
+		}
+	})
 	t.Run("R2-FIN-02-S03_exact_arithmetic", func(t *testing.T) {
 		e := event(tenant())
 		e.EconomicSnapshot.Buy = []PricingRule{{Meter: "one", Amount: "0.1", Incidence: []string{"SUCCEEDED"}, UnitScope: "OPERATION"}, {Meter: "two", Amount: "0.2", Incidence: []string{"SUCCEEDED"}, UnitScope: "OPERATION"}}

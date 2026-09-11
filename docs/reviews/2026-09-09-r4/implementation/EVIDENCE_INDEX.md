@@ -20,6 +20,8 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; 12 ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
 | `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
 | `hub/deploy/r2/tests/webhook-capacity-runtime.sh` + `webhook-capacity-latest.log` | Entrega no worker Pulsar real do Compose | PASS; delivery sintética chegou a `DELIVERED` e o permit `r4-webhook` terminou `open=0`, `pending=0`, com limpeza do registro de teste |
+| `hub/deploy/r2/tests/finance-runtime-proof.sh` + `finance-runtime-latest.log` | Incidência financeira do workload autorizado | PASS; outbox com `SUBMITTED`/`STATUS` carregou `attempt_id`, Libra recebeu fatos de custo/receita, inbox foi persistida, journal balanceou por moeda e não houve quarentena de incidência inválida |
+| `hub/internal/cometa/polling_custody.go` + `hub/internal/libra/consumers.go` | Separação entre estado operacional e incidência econômica | PASS com PostgreSQL real; aceitação UNKNOWN publica `SUBMITTED`, polling publica `STATUS` por tentativa e fencing não publica observação não autorizada |
 | `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | Kind `ai-hub-r2` | Prontidão, métricas, HPA/KEDA e recuperação | PASS local; dependências ainda Compose-linked |
 
