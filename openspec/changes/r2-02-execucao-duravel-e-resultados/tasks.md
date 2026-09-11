@@ -27,14 +27,14 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
 
 ## 2. Comportamentos
 
-- [ ] 2.1 Aceite e intenção recuperáveis em todas as modalidades
+- [x] 2.1 Aceite e intenção recuperáveis em todas as modalidades
   - Objective: Entregar o comportamento R2-EXE-01 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-01, EXE-15, DAD-03, COM-03, DAD-09, DAD-02.
   - Likely files/components: `hub/internal/orbita/handlers.go`; `hub/internal/orbita/store.go`; `hub/internal/outbox`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-01; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.1; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.2 Idempotência concorrente com UUID recuperável
+- [x] 2.2 Idempotência concorrente com UUID recuperável
   - Objective: Entregar o comportamento R2-EXE-02 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-01, EXE-16, DAD-03.
   - Likely files/components: `hub/internal/orbita/handlers.go`; `hub/internal/orbita/store.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -92,14 +92,14 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
 
 ## 3. Provas por requisito
 
-- [ ] 3.1 Qualificar R2-EXE-01 com oráculos independentes
+- [x] 3.1 Qualificar R2-EXE-01 com oráculos independentes
   - Objective: Executar R2-EXE-01-S01, R2-EXE-01-S02, R2-EXE-01-S03. Caso indispensável: Commit incerto; esperado: o Hub resolve pela autoridade de idempotência, sem afirmar não execução nem criar outro efeito.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/orbita/handlers.go`; `hub/internal/orbita/store.go`.
   - Depends on: 2.1; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.2 Qualificar R2-EXE-02 com oráculos independentes
+- [x] 3.2 Qualificar R2-EXE-02 com oráculos independentes
   - Objective: Executar R2-EXE-02-S01, R2-EXE-02-S02, R2-EXE-02-S03. Caso indispensável: Erro após aceite; esperado: o erro expõe UUID e consulta quando o aceite é conhecido; retry usa a mesma chave.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/orbita/handlers.go`; `hub/internal/orbita/store.go`.
   - Depends on: 2.2; fixtures de r2-09; dependências de integração pertinentes.

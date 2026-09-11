@@ -63,6 +63,7 @@ R2-INT-08-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestFinalize
 R2-INT-08-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestFinalizeRejectsSuccessAfterProviderSLABreach
 R2-INT-08-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestAdminSLAReportSeparatesOpenFulfilledExpiredAndExcludedCohort expõe resumo de coorte no endpoint consumido pelo portal
 R2-EXE-01-S01;PASS_INTEGRADO;crash-after-acceptance-runtime-latest.json — aceite ASYNC durável sobreviveu ao reinício imediato de Órbita, a mesma obrigação foi recuperada até SUCCEEDED e PostgreSQL/provider-sim confirmaram um protocolo, uma operação e um efeito
+R2-EXE-01-S02;PASS_INTEGRADO;async-broker-outage-runtime-latest.json — broker indisponível antes do aceite retornou 202/ACCEPTED; após restauração e reinicialização dos consumidores, a mesma obrigação concluiu SUCCEEDED com uma operação, um outbox finalizado e um único efeito externo
 R2-EXE-01-S03;PASS_INTEGRADO_LOCAL;commit-uncertain-runtime-latest.json — cliente encerrou a conexão após enviar o request, PostgreSQL recuperou um único protocolo ACCEPTED e o replay autenticado retornou o mesmo UUID sem criar operação duplicada
 R2-EXE-02-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAdmissionPostgresAtomicIdempotency disputa concorrente e converge em um protocolo
 R2-EXE-02-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAdmissionPostgresAtomicIdempotency recusa hash divergente sem substituir o aceite
