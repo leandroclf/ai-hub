@@ -243,7 +243,7 @@ services:
       SELF_URL: http://cometa:8082
       # Chave sintética exclusiva da fixture local; em produção deve vir de
       # secret manager e ser compartilhada apenas com o provedor homologado.
-      CAPACITY_DOMAINS: r4-sync,r4-sync-failure,r4-poll-1,r4-poll-2,r4-callback
+      CAPACITY_DOMAINS: r4-sync,r4-sync-failure,r4-poll-1,r4-poll-2,r4-callback,r4-webhook
       CAPACITY_POLICY_JSON: '{"version":"r4-fixture-v1","evidence_ref":"r4-local-capacity-fixture","valid_until":"2099-12-31T23:59:59Z","max_concurrent":8,"min_concurrent":5,"reconciliation_reserve":1,"max_pending":8,"rate_per_window":200,"window_millis":1000,"lease_millis":5000,"stable_millis":100,"latency_threshold_millis":100,"tenant_limits":{"acme":2,"acme-strict":1,"acme-dedicated":1},"tenant_pending_limits":{"acme":4,"acme-strict":2,"acme-dedicated":2},"tenant_rate_limits":{"acme":90,"acme-strict":50,"acme-dedicated":50}}'
       CALLBACK_INGRESS_KEY: ${R2_CALLBACK_INGRESS_KEY:-r4-callback-ingress-fixture}
       QUEUE_ENDPOINT: http://localstack:4566
@@ -302,6 +302,9 @@ services:
       LIBRA_URL: http://libra:8084
       COMETA_URL: http://cometa:8082
       SELF_URL: http://pulsar:8083
+      CAPACITY_WEBHOOK_DOMAIN: r4-webhook
+      CAPACITY_DOMAINS: r4-webhook
+      CAPACITY_POLICY_JSON: '{"version":"r4-fixture-v1","evidence_ref":"r4-local-capacity-fixture","valid_until":"2099-12-31T23:59:59Z","max_concurrent":8,"min_concurrent":5,"reconciliation_reserve":1,"max_pending":8,"rate_per_window":200,"window_millis":1000,"lease_millis":5000,"stable_millis":100,"latency_threshold_millis":100,"tenant_limits":{"acme":2,"acme-strict":1,"acme-dedicated":1},"tenant_pending_limits":{"acme":4,"acme-strict":2,"acme-dedicated":2},"tenant_rate_limits":{"acme":90,"acme-strict":50,"acme-dedicated":50}}'
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566

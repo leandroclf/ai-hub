@@ -33,8 +33,10 @@
   payloads/itens e remover processados de forma limitada; a validação terminal
   ocorre antes da custódia órfã.
 - A capacidade foi conectada ao `SUBMIT`, ao `STATUS` de polling e à
-  reconciliação. Destinos de webhook agora são congelados na admissão e
-  transportados no fato final.
+  reconciliação. Nesta iteração, o Pulsar também passou a adquirir `FETCH` no
+  domínio isolado `r4-webhook`; o lease precisa cobrir o timeout e uma margem
+  de segurança antes do POST. Destinos de webhook agora são congelados na
+  admissão e transportados no fato final.
 
 ## Bloqueios e limites ainda reproduzíveis
 

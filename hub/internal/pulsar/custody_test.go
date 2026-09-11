@@ -13,7 +13,9 @@ import (
 	"os"
 	"sync"
 	"testing"
+	"time"
 
+	"ai-hub/hub/internal/cometa"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
@@ -44,7 +46,11 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 	s := NewStore(db)
 	ctx := context.Background()
 	cell := "delivery-test-" + idgen.New()
+	capacityDomain := "delivery-test-capacity-" + idgen.New()
 	defer func() {
+		db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityDomain)
+		db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityDomain)
+		db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityDomain)
 		db.Exec("DELETE FROM webhook_attempts WHERE delivery_id IN (SELECT delivery_id FROM deliveries WHERE cell_id=$1)", cell)
 		db.Exec("DELETE FROM deliveries WHERE cell_id=$1", cell)
 		db.Exec("DELETE FROM webhook_destination_versions WHERE cell_id=$1", cell)
@@ -121,6 +127,28 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 	var workerLogs bytes.Buffer
 	worker := NewDeliveryWorker(s, "", slog.New(slog.NewTextHandler(&workerLogs, nil)))
 	worker.resolver = fixtureSecrets{"key-a": "synthetic-a", "key-b": "synthetic-b"}
+	worker.capacity = cometa.NewCapacityController(db)
+	worker.capacityDomain = capacityDomain
+	if err = worker.capacity.InstallPolicy(ctx, cometa.CapacityPolicy{
+		Domain:                 capacityDomain,
+		Version:                "delivery-test-v1",
+		EvidenceRef:            "delivery-test-capacity",
+		ValidUntil:             time.Now().Add(time.Hour),
+		MaxConcurrent:          8,
+		MinConcurrent:          5,
+		ReconciliationReserve:  1,
+		MaxPending:             8,
+		RatePerWindow:          200,
+		WindowMillis:           1000,
+		LeaseMillis:            5000,
+		StableMillis:           100,
+		LatencyThresholdMillis: 100,
+		TenantLimits:           map[string]int{cell + "a": 1, cell + "b": 1},
+		TenantPendingLimits:    map[string]int{cell + "a": 2, cell + "b": 2},
+		TenantRateLimits:       map[string]int{cell + "a": 90, cell + "b": 90},
+	}); err != nil {
+		t.Fatal(err)
+	}
 	var wg sync.WaitGroup
 	for _, d := range []ClaimedDelivery{first, second} {
 		wg.Add(1)
@@ -132,6 +160,13 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 	}
 	if err = db.QueryRow("SELECT count(*) FROM deliveries WHERE cell_id=$1 AND state='DELIVERED'", cell).Scan(&count); err != nil || count != 2 {
 		t.Fatalf("acknowledged receipts=%d %v; worker log=%s", count, err, workerLogs.String())
+	}
+	var open, pending int
+	if err = db.QueryRow("SELECT count(*) FILTER (WHERE transport_open), count(*) FILTER (WHERE pending_external) FROM capacity_permits WHERE domain_id=$1", capacityDomain).Scan(&open, &pending); err != nil {
+		t.Fatal(err)
+	}
+	if open != 0 || pending != 0 {
+		t.Fatalf("webhook capacity permits not settled: open=%d pending=%d", open, pending)
 	}
 	t.Log("two tenants share URL with distinct pinned keys; original bytes conserved across JSONB event processing; duplicate facts create two total deliveries; exclusive claims and actual HTTP204 receipts committed")
 }

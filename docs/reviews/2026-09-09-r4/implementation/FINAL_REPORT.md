@@ -30,8 +30,10 @@ qualificação/célula de capacidade fica restrita ao fixture local autorizado. 
 carga não imprime nem persiste o bearer. O callback exige chave de ingresso,
 capability por operação e observação terminal; a inbox aplica identidade por
 capability, limites e retenção limitada. A capacidade está ligada a
-`SUBMIT`, `STATUS` e reconciliação. Destinos webhook são congelados no aceite
-e o Pulsar entrega o snapshot persistido. O cache usa L1 privado,
+`SUBMIT`, `STATUS`, reconciliação e `FETCH` de webhook. O Pulsar só inicia a
+entrega quando o lease cobre o timeout configurado com margem de segurança e
+fecha o permit com sinal, latência e evidência; destinos webhook são congelados
+no aceite e o Pulsar entrega o snapshot persistido. O cache usa L1 privado,
 expiração/revogação e locks limitados; Redis permanece opcional e vazio.
 
 ## Limite de conclusão

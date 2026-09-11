@@ -134,8 +134,8 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-10 Concluir e requalificar R3-INT-01 — Controle adaptativo conectado a todo I/O.
-  - Objective: Capacity agora está conectado ao Execute do Cometa, ao polling e à reconciliação, com sinais de sucesso, timeout, throttling e indisponibilidade; permanece aberta a qualificação integral por domínio e de todos os I/O.
-  - Likely files/components: hub/internal/cometa/capacity.go, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go.
+  - Objective: Capacity agora está conectado ao Execute do Cometa, ao polling, à reconciliação e ao `FETCH` de webhook no Pulsar, com sinais de sucesso, timeout, throttling e indisponibilidade; permanece aberta a qualificação integral por domínio e de todos os I/O.
+  - Likely files/components: hub/internal/cometa/capacity.go, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/pulsar/worker.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.

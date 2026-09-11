@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"ai-hub/hub/internal/cometa"
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/config"
 	"ai-hub/hub/internal/platform/httpserver"
@@ -43,6 +44,11 @@ func main() {
 
 	store := pulsar.NewStore(db)
 	handlers := pulsar.NewHandlers(store)
+	capacity := cometa.NewCapacityController(db)
+	if err := cometa.InstallPoliciesFromEnv(context.Background(), capacity); err != nil {
+		log.Error("falha ao instalar politica de capacidade do pulsar", "error", err)
+		panic(err)
+	}
 	worker := pulsar.NewDeliveryWorker(store, orbitaURL, log)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

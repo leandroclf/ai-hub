@@ -18,7 +18,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Ofertas | consulta `LIMIT 2` + `EXPLAIN (ANALYZE, BUFFERS)` | PASS de caminho; índice parcial `catalog_offer_eligibility_lookup` confirmado quando o planner usa índice; catálogo pequeno pode escolher seq scan por custo |
 | Restore | `R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual2 bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
 | Kind/HA | cluster `ai-hub-r2`, três nós, réplicas e exclusão controlada de pods | PASS local; Atlas, Órbita, Cometa, Pulsar e Libra recuperaram réplicas em workers distintos; métricas, HPA e KEDA disponíveis |
-| Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS |
+| Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
 
@@ -35,8 +35,11 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
   terminais antes de criar custódia órfã; a inbox usa `(operation_id,
   body_sha256, token_hash)`, limite de bytes/itens e limpeza limitada de itens
   processados.
-- A capacidade está ligada às concessões de `SUBMIT`, `STATUS` de polling e
-  reconciliação, com sinais de sucesso, timeout, throttling e indisponibilidade.
+- A capacidade está ligada às concessões de `SUBMIT`, `STATUS` de polling,
+  reconciliação e `FETCH` de webhook. O Pulsar falha fechado quando o lease não
+  cobre o timeout mais a margem de segurança; falhas locais liberam o permit e
+  respostas/timeout fecham-no com sinal, latência e evidência. O runtime Compose
+  instala o domínio `r4-webhook` sem alterar os volumes existentes.
 - O aceite congelou destinos de webhook por tenant/aplicação e o Pulsar
   consumiu somente o snapshot persistido no fato, sem consultar uma versão
   dinâmica posterior.

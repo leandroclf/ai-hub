@@ -13,11 +13,12 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, SLA, destinos versionados, logout e viewport móvel |
 | Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP | BLOCKED-ENVIRONMENT; executável presente, daemon sem `DevToolsActivePort` utilizável |
 | `hub/internal/cometa/custody.go` + migração `0041` | Inbox de callback | PASS de implementação/testes focados; identidade por capability, limites de bytes/itens e retenção periódica; qualificação externa ainda aberta |
-| `hub/internal/cometa/capacity.go` + executor/poller/reconciliation | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS` e reconciliação, budgets integrais ainda abertos |
-| `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` | Snapshot de destino webhook | PASS de teste PostgreSQL; versão aceita é congelada e entregue sem lookup dinâmico posterior |
+| `hub/internal/cometa/capacity.go` + executor/poller/reconciliation + `hub/internal/pulsar/worker.go` | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS`, reconciliação e `FETCH` de webhook; budgets integrais de todos os I/O ainda abertos |
+| `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` + `custody_test.go` | Snapshot de destino webhook e orçamento de entrega | PASS de teste PostgreSQL; versão aceita é congelada, entrega usa o snapshot persistido e o permit é encerrado com sinal/evidência |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
 | `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; 12 ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
+| `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
 | `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | Kind `ai-hub-r2` | Prontidão, métricas, HPA/KEDA e recuperação | PASS local; dependências ainda Compose-linked |
 
