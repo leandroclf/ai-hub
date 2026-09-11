@@ -21,7 +21,7 @@
 
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
-| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789127362271`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
+| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, `max_parallel=2`, duas operações/efeitos reais com início sobreposto em 35 ms, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-parallel-20260911qual2`) | Provider-sim local; falha de passo opcional e homologação comercial permanecem fora |
 | `compose-recreation-latest.log` + `product-http-latest.log` | R2-OPE-01-S02: recriação sem reset | PASS; Atlas foi recriado sem remoção de volumes, catálogo/protocolos preservaram contagens e a jornada HTTP voltou a concluir (`r4-product-http-1789129264735`) |
 | `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
 | `browser-smoke.json` | PASS; portal persiste e relê mapeamento de entrada entre etapas e a API retorna HTTP 401 após logout sem credencial | Não substitui matriz completa de autorização e negativos |

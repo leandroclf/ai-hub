@@ -69,14 +69,14 @@ async function providerEffects(){
 }
 
 function sql(protocolID){
- const query=`SELECT (SELECT count(*) FROM operation_plans WHERE protocol_id='${protocolID}') AS plans,(SELECT count(*) FROM operation_steps WHERE protocol_id='${protocolID}' AND state='SUCCEEDED') AS succeeded_steps,(SELECT count(*) FROM operations WHERE protocol_id='${protocolID}') AS operations,(SELECT count(*) FROM protocols WHERE protocol_id='${protocolID}') AS protocols`;
+ const query=`SELECT (SELECT count(*) FROM operation_plans WHERE protocol_id='${protocolID}') AS plans,(SELECT max_parallel FROM operation_plans WHERE protocol_id='${protocolID}') AS max_parallel,(SELECT count(*) FROM operation_steps WHERE protocol_id='${protocolID}' AND state='SUCCEEDED') AS succeeded_steps,(SELECT count(*) FROM operations WHERE protocol_id='${protocolID}') AS operations,(SELECT count(*) FROM protocols WHERE protocol_id='${protocolID}') AS protocols,(SELECT COALESCE(ROUND(EXTRACT(EPOCH FROM (max(created_at)-min(created_at)))*1000)::int,0) FROM operations WHERE protocol_id='${protocolID}') AS operation_start_spread_ms`;
  const raw=execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_core','-At','-F','\\t','-v','ON_ERROR_STOP=1','-c',query],{encoding:'utf8'}).trim();
- const [plans,succeeded_steps,operations,protocols]=raw.split('\\t').map(Number);
- return {plans,succeeded_steps,operations,protocols};
+ const [plans,max_parallel,succeeded_steps,operations,protocols,operation_start_spread_ms]=raw.split('\\t').map(Number);
+ return {plans,max_parallel,succeeded_steps,operations,protocols,operation_start_spread_ms};
 }
 
 const key=process.env.R2_PRODUCT_IDEMPOTENCY_KEY||`r4-product-http-${Date.now()}`;
-const payload={mode:'ASYNC',provider_account_id:'prov-poll-1',service_code:'produto-duplo-r4',service_version:1,input:{cpf:'44444444444',delay_ms:250}};
+const payload={mode:'ASYNC',provider_account_id:'prov-poll-1',service_code:'produto-duplo-r4',service_version:1,input:{cpf:'44444444444',delay_ms:1500}};
 const {browser,token}=await authenticatedToken();
 const evidence=[];
 try{
@@ -99,7 +99,7 @@ try{
  evidence.push({check:'consulta pública retorna consolidação terminal do produto',status:'PASS',final_status:current.status,final_body:current.final_body||null});
 
  const durable=sql(protocolID);
- if(durable.plans!==1||durable.succeeded_steps!==2||durable.operations!==2||durable.protocols!==1) throw new Error(`oráculo DAG inconsistente: ${JSON.stringify(durable)}`);
+ if(durable.plans!==1||durable.max_parallel!==2||durable.succeeded_steps!==2||durable.operations!==2||durable.protocols!==1||durable.operation_start_spread_ms>700) throw new Error(`oráculo DAG/paralelismo inconsistente: ${JSON.stringify(durable)}`);
  evidence.push({check:'oráculo PostgreSQL confirma plano, duas etapas e duas operações',status:'PASS',durable});
  const effectsAfter=await providerEffects();
  if(effectsAfter.effects-effectsBefore.effects!==2||effectsAfter.protocols-effectsBefore.protocols!==2) throw new Error(`efeitos externos não separados por etapa: antes=${JSON.stringify(effectsBefore)} depois=${JSON.stringify(effectsAfter)}`);

@@ -1,10 +1,10 @@
 {
-  "key": "r4-product-http-1789129264735",
+  "key": "r4-product-parallel-20260911qual2",
   "evidence": [
     {
       "check": "admissão HTTP do produto composto",
       "status": "PASS",
-      "protocol_id": "01a0906a-133b-7391-8391-f9330ff70991",
+      "protocol_id": "01a0915a-93da-780b-a6bc-3345ec68c4f8",
       "initial_status": 202
     },
     {
@@ -12,7 +12,7 @@
       "status": "PASS",
       "final_status": "SUCCEEDED",
       "final_body": {
-        "protocol_id": "01a0906a-133b-7391-8391-f9330ff70991",
+        "protocol_id": "01a0915a-93da-780b-a6bc-3345ec68c4f8",
         "status": "SUCCEEDED",
         "result_version": 1,
         "result": {
@@ -20,11 +20,11 @@
           "skipped_steps": [],
           "steps": {
             "etapa_a": {
-              "provider_request_id": "prov-req-000055",
+              "provider_request_id": "prov-req-000002",
               "status": "SUCCEEDED"
             },
             "etapa_b": {
-              "provider_request_id": "prov-req-000056",
+              "provider_request_id": "prov-req-000003",
               "status": "SUCCEEDED"
             }
           }
@@ -36,21 +36,23 @@
       "status": "PASS",
       "durable": {
         "plans": 1,
+        "max_parallel": 2,
         "succeeded_steps": 2,
         "operations": 2,
-        "protocols": 1
+        "protocols": 1,
+        "operation_start_spread_ms": 35
       }
     },
     {
       "check": "oráculo do provider-sim confirma dois efeitos externos independentes",
       "status": "PASS",
       "before": {
-        "effects": 54,
-        "protocols": 54
+        "effects": 1,
+        "protocols": 1
       },
       "after": {
-        "effects": 56,
-        "protocols": 56
+        "effects": 3,
+        "protocols": 3
       }
     },
     {
@@ -59,13 +61,15 @@
       "same_protocol": true,
       "durable_after_duplicate": {
         "plans": 1,
+        "max_parallel": 2,
         "succeeded_steps": 2,
         "operations": 2,
-        "protocols": 1
+        "protocols": 1,
+        "operation_start_spread_ms": 35
       },
       "external_after_duplicate": {
-        "effects": 56,
-        "protocols": 56
+        "effects": 3,
+        "protocols": 3
       }
     }
   ]

@@ -72,7 +72,7 @@ try{
  if(accepted!=='1\tACCEPTED')throw new Error(`intenção não ficou ACCEPTED com broker fora: ${accepted}`);
  compose(['up','-d','localstack']);
  await wait(`${process.env.LOCALSTACK_URL||'http://localhost:14566'}/_localstack/health`);
- compose(['up','-d','--force-recreate','--no-deps','orbita','cometa']);
+ compose(['up','-d','--force-recreate','--no-deps','orbita','cometa','admin-ui']);
  await wait(`${orbitaOrigin}/healthz/ready`);
  let current=admission.body;
  const deadline=Date.now()+30000;
@@ -83,7 +83,7 @@ try{
  result={...result,status:current.status==='SUCCEEDED'&&protocols===1&&operations===1&&finalized===1&&after.effects-before.effects===1?'PASS':'FAIL',protocol_id:protocolID,broker:{stopped_before_admission:true,restored_before_recovery:true},admission:{http_status:admission.status,status:accepted.split('\t')[1]},recovered_status:current.status,durable:{protocols,operations,finalized_outbox:finalized},external_effects:{before:before.effects,after:after.effects,delta:after.effects-before.effects}};
 }catch(error){result.error=error.message.split('\n')[0];process.exitCode=1}
 finally{
- try{compose(['up','-d','localstack']);await wait(`${process.env.LOCALSTACK_URL||'http://localhost:14566'}/_localstack/health`);compose(['up','-d','--force-recreate','--no-deps','orbita','cometa'])}catch(error){result.cleanup_error=error.message.split('\n')[0];result.status='FAIL'}
+ try{compose(['up','-d','localstack']);await wait(`${process.env.LOCALSTACK_URL||'http://localhost:14566'}/_localstack/health`);compose(['up','-d','--force-recreate','--no-deps','orbita','cometa','admin-ui'])}catch(error){result.cleanup_error=error.message.split('\n')[0];result.status='FAIL'}
  result.finished_at=new Date().toISOString();
  await writeFile(evidencePath,`${JSON.stringify(result,null,2)}\n`);
  console.log(JSON.stringify(result,null,2));
