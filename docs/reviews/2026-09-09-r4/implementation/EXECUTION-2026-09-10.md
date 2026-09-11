@@ -9,7 +9,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Gate | Comando/artefato | Resultado |
 |---|---|---|
 | Catálogo versionado | `node hub/deploy/r2/tests/catalog-seed.mjs` | PASS; seed idempotente via `admin/v1`, validação/publicação com `If-Match`, qualificação/célula sintéticas somente no fixture autorizado |
-| Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789092849998`) |
+| Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789103863389`) |
 | Callback | Carga acima + testes focados de inbox/validação terminal | PASS parcial; callback concluiu, ingress key/capability inválidos retornaram 401, deduplicação por capability, quota e retenção têm implementação e testes focados; cenários externos completos ainda abertos |
 | Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, criação/leitura durável, SLA, destinos versionados, navegação, logout, storage sem sessão persistida e viewport móvel sem overflow |
 | Entrega webhook com capacidade | `bash hub/deploy/r2/tests/webhook-capacity-runtime.sh` | PASS; worker Pulsar real entregou no sink local e encerrou o permit `r4-webhook` sem concessão aberta ou obrigação pendente; fixture removida ao final |
@@ -72,6 +72,28 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
   workload.
 - O cenário exploratório do Browser Harness continua auxiliar e bloqueado por
   CDP nesta máquina; o gate bloqueador do frontend é o Playwright determinístico.
+
+## Atualização operacional de 11/09/2026
+
+A primeira repetição da prova de entrega encontrou deriva de configuração no
+runtime: o Pulsar estava com `EGRESS_PRIVATE_RULES` em `127.0.0.1/32`, embora os
+nomes internos resolvessem para a rede Compose `172.19.0.0/16`. O diagnóstico
+foi confirmado comparando IPs dos containers e a configuração efetiva do
+Pulsar; a entrega foi recusada antes do POST e terminou como
+`transport_unconfirmed`. O bootstrap oficial recalculou as três CIDRs e a
+recriação controlada do Compose corrigiu a configuração sem remover volumes.
+
+Após a correção, as provas foram repetidas: entrega webhook
+`f61bda52-c97f-4c5d-9c71-70b8d363b86a` terminou com `open=0` e `pending=0`, a
+incidência financeira terminou balanceada e sem quarentena inválida, e o RLS
+confirmou isolamento cross-tenant nas três bases. O produto HTTP
+`r4-product-http-1789104098588` finalizou com duas operações e dois efeitos
+independentes. O smoke Chromium criou `browser-client-1789104122199` e
+`browser-product-1789104180968`, com persistência do mapeamento entre etapas.
+
+O incidente demonstra que a execução deve usar `bootstrap.sh` ou fornecer as
+CIDRs descobertas no ambiente do Compose; `docker compose up` isolado pode
+reintroduzir os defaults de loopback e não é um procedimento de qualificação.
 
 ## Limites e pendências explícitas
 

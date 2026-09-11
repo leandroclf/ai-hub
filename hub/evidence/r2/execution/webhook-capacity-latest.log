@@ -1,7 +1,9 @@
+Data: 2026-09-11
 Comando: bash hub/deploy/r2/tests/webhook-capacity-runtime.sh
 Projeto: ai_hub_r3qual
-Resultado: PASS
-delivery: sintética e removida pelo trap de limpeza
+Resultado: PASS após correção da configuração efetiva de egress
+delivery: f61bda52-c97f-4c5d-9c71-70b8d363b86a, sintética e removida pelo trap de limpeza
 capacity: 1|open=0|pending=0
 domínio: r4-webhook
 secret_version: obtido do VersionId efetivo do LocalStack, sem segredo em claro
+diagnóstico anterior: Pulsar com CIDRs de loopback recusou a entrega antes do POST; bootstrap/recriação controlada recalculou as CIDRs internas atuais.

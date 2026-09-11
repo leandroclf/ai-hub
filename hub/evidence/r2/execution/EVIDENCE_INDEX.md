@@ -13,10 +13,14 @@
 
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
-| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito | Provider-sim local; não homologa provedor comercial ou matriz completa |
+| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789104098588`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
 | `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
 | `browser-smoke.json` | PASS; portal também persiste e relê mapeamento de entrada entre etapas | Não substitui matriz completa de autorização e negativos |
 | `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
+
+| `authorized-load-latest.log` | Reexecução após correção de CIDR: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789103863389`) | Dados sintéticos e provider-sim local |
+| `webhook-capacity-latest.log` + `finance-runtime-latest.log` | Entrega webhook com `open=0/pending=0` e financeiro balanceado sem quarentena: PASS | Não homologa endpoint comercial ou ERP |
+| `rls-runtime-proof.sh` | Isolamento cross-tenant em control/core/finance com role não proprietária: PASS | Não substitui matriz HTTP completa de autorização |
 
 Origem: HEAD `a39d394b0d87185ed4cc3861c12ec45f2c302d9e`, branch `r2-implementation`, alterações não commitadas. Ambiente: laboratório isolado `ai-hub-r2`, PostgreSQL16, LocalStack3.8, Keycloak26.7.3; dados sintéticos. Coleta em 07–08/09/2026. A existência de teste com nome de cenário não encerra requisito sem revisar seu oráculo e a integração.
 
