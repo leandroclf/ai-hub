@@ -8,19 +8,19 @@
   - Completion criteria: cada achado tem estado atual verificável.
 
 ## 2. R4-OPE-01 — L1 utilizável na falha de cofre e coordenação limitada
-- [ ] 2.1 Fixar contrato e reproduzir contraexemplos.
+- [x] 2.1 Fixar contrato e reproduzir contraexemplos.
   - Objective: tornar F-R4-07 observável sem enfraquecer regra.
   - Likely files/components: hub/internal/providerauth/client.go, hub/internal/providerauth/client.go.
   - Depends on: 1.1.
   - Validation: R4-OPE-01-S01/S02/S03 e regressão herdada.
   - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
-- [ ] 2.2 Implementar fluxo, dados e integração.
+- [x] 2.2 Implementar fluxo, dados e integração.
   - Objective: O Hub SHALL consultar cache válido por identidade/versionamento autorizado antes de buscar segredo remoto, respeitar expiração/revogação e coordenar renovação com espera cancelável por chave. Entradas de cache e estruturas de coordenação devem ter limites/evicção seguros sob rotação e crescimento, sem fallback para outro binding.
   - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
   - Depends on: 2.1 e dependências do backlog R4.
   - Validation: integração real e negativas de autorização/erro.
   - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
-- [ ] 2.3 Qualificar e anexar evidência.
+- [x] 2.3 Qualificar e anexar evidência.
   - Objective: fechar cenários e requisitos herdados R3-INT-02, R3-OPE-04, R2-INT-03.
   - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
   - Depends on: 2.2.

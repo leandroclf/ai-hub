@@ -1,10 +1,11 @@
 R4-OPE-01 — L1, cofre indisponível e coordenação limitada
-source_commit=ce7bc8f
+source_commit=18d35652d63bd4f82b471265dd6f421ebe65b91a
 commands:
   go test -race -count=1 ./internal/providerauth
   go test -race -count=1 ./...
   go vet ./...
 result=PASS
+latest_recheck=2026-09-11; go test -race -count=1 ./internal/providerauth; go test -race -count=1 ./...; go vet ./...
 observations:
   - token OAuth válido foi reutilizado em L1 depois que o resolver ficou indisponível;
     o endpoint de token foi consultado uma única vez;
