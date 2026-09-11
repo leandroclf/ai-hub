@@ -1,0 +1,21 @@
+R4-CBK-02/03/04 — custódia, inbox recuperável e observações externas
+source_commit=90ec11b
+environment=local-compose-postgres-fixture-and-local-http
+commands:
+  R2_CORE_TEST_DSN='postgres://hub:<fixture>@127.0.0.1:15432/hub_core?sslmode=disable' go test -race -count=1 ./internal/cometa
+  R2_CORE_TEST_DSN='postgres://hub:<fixture>@127.0.0.1:15432/hub_core?sslmode=disable' R2_S3_TEST_ENDPOINT='http://127.0.0.1:14566' go test -race -count=1 ./...
+  go vet ./...
+result=PASS
+observations:
+  - callback inbox com PostgreSQL real manteve capability inválida separada e rejeitada;
+    a mesma carga com capability correta foi aplicada no lote seguinte;
+  - lote de reconciliação limitado a um item não chamou a aplicação para a entrada inválida;
+  - leases/epochs, custódia antes do ACK, duplicidade, conflito poll/callback,
+    correlação positiva/negativa, revogação de vínculo e worker de reconciliação passaram;
+  - resposta JSON com campo desconhecido continua rejeitada pelo decoder estrito;
+  - teste HTTP autenticado usou Basic por conta, binding atual, egress restrito e
+    impediu nova chamada após revogação.
+limitation=R4-CBK-01 e a parte de R4-CBK-02 que exige autenticação de origem
+explicitamente homologada por conta no gateway continuam parciais; a prova local
+usa chave de ingress/capability, PostgreSQL fixture e HTTP sintético, sem provedor
+comercial ou gateway externo.

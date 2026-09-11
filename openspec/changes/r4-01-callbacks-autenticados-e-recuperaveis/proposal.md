@@ -4,10 +4,27 @@ r4-01-callbacks-autenticados-e-recuperaveis
 ## Status
 Em execução — implementação parcial; qualificação integral pendente.
 ## Why
-O handler ganhou capability por operação e custódia antes de 2xx. Entretanto, toda a rota /internal/ continua envolvida pelo JWT do Hub; a URL entregue ao provedor contém apenas capability. O simulador não envia JWT Hub. A correção do handler não fecha o caminho de rede. Isso é incompatibilidade de composição, não prova de endpoint publicamente desprotegido.
-Quando a operação não existe, qualquer token não vazio que alcance o handler permite inserir body e receber 202. A chave única usa operação+hash do body, sem identidade autenticada/token: primeira tentativa com token incorreto pode ocupar a identidade de posterior recibo correto, que só incrementa occurrences. A tabela também não registra tenant/conta/célula, TTL ou quota. Exploração externa depende da rota/autenticação atual; o risco permanece ao corrigir essa rota.
-ReconcileCallbackInbox só é chamado ao receber outro callback conhecido. A consulta percorre todos os RECEIVED associados, sem LIMIT, claim, lease ou escopo de célula. O cursor permanece aberto enquanto são feitas outras operações SQL e aplicação. O HTTP de uma operação pode depender do backlog/erro de outra, e sem novo callback não há gatilho autônomo.
-finalize valida OutputSchema e conserva OperationResult. ApplyExternalObservation transforma callback somente em detail, não chama a mesma validação e não confere provider_request_id contra correlação armazenada. ConserveObservation pode sobrescrever a correlação com qualquer ID não vazio recebido. Token de operação não torna o body semanticamente correto.
+O handler ganhou capability por operação e custódia antes de 2xx. A rota pública
+aceita uma chave de ingress e a capability por operação, sem depender do JWT de
+workload interno; a capability fica fora do armazenamento em claro. A prova
+atual fecha custódia, deduplicação e recuperação local, mas ainda não fecha a
+homologação da credencial de callback por conta no gateway externo.
+Quando a operação não existe, a entrada somente é admitida após a chave de
+ingress e o formato terminal passarem; a capability é parte da identidade de
+deduplicação, portanto tentativa incorreta não ocupa o recibo legítimo. Quota,
+retenção, claim, lease e epoch estão implementados e cobertos localmente. A
+política de autenticação específica da conta e sua composição com gateway
+externo continuam como risco residual.
+ReconcileCallbackInboxBatch reivindica lote limitado antes da aplicação, com
+claim/lease/epoch e `SKIP LOCKED`; `RunCallbackInboxWorker` executa a recuperação
+periodicamente sem depender de novo tráfego HTTP. A prova cobre limite e
+disposição de capability inválida; reinício em múltiplas réplicas e gateway
+externo permanecem fora desta rodada.
+SUBMIT, polling e callback convergem em `ApplyExternalObservation`; a rotina
+confere correlação, snapshot, schema e projeção, conserva o recibo bruto e
+classifica conflito sem reabrir o terminal. A suíte local cobre correlação
+divergente, contrato estrito e conflito poll/callback; provedor comercial ainda
+não está homologado.
 ## Context
 Brownfield do commit b9d0f90ce02aa0c27cad546745153d160ff5867f. A baseline tem 189 requisitos/696 cenários.
 ## Problem
