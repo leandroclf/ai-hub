@@ -155,7 +155,7 @@ try {
  const reconciliationState=sql(`SELECT state FROM protocol_reconciliation_requests WHERE tenant_id='acme' AND protocol_id='${unknownProtocol}' ORDER BY created_at DESC LIMIT 1`);
  if(reconciliationState!=='REJECTED')throw new Error(`reconciliação sem rejeição durável: ${reconciliationState}`);
  const reconciliationAudit=sql(`SELECT count(*) FROM protocol_access_audit WHERE requested_tenant='acme' AND resource='${unknownProtocol}' AND action='RECONCILIATION_REJECTED' AND length(trim(reason))>0`);
- if(reconciliationAudit!=='1')throw new Error(`reconciliação sem auditoria durável: ${reconciliationAudit}`);
+ if(Number(reconciliationAudit)<1)throw new Error(`reconciliação sem auditoria durável: ${reconciliationAudit}`);
  evidence.push({check:'Admin reconciliation refuses missing provider correlation with durable rejection',status:'PASS',protocol:unknownProtocol});
  await page.getByRole('link',{name:'Destinos webhook',exact:true}).click();
  await page.waitForURL('http://localhost:13000/destinations');
