@@ -106,3 +106,10 @@ ou tarifa histórica; a reaplicação não duplicou o fato e a base oficial não
 alterada. A integração local confirmou ledger balanceado, deduplicação,
 aprovação segregada e bloqueio de fechamento incompleto. ERP/adquirente,
 backfill produtivo e rollback de versão publicada continuam fora do envelope.
+
+A identidade foi revalidada no mesmo ambiente: o TOTP manual Base32 foi aceito
+no Keycloak local, enquanto a prova de escopo confirmou leitura global
+autorizada (`200`), escrita negada (`403`) e bloqueio de cruzamento indevido de
+tenant (`403`). O fluxo OIDC/PKCE do portal também passou; nenhum segredo foi
+impresso na evidência. IdP gerenciado, certificados, rotação e failover
+regional/produtivo continuam fora do envelope.

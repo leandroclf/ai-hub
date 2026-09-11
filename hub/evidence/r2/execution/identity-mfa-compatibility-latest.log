@@ -1,0 +1,4 @@
+IDENTITY_MFA_COMPATIBILITY=START
+manual_base32_totp=PASS
+identity_scope=PASS global_read=200/200 global_write=403 tenant_cross_read=403
+IDENTITY_MFA_COMPATIBILITY=PASS oidc_pkce=true manual_totp=true no_secret_output=true
