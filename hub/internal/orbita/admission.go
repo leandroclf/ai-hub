@@ -16,8 +16,33 @@ import (
 // snapshot and replayable obligation together. The caller must treat a commit
 // error as uncertain and retry this same key; it must never invent an acceptance.
 func (s *Store) Admit(ctx context.Context, p Protocol, cmd dispatch.Command, subject string, reservation bool) (Protocol, bool, error) {
+	return s.admit(ctx, p, []dispatch.Command{cmd}, nil, subject, reservation)
+}
+
+// AdmitProduct conserva o protocolo e todas as etapas iniciais do produto na
+// mesma transação. Somente etapas sem dependências ficam READY; as demais
+// permanecem PENDING até que suas pré-condições sejam observadas duravelmente.
+func (s *Store) AdmitProduct(ctx context.Context, p Protocol, commands []dispatch.Command, plan ProductPlan, subject string, reservation bool) (Protocol, bool, error) {
+	return s.admit(ctx, p, commands, &plan, subject, reservation)
+}
+
+func (s *Store) admit(ctx context.Context, p Protocol, commands []dispatch.Command, plan *ProductPlan, subject string, reservation bool) (Protocol, bool, error) {
+	if len(commands) == 0 {
+		return Protocol{}, false, errors.New("empty admission command plan")
+	}
+	cmd := commands[0]
 	if p.ApplicationID == "" || p.CellID == "" || subject == "" || len(cmd.ConfigSnapshot) == 0 || cmd.CommandID != p.CommandID || cmd.TenantID != p.TenantID || cmd.ProtocolID != p.ProtocolID || cmd.ApplicationID != p.ApplicationID || cmd.CellID != p.CellID {
 		return Protocol{}, false, errors.New("invalid admission identity or snapshot")
+	}
+	if plan != nil {
+		if len(plan.Steps) != len(commands) || plan.TargetID == "" || plan.TargetVersion < 1 || plan.MaxParallel < 1 || plan.MaxParallel > 5 {
+			return Protocol{}, false, errors.New("invalid product plan")
+		}
+		for i, step := range plan.Steps {
+			if step.CommandID != commands[i].CommandID || step.StepID == "" {
+				return Protocol{}, false, errors.New("product step command mismatch")
+			}
+		}
 	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -55,11 +80,7 @@ func (s *Store) Admit(ctx context.Context, p Protocol, cmd dispatch.Command, sub
 			return Protocol{}, false, err
 		}
 	}
-	cmd.WebhookDestinations, err = snapshotWebhookDestinationsTx(ctx, tx, p.TenantID, p.ApplicationID, p.CellID)
-	if err != nil {
-		return Protocol{}, false, err
-	}
-	raw, err := json.Marshal(cmd)
+	destinations, err := snapshotWebhookDestinationsTx(ctx, tx, p.TenantID, p.ApplicationID, p.CellID)
 	if err != nil {
 		return Protocol{}, false, err
 	}
@@ -67,18 +88,86 @@ func (s *Store) Admit(ctx context.Context, p Protocol, cmd dispatch.Command, sub
 	if err != nil {
 		return Protocol{}, false, err
 	}
-	state := "READY"
-	if reservation {
-		state = "WAITING_RESERVATION"
-	}
-	_, err = tx.ExecContext(ctx, `INSERT INTO command_intents(command_id,protocol_id,tenant_id,application_id,cell_id,dispatch_mode,command,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, p.CommandID, p.ProtocolID, p.TenantID, p.ApplicationID, p.CellID, p.DispatchMode, raw, state)
-	if err != nil {
-		return Protocol{}, false, err
+
+	if plan == nil {
+		cmd.WebhookDestinations = destinations
+		raw, marshalErr := json.Marshal(cmd)
+		if marshalErr != nil {
+			return Protocol{}, false, marshalErr
+		}
+		state := "READY"
+		if reservation {
+			state = "WAITING_RESERVATION"
+		}
+		_, err = tx.ExecContext(ctx, `INSERT INTO command_intents(command_id,protocol_id,tenant_id,application_id,cell_id,dispatch_mode,command,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, p.CommandID, p.ProtocolID, p.TenantID, p.ApplicationID, p.CellID, p.DispatchMode, raw, state)
+		if err != nil {
+			return Protocol{}, false, err
+		}
+	} else {
+		_, err = tx.ExecContext(ctx, `INSERT INTO operation_plans(protocol_id,tenant_id,cell_id,target_kind,target_id,target_version,max_parallel,allow_partial,consolidation,failure_policy) VALUES($1,$2,$3,'products',$4,$5,$6,$7,$8,$9)`, p.ProtocolID, p.TenantID, p.CellID, plan.TargetID, plan.TargetVersion, plan.MaxParallel, plan.AllowPartial, plan.Consolidation, plan.FailurePolicy)
+		if err != nil {
+			return Protocol{}, false, err
+		}
+		for i, step := range plan.Steps {
+			command := commands[i]
+			command.WebhookDestinations = destinations
+			raw, marshalErr := json.Marshal(command)
+			if marshalErr != nil {
+				return Protocol{}, false, marshalErr
+			}
+			state := "PENDING"
+			if len(step.DependsOn) == 0 {
+				state = "READY"
+				if reservation {
+					state = "WAITING_RESERVATION"
+				}
+			}
+			var compensationRaw []byte
+			if step.CompensationCommand.CommandID != "" {
+				compensationRaw, marshalErr = json.Marshal(step.CompensationCommand)
+				if marshalErr != nil {
+					return Protocol{}, false, marshalErr
+				}
+			}
+			if _, err = tx.ExecContext(ctx, `INSERT INTO operation_steps(protocol_id,tenant_id,cell_id,step_id,command_id,service_id,service_version,required,depends_on,input_mapping,compensation_service_id,state,command,compensation_command) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,NULLIF($11,''),$12,$13,$14)`, p.ProtocolID, p.TenantID, p.CellID, step.StepID, command.CommandID, step.ServiceID, step.ServiceVersion, step.Required, jsonArray(step.DependsOn), jsonObject(step.InputMapping), step.CompensationServiceID, stateForStep(state), raw, nullOrBytes(compensationRaw)); err != nil {
+				return Protocol{}, false, err
+			}
+			if _, err = tx.ExecContext(ctx, `INSERT INTO command_intents(command_id,protocol_id,tenant_id,application_id,cell_id,dispatch_mode,command,state) VALUES($1,$2,$3,$4,$5,$6,$7,$8)`, command.CommandID, p.ProtocolID, p.TenantID, p.ApplicationID, p.CellID, p.DispatchMode, raw, state); err != nil {
+				return Protocol{}, false, err
+			}
+		}
 	}
 	if err = tx.Commit(); err != nil {
 		return Protocol{}, false, err
 	}
 	return p, true, nil
+}
+
+func nullOrBytes(value []byte) any {
+	if len(value) == 0 {
+		return nil
+	}
+	return value
+}
+
+func stateForStep(intentState string) string {
+	if intentState == "READY" || intentState == "WAITING_RESERVATION" {
+		return "READY"
+	}
+	return "PENDING"
+}
+
+func jsonArray(values []string) []byte {
+	b, _ := json.Marshal(values)
+	return b
+}
+
+func jsonObject(values map[string]string) []byte {
+	if values == nil {
+		return []byte(`{}`)
+	}
+	b, _ := json.Marshal(values)
+	return b
 }
 
 func snapshotWebhookDestinationsTx(ctx context.Context, tx *sql.Tx, tenant, application, cell string) ([]dispatch.DestinationSnapshot, error) {

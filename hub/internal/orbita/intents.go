@@ -66,6 +66,9 @@ func (s *Store) claimIntentMode(ctx context.Context, cell, owner string, mode di
  WHERE i.cell_id=$1 AND i.dispatch_mode=$3 AND i.state='READY'
  AND i.next_attempt_at<=clock_timestamp() AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
  AND p.client_deadline_at>clock_timestamp() AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+ AND (NOT EXISTS (SELECT 1 FROM operation_plans op WHERE op.protocol_id=i.protocol_id)
+      OR (SELECT count(*) FROM operation_steps os WHERE os.protocol_id=i.protocol_id AND os.state IN ('RUNNING','WAITING_PROVIDER'))
+         < (SELECT max_parallel FROM operation_plans op WHERE op.protocol_id=i.protocol_id))
  ORDER BY i.next_attempt_at,i.command_id FOR UPDATE OF i SKIP LOCKED LIMIT 1)
  UPDATE command_intents i SET lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',epoch=i.epoch+1,attempts=i.attempts+1
  FROM candidate c WHERE i.command_id=c.command_id RETURNING i.command,i.epoch`, cell, owner, string(mode)).Scan(&raw, &result.Epoch)
@@ -74,6 +77,13 @@ func (s *Store) claimIntentMode(ctx context.Context, cell, owner string, mode di
 	}
 	if err = json.Unmarshal(raw, &result.Command); err != nil {
 		return Intent{}, err
+	}
+	if _, product, productErr := s.ProductStepByCommand(ctx, result.Command.CommandID); productErr != nil {
+		return Intent{}, productErr
+	} else if product {
+		if productErr = s.ClaimProductStep(ctx, result.Command.CommandID); productErr != nil {
+			return Intent{}, productErr
+		}
 	}
 	return result, nil
 }
@@ -207,6 +217,9 @@ func (s *Store) CompleteIntent(ctx context.Context, i Intent, delivered bool) (b
 		return false, err
 	}
 	n, err := res.RowsAffected()
+	if err == nil && n == 1 && !delivered {
+		_, err = s.db.ExecContext(ctx, `UPDATE operation_steps SET state='READY',version=version+1,updated_at=clock_timestamp() WHERE command_id=$1 AND state='RUNNING'`, i.Command.CommandID)
+	}
 	return n == 1, err
 }
 

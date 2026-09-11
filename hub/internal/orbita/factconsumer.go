@@ -18,6 +18,7 @@ type operationFact struct {
 	ApplicationID string `json:"application_id"`
 	CellID        string `json:"cell_id"`
 	OperationID   string `json:"operation_id"`
+	StepID        string `json:"step_id,omitempty"`
 	EvidenceID    string `json:"evidence_id"`
 	TraceID       string `json:"trace_id,omitempty"`
 	Kind          string `json:"kind"`
@@ -41,7 +42,11 @@ func (s *Store) ConsumeOperationFact(ctx context.Context, m queue.ReceivedMessag
 	if err != nil {
 		return err
 	}
-	if p.ApplicationID != fact.ApplicationID || p.CellID != fact.CellID || p.CommandID != fact.OperationID {
+	stepID, product, stepErr := s.ProductStepByCommand(ctx, fact.OperationID)
+	if stepErr != nil {
+		return stepErr
+	}
+	if p.ApplicationID != fact.ApplicationID || p.CellID != fact.CellID || (!product && p.CommandID != fact.OperationID) || (product && fact.StepID != "" && fact.StepID != stepID) {
 		return s.quarantineFact(ctx, m, "operation_scope_mismatch")
 	}
 	raw, err := json.Marshal(e)
@@ -65,7 +70,25 @@ func (s *Store) ConsumeOperationFact(ctx context.Context, m queue.ReceivedMessag
 		return nil
 	}
 	disposition = "OBSERVED"
-	if fact.Kind != "UNKNOWN" {
+	if product {
+		outcome, applyErr := s.ApplyProductFact(ctx, fact.ProtocolID, fact.OperationID, fact.Kind, fact.ResponseBody, fact.ErrorMessage)
+		if applyErr != nil {
+			return applyErr
+		}
+		if outcome.Finalize {
+			_, err = finalizer.Finalize(ctx, fact.TraceID, p.TenantID, p.ProtocolID, outcome.ExpectedVersion, outcome.Status, outcome.Body, "")
+			if err != nil {
+				return err
+			}
+			p, err = s.Get(ctx, fact.TenantID, fact.ProtocolID)
+			if err != nil {
+				return err
+			}
+			if !IsTerminal(p.Status) {
+				return errors.New("product terminal consolidation pending")
+			}
+		}
+	} else if fact.Kind != "UNKNOWN" {
 		if !IsTerminal(p.Status) {
 			status := StatusFailed
 			if fact.Kind == "SUCCEEDED" {

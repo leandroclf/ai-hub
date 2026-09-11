@@ -103,12 +103,25 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 		return OfferSnapshot{}, ErrCredentialUnavailable
 	}
 	target, _ := DecodeCatalogData(snapshot.Target)
+	loadedServices := map[string]bool{}
 	for _, step := range target.Steps {
 		r, e := s.GetResource(ctx, "services", step.ServiceID, step.ServiceVersion)
 		if e != nil || r.State != "PUBLISHED" {
 			return OfferSnapshot{}, ErrNotFound
 		}
 		snapshot.Services = append(snapshot.Services, r)
+		loadedServices[r.ID+strconv.Itoa(r.Version)] = true
+		if step.CompensationServiceID != "" {
+			comp, compErr := s.GetResource(ctx, "services", step.CompensationServiceID, step.CompensationServiceVersion)
+			if compErr != nil || comp.State != "PUBLISHED" {
+				return OfferSnapshot{}, ErrNotFound
+			}
+			key := comp.ID + strconv.Itoa(comp.Version)
+			if !loadedServices[key] {
+				snapshot.Services = append(snapshot.Services, comp)
+				loadedServices[key] = true
+			}
+		}
 	}
 	if data.ValidUntil != nil && data.ValidUntil.Before(snapshot.ValidUntil) {
 		snapshot.ValidUntil = *data.ValidUntil

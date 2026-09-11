@@ -213,6 +213,13 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 422, "mode_not_eligible", "modo não elegível no contrato publicado")
 		return
 	}
+	if snapshot.Target.Kind == "products" && mode == "SYNC" {
+		// Um produto pode liberar várias operações externas; a resposta SYNC
+		// não pode afirmar o final antes da consolidação durável de todas as
+		// etapas. ASYNC/AUTO retomam o plano pelo intent publisher.
+		writeErr(w, 422, "mode_not_eligible", "produtos compostos exigem ASYNC ou AUTO")
+		return
+	}
 	profile, err := atlas.DecodeCatalogData(snapshot.TechnicalProfile)
 	if err != nil {
 		writeErr(w, 503, "profile_unavailable", "perfil indisponível")
@@ -262,7 +269,29 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		ProviderAccountID: snapshot.SelectedRoute.ProviderAccountID, RequestBody: json.RawMessage(transformed), StepDeadline: clientDeadline,
 		AcceptedAt: now, RetryDeadline: now.Add(time.Duration(target.RetryTTLSeconds) * time.Second), RetryTTLSeconds: target.RetryTTLSeconds, ConfigSnapshot: snapshotBytes, EconomicSnapshot: economicBytes,
 	}
-	accepted, created, err := h.store.Admit(ctx, p, cmd, principal.Subject, sale.StrictBalance)
+	var productPlan *ProductPlan
+	var commands []dispatch.Command
+	if snapshot.Target.Kind == "products" {
+		plan, productCommands, planErr := BuildProductPlan(snapshot, cmd, json.RawMessage(transformed))
+		if planErr != nil {
+			writeErr(w, 422, "product_plan_invalid", planErr.Error())
+			return
+		}
+		productPlan = &plan
+		commands = productCommands
+		commandID = commands[0].CommandID
+		p.CommandID = commandID
+		cmd = commands[0]
+	} else {
+		commands = []dispatch.Command{cmd}
+	}
+	var accepted Protocol
+	var created bool
+	if productPlan != nil {
+		accepted, created, err = h.store.AdmitProduct(ctx, p, commands, *productPlan, principal.Subject, sale.StrictBalance)
+	} else {
+		accepted, created, err = h.store.Admit(ctx, p, cmd, principal.Subject, sale.StrictBalance)
+	}
 	if errors.Is(err, ErrIdempotencyConflict) {
 		writeErr(w, 409, "idempotency_conflict", "chave reutilizada com outro pedido")
 		return
@@ -285,7 +314,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 			h.respondWithProtocol(w, p, http.StatusServiceUnavailable)
 			return
 		}
-		if _, err = h.store.db.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE command_id=$1 AND state='WAITING_RESERVATION'", commandID); err != nil {
+		if _, err = h.store.db.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE protocol_id=$1 AND state='WAITING_RESERVATION'", protocolID); err != nil {
 			h.respondWithProtocol(w, p, 503)
 			return
 		}

@@ -34,13 +34,14 @@ type Resource struct {
 }
 
 type Step struct {
-	ID                    string            `json:"id"`
-	ServiceID             string            `json:"service_id"`
-	ServiceVersion        int               `json:"service_version"`
-	DependsOn             []string          `json:"depends_on"`
-	Required              bool              `json:"required"`
-	InputMapping          map[string]string `json:"input_mapping"`
-	CompensationServiceID string            `json:"compensation_service_id,omitempty"`
+	ID                         string            `json:"id"`
+	ServiceID                  string            `json:"service_id"`
+	ServiceVersion             int               `json:"service_version"`
+	DependsOn                  []string          `json:"depends_on"`
+	Required                   bool              `json:"required"`
+	InputMapping               map[string]string `json:"input_mapping"`
+	CompensationServiceID      string            `json:"compensation_service_id,omitempty"`
+	CompensationServiceVersion int               `json:"compensation_service_version,omitempty"`
 }
 
 type CatalogData struct {
@@ -342,6 +343,9 @@ func PlanDAG(steps []Step) ([][]string, error) {
 	for _, s := range steps {
 		if !safeField(s.ID) || s.ServiceID == "" || s.ServiceVersion < 1 {
 			return nil, fmt.Errorf("passo %s sem identidade/serviço versionado", s.ID)
+		}
+		if s.CompensationServiceID != "" && s.CompensationServiceVersion < 1 {
+			return nil, fmt.Errorf("passo %s sem serviço de compensação versionado", s.ID)
 		}
 		if _, ok := byID[s.ID]; ok {
 			return nil, fmt.Errorf("passo duplicado: %s", s.ID)
