@@ -157,6 +157,12 @@ vazio. O editor também filtra localmente as opções já carregadas por nome ou
 identificador, com check dedicado no smoke para garantir que a lista não seja
 apresentada como uma seleção vazia sem explicação.
 
+O mesmo smoke validou a troca de identidade após logout OIDC com
+`id_token_hint`: `operadora-a` retorna ao portal, `auditor-global` entra em
+seguida, informa tenant e finalidade, consulta protocolo de outro tenant e
+abre seu detalhe sem receber ação de escrita. A finalidade é preservada na
+rota do detalhe/timeline e a API continua exigindo a mesma auditoria.
+
 O cliente HTTP administrativo também passou a rejeitar corpo vazio, JSON
 malformado ou tipo JSON incompatível, inclusive em respostas HTTP 200. O smoke
 intercepta uma resposta inválida, confirma a mensagem de autoridade e verifica

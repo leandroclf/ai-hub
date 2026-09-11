@@ -18,12 +18,17 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
  const [reason,setReason]=useState('');
  const [message,setMessage]=useState('');
  const [refresh,setRefresh]=useState(0);
- const scope=`tenant_id=${encodeURIComponent(tenant)}`;
+ const crossTenant=principal.scopes.includes('admin:cross_tenant')&&principal.mfa&&tenant!==principal.tenant_id;
+ const requiresReadReason=crossTenant&&(kind==='protocols'||kind==='sla-reports');
+ const scopeParams=new URLSearchParams({tenant_id:tenant});
+ if(query.get('reason'))scopeParams.set('reason',query.get('reason')!);
+ const scope=scopeParams.toString();
  const title=kind==='protocols'?'Protocolos':kind==='deliveries'?'Entregas':'SLA bilateral';
 
  useEffect(()=>{
   const abort=new AbortController();
   setBusy(true);setError('');setMessage('');setDetail(null);setTimeline([]);
+  if(requiresReadReason&&(query.get('reason')||'').trim().length<8){setBusy(false);setError('Informe a finalidade da consulta cross-tenant antes de consultar.');return()=>abort.abort()}
   if(id){
    void api<RecordData>(`/admin/v1/${kind}/${encodeURIComponent(id)}?${scope}`,{signal:abort.signal}).then(async value=>{
     setDetail(value);
@@ -51,17 +56,18 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
   {error&&<p role="alert">{error}</p>}
   {message&&<p role="status">{message}</p>}
   {busy&&<p role="status">Consultando autoridade do recurso…</p>}
-  <form className="filters" onSubmit={event=>{event.preventDefault();const form=new FormData(event.currentTarget);const resource=String(form.get('resource_id')||'');if(resource)navigate(`/${kind}/${encodeURIComponent(resource)}`);else navigate(`/${kind}?${new URLSearchParams({status:String(form.get('status')||''),from:String(form.get('from')||''),to:String(form.get('to')||'')})}`)}}>
+  <form className="filters" onSubmit={event=>{event.preventDefault();const form=new FormData(event.currentTarget);const resource=String(form.get('resource_id')||'');const values=new URLSearchParams({status:String(form.get('status')||''),from:String(form.get('from')||''),to:String(form.get('to')||'')});const readReason=String(form.get('read_reason')||'').trim();if(readReason)values.set('reason',readReason);if(resource)navigate(`/${kind}/${encodeURIComponent(resource)}?${values}`);else navigate(`/${kind}?${values}`)}}>
    <label>Identificador<input name="resource_id" defaultValue={id}/></label>
    <label>Estado<select name="status" defaultValue={query.get('status')||''}><option value="">Todos</option>{(kind==='deliveries'?['PENDING','DELIVERED','EXHAUSTED','SUSPENDED']:['ACCEPTED','RUNNING','WAITING_PROVIDER','RECONCILING','SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','UNKNOWN']).map(value=><option key={value}>{value}</option>)}</select></label>
    <label>De<input name="from" type="date" defaultValue={query.get('from')||''}/></label>
    <label>Até<input name="to" type="date" defaultValue={query.get('to')||''}/></label>
+   {requiresReadReason&&<label>Finalidade da consulta<input name="read_reason" minLength={8} defaultValue={query.get('reason')||''}/></label>}
    <button disabled={busy}>Consultar</button><button type="button" onClick={()=>setRefresh(value=>value+1)}>Atualizar</button>
   </form>
   {!id&&<div className="table-scroll" tabIndex={0}>
    <table><thead><tr>{kind==='sla-reports'?<><th>Protocolo</th><th>Cliente</th><th>Estado</th><th>SLA cliente</th><th>SLA provedor</th><th>Observado em</th></>:<><th>Identificador</th><th>Cliente</th><th>Estado</th><th>Data</th></>}</tr></thead>
     <tbody>{items.map((row,index)=>{const key=String(row.protocol_id||row.delivery_id||row.id||index);return <tr key={key}>
-     <td><a href={`/${kind}/${key}`} onClick={event=>{event.preventDefault();navigate(`/${kind}/${key}`)}}>{key}</a></td>
+     <td><a href={`/${kind}/${key}${query.get('reason')?`?reason=${encodeURIComponent(query.get('reason')!)}`:''}`} onClick={event=>{event.preventDefault();navigate(`/${kind}/${key}${query.get('reason')?`?reason=${encodeURIComponent(query.get('reason')!)}`:''}`)}}>{key}</a></td>
      <td>{String(row.tenant_id||'')}</td><td>{String(row.status||row.state||'')}</td>
      {kind==='sla-reports'?<><td>{row.client_sla_breached?'violado':'dentro do prazo'}</td><td>{row.provider_sla_breached?'violado':'dentro do prazo'}</td><td>{String(row.observed_at||'')}</td></>:<td>{String(row.accepted_at||row.created_at||'')}</td>}
     </tr>})}</tbody>

@@ -18,12 +18,12 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789121052920"
+    "resource": "browser-client-1789121712309"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789121100939"
+    "resource": "browser-product-1789121760934"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -104,6 +104,10 @@
   {
     "check": "R2-SEG-05-S02 logout navigation",
     "status": "OBSERVED",
-    "origin": "http://localhost:18085"
+    "origin": "http://localhost:13000"
+  },
+  {
+    "check": "Global reader consults cross-tenant protocol with audited purpose and no write action",
+    "status": "PASS"
   }
 ]

@@ -52,6 +52,11 @@ após uma mensagem de erro e mantenha relógio do host e do container
 sincronizados. O formulário limpa o campo quando o Keycloak rejeita o código;
 isso não indica, por si só, senha incorreta.
 
+No logout, o portal revoga a sessão local e envia o `id_token_hint` ao endpoint
+OIDC antes de retornar ao portal. Isso encerra a sessão SSO do usuário atual e
+evita que uma segunda identidade nominal do laboratório seja rejeitada como
+troca de usuário na mesma janela.
+
 O usuário sintético `auditor-global` representa o perfil nominal
 `hub_protocol_reader`. Ele só recebe `admin:cross_tenant` quando o token também
 contém MFA; a permissão permite consultas administrativas auditadas entre
@@ -67,6 +72,13 @@ escopo, consulta Atlas/Órbita sem campos sensíveis, tenta uma escrita e valida
 que `leitor-a` não cruza para `beta`. A consulta administrativa global deve
 informar tenant-alvo e finalidade; o backend registra essa leitura na trilha
 de auditoria.
+
+No portal, depois de entrar como `auditor-global`, informe o tenant em
+`Cliente em consulta` e, nas jornadas `Protocolos` ou `SLA bilateral`, a
+`Finalidade da consulta` antes de selecionar `Consultar`. A finalidade é
+preservada ao abrir o detalhe e a timeline. O perfil global não recebe botões
+de reconciliação, redelivery ou edição; a ausência da ação na UI é apenas uma
+conveniência, pois a API continua sendo a autoridade.
 
 Segredos de provedor e webhook nunca são digitados nem exibidos em claro.
 As telas trabalham somente com referências versionadas, como `secret_ref` e

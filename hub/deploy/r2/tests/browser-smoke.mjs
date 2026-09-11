@@ -7,9 +7,9 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 const page=await browser.newPage({viewport:{width:1365,height:900}});
 const evidence=[];
 let phase='inicialização';
-async function authenticate(expectedURL){
+async function authenticate(username,expectedURL){
  await page.getByRole('button',{name:'Entrar',exact:true}).click();
- await page.locator('#username').fill('operadora-a');
+ await page.locator('#username').fill(username);
  await page.locator('#password').fill('R2-fixture-password!');
  await page.locator('#kc-login').click();
  await page.locator('#otp').waitFor();
@@ -28,7 +28,7 @@ async function authenticate(expectedURL){
 try {
  phase='autenticação inicial';
  await page.goto('http://localhost:13000/services');
- await authenticate('http://localhost:13000/services');
+ await authenticate('operadora-a','http://localhost:13000/services');
  await page.waitForURL('http://localhost:13000/services');
  await page.getByRole('heading',{name:'Serviços',exact:true}).waitFor();
  evidence.push({check:'OIDC Authorization Code PKCE + password + OTP in Chromium',status:'PASS'});
@@ -77,7 +77,7 @@ try {
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.reload({waitUntil:'networkidle'});
  await page.waitForTimeout(60500-(Date.now()%30000));
- await authenticate(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
+ await authenticate('operadora-a',/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.locator(`input[value="Browser ${clientCode}"]`).waitFor();
  evidence.push({check:'Admin resource save, reload and durable readback',status:'PASS',resource:clientCode});
@@ -104,7 +104,7 @@ try {
  await page.waitForURL(/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  await page.reload({waitUntil:'networkidle'});
  await page.waitForTimeout(60500-(Date.now()%30000));
- await authenticate(/http:\/\/localhost:13000\/products\/[^/]+\/1/);
+ await authenticate('operadora-a',/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  if(await page.locator('#step-1-input-mapping').inputValue()!=='{\n  "marker": "etapa_a.marker"\n}')throw new Error('input_mapping do produto não reapareceu no readback');
  evidence.push({check:'Admin product editor persists dependent input mapping',status:'PASS',resource:productCode});
  phase='navegação e relatórios administrativos';
@@ -171,11 +171,28 @@ try {
  evidence.push({check:'390px viewport has no page overflow',status:overflow?'FAIL':'PASS',dimensions,overflowInfo});
  if(overflow)process.exitCode=1;
  await page.getByRole('button',{name:'Sair',exact:true}).click();
- await page.waitForTimeout(1000);
+ await page.waitForURL('http://localhost:13000/services',{timeout:5000});
  const unauthenticatedStatus=await page.request.get('http://localhost:13000/api/atlas/admin/v1/clients?tenant_id=acme').then(response=>response.status());
  if(unauthenticatedStatus!==401)throw new Error(`API administrativa sem sessão retornou HTTP ${unauthenticatedStatus}`);
  evidence.push({check:'R2-SEG-05-S02 logout revokes browser access to administrative API',status:'PASS',httpStatus:unauthenticatedStatus});
  evidence.push({check:'R2-SEG-05-S02 logout navigation',status:'OBSERVED',origin:new URL(page.url()).origin});
+ phase='leitor global cross-tenant';
+ await page.goto('http://localhost:13000/protocols');
+ await authenticate('auditor-global','http://localhost:13000/protocols');
+ await page.getByRole('heading',{name:'Protocolos',exact:true}).waitFor();
+ const globalTenant=page.getByLabel('Cliente em consulta',{exact:true});
+ await globalTenant.fill('acme');
+ const globalReason=page.getByLabel('Finalidade da consulta',{exact:true});
+ await globalReason.fill('diagnostico operacional');
+ await page.getByRole('button',{name:'Consultar',exact:true}).click();
+ const globalRow=page.locator('tbody tr').filter({hasText:'acme'}).first();
+ await globalRow.waitFor();
+ await globalRow.getByRole('link').first().click();
+ await page.getByRole('heading',{name:'Detalhe persistido',exact:true}).waitFor();
+ if(await page.getByRole('button',{name:'Solicitar reconciliação',exact:true}).count())throw new Error('leitor global recebeu ação de escrita no portal');
+ evidence.push({check:'Global reader consults cross-tenant protocol with audited purpose and no write action',status:'PASS'});
+ await page.getByRole('button',{name:'Sair',exact:true}).click();
+ await page.waitForTimeout(500);
  console.log(JSON.stringify(evidence,null,2));
 } catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
 finally {await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()}
