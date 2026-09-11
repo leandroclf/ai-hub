@@ -33,6 +33,10 @@ reprodutível.
   e GET p95=5,16 ms/p99=5,23 ms, dentro das metas propostas de R2-OPE-09-S01.
   A evidência não cobre ainda manutenção sob ruído nem converte a meta proposta
   em aprovação de produção.
+- Broker fora: PASS local; `localstack` foi interrompido, Órbita e Cometa foram
+  recriados sem dependências, permaneceram prontos e executaram SYNC/GET com
+  `SUCCEEDED`. O broker foi restaurado ao final e a única fixture sintética
+  sem efeito da primeira tentativa foi fechada pelo oráculo 404 local.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos

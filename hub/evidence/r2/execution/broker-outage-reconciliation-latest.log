@@ -1,0 +1,2 @@
+CLOSED domain=r4-sync permit=01a09073-18fa-7228-821d-d8e5565c8be7 protocol=01a09073-18fa-7225-b818-c5b33dd1e98e evidence=local-oracle-absence:01a09073-18fa-7225-b818-c5b33dd1e98e
+summary closed=1 protected=0

@@ -11,6 +11,7 @@ limites arquiteturais.
 |---|---|---|
 | `hub/evidence/r2/execution/authorized-load-latest.log` | Carga autenticada com seed versionado | PASS; oito caminhos, falha controlada e idempotência |
 | `hub/evidence/r2/execution/slo-load-latest.json` | R2-OPE-09-S01 — perfil de referência sob carga | PASS local; 30 admissões ASYNC e 30 GETs autenticados, concorrência 5, payload 59989 bytes, p95/p99 abaixo das metas propostas; não cobre manutenção sob ruído |
+| `hub/evidence/r2/execution/broker-outage-runtime-latest.json` + `broker-outage-reconciliation-latest.log` | R2-OPE-06-S01 — reinício com broker fora | PASS local; localstack indisponível durante a recriação de Órbita/Cometa, SYNC/GET concluíram com custódia e o reconciliador fechou somente a fixture sem efeito comprovada por 404 |
 | `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, erro de JSON inválido sem falso sucesso, CRUD/readback, editor de contrato REST declarativo, filtro local de referências, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout, HTTP 401 pós-logout e viewport móvel |
 | `hub/evidence/r2/execution/browser-smoke.json` + `hub/evidence/r2/execution/r2-security.log` | R2-ADM-09-S01/S02/S03 e R2-ADM-11-S01/S03 | PASS local para redelivery auditado, reconciliação segura de `UNKNOWN`, negação de escrita ao leitor administrativo, leitura financeira persistida e bloqueio de autoaprovação; aprovação compensatória completa do ajuste permanece pendente |
 | Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP explícito `BU_CDP_URL=http://127.0.0.1:9222` | PASS-EXPLORATORY; descoberta automática do daemon headless ainda não funciona, evidência em `hub/evidence/r2/execution/browser-harness-latest.log` |
@@ -65,7 +66,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 144 com evidência existente e 588 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 145 com evidência existente e 587 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -74,6 +75,7 @@ limites arquiteturais.
 | 10/09/2026: carga autorizada | `hub/deploy/r2/tests/authorized-load.mjs` | PASS: oito caminhos autorizados, falha controlada, polling/callback/AUTO, saldo estrito, credencial dedicada e quatro observações idempotentes |
 | 11/09/2026: Browser Harness | `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh` | PASS-EXPLORATORY: 16 rotas em viewport 390×844; descoberta automática headless requer CDP explícito |
 | 11/09/2026: SLO de referência | `R2_SLO_SAMPLES=30 R2_SLO_CONCURRENCY=5 node hub/deploy/r2/tests/slo-load-proof.mjs` | PASS local: 30/30 admissões e 30/30 GETs; o artefato registra carga, payload, códigos HTTP e percentis sem bearer ou payload |
+| 11/09/2026: broker fora | `node hub/deploy/r2/tests/broker-outage-runtime-proof.mjs` | PASS local: localstack parado durante reinício controlado, SYNC/GET `SUCCEEDED`, persistência confirmada e restauração obrigatória do broker |
 
 O smoke Playwright mais recente também verificou a pesquisa local de
 referências no editor de ofertas (`Admin reference editor filters loaded
