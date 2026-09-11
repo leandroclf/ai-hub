@@ -1,6 +1,6 @@
 # Tasks: Medição, saldo estrito, ledger e fechamento
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados, r2-04-catalogo-produtos-e-contratos
+Status: **comportamentos e provas concluídos; integração/migração e fechamento permanecem abertos**. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados, r2-04-catalogo-produtos-e-contratos
 
 ## 1. Contratos e preparação
 
@@ -27,42 +27,42 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 2. Comportamentos
 
-- [ ] 2.1 Compra, venda e incidência por snapshot
+- [x] 2.1 Compra, venda e incidência por snapshot
   - Objective: Entregar o comportamento R2-FIN-01 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-01, FIN-02, FIN-03, FIN-05, FIN-11.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/migrations/finance`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-FIN-01; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.1; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.2 Medição exata e deduplicação econômica
+- [x] 2.2 Medição exata e deduplicação econômica
   - Objective: Entregar o comportamento R2-FIN-02 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-04, FIN-05, FIN-09.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/migrations/finance`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-FIN-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Saldo estrito e retenção de incerteza
+- [x] 2.3 Saldo estrito e retenção de incerteza
   - Objective: Entregar o comportamento R2-FIN-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-06, FIN-10, DAD-03, DAD-11.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/migrations/finance`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-FIN-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.4 Planos, franquias e política de produto
+- [x] 2.4 Planos, franquias e política de produto
   - Objective: Entregar o comportamento R2-FIN-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-02, FIN-05, FIN-09, CAT-07.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/migrations/finance`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-FIN-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.5 Ledger imutável e ajustes compensatórios
+- [x] 2.5 Ledger imutável e ajustes compensatórios
   - Objective: Entregar o comportamento R2-FIN-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-07, FIN-10.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/migrations/finance`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-FIN-05; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.5; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.6 Fechamento, reconciliação e integração financeira
+- [x] 2.6 Fechamento, reconciliação e integração financeira
   - Objective: Entregar o comportamento R2-FIN-06 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-08, FIN-10, FIN-11.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/migrations/finance`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.

@@ -1,6 +1,6 @@
 # Tasks: Adaptadores reais, credenciais, polling, callbacks e pressão
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **comportamentos e provas concluídos; integração/migração e fechamento permanecem abertos**. Itens sem evidência integral não são promovidos. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -27,56 +27,56 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 2. Comportamentos
 
-- [ ] 2.1 Adapter executável homologado por capacidade
+- [x] 2.1 Adapter executável homologado por capacidade
   - Objective: Entregar o comportamento R2-INT-01 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline COM-02, CAT-06, CAT-11.
   - Likely files/components: `hub/internal/cometa/executor.go`; `hub/internal/providersim/providersim.go`; `hub/internal/atlas/store.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-01; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.1; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.2 Credencial efetiva vinculada ao cliente e à conta
+- [x] 2.2 Credencial efetiva vinculada ao cliente e à conta
   - Objective: Entregar o comportamento R2-INT-02 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-05, SEG-05, FIN-11, CAT-11.
   - Likely files/components: `hub/internal/cometa/executor.go`; `hub/internal/providerauth/client.go`; `hub/internal/atlas/store.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Segredos reais e cache dispensável
+- [x] 2.3 Segredos reais e cache dispensável
   - Objective: Entregar o comportamento R2-INT-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline SEG-05, DAD-10, OPE-13, ARQ-03.
   - Likely files/components: `hub/internal/providerauth/client.go`; `hub/cmd/cometa/main.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.4 Polling e callback combináveis e coordenados
+- [x] 2.4 Polling e callback combináveis e coordenados
   - Objective: Entregar o comportamento R2-INT-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-05, EXE-06, SEG-02.
   - Likely files/components: `hub/internal/cometa/poller.go`; `hub/internal/cometa/handlers.go`; `hub/internal/cometa/store.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.5 Janela absoluta de retry e classificação de falha
+- [x] 2.5 Janela absoluta de retry e classificação de falha
   - Objective: Entregar o comportamento R2-INT-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-09, EXE-10, CFG-04.
   - Likely files/components: `hub/internal/cometa`; `hub/internal/atlasclient/client.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-05; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.5; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.6 Controle adaptativo global por domínio de capacidade
+- [x] 2.6 Controle adaptativo global por domínio de capacidade
   - Objective: Entregar o comportamento R2-INT-06 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-07, OPE-08, EXE-13, CAT-06.
   - Likely files/components: `hub/internal/cometa`; `hub/internal/atlas/store.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-06; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.6; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.7 Entrega ao cliente com identidade e política próprias
+- [x] 2.7 Entrega ao cliente com identidade e política próprias
   - Objective: Entregar o comportamento R2-INT-07 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-08, COM-05, SEG-02, CFG-03.
   - Likely files/components: `hub/internal/pulsar`; `hub/migrations/core`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-INT-07; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.7; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.8 SLA do provedor separado de SLA do cliente
+- [x] 2.8 SLA do provedor separado de SLA do cliente
   - Objective: Entregar o comportamento R2-INT-08 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-10, EXE-11, FIN-10, CAT-10.
   - Likely files/components: `hub/internal/cometa`; `hub/internal/orbita`; `hub/internal/platform`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.

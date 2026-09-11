@@ -1,6 +1,6 @@
 # Tasks: Custódia, execução única e resultado final correto
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: r2-01-identidade-e-isolamento
+Status: **parcialmente concluído**. Comportamentos com todos os cenários comprovados foram sincronizados; itens com lacunas permanecem abertos. Dependências de change: r2-01-identidade-e-isolamento
 
 ## 1. Contratos e preparação
 
@@ -41,7 +41,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Um dono de despacho e tentativa anterior ao efeito
+- [x] 2.3 Um dono de despacho e tentativa anterior ao efeito
   - Objective: Entregar o comportamento R2-EXE-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-04, EXE-09, EXE-15, DAD-03, COM-06.
   - Likely files/components: `hub/internal/cometa/executor.go`; `hub/internal/cometa/store.go`; `hub/internal/dispatch/contract.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -55,7 +55,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.5 Inbox, outbox e confirmação de mensagens
+- [x] 2.5 Inbox, outbox e confirmação de mensagens
   - Objective: Entregar o comportamento R2-EXE-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline COM-03, COM-04, OPE-11, FIN-04, EXE-08.
   - Likely files/components: `hub/internal/queue/queue.go`; `hub/internal/outbox`; `hub/internal/orbita/factconsumer.go`; `hub/internal/pulsar/consumer.go`; `hub/internal/libra/consumers.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -83,7 +83,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-08; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.8; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.9 Reconciliação de obrigações sem reexecutar efeitos
+- [x] 2.9 Reconciliação de obrigações sem reexecutar efeitos
   - Objective: Entregar o comportamento R2-EXE-09 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-03, EXE-09, EXE-15, OPE-11, DAD-09.
   - Likely files/components: `hub/internal/orbita`; `hub/internal/cometa`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -106,7 +106,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-EXE-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-EXE-03 com oráculos independentes
   - Objective: Executar R2-EXE-03-S01, R2-EXE-03-S02, R2-EXE-03-S03. Caso indispensável: Fencing antigo; esperado: sua ação é rejeitada; lease expirada não prova ausência de efeito já enviado.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa/executor.go`; `hub/internal/cometa/store.go`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.
@@ -120,7 +120,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.5 Qualificar R2-EXE-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-EXE-05 com oráculos independentes
   - Objective: Executar R2-EXE-05-S01, R2-EXE-05-S02, R2-EXE-05-S03. Caso indispensável: Schema desconhecido; esperado: original sanitizado e metadados ficam em quarentena; alerta e replay autorizado preservam a identidade de origem.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/queue/queue.go`; `hub/internal/outbox`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.

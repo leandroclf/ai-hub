@@ -1,6 +1,6 @@
 # Tasks: Identidade, isolamento de tenants e administração segura
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.
+Status: **comportamentos e provas concluídos; integração/migração e fechamento permanecem abertos**. Itens sem evidência integral não são promovidos. Dependências de change: Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.
 
 ## 1. Contratos e preparação
 
@@ -27,35 +27,35 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 2. Comportamentos
 
-- [ ] 2.1 Identidade autenticada e autorização por recurso
+- [x] 2.1 Identidade autenticada e autorização por recurso
   - Objective: Entregar o comportamento R2-SEG-01 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline SEG-01, SEG-03, EXE-07, EXE-16.
   - Likely files/components: `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`; `hub/internal/orbita/handlers.go`; `hub/internal/atlas/handlers.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-SEG-01; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.1; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.2 Workloads com menor privilégio
+- [x] 2.2 Workloads com menor privilégio
   - Objective: Entregar o comportamento R2-SEG-02 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline SEG-01, SEG-03, DAD-01, DAD-07.
   - Likely files/components: `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`; `hub/internal/orbita/handlers.go`; `hub/internal/atlas/handlers.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-SEG-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Leitura administrativa individual entre tenants
+- [x] 2.3 Leitura administrativa individual entre tenants
   - Objective: Entregar o comportamento R2-SEG-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline SEG-04, CFG-03.
   - Likely files/components: `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`; `hub/internal/orbita/handlers.go`; `hub/internal/atlas/handlers.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-SEG-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.4 Destinos externos e callbacks protegidos
+- [x] 2.4 Destinos externos e callbacks protegidos
   - Objective: Entregar o comportamento R2-SEG-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline SEG-02, COM-02, CFG-05.
   - Likely files/components: `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`; `hub/internal/orbita/handlers.go`; `hub/internal/atlas/handlers.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-SEG-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.5 Sessão administrativa e trilha de alterações
+- [x] 2.5 Sessão administrativa e trilha de alterações
   - Objective: Entregar o comportamento R2-SEG-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-01, CFG-02, SEG-01, SEG-03.
   - Likely files/components: `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`; `hub/internal/orbita/handlers.go`; `hub/internal/atlas/handlers.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.

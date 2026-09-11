@@ -1,6 +1,6 @@
 # Tasks: Catálogo operável, produtos compostos e contratos por cliente
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação têm prova integral; ofertas, agregação, perfis e onboarding permanecem abertos onde faltam cenários. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -27,7 +27,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 2. Comportamentos
 
-- [ ] 2.1 Catálogo versionado com publicação governada
+- [x] 2.1 Catálogo versionado com publicação governada
   - Objective: Entregar o comportamento R2-CAT-01 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CAT-01, CAT-02, CFG-02, CFG-04.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/migrations/control`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -48,7 +48,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Teste de domínio/contrato dos limites de R2-CAT-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.4 Composição por DAG e compensações
+- [x] 2.4 Composição por DAG e compensações
   - Objective: Entregar o comportamento R2-CAT-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CAT-04, CAT-05, CAT-08, EXE-03, EXE-13.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/migrations/control`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -85,7 +85,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 3. Provas por requisito
 
-- [ ] 3.1 Qualificar R2-CAT-01 com oráculos independentes
+- [x] 3.1 Qualificar R2-CAT-01 com oráculos independentes
   - Objective: Executar R2-CAT-01-S01, R2-CAT-01-S02, R2-CAT-01-S03. Caso indispensável: Edição concorrente; esperado: servidor detecta versão desatualizada e oferece diff/recarregamento sem sobrescrever trabalho alheio.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/atlas`; `hub/internal/atlasclient`.
   - Depends on: 2.1; fixtures de r2-09; dependências de integração pertinentes.
@@ -106,7 +106,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.4 Qualificar R2-CAT-04 com oráculos independentes
+- [x] 3.4 Qualificar R2-CAT-04 com oráculos independentes
   - Objective: Executar R2-CAT-04-S01, R2-CAT-04-S02, R2-CAT-04-S03. Caso indispensável: Compensação incompleta; esperado: protocolo informa estado contratado e gera obrigação de reconciliação, sem declarar rollback integral fictício.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/atlas`; `hub/internal/atlasclient`.
   - Depends on: 2.4; fixtures de r2-09; dependências de integração pertinentes.

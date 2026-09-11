@@ -1,6 +1,6 @@
 # Tasks: Ambientes completos, disponibilidade, escala e observabilidade
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **parcialmente concluído**. Probes de capacidade/drenagem e placement têm prova integral; ambientes, escala, telemetria, continuidade e promoção permanecem abertos onde a evidência é estrutural ou parcial. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -41,7 +41,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Teste de domínio/contrato dos limites de R2-OPE-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Probes por capacidade e drenagem
+- [x] 2.3 Probes por capacidade e drenagem
   - Objective: Entregar o comportamento R2-OPE-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-05, OPE-13, OPE-14.
   - Likely files/components: `hub/deploy`; `hub/cmd`; `hub/internal/platform`; `hub/internal/atlasclient`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -55,7 +55,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Teste de domínio/contrato dos limites de R2-OPE-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.5 Placement, fencing e recursos por ambiente e célula
+- [x] 2.5 Placement, fencing e recursos por ambiente e célula
   - Objective: Entregar o comportamento R2-OPE-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline DAD-11, ARQ-06, CFG-06, OPE-08.
   - Likely files/components: `hub/deploy`; `hub/cmd`; `hub/internal/platform`; `hub/internal/atlasclient`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -106,7 +106,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-OPE-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-OPE-03 com oráculos independentes
   - Objective: Executar R2-OPE-03-S01, R2-OPE-03-S02, R2-OPE-03-S03. Caso indispensável: Provedor fora; esperado: não reinicia todos os pods; circuito/quotas contêm apenas a capacidade afetada.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy`; `hub/cmd`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.
@@ -120,7 +120,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.5 Qualificar R2-OPE-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-OPE-05 com oráculos independentes
   - Objective: Executar R2-OPE-05-S01, R2-OPE-05-S02, R2-OPE-05-S03. Caso indispensável: Falha parcial de provisionamento; esperado: não atribui tráfego até recursos e canário estarem qualificados; retry de reconcile não duplica dono.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy`; `hub/cmd`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.
