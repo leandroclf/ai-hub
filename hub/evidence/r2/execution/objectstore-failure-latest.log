@@ -1,0 +1,4 @@
+=== RUN   TestStoreResultKeepsObligationReconciliableWhenS3IsUnavailable
+--- PASS: TestStoreResultKeepsObligationReconciliableWhenS3IsUnavailable (3.10s)
+PASS
+ok  	ai-hub/hub/internal/objectstore	3.109s

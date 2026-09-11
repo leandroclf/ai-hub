@@ -76,6 +76,9 @@ reprodutível.
   `Ready` em 1.641 ms e os cinco workloads/endpoints foram revalidados com
   dependências cluster-owned. Recriação completa em máquina limpa permanece
   fora do ensaio.
+- Falha de custódia S3: PASS integrado local; upload de resultado para endpoint
+  indisponível não criou `READY`, manteve a obrigação em `VALIDATING` e o
+  reconciliador não promoveu o resultado sem storage confirmado.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos

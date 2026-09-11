@@ -178,3 +178,64 @@ func TestPostgresS3MultipartFileRef(t *testing.T) {
 	}
 	t.Logf("direct multipart upload and streaming verify/download: %d bytes, 3 parts; pin excluded first plan, then durable retention batch tombstoned and removed the unpinned version", size)
 }
+
+func TestStoreResultKeepsObligationReconciliableWhenS3IsUnavailable(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	class := fmt.Sprintf("SYNTHETIC-FAIL-%d", time.Now().UnixNano())
+	tenant := "s3-failure-" + class
+	obligation := "obligation-" + class
+	_, err = db.Exec(`INSERT INTO object_retention_policies(class,region,purpose,retention_seconds,max_bytes,allowed_types,approved_by) VALUES($1,'fixture-local','RESULT',3600,67108864,'["application/octet-stream"]','fixture-test')`, class)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM object_retention_pins WHERE tenant_id=$1", tenant)
+		_, _ = db.Exec("DELETE FROM file_refs WHERE tenant_id=$1", tenant)
+		_, _ = db.Exec("DELETE FROM object_retention_policies WHERE class=$1", class)
+	})
+	client, err := New(ctx, "http://127.0.0.1:1", "us-east-1", "r2-unavailable-fixture")
+	if err != nil {
+		t.Fatal(err)
+	}
+	catalog := NewCatalog(db, client)
+	_, err = catalog.StoreResult(ctx, tenant, obligation, UploadRequest{
+		Size:        int64(len("fixture-result")),
+		ContentType: "application/octet-stream",
+		Purpose:     "RESULT",
+		Class:       class,
+		Region:      "fixture-local",
+	}, bytes.NewBufferString("fixture-result"))
+	if err == nil {
+		t.Fatal("S3 indisponível produziu resultado confirmado")
+	}
+	var state string
+	if err = db.QueryRow("SELECT state FROM file_refs WHERE tenant_id=$1 AND obligation_id=$2", tenant, obligation).Scan(&state); err != nil {
+		t.Fatal(err)
+	}
+	if state != "VALIDATING" {
+		t.Fatalf("obrigação perdeu estado reconciliável após falha do S3: %s", state)
+	}
+	reconcileCtx, reconcileCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer reconcileCancel()
+	reconciled, reconcileErr := catalog.Reconcile(reconcileCtx, tenant)
+	if reconciled != 0 {
+		t.Fatalf("reconcile promoveu obrigação sem storage disponível: reconciled=%d err=%v", reconciled, reconcileErr)
+	}
+	var ready int
+	if err = db.QueryRow("SELECT count(*) FROM file_refs WHERE tenant_id=$1 AND obligation_id=$2 AND state='READY'", tenant, obligation).Scan(&ready); err != nil {
+		t.Fatal(err)
+	}
+	if ready != 0 {
+		t.Fatalf("resultado READY sem objeto confirmado: %d", ready)
+	}
+}

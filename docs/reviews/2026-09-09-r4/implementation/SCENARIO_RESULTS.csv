@@ -155,4 +155,5 @@ R2-ADM-11-S03;PARCIAL_INTEGRADO;browser-smoke.json — preparação de ajuste ex
 R2-CAT-03-S01;PARCIAL_INTEGRADO;product-dag-latest.log + product-http-latest.log — A/B independentes respeitam max_parallel=2 e dois efeitos reais são consolidados; medição de sobreposição de traces permanece pendente
 R2-DAD-01-S01;PARCIAL_INTEGRADO;admission-postgres.log + r2-cat-dad-qualification.log — admissão fixa versão/hash e cria pin na mesma transação, mas o encadeamento HTTP upload→submit ainda não foi exercitado
 R2-DAD-01-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — FileRef pronto de tenant-a não pode ser baixado por tenant-b e a admissão consulta tenant_id sem revelar referência alheia
+R2-DAD-02-S02;PASS_INTEGRADO_LOCAL;objectstore-failure-latest.log — endpoint S3 indisponível não produz FileRef READY/link quebrado; obrigação fica VALIDATING, reconciliador não promove sem storage e nenhuma admissão de sucesso é emitida
 R2-OPE-01-S02;PASS_INTEGRADO_LOCAL;compose-recreation-latest.log + product-http-latest.log — Atlas foi recriado sem remover volumes, catálogo/protocolos preservaram contagens e produto HTTP voltou a concluir com dois efeitos e idempotência
