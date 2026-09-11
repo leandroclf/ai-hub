@@ -27,6 +27,36 @@ func (s *Store) ClaimIntent(ctx context.Context, cell, owner string) (Intent, er
 	return s.claimIntentMode(ctx, cell, owner, dispatch.DispatchQueued)
 }
 
+// ClaimDirectIntent reivindica a intenção DIRECT criada para uma admissão
+// SYNC. O request original e o recuperador usam a mesma autoridade de lease;
+// assim, somente um deles pode atravessar o limite para o Cometa.
+func (s *Store) ClaimDirectIntent(ctx context.Context, commandID, owner string) (Intent, error) {
+	if commandID == "" || owner == "" {
+		return Intent{}, errors.New("missing direct intent identity")
+	}
+	var raw []byte
+	var result Intent
+	result.Owner = owner
+	err := s.db.QueryRowContext(ctx, `
+		UPDATE command_intents i
+		SET lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',epoch=i.epoch+1,attempts=i.attempts+1
+		FROM protocols p
+		WHERE i.command_id=$1 AND i.protocol_id=p.protocol_id
+		  AND i.dispatch_mode=$3 AND i.state='READY'
+		  AND i.next_attempt_at<=clock_timestamp()
+		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
+		  AND p.client_deadline_at>clock_timestamp()
+		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		RETURNING i.command,i.epoch`, commandID, owner, string(dispatch.DispatchDirect)).Scan(&raw, &result.Epoch)
+	if err != nil {
+		return Intent{}, err
+	}
+	if err = json.Unmarshal(raw, &result.Command); err != nil {
+		return Intent{}, err
+	}
+	return result, nil
+}
+
 func (s *Store) claimIntentMode(ctx context.Context, cell, owner string, mode dispatch.DispatchMode) (Intent, error) {
 	var raw []byte
 	var result Intent

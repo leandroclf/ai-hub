@@ -295,7 +295,13 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		"command_id", commandID, "dispatch_mode", dispatchMode, "provider_account_id", req.ProviderAccountID)
 
 	if mode == "SYNC" {
-		h.handleSyncDispatch(w, r, tenantID, protocolID, commandID, cmd)
+		intent, claimErr := h.store.ClaimDirectIntent(ctx, commandID, "sync-"+idgen.New())
+		if claimErr != nil {
+			h.log.Warn("intenção SYNC não pôde ser reivindicada", "trace_id", traceID, "protocol_id", protocolID, "error", claimErr)
+			acceptedError(w, protocolID, http.StatusServiceUnavailable, "dispatch_temporarily_unavailable")
+			return
+		}
+		h.handleSyncDispatch(w, r, tenantID, protocolID, commandID, cmd, intent)
 		return
 	}
 
@@ -316,11 +322,18 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 // handleSyncDispatch executa o percurso normativo de EXE-14: despacha
 // diretamente, aguarda o fato externo na mesma chamada e decide o
 // prazo antes de responder.
-func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, tenantID, protocolID, commandID string, cmd dispatch.Command) {
+func (h *Handlers) handleSyncDispatch(w http.ResponseWriter, r *http.Request, tenantID, protocolID, commandID string, cmd dispatch.Command, intent Intent) {
+	delivered := false
+	defer func() {
+		if _, err := h.store.CompleteIntent(context.WithoutCancel(r.Context()), intent, delivered); err != nil {
+			h.log.Error("confirmação da intenção SYNC indisponível", "trace_id", cmd.TraceID, "protocol_id", protocolID, "error", err)
+		}
+	}()
 	ctx, cancel := context.WithDeadline(context.WithoutCancel(r.Context()), cmd.StepDeadline)
 	defer cancel()
 
 	result, err := h.dispatcher.DispatchDirect(ctx, cmd)
+	delivered = err == nil && result.Durable && (result.Kind == dispatch.FactSucceeded || result.Kind == dispatch.FactFailed)
 
 	current, getErr := h.store.Get(r.Context(), tenantID, protocolID)
 	if getErr != nil {
