@@ -1,4 +1,23 @@
 cenario;resultado;evidencia
+R2-FIN-01-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S01_snapshot_frozen com PostgreSQL real
+R2-FIN-01-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S02_client_direct com PostgreSQL real
+R2-FIN-01-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S03_submit_then_expiry com PostgreSQL real
+R2-FIN-02-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-02-S01_distinct_operations com PostgreSQL real
+R2-FIN-02-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-02-S02_tariffed_polls com PostgreSQL real
+R2-FIN-02-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-02-S03_exact_arithmetic com PostgreSQL real
+R2-FIN-03-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-03-S01_cumulative_balance com PostgreSQL real
+R2-FIN-03-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-03-S02_concurrent_last_balance com PostgreSQL real
+R2-FIN-03-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-03-S03_missing_limit com PostgreSQL real
+R2-FIN-03-S04;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-03-S04_unknown_hold com PostgreSQL real
+R2-FIN-04-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-04-S01_marginal_journal com PostgreSQL real
+R2-FIN-04-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-04-S02_package com PostgreSQL real
+R2-FIN-04-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-04-S03_concurrent_allowance com PostgreSQL real
+R2-FIN-05-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-05-S01_balanced_and_immutable com PostgreSQL real
+R2-FIN-05-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-05-S02_replay_inbox_atomic com PostgreSQL real
+R2-FIN-05-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-05-S03_authorized_compensation com PostgreSQL real
+R2-FIN-06-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S01_incomplete_watermark com PostgreSQL real
+R2-FIN-06-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S02_export_repeated com PostgreSQL real
+R2-FIN-06-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S03_sla_dispute com PostgreSQL real
 R4-CTR-01-S01;PASS;go test atlas — null não vira string
 R4-CTR-01-S02;PASS;go test atlas — string não vira integer
 R4-CTR-01-S03;PASS;go test atlas — EOF estrito
@@ -27,7 +46,7 @@ R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação com
 R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
 R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;generate-openspec-inventory.py derivou 201 requisitos e 732 cenários das 29 specs, sem IDs duplicados e com digest de fonte
-R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 36 resultados associados e 696 explicitamente NAO_QUALIFICADO_NESTA_RODADA
+R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 55 resultados associados e 677 explicitamente NAO_QUALIFICADO_NESTA_RODADA
 R4-QUA-01-S03;PARCIAL;matriz e digest de fonte registrados; hash final do working tree permanece dependente do commit e do artefato de proveniência da rodada
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes

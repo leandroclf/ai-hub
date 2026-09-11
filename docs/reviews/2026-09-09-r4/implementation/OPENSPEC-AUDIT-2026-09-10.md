@@ -26,7 +26,7 @@ textual isolada.
 | r4-01 callbacks | Parcial | revalidação; worker, ingresso público, validação terminal, quota/retention e deduplicação por capability | autenticação por conta e cenário externo ponta a ponta |
 | r4-02 contratos JSON | Implementação e testes unitários concluídos | contrato, implementação e qualificação dos seis cenários R4 | rollout/upgrade específico e requalificação herdada |
 | r4-03 upgrade/cache | Parcial | upgrade/reconciliação histórica e migração aditiva | revogação/cancelamento/crescimento e prova de projeção/ofertas |
-| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório, inventário de fonte 201/732 e matriz explícita de 732 resultados | 696 cenários ainda não qualificados, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
+| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório, inventário de fonte 201/732 e matriz explícita de 732 resultados | 677 cenários ainda não qualificados, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
 
 ## Evidências consideradas
 
@@ -58,7 +58,7 @@ textual isolada.
   `POLL_CORRELATION_MISMATCH`, sem mudança de estado ou outbox. O teste
   PostgreSQL específico e a suíte Cometa passaram.
 - Rastreamento integral: `generate-openspec-results.py` gerou 732 linhas a
-  partir do inventário; 36 foram associados às evidências existentes e 696
+  partir do inventário; 55 foram associados às evidências existentes e 677
   receberam `NAO_QUALIFICADO_NESTA_RODADA`. O resultado não é aprovação dos
   cenários sem execução.
 
