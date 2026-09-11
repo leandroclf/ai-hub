@@ -28,6 +28,11 @@ reprodutível.
 - Carga autorizada: PASS em SYNC sucesso/falha, ASYNC polling A/B, callback,
   AUTO, saldo estrito e credencial dedicada; idempotência observada quatro
   vezes para o mesmo protocolo.
+- SLO de referência: PASS local com 30 admissões ASYNC e 30 GETs autenticados,
+  concorrência 5 e payload de 59989 bytes; admissão p95=55,07 ms/p99=57,06 ms
+  e GET p95=5,16 ms/p99=5,23 ms, dentro das metas propostas de R2-OPE-09-S01.
+  A evidência não cobre ainda manutenção sob ruído nem converte a meta proposta
+  em aprovação de produção.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos

@@ -87,6 +87,7 @@ R2-DAD-04-S03;PASS_INTEGRADO_LOCAL;rls-runtime-latest.log — rls-runtime-proof.
 R2-DAD-05-S01;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh confronta digests/contagens e bloqueia readmissão antes da reconciliação; objetos produtivos não fizeram parte desta fixture
 R2-DAD-05-S02;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh consulta o oráculo externo sem replay e preserva a readmissão desabilitada; parceiro comercial não foi usado
 R2-OPE-01-S03;PASS_INTEGRADO_LOCAL;offline-startup.json — Orbita e Cometa iniciam prontos com broker e Redis fora do perfil opcional
+R2-OPE-09-S01;PASS_INTEGRADO_LOCAL;slo-load-latest.json — 30 admissões ASYNC e 30 GETs autenticados, payload 59989 bytes, concorrência 5, p95/p99 dentro das metas propostas
 R2-OPE-02-S01;PASS_INTEGRADO_LOCAL;kind-continuity-latest.log — bootstrap independente aplica dependências cluster-owned, workloads, UI, gateway e Jobs de migração
 R2-OPE-03-S02;PASS_UNITARIO;go test ./internal/platform/httpserver — TestShutdownWaitsForAcceptedRequest drena requisição aceita antes de encerrar
 R2-OPE-07-S03;PASS_UNITARIO;go test ./internal/platform/httpserver — TestTelemetryDropsWithoutBlockingBusiness limita buffer e sinaliza descarte sem bloquear negócio

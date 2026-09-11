@@ -1,0 +1,62 @@
+{
+  "status": "PASS",
+  "profile": "r2-ope-09-s01-reference",
+  "started_at": "2026-09-11T12:27:31.999Z",
+  "finished_at": "2026-09-11T12:27:32.290Z",
+  "origin": {
+    "orbita": "http://localhost:18080",
+    "admin": "http://localhost:13000"
+  },
+  "load": {
+    "samples": 30,
+    "concurrency": 5,
+    "payload_bytes": 59989,
+    "payload_limit_bytes": 65536,
+    "mode": "ASYNC",
+    "provider_account_id": "prov-poll-1",
+    "service_code": "protocolo-assincrono"
+  },
+  "admission": {
+    "samples": 30,
+    "success_count": 30,
+    "http_statuses": {
+      "202": 30
+    },
+    "latency_ms": {
+      "min": 27.11621,
+      "p50": 34.967559,
+      "p95": 55.065501,
+      "p99": 57.063985,
+      "max": 57.063985
+    },
+    "target_ms": {
+      "p95": 250,
+      "p99": 500
+    },
+    "target_result": "PASS"
+  },
+  "get": {
+    "samples": 30,
+    "success_count": 30,
+    "http_statuses": {
+      "200": 30
+    },
+    "latency_ms": {
+      "min": 2.485487,
+      "p50": 3.826288,
+      "p95": 5.155478,
+      "p99": 5.23128,
+      "max": 5.23128
+    },
+    "target_ms": {
+      "p95": 100,
+      "p99": 250
+    },
+    "target_result": "PASS"
+  },
+  "protocol_ids_observed": 30,
+  "failures": {
+    "admission": [],
+    "get": []
+  }
+}
