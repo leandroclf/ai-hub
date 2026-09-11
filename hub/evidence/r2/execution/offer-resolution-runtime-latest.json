@@ -14,7 +14,7 @@
         "equivalence_id": "r4-async",
         "capacity_domain": "r4-poll-2"
       },
-      "content_hash": "4519ec5ddef297e8b9bb147757305f1637889992f13ea975319c51f22496e52c"
+      "content_hash": "3b1b2deef01fc11f81eed9f95fa5651ac660886a4df9b054407ba2da438c5262"
     },
     {
       "check": "conta escolhida fora da oferta é recusada antes do efeito",
@@ -26,6 +26,24 @@
       "check": "resolução não amplia escopo para outro tenant",
       "status": "PASS",
       "http_status": 403
+    },
+    {
+      "check": "publicação bloqueia SLA/modalidade incompatíveis com erro específico",
+      "status": "PASS",
+      "offer_id": "offer-r4-invalid-sla",
+      "field_errors": {
+        "modes": "SYNC exige provedor síncrono e orçamento qualificado compatível"
+      },
+      "state": "DRAFT"
+    },
+    {
+      "check": "publicação bloqueia vínculo de credencial divergente",
+      "status": "PASS",
+      "offer_id": "offer-r4-invalid-binding",
+      "field_errors": {
+        "routes/prov-sync-1": "vínculo não corresponde à conta ou ao cliente da rota"
+      },
+      "state": "DRAFT"
     }
   ]
 }

@@ -64,6 +64,28 @@ async function request(token,query){
  return {status:response.status,body};
 }
 
+async function adminRequest(token,path,options={}){
+ const response=await fetch(`${atlas}${path}`,{...options,headers:{'content-type':'application/json',authorization:`Bearer ${token}`,...(options.headers||{})}});
+ const body=await response.json().catch(()=>({}));
+ return {status:response.status,body};
+}
+
+async function ensureDraftOffer(token,id,data){
+ const path=`/admin/v1/offers/${encodeURIComponent(id)}/1`;
+ let current=await adminRequest(token,path);
+ if(current.status===404){
+  current=await adminRequest(token,'/admin/v1/offers',{method:'POST',body:JSON.stringify({id,version:1,tenant_id:'acme',name:`Fixture negativa ${id}`,data})});
+  if(current.status!==201)throw new Error(`criação da fixture negativa ${id}: HTTP ${current.status} ${JSON.stringify(current.body)}`);
+ }else if(current.status===200){
+  if(current.body.state!=='DRAFT')throw new Error(`fixture negativa ${id} não está em DRAFT: ${current.body.state}`);
+  current=await adminRequest(token,path,{method:'PATCH',headers:{'if-match':`"${current.body.revision}"`},body:JSON.stringify({name:`Fixture negativa ${id}`,data})});
+  if(current.status!==200)throw new Error(`atualização da fixture negativa ${id}: HTTP ${current.status} ${JSON.stringify(current.body)}`);
+ }else throw new Error(`consulta da fixture negativa ${id}: HTTP ${current.status}`);
+ const validation=await adminRequest(token,`${path}/validate`,{method:'POST',body:'{}'});
+ const state=await adminRequest(token,path);
+ return {validation,state};
+}
+
 const {browser,token}=await sessionToken();
 const checks=[];
 try{
@@ -80,6 +102,15 @@ try{
  const crossTenant=await request(token,{tenant_id:'beta',application_id:'app-acme',service_code:'protocolo-assincrono',service_version:'1',provider_account_id:'prov-poll-2'});
  if(crossTenant.status!==403)throw new Error(`resolução cross-tenant retornou HTTP ${crossTenant.status}`);
  checks.push({check:'resolução não amplia escopo para outro tenant',status:'PASS',http_status:crossTenant.status});
+
+ const invalidCommon={input_schema:{type:'object',properties:{},additionalProperties:false},output_schema:{type:'object',properties:{status:{type:'string'}},required:['status'],additionalProperties:false},data_class:'SYNTHETIC',qualification_id:'r4-fixture-qualification',application_id:'app-acme',target_kind:'services',target_id:'consulta-cadastral',target_version:1,technical_profile_id:'profile-r4-json',technical_profile_version:1,purchase_contract_id:'purchase-r4',purchase_contract_version:1,sale_contract_id:'sale-r4',sale_contract_version:1,client_sla_seconds:30,provider_sla_seconds:5,provider_sla_policy:'MONITOR_ONLY',retry_ttl_seconds:10,finalization_reserve_seconds:5};
+ const invalidSLA=await ensureDraftOffer(token,'offer-r4-invalid-sla',{...invalidCommon,modes:['SYNC'],provider_mode:'sync',sync_http_budget_seconds:10,provider_sla_seconds:8,routes:[{provider_account_id:'prov-sync-1',provider_account_version:1,binding_id:'bind-r4-sync',binding_version:1,priority:1,capacity_domain:'r4-sync'}]});
+ if(invalidSLA.validation.status!==200||invalidSLA.validation.body.valid!==false||!invalidSLA.validation.body.field_errors?.modes||invalidSLA.state.body.state!=='DRAFT')throw new Error(`bloqueio de SLA/modalidade não foi específico ou a oferta foi ativada: ${JSON.stringify(invalidSLA)}`);
+ checks.push({check:'publicação bloqueia SLA/modalidade incompatíveis com erro específico',status:'PASS',offer_id:'offer-r4-invalid-sla',field_errors:invalidSLA.validation.body.field_errors,state:invalidSLA.state.body.state});
+
+ const invalidBinding=await ensureDraftOffer(token,'offer-r4-invalid-binding',{...invalidCommon,modes:['SYNC'],provider_mode:'sync',sync_http_budget_seconds:15,routes:[{provider_account_id:'prov-sync-1',provider_account_version:1,binding_id:'bind-r4-poll-1',binding_version:1,priority:1,capacity_domain:'r4-sync'}]});
+ if(invalidBinding.validation.status!==200||invalidBinding.validation.body.valid!==false||!invalidBinding.validation.body.field_errors?.['routes/prov-sync-1']||invalidBinding.state.body.state!=='DRAFT')throw new Error(`bloqueio de vínculo não foi específico ou a oferta foi ativada: ${JSON.stringify(invalidBinding)}`);
+ checks.push({check:'publicação bloqueia vínculo de credencial divergente',status:'PASS',offer_id:'offer-r4-invalid-binding',field_errors:invalidBinding.validation.body.field_errors,state:invalidBinding.state.body.state});
  console.log(JSON.stringify({status:'PASS',checks},null,2));
  await writeFile(evidencePath,`${JSON.stringify({status:'PASS',checks},null,2)}\n`);
 }catch(error){
