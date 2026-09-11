@@ -340,6 +340,20 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		auth.Error(w, 503, "sla_reports_unavailable")
 		return
 	}
+	var eligible, open, fulfilled, expired, excluded int
+	if err := h.store.db.QueryRowContext(r.Context(), `SELECT count(*),
+		count(*) FILTER (WHERE status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')),
+		count(*) FILTER (WHERE status IN ('SUCCEEDED','PARTIALLY_SUCCEEDED')),
+		count(*) FILTER (WHERE status='EXPIRED'),
+		count(*) FILTER (WHERE status IN ('FAILED','CANCELLED'))
+		FROM protocols
+		WHERE ($1='*' OR tenant_id=$1)
+		  AND ($2='' OR accepted_at>=NULLIF($2,'')::date)
+		  AND ($3='' OR accepted_at<NULLIF($3,'')::date+interval '1 day')`, tenant, from, to).
+		Scan(&eligible, &open, &fulfilled, &expired, &excluded); err != nil {
+		auth.Error(w, 503, "sla_reports_unavailable")
+		return
+	}
 	defer rows.Close()
 	items := []map[string]any{}
 	last := ""
@@ -472,5 +486,5 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 	if watermarkAt.IsZero() {
 		watermarkAt = generatedAt
 	}
-	writeJSON(w, 200, map[string]any{"items": items, "next_cursor": next, "generated_at": generatedAt, "watermark_at": watermarkAt, "watermark_lag_seconds": generatedAt.Sub(watermarkAt).Seconds()})
+	writeJSON(w, 200, map[string]any{"items": items, "next_cursor": next, "generated_at": generatedAt, "watermark_at": watermarkAt, "watermark_lag_seconds": generatedAt.Sub(watermarkAt).Seconds(), "cohort": map[string]int{"eligible": eligible, "open": open, "fulfilled": fulfilled, "expired": expired, "excluded": excluded}})
 }

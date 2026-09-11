@@ -195,3 +195,53 @@ func TestPostgresCapacityRollingRateIsolation(t *testing.T) {
 	}
 	t.Log("rolling 60-second rate: A denied after 2; B admits 2; global domain")
 }
+
+func TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant(t *testing.T) {
+	db, c, p := capacityFixture(t)
+	ctx := context.Background()
+	p.TenantLimits = map[string]int{"a": 2, "b": 2}
+	p.TenantPendingLimits = map[string]int{"a": 2, "b": 2}
+	p.TenantRateLimits = map[string]int{"a": 40, "b": 40}
+	if err := c.InstallPolicy(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	permits := make([]CapacityPermit, 0, 2)
+	for replica := 0; replica < 3; replica++ {
+		for attempt := 0; attempt < 20; attempt++ {
+			wg.Add(1)
+			go func(replica, attempt int) {
+				defer wg.Done()
+				v, err := NewCapacityController(db).Acquire(ctx, p.Domain, idgen.New(), "a", fmt.Sprintf("cell-%d", replica), fmt.Sprintf("replica-%d", replica), "SUBMIT")
+				if err == nil {
+					mu.Lock()
+					permits = append(permits, v)
+					mu.Unlock()
+				} else if !errors.Is(err, ErrCapacityDenied) {
+					t.Errorf("ruído da réplica retornou erro inesperado: %v", err)
+				}
+			}(replica, attempt)
+		}
+	}
+	wg.Wait()
+	if len(permits) != 2 {
+		t.Fatalf("partilha do domínio concedeu %d permissões A; esperado 2", len(permits))
+	}
+	partitioned, cancel := context.WithCancel(ctx)
+	cancel()
+	if _, err := c.Acquire(partitioned, p.Domain, idgen.New(), "a", "partitioned-cell", "partitioned-replica", "SUBMIT"); !errors.Is(err, context.Canceled) {
+		t.Fatalf("réplica sem coordenador não foi interrompida: %v", err)
+	}
+	var total int
+	if err := db.QueryRow(`SELECT count(*) FROM capacity_permits WHERE domain_id=$1 AND transport_open`, p.Domain).Scan(&total); err != nil {
+		t.Fatal(err)
+	}
+	if total != 2 {
+		t.Fatalf("tentativa particionada alterou permissões válidas: %d", total)
+	}
+	if _, err := c.Acquire(ctx, p.Domain, idgen.New(), "b", "healthy-cell", "healthy-replica", "SUBMIT"); err != nil {
+		t.Fatalf("tenant B perdeu sua reserva durante ruído/partição de A: %v", err)
+	}
+	t.Log("três réplicas disputaram o mesmo domínio sem multiplicar quota; a réplica particionada não enviou e B continuou elegível com reserva própria")
+}

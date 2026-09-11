@@ -76,7 +76,20 @@ func TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC(t *testing.T) {
 		attempt := len(requests)
 		mu.Unlock()
 		if attempt == 1 {
-			w.WriteHeader(http.StatusInternalServerError)
+			// O receptor registrou os bytes, mas a conexão caiu antes de o
+			// Pulsar receber o 2xx. A segunda tentativa deve ser idêntica.
+			hijacker, ok := w.(http.Hijacker)
+			if !ok {
+				t.Error("servidor de ensaio não suporta perda de resposta HTTP")
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			conn, _, err := hijacker.Hijack()
+			if err != nil {
+				t.Errorf("simular perda do recibo: %v", err)
+				return
+			}
+			_ = conn.Close()
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)

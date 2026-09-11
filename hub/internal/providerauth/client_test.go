@@ -202,6 +202,58 @@ func TestOAuthL1RemainsUsableWhenResolverBecomesUnavailable(t *testing.T) {
 	}
 }
 
+func TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		if err := r.ParseForm(); err != nil || r.Form.Get("client_secret") == "" || r.Form.Get("client_secret_ref") != "" {
+			t.Fatalf("o endpoint recebeu referência ou credencial vazia: %v", err)
+		}
+		fmt.Fprintf(w, `{"access_token":"token-%s-%d","expires_in":6}`, r.Form.Get("client_id"), calls.Load())
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	t.Setenv("ENVIRONMENT", "local")
+	t.Setenv("EGRESS_HTTP_ORIGINS", server.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", u.Host+"=127.0.0.1/32")
+
+	cache := NewTokenCache("127.0.0.1:1")
+	defer cache.Close()
+	cache.Resolver = testResolver{
+		"revoked-secret": {Value: "revoked-value", Version: "v1"},
+		"healthy-secret": {Value: "healthy-value", Version: "v1"},
+	}
+	base := Config{AuthType: OAuthClientCredentials, TokenURL: server.URL, SecretVersion: "v1", TokenTTLSeconds: 1, Environment: "local"}
+	revoked := base
+	revoked.ClientID, revoked.ClientSecretRef, revoked.BindingID, revoked.TenantID = "revoked-client", "revoked-secret", "binding-revoked", "tenant-revoked"
+	healthy := base
+	healthy.ClientID, healthy.ClientSecretRef, healthy.BindingID, healthy.TenantID = "healthy-client", "healthy-secret", "binding-healthy", "tenant-healthy"
+	request := func(cfg Config) *http.Request {
+		req, _ := http.NewRequest(http.MethodGet, "https://provider.example/resource", nil)
+		if err := cache.Apply(context.Background(), http.DefaultClient, "provider-account", cfg, req); err != nil {
+			t.Fatalf("credencial elegível foi recusada: %v", err)
+		}
+		return req
+	}
+	request(revoked)
+	request(healthy)
+	time.Sleep(1200 * time.Millisecond)
+	cache.Resolver = testResolver{"healthy-secret": {Value: "healthy-value", Version: "v1"}}
+
+	refused, _ := http.NewRequest(http.MethodGet, "https://provider.example/resource", nil)
+	if err := cache.Apply(context.Background(), http.DefaultClient, "provider-account", revoked, refused); err == nil || refused.Header.Get("Authorization") != "" {
+		t.Fatalf("segredo revogado após expiração do L1 foi usado: err=%v auth=%q", err, refused.Header.Get("Authorization"))
+	}
+	continued := request(healthy)
+	if !strings.HasPrefix(continued.Header.Get("Authorization"), "Bearer token-healthy-client-") {
+		t.Fatalf("binding saudável não continuou: %q", continued.Header.Get("Authorization"))
+	}
+	if got := calls.Load(); got != 3 {
+		t.Fatalf("chamadas ao endpoint=%d; esperadas duas para o binding saudável e uma inicial do revogado", got)
+	}
+	t.Log("L1 expirado não reutilizou segredo revogado; a tentativa afetada foi recusada sem header e o binding saudável renovou sua credencial")
+}
+
 func TestKeyedLockAcquireHonorsCancellationWhileBusy(t *testing.T) {
 	c := NewTokenCache("127.0.0.1:1")
 	defer c.Close()
