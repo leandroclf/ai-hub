@@ -184,6 +184,23 @@ try {
  if(await page.getByRole('button',{name:'Publicar versão',exact:true}).count())throw new Error('tenant_reader recebeu formulário de publicação de destino');
  await page.getByRole('heading',{name:'Destinos persistidos',exact:true}).waitFor();
  evidence.push({check:'Tenant reader sees destinations read-only and no write form',status:'PASS'});
+ await page.getByRole('link',{name:'Protocolos',exact:true}).click();
+ await page.waitForURL('http://localhost:13000/protocols');
+ await page.getByRole('heading',{name:'Protocolos',exact:true}).waitFor();
+ const readerProtocol=page.locator('tbody tr a').first();
+ if(await readerProtocol.count()){
+  await readerProtocol.click();
+  await page.getByRole('heading',{name:'Detalhe persistido',exact:true}).waitFor();
+  if(await page.getByRole('button',{name:'Solicitar reconciliação',exact:true}).count())throw new Error('tenant_reader recebeu ação de reconciliação');
+ }
+ evidence.push({check:'Tenant reader consults protocols without reconciliation action',status:'PASS'});
+ await page.getByRole('link',{name:'Financeiro',exact:true}).click();
+ await page.waitForURL('http://localhost:13000/finance');
+ await page.getByRole('link',{name:'Fechamentos',exact:true}).click();
+ await page.waitForURL('http://localhost:13000/finance?view=periods');
+ await page.getByRole('heading',{name:'Financeiro e conciliação',exact:true}).waitFor();
+ if(await page.getByRole('button',{name:'Verificar e fechar período',exact:true}).count())throw new Error('tenant_reader recebeu comando financeiro');
+ evidence.push({check:'Tenant reader sees finance queries without mutation commands',status:'PASS'});
  await page.getByRole('button',{name:'Sair',exact:true}).click();
  await page.waitForURL('http://localhost:13000/services',{timeout:5000});
  phase='leitor global cross-tenant';

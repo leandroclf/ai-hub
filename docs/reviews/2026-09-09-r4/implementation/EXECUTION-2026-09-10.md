@@ -164,12 +164,13 @@ seguida, informa tenant e finalidade, consulta protocolo de outro tenant e
 abre seu detalhe sem receber ação de escrita. A finalidade é preservada na
 rota do detalhe/timeline e a API continua exigindo a mesma auditoria.
 
-Na mesma rodada, `leitor-a` consultou a página de destinos webhook com a
-permissão `deliveries:read`. O portal exibiu os destinos persistidos em modo
-somente leitura e não renderizou o formulário `Publicar versão`; a regra de
-escrita continua aplicada também pela API, que exige `deliveries:write`.
-Isso cobre a fronteira de autorização na experiência do usuário sem tratar a
-visibilidade da interface como substituta da autorização do servidor.
+Na mesma rodada, `leitor-a` consultou destinos webhook, protocolos e financeiro
+com as permissões de leitura. O portal exibiu os dados autorizados em modo
+somente leitura e não renderizou `Publicar versão`, `Solicitar reconciliação` ou
+`Verificar e fechar período`; as regras de escrita continuam aplicadas também
+pelas APIs, que exigem os escopos correspondentes. Isso cobre a fronteira de
+autorização na experiência do usuário sem tratar a visibilidade da interface
+como substituta da autorização do servidor.
 
 O cliente HTTP administrativo também passou a rejeitar corpo vazio, JSON
 malformado ou tipo JSON incompatível, inclusive em respostas HTTP 200. O smoke

@@ -18,12 +18,12 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789122146024"
+    "resource": "browser-client-1789122966525"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789122180917"
+    "resource": "browser-product-1789123020923"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -108,6 +108,14 @@
   },
   {
     "check": "Tenant reader sees destinations read-only and no write form",
+    "status": "PASS"
+  },
+  {
+    "check": "Tenant reader consults protocols without reconciliation action",
+    "status": "PASS"
+  },
+  {
+    "check": "Tenant reader sees finance queries without mutation commands",
     "status": "PASS"
   },
   {

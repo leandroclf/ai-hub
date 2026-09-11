@@ -132,7 +132,8 @@ Use os gates nesta ordem quando a demanda envolver o portal:
    O smoke cobre OIDC/OTP, contrato REST declarativo, pesquisa local de
    referências, criação e readback durável, navegação autenticada, SLA,
    publicação/readback de destino, distinção de formulário para
-   `tenant_reader`, ausência de token persistido, logout e viewport de 390 px.
+   `tenant_reader` somente leitura em destinos, protocolos e financeiro,
+   ausência de token persistido, logout e viewport de 390 px.
    A execução cria apenas dados sintéticos no laboratório; não use contas ou
    endpoints reais.
 
