@@ -1,0 +1,7 @@
+OBSERVABILITY_ALERT_RUNTIME=START
+dropped_before=2
+alloy=STOPPED
+dropped_after=1006
+prometheus_alert_state=firing
+tempo_after=READY
+OBSERVABILITY_ALERT_RUNTIME=PASS telemetry_drop_signaled=true alert_state=firing business_routes_untouched=true

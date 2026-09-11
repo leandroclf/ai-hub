@@ -67,9 +67,10 @@ reprodutível.
 - Readiness de provisionamento: PASS integrado local; sem headroom
   qualificado, o onboarding fica em `PROVISIONING`, não cria placement ativo e
   reconciliação repetida mantém uma única solicitação de provisionamento.
-- Alertas operacionais: PARCIAL estrutural; três regras Prometheus apontam
-  para runbooks existentes, o dashboard está presente e o perfil Kind agora
-  monta `alerts.yml`. Disparo live de outbox/DLQ/SLA e recuperação continuam
+- Alertas operacionais: PARCIAL integrado; três regras Prometheus apontam para
+  runbooks existentes, o dashboard está presente e o perfil Kind monta
+  `alerts.yml`. Alloy fora elevou `hub_telemetry_dropped_total`, o alerta
+  disparou e foi recuperado. Disparos live de outbox/DLQ/SLA continuam
   pendentes.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.

@@ -89,7 +89,7 @@ R2-DAD-05-S02;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconci
 R2-OPE-01-S03;PASS_INTEGRADO_LOCAL;offline-startup.json — Orbita e Cometa iniciam prontos com broker e Redis fora do perfil opcional
 R2-OPE-09-S01;PASS_INTEGRADO_LOCAL;slo-load-latest.json — 30 admissões ASYNC e 30 GETs autenticados, payload 59989 bytes, concorrência 5, p95/p99 dentro das metas propostas
 R2-OPE-06-S01;PASS_INTEGRADO_LOCAL;broker-outage-runtime-latest.json — localstack indisponível, Órbita/Cometa recriados prontos, SYNC/GET SUCCEEDED e broker restaurado; reconciliação local fechou somente a fixture sem efeito
-R2-OPE-07-S02;PARCIAL_ESTRUTURAL;observability-alert-latest.log — três alertas Prometheus, runbooks com anchors e montagem Kind foram resolvidos; exercício live de outbox/DLQ/SLA e recuperação ainda não foi executado
+R2-OPE-07-S02;PARCIAL_INTEGRADO;observability-alert-latest.log + observability-alert-runtime-latest.log — três alertas Prometheus, runbooks e montagem Kind resolvidos; Alloy fora disparou HubTelemetryDropped e foi recuperado, mas exercício live de outbox/DLQ/SLA ainda não foi executado
 R2-OPE-02-S01;PASS_INTEGRADO_LOCAL;kind-continuity-latest.log — bootstrap independente aplica dependências cluster-owned, workloads, UI, gateway e Jobs de migração
 R2-OPE-02-S02;PARCIAL_ESTRUTURAL;environment-boundary-latest.log — overlays usam namespaces distintos e referências de segredos sem materialização; ensaio cross-environment com IdP/credencial real permanece pendente
 R2-OPE-02-S03;PASS_ESTRUTURAL;environment-boundary-latest.log — promotion-gate bloqueia prd sem perfil/aprovações P-01/P-08/P-10 e permite desenvolvimento local
