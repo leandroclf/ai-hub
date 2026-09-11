@@ -20,6 +20,7 @@
 | `admin-portal-recreation-latest.log` | R2-ADM-12/4.1: SPA recriada no Compose oficial; quatro rotas renderizaram, APIs sem sessão permaneceram em `401` e contagens de `applications`, `clients`, `products` e `services` foram preservadas: PASS; migration de banco não aplicável à fatia | Não substitui rollback de imagem publicada, WCAG formal ou homologação de produção |
 | `finance-migration-rollback-latest.log` | R2-FIN-06/4.1: banco financeiro descartável recebeu fato legado, migration preservou `NUMERIC(30,8)` e `LEGACY_UNVERIFIED`, não inventou snapshot/tarifa e replay idempotente não duplicou o fato: PASS; base oficial não foi alterada | Não substitui backfill auditado de produção, ERP/adquirente ou rollback de versão publicada |
 | `identity-mfa-compatibility-latest.log` | R2-SEG-01/03/05: TOTP Base32 manual aceito no Keycloak local; OIDC/PKCE, sujeito/MFA/escopos, leitura global, escrita negada e isolamento cross-tenant passaram sem imprimir segredo: PASS | Fixture local; não substitui IdP, certificados, rotação ou failover regional/produtivo |
+| `r4-cbk-regression-latest.log` | R4-CBK-02/03/04 reexecutados no HEAD com PostgreSQL real, `go test -race` e `go vet`: inbox limitada, capability inválida, deduplicação, worker autônomo, leases/epochs, correlação, schema estrito e ausência de novo submit: PASS | R4-CBK-01 e autenticação de origem por conta no gateway continuam parciais; não homologa provedor comercial |
 
 ## Atualização da rodada R4 — 10/09/2026
 

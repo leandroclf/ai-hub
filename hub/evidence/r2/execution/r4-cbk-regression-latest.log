@@ -1,0 +1,24 @@
+AI Hub R4 — regressão atual de custódia, inbox e observações de callback
+date=2026-09-11
+source_commit=9e983d8
+environment=local-compose-postgres-fixture-and-local-http
+secrets=omitted
+
+command=R2_CORE_TEST_DSN=<fixture> go test -race -count=1 -v ./internal/cometa
+command=go vet ./internal/cometa
+result=PASS
+observations:
+  - registry de adapter, resposta estrita, budget e capacidade passaram;
+  - inbox de callback preservou capability inválida separada, quota de lote,
+    deduplicação e aplicação posterior do callback válido;
+  - worker e reconciliação preservaram lease/epoch, correlação, conflito
+    poll/callback, custódia antes do ACK e ausência de novo submit;
+  - callback e polling rejeitaram correlação divergente, schema inválido e
+    observação não terminal;
+  - falhas de storage/commit permaneceram UNKNOWN e reconciliáveis, sem falso
+    sucesso ou outbox duplicado;
+  - teste HTTP de polling usou binding/conta dedicados, segredo resolvido e
+    egress restrito; revogação impediu nova chamada externa.
+limitation=R4-CBK-01 e autenticação da origem por conta no gateway continuam
+parciais; a prova local usa chave de ingress/capability, sem provedor comercial
+ou gateway externo.
