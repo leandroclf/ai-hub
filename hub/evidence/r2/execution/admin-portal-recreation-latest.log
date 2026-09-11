@@ -1,0 +1,14 @@
+ADMIN_PORTAL_RECREATION_PROOF=START
+before_container=d8fc8c30c5f76f0f0773d776123cd7bf8753f693614a98bf03f1c85e1450f93d
+before_catalog=applications|1;clients|115;products|63;services|15;
+route=clients page_http=200 api_without_session=401
+route=applications page_http=200 api_without_session=401
+route=services page_http=200 api_without_session=401
+route=products page_http=200 api_without_session=401
+after_container=476ced84e96ca53855a71f33090aac02230dd4fc096a2788ca017be822a2ec5d
+after_catalog=applications|1;clients|115;products|63;services|15;
+route=clients page_http=200 api_without_session=401
+route=applications page_http=200 api_without_session=401
+route=services page_http=200 api_without_session=401
+route=products page_http=200 api_without_session=401
+ADMIN_PORTAL_RECREATION_PROOF=PASS container_changed=true catalog_preserved=true routes_protected=true data_migration=not_applicable

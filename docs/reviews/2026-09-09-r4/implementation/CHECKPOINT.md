@@ -92,3 +92,10 @@ destinos declarados. O Nginx do portal resolve os nomes Docker com TTL curto e
 reescreve explicitamente os prefixos `/api/*`, evitando upstream obsoleto após
 `--force-recreate`. A prova Chromium voltou a completar OIDC/PKCE, senha+OTP e
 as 24 verificações do portal (23 `PASS`, 1 `OBSERVED`, nenhum `FAIL`).
+
+O portal administrativo também passou por recriação controlada da SPA: as
+rotas `clients`, `applications`, `services` e `products` continuaram
+renderizando, as APIs seguiram protegidas sem sessão e as contagens dos quatro
+cadastros permaneceram idênticas. A fatia não possui migration própria de
+banco; o ensaio cobre rollout/recuo de UI no laboratório, enquanto rollback de
+imagem publicada, WCAG formal e promoção produtiva permanecem abertos.

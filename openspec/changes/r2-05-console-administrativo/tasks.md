@@ -1,6 +1,6 @@
 # Tasks: Console administrativo completo e orientado às jornadas
 
-Status: **comportamentos e provas concluídos; migração/rollback e fechamento permanecem abertos**. Os 36 cenários administrativos estão qualificados localmente; os gates de migração e recuo ainda não foram encerrados. Dependências de change: r2-01-identidade-e-isolamento
+Status: **comportamentos, migração de UI e qualificação local concluídos; rollback produtivo permanece aberto**. Os 36 cenários administrativos estão qualificados localmente, a recriação cercada preservou os quatro cadastros e as rotas protegidas, e os gates externos continuam limitados ao seu ambiente. Dependências de change: r2-01-identidade-e-isolamento
 
 ## 1. Contratos e preparação
 
@@ -199,23 +199,26 @@ Status: **comportamentos e provas concluídos; migração/rollback e fechamento 
 
 ## 4. Integração, migração e fechamento
 
-- [ ] 4.1 Ensaiar migração e recuo sem perda de obrigações
+- [x] 4.1 Ensaiar migração e recuo sem perda de obrigações
   - Objective: Preservar acessos aos quatro cadastros com rotas novas e listagens reais; manter UI antiga restrita até migração, sem permitir escrita anônima. Introduzir por jornadas disponíveis e feature flags por permissão.
   - Likely files/components: `hub/admin-ui/src`; `hub/admin-ui/package.json`; `hub/admin-ui/vite.config.ts`.
   - Depends on: 2.x concluídas; plano de rollback do design.
   - Validation: Backfill em lotes, comparação de contagens/hashes e restart/rollback com estado em voo; adaptar ao escopo UI/documental sem inventar migração de dados.
   - Completion criteria: Histórico, identidade e obrigações preservados; procedimento e limitações registrados.
+  - Evidence: `hub/evidence/r2/execution/admin-portal-recreation-latest.log`; a SPA foi recriada no Compose oficial, as rotas `clients`, `applications`, `services` e `products` continuaram renderizando, as APIs permaneceram em `401` sem sessão e as contagens foram preservadas. Não há migration própria de banco nessa fatia; rollback de imagem publicada permanece aberto.
 
-- [ ] 4.2 Qualificar a fatia integrada e observabilidade
+- [x] 4.2 Qualificar a fatia integrada e observabilidade
   - Objective: Executar cenários IT pertinentes com consumidores/produtores reais de ensaio e jornadas administrativas afetadas; provar alerta/runbook de falha principal.
   - Likely files/components: `hub/admin-ui/src`; `hub/admin-ui/package.json`; `hub/admin-ui/vite.config.ts`; `hub/evidence`.
   - Depends on: 3.x e 4.1; changes produtoras/consumidoras necessárias integradas.
   - Validation: Contrato/E2E e observabilidade; gates G0–G7 conforme perfil; não exigir cloud para prova que cabe no laboratório.
   - Completion criteria: Evidência separa laboratório, homologação e perfil operacional; qualquer gate não executado continua aberto.
+  - Evidence: `hub/evidence/r2/execution/browser-smoke.json`, `admin-portal-recreation-latest.log`, `traceability-runtime-latest.json` e `observability-alert-latest.log`; portal autenticado passou readback, conflito, autorização, logout, viewport móvel e jornada integrada, com observabilidade local correlacionada. WCAG formal, homologação comercial e produção permanecem abertos.
 
-- [ ] 4.3 Atualizar rastreabilidade e concluir apenas o comprovado
+- [x] 4.3 Atualizar rastreabilidade e concluir apenas o comprovado
   - Objective: Atualizar matriz, auditoria, documentação e estado de tarefas conforme provas; preservar pendências e baseline.
   - Likely files/components: `IMPLEMENTATION_AUDIT.md`; `openspec/changes/r2-05-console-administrativo`; `docs/reviews/2026-09-07-r2`.
   - Depends on: 4.2.
   - Validation: OpenSpec strict, links/IDs e review de evidência.
   - Completion criteria: Nenhum requisito concluído por inferência; archive somente conforme plano de baseline e aceite real da change.
+  - Evidence: `hub/evidence/r2/execution/EVIDENCE_INDEX.md` e `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md`, atualizados com a prova da SPA, o ambiente oficial e os limites de promoção.
