@@ -90,3 +90,43 @@ func TestFinalizeMaterializesLargeResultAndLinksAfterCommit(t *testing.T) {
 		t.Fatalf("final body does not expose stable FileRef: %#v", final.Result)
 	}
 }
+
+func TestFinalizeUsesProtocolSnapshotWhenIntentIsMissing(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	store := NewStore(db)
+	now := time.Now().UTC()
+	tenant := "missing-intent-tenant-" + idgen.New()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "missing-intent-cell", IdempotencyKey: "missing-intent-key", RequestHash: "missing-intent-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"fixture":true}`), EconomicSnapshot: json.RawMessage(`{}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	defer func() {
+		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
+		db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+	}()
+	if _, err = db.ExecContext(ctx, "DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID); err != nil {
+		t.Fatal(err)
+	}
+
+	finalizer := NewFinalizer(store, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	if applied, err := finalizer.Finalize(ctx, "trace", tenant, p.ProtocolID, 0, StatusExpired, FinalBody{ErrorCode: "SLA_EXCEEDED"}, "SLA_EXCEEDED"); err != nil || !applied {
+		t.Fatalf("finalize without intent: applied=%v err=%v", applied, err)
+	}
+	var outboxCount int
+	if err = db.QueryRowContext(ctx, "SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND event_type='protocol.finalized'", p.ProtocolID).Scan(&outboxCount); err != nil {
+		t.Fatal(err)
+	}
+	if outboxCount != 1 {
+		t.Fatalf("expected one durable finalization fact, got %d", outboxCount)
+	}
+}

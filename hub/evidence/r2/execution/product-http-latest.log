@@ -1,0 +1,72 @@
+{
+  "key": "r4-product-http-1789103102093",
+  "evidence": [
+    {
+      "check": "admissão HTTP do produto composto",
+      "status": "PASS",
+      "protocol_id": "01a08edb-4d54-7054-91ac-7805ab9019d6",
+      "initial_status": 202
+    },
+    {
+      "check": "consulta pública retorna consolidação terminal do produto",
+      "status": "PASS",
+      "final_status": "SUCCEEDED",
+      "final_body": {
+        "protocol_id": "01a08edb-4d54-7054-91ac-7805ab9019d6",
+        "status": "SUCCEEDED",
+        "result_version": 1,
+        "result": {
+          "failed_steps": [],
+          "skipped_steps": [],
+          "steps": {
+            "etapa_a": {
+              "provider_request_id": "prov-req-000014",
+              "status": "SUCCEEDED"
+            },
+            "etapa_b": {
+              "provider_request_id": "prov-req-000015",
+              "status": "SUCCEEDED"
+            }
+          }
+        }
+      }
+    },
+    {
+      "check": "oráculo PostgreSQL confirma plano, duas etapas e duas operações",
+      "status": "PASS",
+      "durable": {
+        "plans": 1,
+        "succeeded_steps": 2,
+        "operations": 2,
+        "protocols": 1
+      }
+    },
+    {
+      "check": "oráculo do provider-sim confirma dois efeitos externos independentes",
+      "status": "PASS",
+      "before": {
+        "effects": 13,
+        "protocols": 13
+      },
+      "after": {
+        "effects": 15,
+        "protocols": 15
+      }
+    },
+    {
+      "check": "repetição da chave não cria novo plano ou efeito",
+      "status": "PASS",
+      "same_protocol": true,
+      "durable_after_duplicate": {
+        "plans": 1,
+        "succeeded_steps": 2,
+        "operations": 2,
+        "protocols": 1
+      },
+      "external_after_duplicate": {
+        "effects": 15,
+        "protocols": 15
+      }
+    }
+  ]
+}

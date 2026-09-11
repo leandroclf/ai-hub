@@ -243,7 +243,11 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	delayMs := requestedDelayMs(cmd.RequestBody)
 
 	req := providersim.SubmitRequest{
-		ProtocolID:      cmd.ProtocolID,
+		// O protocolo é a chave externa de uma operação simples. Em um
+		// produto, porém, várias etapas compartilham o mesmo protocolo e
+		// precisam de efeitos externos independentes; o command_id continua
+		// estável entre retries e é a chave de idempotência da etapa.
+		ProtocolID:      externalIdempotencyKey(cmd),
 		FileRefs:        cmd.FileRefs,
 		Mode:            providersim.Mode(pa.ProviderMode),
 		DelayMs:         delayMs,
@@ -329,6 +333,13 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	default:
 		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado")), true)
 	}
+}
+
+func externalIdempotencyKey(cmd dispatch.Command) string {
+	if cmd.StepID != "" && cmd.StepID != cmd.ProtocolID {
+		return cmd.CommandID
+	}
+	return cmd.ProtocolID
 }
 
 func (e *Executor) communicationFailure(ctx context.Context, operationID, attemptID string, sentAt time.Time, code string, cause error) dispatch.Result {

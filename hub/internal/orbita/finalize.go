@@ -104,15 +104,13 @@ func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID 
 		// is not a nullable database/sql destination.  Normalize the absence
 		// to an empty object so finalization remains durable and the outbox
 		// fact keeps a valid JSON contract.
-		var commandRaw []byte
-		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,p.application_id,COALESCE(i.command->'economic_snapshot','{}'::jsonb),i.command,clock_timestamp() FROM protocols p JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.ApplicationID, &fact.EconomicSnapshot, &commandRaw, &fact.OccurredAt); err != nil {
+		var destinationsRaw []byte
+		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,p.application_id,COALESCE(i.command->'economic_snapshot','{}'::jsonb),COALESCE(i.command->'webhook_destinations','[]'::jsonb),clock_timestamp() FROM protocols p LEFT JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.ApplicationID, &fact.EconomicSnapshot, &destinationsRaw, &fact.OccurredAt); err != nil {
 			return err
 		}
-		var command dispatch.Command
-		if err := json.Unmarshal(commandRaw, &command); err != nil {
+		if err := json.Unmarshal(destinationsRaw, &fact.WebhookDestinations); err != nil {
 			return err
 		}
-		fact.WebhookDestinations = command.WebhookDestinations
 		return outbox.Enqueue(ctx, tx.Tx(), "protocol", protocolID, "protocol.finalized", fact)
 	})
 	if errors.Is(err, ErrResultLate) {

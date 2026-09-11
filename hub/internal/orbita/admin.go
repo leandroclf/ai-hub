@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strconv"
@@ -83,17 +84,45 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		defer tx.Rollback()
 		requestID := idgen.New()
 		var storedRequestID string
-		err = tx.QueryRowContext(r.Context(), `INSERT INTO protocol_reconciliation_requests(request_id,protocol_id,tenant_id,requested_by,reason) VALUES($1,$2,$3,$4,$5) ON CONFLICT (tenant_id,protocol_id) WHERE state='OPEN' DO UPDATE SET updated_at=clock_timestamp(),reason=EXCLUDED.reason,requested_by=EXCLUDED.requested_by RETURNING request_id`, requestID, id, protocol.TenantID, p.Subject, strings.TrimSpace(input.Reason)).Scan(&storedRequestID)
+		var missingCorrelation bool
+		if err = tx.QueryRowContext(r.Context(), `SELECT EXISTS(SELECT 1 FROM operations WHERE protocol_id=$1 AND tenant_id=$2 AND state IN ('SUBMITTING','UNKNOWN','ACCEPTED_EXTERNAL','WAITING_FINAL') AND provider_request_id IS NULL)`, id, protocol.TenantID).Scan(&missingCorrelation); err != nil {
+			auth.Error(w, 503, "reconciliation_unavailable")
+			return
+		}
+		requestState := "OPEN"
+		lastError := ""
+		if missingCorrelation {
+			requestState = "REJECTED"
+			lastError = "provider_request_id ausente; obter evidência externa antes de reconciliar"
+			err = tx.QueryRowContext(r.Context(), `UPDATE protocol_reconciliation_requests SET state='REJECTED',last_error=$3,claim_owner=NULL,lease_until=NULL,updated_at=clock_timestamp() WHERE tenant_id=$1 AND protocol_id=$2 AND state='OPEN' RETURNING request_id`, protocol.TenantID, id, lastError).Scan(&storedRequestID)
+			if errors.Is(err, sql.ErrNoRows) {
+				err = tx.QueryRowContext(r.Context(), `INSERT INTO protocol_reconciliation_requests(request_id,protocol_id,tenant_id,requested_by,reason,state,last_error) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING request_id`, requestID, id, protocol.TenantID, p.Subject, strings.TrimSpace(input.Reason), requestState, lastError).Scan(&storedRequestID)
+			}
+		} else {
+			err = tx.QueryRowContext(r.Context(), `INSERT INTO protocol_reconciliation_requests(request_id,protocol_id,tenant_id,requested_by,reason,state,last_error) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT (tenant_id,protocol_id) WHERE state='OPEN' DO UPDATE SET updated_at=clock_timestamp(),reason=EXCLUDED.reason,requested_by=EXCLUDED.requested_by RETURNING request_id`, requestID, id, protocol.TenantID, p.Subject, strings.TrimSpace(input.Reason), requestState, lastError).Scan(&storedRequestID)
+		}
 		if err != nil {
 			auth.Error(w, 503, "reconciliation_unavailable")
 			return
 		}
-		if _, err = tx.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,$3,'RECONCILIATION_REQUEST',$4)", p.Subject, tenant, id, p.MFA); err != nil || tx.Commit() != nil {
+		auditAction := "RECONCILIATION_REQUEST"
+		if missingCorrelation {
+			auditAction = "RECONCILIATION_REJECTED"
+		}
+		if _, err = tx.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,$3,$4,$5)", p.Subject, tenant, id, auditAction, p.MFA); err != nil {
+			auth.Error(w, 503, "audit_unavailable")
+			return
+		}
+		if err = tx.Commit(); err != nil {
 			auth.Error(w, 503, "audit_unavailable")
 			return
 		}
 		w.Header().Set("Cache-Control", "no-store")
-		writeJSON(w, http.StatusAccepted, map[string]any{"request_id": storedRequestID, "protocol_id": id, "state": "OPEN", "effect": "no_provider_replay"})
+		if missingCorrelation {
+			writeJSON(w, http.StatusConflict, map[string]any{"request_id": storedRequestID, "protocol_id": id, "state": requestState, "effect": "no_provider_correlation", "error": lastError})
+			return
+		}
+		writeJSON(w, http.StatusAccepted, map[string]any{"request_id": storedRequestID, "protocol_id": id, "state": requestState, "effect": "no_provider_replay"})
 		return
 	}
 	// Audit is a prerequisite of diagnostic access, including empty/global reads.
