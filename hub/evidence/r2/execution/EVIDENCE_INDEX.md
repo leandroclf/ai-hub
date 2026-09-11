@@ -47,6 +47,7 @@
 | `admin-technical-policy-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; TTL efetivo e incompatibilidade SYNC/async_poll | Contrato legado com prova GET/webhook ainda não qualificado |
 | `admin-protocol-scope-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; resultado materializado sem provider e isolamento de filtro tenant-only | Não substitui ensaio comercial de todas as timelines |
 | `admin-sla-freshness-smoke.json` | Ensaio Chromium curto: `PASS`; geração, watermark e atraso observados no painel SLA | Exportação de relatório com escopo/auditoria permanece pendente |
+| `admin-finance-adjustment-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; ajuste compensatório preparado com razão, autoaprovação bloqueada e aprovação por `auditor-global` distinto com recibo `approved` | Fixture local; a auditoria financeira produtiva e o ERP comercial permanecem fora |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026

@@ -1,0 +1,15 @@
+[
+  {
+    "check": "Admin finance prepares compensatory adjustment with reason and segregated approval",
+    "status": "PASS",
+    "reason": "browser-compensatory-1789136489678",
+    "origin": "5a2e9f8ed9b05fbd6ffdef8ba64b59b44e4810f1528ddbe287fa173f2439999d"
+  },
+  {
+    "check": "Distinct finance approver records compensatory entry while preserving original",
+    "status": "PASS",
+    "reason": "browser-compensatory-1789136489678",
+    "receipt": "Ação persistida: {\"status\":\"approved\"}",
+    "approver": "auditor-global"
+  }
+]

@@ -639,7 +639,8 @@
         ]
       },
       "realmRoles": [
-        "hub_protocol_reader"
+        "hub_protocol_reader",
+        "hub_admin"
       ],
       "credentials": [
         {
