@@ -15,7 +15,12 @@ let seededDelivery='';
 function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_core','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
 function sqlControl(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_control','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
 let phase='inicialização';
+const lastSuccessfulAuthCounter=new Map();
 async function authenticate(username,expectedURL){
+ const previousCounter=lastSuccessfulAuthCounter.get(username);
+ if(previousCounter!==undefined){
+  while(Math.floor(Date.now()/30000)<=previousCounter)await page.waitForTimeout(500);
+ }
  if(!await page.locator('#otp').count()){
   await page.getByRole('button',{name:'Entrar',exact:true}).click();
   await page.locator('#username').fill(username);
@@ -31,7 +36,7 @@ async function authenticate(username,expectedURL){
    const offset=digest[digest.length-1]&15;
    const otp=((digest.readUInt32BE(offset)&0x7fffffff)%1000000).toString().padStart(6,'0');
    await page.locator('#otp').fill(otp);await page.locator('#kc-login').click();
-   try{await page.waitForURL(expectedURL,{timeout:1500});return}catch{}
+   try{await page.waitForURL(expectedURL,{timeout:1500});lastSuccessfulAuthCounter.set(username,Math.floor(Date.now()/30000));return}catch{}
   }
   await page.waitForTimeout(250);
  }

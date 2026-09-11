@@ -18,15 +18,23 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 )
 
-const (
-	orbitaURL      = "http://localhost:8080"
-	atlasURL       = "http://localhost:8081"
-	webhookSinkURL = "http://localhost:8091"
+var (
+	orbitaURL      = envOr("R2_E2E_ORBITA_URL", "http://localhost:8080")
+	atlasURL       = envOr("R2_E2E_ATLAS_URL", "http://localhost:8081")
+	webhookSinkURL = envOr("R2_E2E_WEBHOOK_SINK_URL", "http://localhost:8091")
 )
+
+func envOr(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
+}
 
 type protocolResponse struct {
 	ProtocolID    string          `json:"protocol_id"`

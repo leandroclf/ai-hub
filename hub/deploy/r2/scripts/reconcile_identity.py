@@ -52,7 +52,13 @@ def reconcile_user(t, username, tenant, app, cell, role):
     request("/admin/realms/%s/users/%s"%(REALM,uid),"PUT",{"username":username,"enabled":True,"emailVerified":True,"firstName":username,"lastName":"Fixture R2","email":username+"@r2.invalid","attributes":{"tenant_id":[tenant],"application_id":[app],"cell_id":[cell]}},t)
     request("/admin/realms/%s/users/%s/reset-password"%(REALM,uid),"PUT",{"type":"password","value":PASSWORD,"temporary":False},t)
     roles=request("/admin/realms/%s/roles/%s"%(REALM,role),token=t)[1]
-    request("/admin/realms/%s/users/%s/role-mappings/realm"%(REALM,uid),"POST",[roles],t)
+    mappings=request("/admin/realms/%s/users/%s/role-mappings/realm"%(REALM,uid),token=t)[1]
+    managed={"hub_admin","hub_protocol_reader","tenant_reader","tenant_operator"}
+    stale=[item for item in mappings if item.get("name") in managed and item.get("name") != role]
+    if stale:
+        request("/admin/realms/%s/users/%s/role-mappings/realm"%(REALM,uid),"DELETE",stale,t)
+    if not any(item.get("name")==role for item in mappings):
+        request("/admin/realms/%s/users/%s/role-mappings/realm"%(REALM,uid),"POST",[roles],t)
 
 def reconcile_client_scope(t, scope_name, role_name):
     """Garante um escopo administrativo nos dois clientes da fixture."""
