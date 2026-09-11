@@ -27,6 +27,9 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
+| R2-03/R2-02 complementar | `hub/evidence/r2/execution/r2-int-exe-qualification.log` | PASS seletivo; credenciais dedicadas, mTLS, polling/callback, prazos, SLA bilateral, idempotência, fencing, custódia e reconciliação; cenários fora do envelope local permanecem não qualificados |
+| R2-04/R2-07 complementar | `hub/evidence/r2/execution/r2-cat-dad-qualification.log` | PASS seletivo; catálogo versionado, conflito de revisão, DAG, JSON estrito, importação/diff, paginação, FileRef, pins e restore controlado; limites de storage comercial/regional permanecem abertos |
+| R2-08/R2-09 complementar | `hub/evidence/r2/execution/rls-runtime-latest.log` + `kind-continuity-latest.log` | PASS seletivo; RLS nas três bases, bootstrap Kind independente, UI/gateway e recuperação de workloads; SLO/load, ambientes remotos e HA regional permanecem abertos |
 
 ## Detalhes observados
 
@@ -73,6 +76,11 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 - O cenário exploratório do Browser Harness passou com CDP explícito e percorreu
   16 rotas; a descoberta automática de Chrome headless continua indisponível.
   Ele permanece auxiliar, e o gate determinístico do frontend é o Playwright.
+- A prova complementar de R2-03/R2-02 usou endpoint OAuth HTTPS de teste local,
+  PostgreSQL real e o cofre LocalStack versionado. O teste de `Retry-After`
+  superior à janela preservou a espera e não permitiu nova claim além do
+  deadline. O relatório administrativo de SLA foi exercitado por ID após a
+  correção do filtro UUID.
 
 ## Atualização operacional de 11/09/2026
 
@@ -121,6 +129,22 @@ chave `r4-product-http-1789109019646`: admissão `202`, duas operações e dois
 efeitos independentes, consolidação pública `SUCCEEDED` e repetição da chave
 sem novo plano ou efeito. O log saneado está em
 `hub/evidence/r2/execution/product-http-latest.log`.
+
+### Qualificação adicional de catálogo, dados e portal — 11/09/2026
+
+Os testes focados de Atlas e Órbita foram reexecutados com `-race` usando
+PostgreSQL real: publicação imutável, conflito de revisão, DAG/fan-out,
+projeção JSON estrita, importação em staging com diff, sanitização e paginação
+por cursor passaram. A prova de objetos confirmou resultado volumoso em
+multipart/streaming com `FileRef`, pin de retenção e expurgo somente após a
+obrigação ser liberada. O `rls-runtime-proof.sh` confirmou isolamento
+cross-tenant para as três bases usando o papel `hub_runtime`.
+
+O portal foi reconstruído no container oficial e repetiu o Playwright com
+backend real. Além dos checks anteriores, os selects de referência agora
+percorrem cursores de catálogo até um limite seguro de 1.000 itens e sinalizam
+falha de lookup; não apresentam uma primeira página incompleta como catálogo
+vazio.
 
 ## Limites e pendências explícitas
 

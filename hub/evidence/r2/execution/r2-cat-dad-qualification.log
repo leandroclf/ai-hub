@@ -1,0 +1,37 @@
+AI Hub R2 — qualificação de catálogo, dados e continuidade
+date=2026-09-11
+source_commit=4e670d9
+environment=local-compose-postgres-fixture-and-localstack
+secrets=omitted
+
+[catalog-and-product]
+command=R2_CORE_TEST_DSN=<fixture> R2_FINANCE_DSN=<fixture> ATLAS_TEST_DSN=<fixture> go test -count=1 -race -v ./internal/atlas ./internal/orbita -run 'Test(DAGContract|TechnicalProjectionRejectsInvalidJSONDocumentsAndTypes|TechnicalProjectionEnforcesPublishedDialectAndBounds|ImportSecretSanitization|CatalogValidation|CatalogPublicationRejectsBindingFromAnotherProviderAccount|CatalogPostgresPaginationAndStaging|CatalogImportDiffStates|ProductPlanPersistsDependenciesAndConsolidatesAfterAllSteps|ProductPlanCompensationIsASeparateTrackedOperation)$'
+result=PASS
+observed=publicação versionada imutável, edição concorrente com revisão, fan-out/DAG/mapeamentos e compensação rastreável, projeção JSON estrita, importação em staging com diff NEW/CHANGED/UNCHANGED, sanitização de segredos e paginação persistente
+scope=PostgreSQL real em schemas isolados para Atlas/Core; o teste de produto também confirma dependências duráveis; não representa adapter comercial nem a jornada completa de todas as telas
+
+[result-custody]
+command=R2_CORE_TEST_DSN=<fixture> R2_S3_TEST_ENDPOINT=http://127.0.0.1:14566 go test -tags=e2e -count=1 ./internal/objectstore -run TestPostgresS3MultipartFileRef -v
+result=PASS
+observed=resultado volumoso em multipart/streaming, FileRef com checksum e versão, pin protege contra expurgo e unpin permite expurgo com tombstone; isolamento de tenant validado pelo PostgreSQL e LocalStack
+scope=LocalStack e PostgreSQL locais; falhas de put/commit e retenção regional/produtiva continuam fora desta prova
+
+[rls-and-restore]
+command=R2_PG_CONTAINER=ai_hub_r3qual-postgres-1 bash hub/deploy/r2/tests/rls-runtime-proof.sh
+result=PASS
+observed=papel hub_runtime sem superuser/createrole/bypassrls; consultas cross-tenant foram recusadas nas bases control, core e finance
+command=R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=<novo> bash hub/deploy/r2/tests/restore-reconciliation.sh
+result=PASS
+observed=digests/contagens de control, core e finance comparados, oráculo externo consultado antes da reconciliação, nenhum replay executado e readmissão mantida desabilitada
+scope=restore local com alvo novo e fixture sintética; não é prova de PITR/AWS regional, perda regional ou recuperação de objetos produtivos
+
+[admin-portal-reference-pagination]
+command=npm run build (hub/admin-ui) + PLAYWRIGHT_MODULE=<playwright-core> R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/browser-smoke.mjs
+result=PASS
+observed=portal compilou com TypeScript/Vite; smoke autenticado validou CRUD/readback, editor de produto, SLA, destino versionado, fechamento financeiro, logout/401 e viewport 390px; selects de referência usam cursores limitados a 10 páginas de 100 itens
+scope=container admin-ui e backend reais do Compose local; Browser Harness permanece exploratório e não é usado como aprovação de acessibilidade WCAG completa
+
+[boundaries]
+not_qualified=R2-CAT-02-S01/S02/S03, R2-CAT-03-S01/S02, R2-CAT-05-S01/S03, R2-CAT-06, R2-CAT-08-S02/S03
+not_qualified=R2-DAD-01, R2-DAD-02-S02/S03, R2-DAD-03-S03, R2-DAD-04-S01/S02, R2-DAD-05-S03
+limitation=provas locais não substituem provedor comercial, upload HTTP completo, falha de storage entre commit, réplica atrasada ou topologia regional

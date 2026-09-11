@@ -35,6 +35,21 @@ da mesma chave não criou novo efeito. O editor administrativo persiste e relê
 o mapeamento de entrada entre etapas. O budget efetivo passou nos limites de
 snapshot, contexto, lease e margem.
 
+Na qualificação complementar de R2-03/R2-02, duas credenciais dedicadas para a
+mesma conta foram exercitadas simultaneamente sem cruzamento de tokens; mTLS
+foi validado com certificado de cliente e CA fixada; polling/callback, fencing,
+TTL zero, `Retry-After` incompatível, inbox/outbox, AUTO e reconciliação foram
+reexecutados com PostgreSQL real. A correção do filtro UUID do relatório de SLA
+também foi coberta: `MONITOR_ONLY` preserva o sucesso do cliente e registra
+`MONITOR_ONLY_BREACH`, enquanto `REJECT_LATE` produz falha contratada.
+
+Na qualificação complementar de R2-04/R2-07/R2-08, os testes focados cobriram
+publicação imutável e conflito de revisão, DAG/fan-out, projeção JSON estrita,
+importação em staging com diff, paginação por cursor, resultado volumoso em
+`FileRef`, pins de retenção, RLS nas três bases e restore sem replay. O portal
+foi reconstruído e repetiu o smoke autenticado; os lookups de referência agora
+seguem cursores até 1.000 itens e transformam falhas em estado explícito.
+
 ## Resultado
 
 Implementação e qualificação local integradas passaram nos gates declarados.
@@ -83,8 +98,8 @@ nem homologação de produção. O backlog herdado do R4-04 ainda contém cortes
 arquiteturais abertos, incluindo provedor comercial, carga e budgets completos
 em todo I/O, fencing geral, financeiro/webhooks/FileRefs produtivos, telemetria
 bilateral, IaC/HA regional e qualificação dos cenários sem evidência. A matriz
-integral de rastreabilidade está em `RESULT-MATRIX-732-CENARIOS.csv`: 70 linhas
-estão associadas a resultados existentes e 662 permanecem
+integral de rastreabilidade está em `RESULT-MATRIX-732-CENARIOS.csv`: 131 linhas
+estão associadas a resultados existentes e 601 permanecem
 `NAO_QUALIFICADO_NESTA_RODADA`. O estado detalhado permanece em
 `REQUIREMENTS_STATUS.csv`, `SCENARIO_RESULTS.csv`, `RESULT-MATRIX-732-CENARIOS.csv`, `CHECKPOINT.md` e
 `OPENSPEC-AUDIT-2026-09-10.md`; nenhum desses itens foi fechado somente por

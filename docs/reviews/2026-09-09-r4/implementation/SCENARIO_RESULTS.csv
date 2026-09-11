@@ -33,6 +33,67 @@ R2-FIN-05-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenari
 R2-FIN-06-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S01_incomplete_watermark com PostgreSQL real
 R2-FIN-06-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S02_export_repeated com PostgreSQL real
 R2-FIN-06-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S03_sla_dispute com PostgreSQL real
+R2-INT-01-S02;PASS_UNITARIO;r2-int-exe-qualification.log — TestAdapterRegistryDoesNotTurnCatalogIDIntoTransport
+R2-INT-01-S03;PASS_UNITARIO;r2-int-exe-qualification.log — TestAdapterRegistryFailsClosedForUnknownRuntimeAdapter e TestAdapterRegistryReadsExplicitRuntimeAllowlist
+R2-INT-02-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestOAuthSameProviderAccountUsesEachDedicatedBindingCredential com duas credenciais simultâneas na mesma conta
+R2-INT-02-S02;PASS_UNITARIO;r2-int-exe-qualification.log — TestBasicUsesDecryptedVersionWithoutFallback recusa versão dedicada ausente
+R2-INT-02-S03;PASS_UNITARIO;r2-int-exe-qualification.log — TestOAuthCacheRevocationAndExpiry invalida versão antiga e respeita expiração
+R2-INT-03-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestMTLSOAuthUsesClientCertificateAndPinnedCA com handshake HTTPS real
+R2-INT-03-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestOAuthWorksWithoutRedisAndScopesTokensByBinding com cache L1 e Redis indisponível
+R2-INT-04-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingAuthenticatedHTTP conserva agenda e autenticação
+R2-INT-04-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingClaimsFenceAndAbsoluteDeadline preserva deadline e bloqueia orçamento insuficiente
+R2-INT-04-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingCallbackConflictRetainsBoth classifica observações concorrentes
+R2-INT-04-S04;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestCallbackDoesNotAckWhenCustodyAuthorityUnavailable retorna 503 sem ACK 2xx
+R2-INT-05-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresRetryHorizonTTLZeroDoesNotRequeue
+R2-INT-05-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresRetryHorizonStartsOnceAndExpires preserva retry_until após takeover
+R2-INT-05-S03;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresPollingRetryAfterBeyondDeadlineIsNotClaimed
+R2-INT-05-S04;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted
+R2-INT-06-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresCapacityAdaptiveAndPending reduz limite sob timeout/latência
+R2-INT-06-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestPostgresCapacityAdaptiveAndPending recupera gradualmente após estabilidade
+R2-INT-07-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresVersionedWebhookCustody separa chaves por tenant com mesma URL
+R2-INT-07-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresVersionedWebhookCustody congela versão histórica para reentrega
+R2-INT-08-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestFinalizeMonitorOnlyPreservesClientSuccessAndReportsProviderBreach
+R2-INT-08-S02;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestFinalizeRejectsSuccessAfterProviderSLABreach
+R2-EXE-02-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAdmissionPostgresAtomicIdempotency disputa concorrente e converge em um protocolo
+R2-EXE-02-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAdmissionPostgresAtomicIdempotency recusa hash divergente sem substituir o aceite
+R2-EXE-03-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresSubmissionAndObservationCustody conserva tentativa e posse única
+R2-EXE-03-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted
+R2-EXE-03-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresSubmissionLeaseFencesStaleOwner
+R2-EXE-04-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody conserva result_marker distinto do input e TestPostgresProviderReceiptIsSeparateFromNormalizedResult
+R2-EXE-05-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody não confirma mensagem sem finalização durável
+R2-EXE-05-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody deduplica inbox após reentrega
+R2-EXE-05-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody quarentena tipo desconhecido e preserva identidade
+R2-EXE-07-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait retorna final rápido ou 202 tardio sem renovar espera
+R2-EXE-07-S04;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait preserva intenção após desconexão
+R2-EXE-09-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestReconciliationWorkerResolvesStatusWithoutReplay reconcilia com GET e zero POST
+R2-EXE-09-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresOrphanCapabilityHashDoesNotShadowValidCallback
+R2-CAT-01-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogPostgresConcurrencyPublicationAndIsolation publica versão com hash/autor/revisão auditáveis
+R2-CAT-01-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogPostgresConcurrencyPublicationAndIsolation rejeita mutação de versão publicada
+R2-CAT-01-S03;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogPostgresConcurrencyPublicationAndIsolation conserva uma edição e rejeita a revisão concorrente
+R2-CAT-03-S03;PASS_UNITARIO;r2-cat-dad-qualification.log — TestDAGContract rejeita fan-out acima do limite autorizado
+R2-CAT-04-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestProductPlanPersistsDependenciesAndConsolidatesAfterAllSteps mantém C pendente até A/B e materializa o mapeamento
+R2-CAT-04-S02;PASS_UNITARIO;r2-cat-dad-qualification.log — TestDAGContract rejeita ciclos e referências inválidas
+R2-CAT-04-S03;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestProductPlanCompensationIsASeparateTrackedOperation cria compensação rastreável sem rollback fictício
+R2-CAT-05-S02;PASS_UNITARIO;r2-cat-dad-qualification.log — TestTechnicalProjectionRejectsInvalidJSONDocumentsAndTypes e TestTechnicalProjectionEnforcesPublishedDialectAndBounds rejeitam transformação inválida
+R2-CAT-07-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogImportDiffStates identifica NEW/CHANGED/UNCHANGED sem duplicar catálogo
+R2-CAT-07-S03;PASS_UNITARIO;r2-cat-dad-qualification.log — TestImportSecretSanitization remove tokens e headers sensíveis do preview
+R2-CAT-08-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogPostgresPaginationAndStaging limita página, conserva cursor e filtra no servidor
+R2-DAD-02-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestFinalizeMaterializesLargeResultAndLinksAfterCommit e TestPostgresS3MultipartFileRef custodeiam resultado volumoso via FileRef
+R2-DAD-03-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestPostgresS3MultipartFileRef permite expurgo somente após remoção do pin e deixa tombstone
+R2-DAD-03-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestPostgresS3MultipartFileRef mantém objeto protegido enquanto o pin de obrigação está aberto
+R2-DAD-04-S03;PASS_INTEGRADO_LOCAL;rls-runtime-latest.log — rls-runtime-proof.sh rejeita acesso cross-tenant nas bases control/core/finance com hub_runtime
+R2-DAD-05-S01;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh confronta digests/contagens e bloqueia readmissão antes da reconciliação; objetos produtivos não fizeram parte desta fixture
+R2-DAD-05-S02;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh consulta o oráculo externo sem replay e preserva a readmissão desabilitada; parceiro comercial não foi usado
+R2-OPE-01-S03;PASS_INTEGRADO_LOCAL;offline-startup.json — Orbita e Cometa iniciam prontos com broker e Redis fora do perfil opcional
+R2-OPE-02-S01;PASS_INTEGRADO_LOCAL;kind-continuity-latest.log — bootstrap independente aplica dependências cluster-owned, workloads, UI, gateway e Jobs de migração
+R2-OPE-03-S02;PASS_UNITARIO;go test ./internal/platform/httpserver — TestShutdownWaitsForAcceptedRequest drena requisição aceita antes de encerrar
+R2-OPE-07-S03;PASS_UNITARIO;go test ./internal/platform/httpserver — TestTelemetryDropsWithoutBlockingBusiness limita buffer e sinaliza descarte sem bloquear negócio
+R2-ADM-11-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal recusa fechamento com obrigações pendentes e mantém o estado financeiro não conciliado
+R2-ADM-12-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — Playwright cria, publica/consulta e revisita recursos no backend real após refresh em viewport móvel
+R2-QUA-01-S01;PASS_ESTRUTURAL;r2-cat-dad-qualification.log + r2-int-exe-qualification.log — cenários com prova ligam comando, ambiente, SHA e limite na matriz
+R2-QUA-01-S03;PASS_ESTRUTURAL;OPENSPEC-AUDIT-2026-09-10.md + FINAL_REPORT.md — pendências de aprovação e cenários não exercitados permanecem abertas
+R2-QUA-03-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — gate distingue build do portal de jornada autenticada no backend real, sem promover mock
+R2-QUA-04-S01;PASS_ESTRUTURAL;OPENSPEC-AUDIT-2026-09-10.md — changes R2 e histórico v4 permanecem separados, com validação OpenSpec strict
 R4-CTR-01-S01;PASS;go test atlas — null não vira string
 R4-CTR-01-S02;PASS;go test atlas — string não vira integer
 R4-CTR-01-S03;PASS;go test atlas — EOF estrito
@@ -61,7 +122,7 @@ R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação com
 R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
 R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;generate-openspec-inventory.py derivou 201 requisitos e 732 cenários das 29 specs, sem IDs duplicados e com digest de fonte
-R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 70 resultados associados e 662 explicitamente NAO_QUALIFICADO_NESTA_RODADA
+R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 131 resultados associados e 601 explicitamente NAO_QUALIFICADO_NESTA_RODADA
 R4-QUA-01-S03;PARCIAL;matriz e digest de fonte registrados; hash final do working tree permanece dependente do commit e do artefato de proveniência da rodada
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes

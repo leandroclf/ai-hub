@@ -1,0 +1,34 @@
+AI Hub R2 — qualificação de integrações e execução durável
+date=2026-09-11
+source_commit=9a68953
+environment=local-compose-postgres-fixture-and-local-httptest
+secrets=omitted
+
+[provider-auth-and-sla]
+command=R2_CORE_TEST_DSN=<fixture> go test -count=1 -race -v ./internal/providerauth ./internal/orbita -run 'TestOAuthSameProviderAccountUsesEachDedicatedBindingCredential|TestPostgresRetryHorizonTTLZeroDoesNotRequeue|TestPostgresRetryHorizonStartsOnceAndExpires|TestFinalizeMonitorOnlyPreservesClientSuccessAndReportsProviderBreach|TestFinalizeRejectsSuccessAfterProviderSLABreach'
+result=PASS
+observed=duas credenciais dedicadas para a mesma provider_account foram resolvidas simultaneamente; cada principal recebeu somente seu próprio token
+observed=retry_ttl_seconds=0 encerrou a intenção como EXPIRED sem novo submit; o horizonte existente permaneceu imutável após takeover
+observed=MONITOR_ONLY preservou SUCCEEDED do cliente e o relatório retornou MONITOR_ONLY_BREACH; REJECT_LATE materializou FAILED/PROVIDER_SLA_EXCEEDED
+scope=endpoint OAuth HTTPS de teste local, PostgreSQL real e handler administrativo real; nenhum segredo foi emitido no log
+
+[polling-and-callback]
+command=R2_CORE_TEST_DSN=<fixture> go test -count=1 -race -v ./internal/cometa -run 'TestPostgresPollingAuthenticatedHTTP|TestPostgresPollingClaimsFenceAndAbsoluteDeadline|TestPostgresPollingRejectsProviderCorrelationMismatch|TestPostgresPollingRetryAfterBeyondDeadlineIsNotClaimed|TestPostgresPollingCallbackConflictRetainsBoth'
+result=PASS
+observed=polling autenticado, claim/lease/epoch, deadline absoluto, Retry-After além da janela sem nova claim, correlation mismatch sem estado/outbox e conflito polling/callback com ambos recibos conservados
+scope=PostgreSQL real e endpoint HTTPS de teste local; não representa latência ou disponibilidade de provedor comercial
+
+[durable-execution]
+command=R2_CORE_TEST_DSN=<fixture> R2_FINANCE_DSN=<fixture> ATLAS_TEST_DSN=<fixture> go test -count=1 -race ./internal/atlas ./internal/providerauth ./internal/cometa ./internal/orbita ./internal/pulsar
+result=PASS
+observed=admissão idempotente concorrente, tentativa antes do efeito, fencing de submission, UNKNOWN sem reenvio, recibo bruto separado do resultado, quarentena/inbox, reconciliação sem POST, AUTO limitado, fatos financeiros e entrega versionada
+scope=suíte de integração local com PostgreSQL por domínio; cenários sem injeção normativa específica permanecem não qualificados
+
+[explicit-boundaries]
+not_qualified=R2-INT-01-S01 (adapter/provedor comercial distinto do simulador)
+not_qualified=R2-INT-03-S03 (cofre indisponível com L1 expirado/revogado e isolamento de outras contas)
+not_qualified=R2-INT-06-S03/S04 (partição do coordenador e janela de ruído de 15 minutos)
+not_qualified=R2-INT-07-S03/S04 (destino lento independente e perda de recibo 2xx no receptor)
+not_qualified=R2-INT-08-S03 (coorte completa com abertos, vencidos, cumpridos e exclusões)
+not_qualified=R2-EXE-01 e demais cenários sem teste de crash/broker/commit ou deadline específico
+limitation=httptest e provider-sim são oráculos locais; não equivalem à homologação comercial, regional ou de produção

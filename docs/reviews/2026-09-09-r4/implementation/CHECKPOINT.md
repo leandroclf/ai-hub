@@ -26,7 +26,9 @@ duas etapas, dois efeitos e idempotência; o runner fechou quatro ausências
 comprovadas (`closed=4 protected=0`).
 
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
-do DAG e o editor administrativo de mapeamento. Permanecem explícitos os gaps
+do DAG, o editor administrativo de mapeamento e a qualificação complementar
+seletiva de R2-03/R2-02. A matriz agora possui 131 resultados associados e 601
+cenários explicitamente não qualificados. Permanecem explícitos os gaps
 arquiteturais do backlog herdado, dependências Compose no renderer do kind,
 ausência de homologação de provedores/AWS reais, carga prolongada/expiração de
 I/O e matriz integral ainda não fechada. Ver `EXECUTION-2026-09-10.md` para os

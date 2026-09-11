@@ -20,6 +20,9 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/r2-security.log` | R2-SEG-01/02/03 | PASS local; nove cenários nomeados cobrem identidade e 401/403 sem efeito, workloads por célula, ausência de bypass, contexto sem vazamento entre requisições, leitura administrativa com MFA/justificativa e negativa sanitizada quando a auditoria está indisponível |
 | `hub/evidence/r2/execution/r2-seg04-egress.log` | R2-SEG-04 | PASS local; HTTPS/TLS efetivo, bloqueio de SSRF/metadados e redirect entre origens, e whitelist privada limitada por host/porta; corrida real de rebinding DNS permanece fora desta prova |
 | `hub/evidence/r2/execution/r2-seg05-admin.log` | R2-SEG-05 | PASS local; publicação atribuível em PostgreSQL, limpeza/logout no Chromium com API 401 e erros públicos correlacionados sem detalhes internos; injeção real de falha de cofre permanece fora desta prova |
+| `hub/evidence/r2/execution/r2-int-exe-qualification.log` | R2-INT e R2-EXE selecionados | PASS local; credenciais dedicadas isoladas, mTLS, polling/callback, TTL/Retry-After, SLA bilateral, idempotência, fencing, inbox/outbox, AUTO e reconciliação; limites normativos não executados permanecem listados no próprio log |
+| `hub/evidence/r2/execution/r2-cat-dad-qualification.log` | R2-CAT/R2-DAD selecionados | PASS local para publicação imutável, concorrência, DAG, JSON estrito, importação em staging, paginação, FileRef e pins; restore é parcial por não incluir objetos produtivos nem parceiro comercial |
+| `hub/evidence/r2/execution/rls-runtime-latest.log` | R2-DAD-04-S03 | PASS runtime; `hub_runtime` sem privilégios de bypass confirmou isolamento cross-tenant em control/core/finance |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
 | `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; quatro ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
 | `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
@@ -55,7 +58,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 70 com evidência existente e 662 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 131 com evidência existente e 601 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -93,9 +96,17 @@ foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race do
 módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
-fonte: 732 cenários, dos quais 70 possuem resultado/evidência já registrada e
-662 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
+fonte: 732 cenários, dos quais 131 possuem resultado/evidência já registrada e
+601 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
 e não substitui a execução dos cenários restantes.
+
+Na continuação de 11/09/2026, `r2-int-exe-qualification.log` registrou as
+provas locais de credencial por binding, mTLS, polling/callback, TTL zero,
+`Retry-After` além do prazo, SLA `MONITOR_ONLY`/`REJECT_LATE`, idempotência,
+fencing, custódia de mensagens, AUTO e reconciliação sem replay. A matriz
+associou 34 cenários R2-INT/R2-EXE a essas provas; crash/broker, provedor
+comercial, partição, coorte completa e perda de recibo 2xx continuam fora da
+promoção.
 
 Esses resultados fecham os gates locais correspondentes, mas não promovem como
 concluídos o adapter/provedor comercial, a qualificação regional ou a matriz
