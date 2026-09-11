@@ -293,6 +293,12 @@ validou o conteúdo e promoveu a referência a `ORPHAN`; uma tentativa de ligá-
 a outra obrigação foi recusada, e somente a obrigação original criou o pin e
 promoveu o estado para `READY`. Nenhum provedor foi chamado ou reexecutado.
 
+O teste `final-representation-immutable-smoke.json` tentou aplicar uma
+representação de contrato v2 sobre protocolo já concluído em v1. A autoridade
+recusou a segunda finalização e preservou status, `result_version`, bytes e o
+único fato final. Isso fecha a garantia de imutabilidade histórica, mas mantém
+R2-EXE-08-S02 parcial até existir ensaio real de upgrade de software/perfil.
+
 O ensaio `finalize-expiry-race-smoke.json` iniciou simultaneamente os caminhos
 de sucesso e expiração com a mesma versão esperada. O lock e a condição de
 versão do PostgreSQL permitiram somente uma transição terminal, com

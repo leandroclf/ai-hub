@@ -237,6 +237,56 @@ func TestFinalizeAndExpiryRaceProducesOneTerminalFact(t *testing.T) {
 	t.Logf("PostgreSQL: finalização e expiração concorrentes convergiram para uma única transição %s, result_version=1 e um protocol.finalized", got.Status)
 }
 
+func TestFinalRepresentationCannotBeReplacedAfterTerminalCommit(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	ctx := context.Background()
+	store := NewStore(db)
+	now := time.Now().UTC()
+	tenant := "final-representation-immutable-" + idgen.New()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "final-representation-cell", IdempotencyKey: "final-representation-key", RequestHash: "final-representation-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"contract_version":"v1"}`), EconomicSnapshot: json.RawMessage(`{}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+	})
+	finalizer := NewFinalizer(store, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	firstBody := FinalBody{Result: map[string]any{"contract_version": "v1", "marker": "historical-bytes"}}
+	if applied, err := finalizer.Finalize(ctx, "immutable-v1", tenant, p.ProtocolID, 0, StatusSucceeded, firstBody, ""); err != nil || !applied {
+		t.Fatalf("finalização inicial: applied=%v err=%v", applied, err)
+	}
+	initial, err := store.Get(ctx, tenant, p.ProtocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if applied, err := finalizer.Finalize(ctx, "immutable-v2", tenant, p.ProtocolID, initial.Version, StatusFailed, FinalBody{Result: map[string]any{"contract_version": "v2", "marker": "replacement"}}, "CONTRACT_UPDATED"); err != nil || applied {
+		t.Fatalf("finalização posterior substituiu histórico: applied=%v err=%v", applied, err)
+	}
+	current, err := store.Get(ctx, tenant, p.ProtocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if current.Status != StatusSucceeded || current.ResultVersion != 1 || string(current.FinalRepresentation) != string(initial.FinalRepresentation) || strings.Contains(string(current.FinalRepresentation), "replacement") {
+		t.Fatalf("representação histórica mudou após segunda finalização: status=%s version=%d body=%s", current.Status, current.ResultVersion, current.FinalRepresentation)
+	}
+	var facts int
+	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND event_type='protocol.finalized'", p.ProtocolID).Scan(&facts); err != nil || facts != 1 {
+		t.Fatalf("fatos finais após tentativa de substituição=%d err=%v", facts, err)
+	}
+	t.Log("PostgreSQL: representação final v1 permaneceu imutável diante de tentativa v2; status, result_version, bytes e protocol.finalized foram preservados")
+}
+
 func TestFinalizeRejectsSuccessAfterProviderSLABreach(t *testing.T) {
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
 	if dsn == "" {

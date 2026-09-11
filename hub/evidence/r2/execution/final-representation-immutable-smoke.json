@@ -1,0 +1,16 @@
+{
+  "check": "Representação final não é substituída após commit terminal",
+  "status": "PASS",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -tags=e2e -count=1 ./internal/orbita -run '^TestFinalRepresentationCannotBeReplacedAfterTerminalCommit$' -v",
+  "oracle": {
+    "database": "PostgreSQL 16",
+    "initial_contract": "v1",
+    "replacement_attempt": "v2",
+    "replacement_applied": false,
+    "status_preserved": "SUCCEEDED",
+    "result_version": 1,
+    "final_facts": 1,
+    "bytes_preserved": true
+  },
+  "limitation": "Prova a imutabilidade do protocolo terminal; não substitui upgrade real de software/perfil e compatibilidade entre versões."
+}
