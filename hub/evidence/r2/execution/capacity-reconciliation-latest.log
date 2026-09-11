@@ -1,5 +1,9 @@
-CLOSED domain=r4-sync permit=01a090f2-7316-7396-945f-534118b3de56 protocol=01a090f2-7316-7392-8afe-dec06548ecf1 evidence=local-oracle-absence:01a090f2-7316-7392-8afe-dec06548ecf1
-CLOSED domain=r4-sync permit=01a090f2-d139-74c7-ac74-5a783ee1ae79 protocol=01a090f2-d139-74c3-8a46-4210acab1553 evidence=local-oracle-absence:01a090f2-d139-74c3-8a46-4210acab1553
-CLOSED domain=r4-sync permit=01a090f5-59e2-7625-8438-22839479d58a protocol=01a090f5-59e2-7622-853c-63be238e690c evidence=local-oracle-absence:01a090f5-59e2-7622-853c-63be238e690c
-CLOSED domain=r4-sync permit=01a090f6-53ea-7768-95ee-751e1d90f53b protocol=01a090f6-53ea-7766-b9cc-c53037513e84 evidence=local-oracle-absence:01a090f6-53ea-7766-b9cc-c53037513e84
-summary closed=4 protected=0
+CLOSED domain=r4-callback permit=01a091b7-2353-77f1-b69e-c951f8666ff0 protocol=01a091b7-2353-77dc-acab-24f3f47bec00 evidence=local-oracle-absence:01a091b7-2353-77dc-acab-24f3f47bec00
+CLOSED domain=r4-callback permit=01a091b9-1e12-7b6f-afb6-fc14ce1e3a80 protocol=01a091b9-1e12-7b6d-a29c-a0b0f746badf evidence=local-oracle-absence:01a091b9-1e12-7b6d-a29c-a0b0f746badf
+CLOSED domain=r4-callback permit=01a09293-789d-73d1-9380-c6fbe2fe1b67 protocol=01a09293-789d-73cf-959c-f80743c4c2eb evidence=local-oracle-absence:01a09293-789d-73cf-959c-f80743c4c2eb
+CLOSED domain=r4-sync permit=01a09186-8ba3-7cf3-bbd7-6fee3522af6f protocol=01a09186-8ba3-7cee-a7f3-cf8c6dd9e249 evidence=local-oracle-absence:01a09186-8ba3-7cee-a7f3-cf8c6dd9e249
+CLOSED domain=r4-sync permit=01a09293-77e8-7d3d-8128-675dea0fe7f9 protocol=01a09293-77e8-7d3b-b20d-6c3ae8622147 evidence=local-oracle-absence:01a09293-77e8-7d3b-b20d-6c3ae8622147
+CLOSED domain=r4-sync permit=01a09293-78bd-7e3a-8997-da1402951d17 protocol=01a09293-78bd-7e38-80a9-d873a8cd2736 evidence=local-oracle-absence:01a09293-78bd-7e38-80a9-d873a8cd2736
+CLOSED domain=r4-sync permit=01a09293-78eb-7e05-a488-796258882ea7 protocol=01a09293-78eb-7e02-a131-f8e07c315ba0 evidence=local-oracle-absence:01a09293-78eb-7e02-a131-f8e07c315ba0
+CLOSED domain=r4-sync-failure permit=01a09293-7853-7dd8-b4ed-ab4874960373 protocol=01a09293-7853-7dd3-8d9b-a73f4e92a71a evidence=local-oracle-absence:01a09293-7853-7dd3-8d9b-a73f4e92a71a
+summary closed=8 protected=0

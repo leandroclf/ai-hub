@@ -1,5 +1,16 @@
 # Evidências da retomada R2 — execução em andamento
 
+## Atualização da rodada integrada — 11/09/2026
+
+| Artefato | Procedimento e resultado | Limite |
+|---|---|---|
+| `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após ajuste de egress e reconciliação local protegida: oito caminhos autorizados (SYNC sucesso/falha, polling A/B, callback, AUTO, saldo estrito e credencial dedicada), idempotência observada quatro vezes e falha de credencial sem fallback: PASS (`r4-authorized-20260911clean`) | Dados sintéticos, provider-sim e autoridade local; não homologa provedor comercial nem carga prolongada |
+| `catalog-legacy-contracts-runtime-latest.json` | R2-CAT-05-S01 reexecutado após a correção do upstream dinâmico: dois contratos legados normalizaram para `cpf`/`delay_ms`, terminaram `SUCCEEDED`, tiveram GET/webhook comparados por JSON canônico equivalente e suspenderam as ofertas temporárias no `finally`: PASS | Fixture local; a suspensão é limpeza de ofertas publicadas da própria fixture, sem exclusão de dados |
+| `finance-runtime-latest.log` | Requalificação após a carga limpa: `FINANCE_RUNTIME_PROOF=PASS`, `outbox=27`, `facts=13`, `cost=4`, `revenue=9`, `inbox=27`, `unbalanced=0`, `invalid_quarantine=0` | Janela local de 900 s; não homologa ERP ou adquirente |
+| `browser-smoke.json` | Chromium autenticado com OIDC/PKCE, senha+OTP, portal administrativo, readback, conflito `If-Match`, financeiro, logout, isolamento e viewport de 390 px: 24 verificações, 23 `PASS`, 1 `OBSERVED`, sem `FAIL` | Não substitui a matriz integral de autorização, WCAG formal ou entrega comercial |
+| `compose.yaml` + `nginx.conf` | Egress padrão do Compose passou a autorizar a bridge privada real (`172.16.0.0/12`) com restrição por host/porta; o portal passou a resolver upstreams Docker dinamicamente após recriação de serviços e os endpoints protegidos voltaram a responder JSON 401 em vez de 502/404: PASS | Somente laboratório local; CIDRs/portas continuam parâmetros explícitos para ambientes não locais |
+| `kind-continuity-latest.log` + `compose-recreation-latest.log` | Kind independente com 3 nós e dependências `cluster-owned` recuperou Cometa/Pulsar em 4.486/4.494 ms; recriação controlada do Atlas preservou catálogo/protocolos sem remover volumes: PASS | Ensaio local; não qualifica HA regional, recriação de nó, AWS ou carga prolongada |
+
 ## Atualização da rodada R4 — 10/09/2026
 
 | Artefato | Procedimento e resultado | Limite |
@@ -49,7 +60,7 @@
 | `commit-uncertain-runtime-latest.json` | R2-EXE-01-S03/R2-EXE-02-S03; cliente encerrou a conexão após enviar o request, PostgreSQL recuperou um único protocolo `ACCEPTED` e o replay autenticado retornou o mesmo UUID sem operação duplicada | A queda ocorre após o envio do request, não por injeção dentro do commit PostgreSQL; o cenário de broker indisponível é separado |
 | `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
 
-| `authorized-load-latest.log` | Reexecução após reconciliação local protegida e correção das CIDRs: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789127281502`) | Dados sintéticos e provider-sim local |
+| `authorized-load-latest.log` | Reexecução após reconciliação local protegida e correção das CIDRs: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-20260911clean`) | Dados sintéticos e provider-sim local |
 | `webhook-capacity-latest.log` + `finance-runtime-latest.log` | Entrega webhook com `open=0/pending=0` e financeiro balanceado sem quarentena: PASS | Não homologa endpoint comercial ou ERP |
 | `rls-runtime-proof.sh` | Isolamento cross-tenant em control/core/finance com role não proprietária: PASS | Não substitui matriz HTTP completa de autorização |
 
@@ -57,11 +68,12 @@
 
 | Artefato | Resultado observado | Limite |
 |---|---|---|
-| `finance-runtime-proof.sh` | `FINANCE_RUNTIME_PROOF=PASS`: outbox 58, fatos 21, custo 8, receita 13, inbox 58, journal balanceado e zero quarentena inválida | Janela local de 900s; não homologa ERP |
+| `finance-runtime-proof.sh` | `FINANCE_RUNTIME_PROOF=PASS`: reexecução mais recente com outbox 27, fatos 13, custo 4, receita 9, inbox 27, journal balanceado e zero quarentena inválida | Janela local de 900s; não homologa ERP |
 | `webhook-capacity-runtime.sh` | `PASS`: delivery `d38017c0-2e2f-4ed1-b46b-5796569733cf`, `open=0`, `pending=0` | Endpoint webhook sintético |
 | `restore-reconciliation.sh` | `PASS`: três bancos restaurados por contagem/digest, 0 objetos S3 e oráculo externo observado sem replay | Restore local; sem AWS/provedor comercial |
-| `continuity-runtime-proof.sh` | `PASS`: 3 nós, 5 workloads cluster-owned; reexecução mais recente com RTO Cometa 4398ms e Pulsar 4421ms | Ensaio Kind local; recriação de nó/contêiner Kind permanece fora |
+| `continuity-runtime-proof.sh` | `PASS`: 3 nós, 5 workloads cluster-owned; reexecução mais recente com RTO Cometa 4486ms e Pulsar 4494ms | Ensaio Kind local; recriação de nó/contêiner Kind permanece fora |
 | `browser-smoke.json` | Execução mais recente: 24 verificações, 23 `PASS` e 1 `OBSERVED`, sem `FAIL`; inclui conflito concorrente `If-Match` com diff local/servidor | Não substitui matriz integral |
+| `capacity-reconciliation-latest.log` | Reconciliação protegida após a carga: `closed=8 protected=0`; somente obrigações locais cujo provider-sim respondeu 404 foram encerradas | Não encerra efeitos externos presentes ou não identificáveis; não equivale a reconciliação comercial |
 | `admin-client-lifecycle-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; pendência de capacidade e suspensão com 1 protocolo `RUNNING` sintético | Fixture local; não substitui aprovação de capacidade cloud nem operação comercial |
 | `admin-import-preview-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; preview `STAGED`, diff de endpoints e `IMPORTED_NOT_EXECUTABLE` sem retenção de segredo | Não publica serviço nem qualifica adapter externo |
 | `admin-service-publication-smoke.json` | Ensaio Chromium curto: 5 verificações `PASS`; qualificação vigente, publicação v1, rejeição de mutação com HTTP 409, publicação de v2 com schema incompatível preservando v1/hash e leitura por segundo operador após refresh | Protocolo v1 real durante o upgrade ainda não foi exercitado; fixture local |

@@ -3,8 +3,9 @@
 Data: 2026-09-11 (America/Sao_Paulo)
 
 HEAD do checkpoint: consultar `git log` após o commit de consolidação desta
-rodada. O código do adapter REST está em `ac9b346` e as evidências integradas
-mais recentes foram consolidadas em `94afa58`.
+rodada. A evidência mais recente desta rodada registra o ajuste de egress da
+bridge Docker, a resolução dinâmica dos upstreams do portal e a reexecução
+limpa da carga autorizada, do contrato legado e do financeiro.
 
 Executado: OpenSpec strict `21/21` — PASS; `npm run build` no portal — PASS;
 `go test -race -count=1 ./...`, `go vet ./...` e `git diff --check` — PASS. O
@@ -24,9 +25,14 @@ fila LocalStack, a quarentena durável de envelopes inválidos/comandos
 expirados e a preservação de falhas recuperáveis para redelivery. A prova do
 produto foi repetida após reconciliação positiva da fixture local e passou com
 duas etapas, dois efeitos e idempotência; o runner fechou dez ausências
-comprovadas (`closed=10 protected=0`). A carga autorizada mais recente usou
-`r4-authorized-1789127281502`; restore, RLS, financeiro, webhook e continuidade
-também foram repetidos com resultado PASS.
+comprovadas (`closed=10 protected=0`) naquela execução. Nesta rodada, uma
+reconciliação posterior fechou oito ausências confirmadas
+(`closed=8 protected=0`). A carga autorizada limpa
+usou `r4-authorized-20260911clean` e passou nos oito caminhos, com quatro
+observações idempotentes; o financeiro passou com `outbox=27`, `facts=13`,
+`cost=4`, `revenue=9`, `inbox=27`, sem lançamentos desbalanceados ou
+quarentena inválida. O contrato legado passou com limpeza das ofertas
+temporárias publicadas.
 
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
@@ -42,3 +48,10 @@ ausência de homologação de provedores/AWS reais, carga prolongada/expiração
 I/O e matriz integral ainda não fechada. O adapter REST foi qualificado somente
 com endpoint HTTP local independente e não representa provedor comercial. Ver
 `EXECUTION-2026-09-10.md` para os oráculos e limites.
+
+Correção operacional desta rodada: as regras padrão de egress do Compose agora
+consideram a bridge privada real (`172.16.0.0/12`) sem abrir host/porta além dos
+destinos declarados. O Nginx do portal resolve os nomes Docker com TTL curto e
+reescreve explicitamente os prefixos `/api/*`, evitando upstream obsoleto após
+`--force-recreate`. A prova Chromium voltou a completar OIDC/PKCE, senha+OTP e
+as 24 verificações do portal (23 `PASS`, 1 `OBSERVED`, nenhum `FAIL`).

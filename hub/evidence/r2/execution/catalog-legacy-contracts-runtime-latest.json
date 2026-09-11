@@ -1,11 +1,11 @@
 {
   "status": "PASS",
   "profile": "r2-cat-05-s01-legacy-contracts",
-  "suffix": 1789149851073,
+  "suffix": 1789166588894,
   "profiles": {
     "a": {
-      "id": "legacy-profile-a-1789149851073",
-      "content_hash": "c84371b902115051854b626342c3dd2b707ef495d1c3ed2b0e42d152429ead9b",
+      "id": "legacy-profile-a-1789166588894",
+      "content_hash": "e700f049a4d23991a47532a454be67dfd6deb0db436840246cdde6a18ac74c0c",
       "input_fields": [
         "cpf_legado",
         "espera_ms"
@@ -16,8 +16,8 @@
       }
     },
     "b": {
-      "id": "legacy-profile-b-1789149851073",
-      "content_hash": "2115885acd1c07d52e96ef4691c33b70a2f9faf51ff5ba0cc8af08e5e46d9da5",
+      "id": "legacy-profile-b-1789166588894",
+      "content_hash": "c428c1a2aec93ca29c34cad5b419aaffefb669c12f7b28f67c468eb9048e5804",
       "input_fields": [
         "documento",
         "atraso"
@@ -30,27 +30,27 @@
   },
   "bindings": {
     "a": {
-      "account": "legacy-account-a-1789149851073",
-      "binding": "legacy-binding-a-1789149851073",
-      "account_hash": "308df5a5d87cc4a08b35c7a4803f0ed026eef3c28c134550ff76b8ab6b8166f1",
-      "binding_hash": "1ee34474efb187494fa525c2ac0122a789792fb21f3ee199022f4eb6d953ac28"
+      "account": "legacy-account-a-1789166588894",
+      "binding": "legacy-binding-a-1789166588894",
+      "account_hash": "46e5675f9f884dc604c5860af6528b66bd67553a69534209085ab698e9de196c",
+      "binding_hash": "21263895c4949f9a07ada75f30369be8fb53837dc5bfb108266917d77901a15b"
     },
     "b": {
-      "account": "legacy-account-b-1789149851073",
-      "binding": "legacy-binding-b-1789149851073",
-      "account_hash": "00c50e00a01e43c7122960cda2ad2a177a503e0769f129b55df64f5fc2850724",
-      "binding_hash": "c3a7255958540e6263cdba04ba6e51de9232bda81d80f2d7d900a6dec3ed5e93"
+      "account": "legacy-account-b-1789166588894",
+      "binding": "legacy-binding-b-1789166588894",
+      "account_hash": "1c39a2ead21f1aeb480c0dd37d7377d6d570760dd6a0c4d3da256cef6f31cf0b",
+      "binding_hash": "75fdb08d48408266d9ba71d7a2f9466c015b38897dd520d9b8824369d3b97df3"
     }
   },
   "offers": {
-    "a": "legacy-offer-a-1789149851073",
-    "b": "legacy-offer-b-1789149851073"
+    "a": "legacy-offer-a-1789166588894",
+    "b": "legacy-offer-b-1789166588894"
   },
   "admissions": [
     {
-      "profile": "legacy-profile-a-1789149851073",
-      "account": "legacy-account-a-1789149851073",
-      "protocol_id": "01a091a4-2eee-76fb-95da-cfc096188646",
+      "profile": "legacy-profile-a-1789166588894",
+      "account": "legacy-account-a-1789166588894",
+      "protocol_id": "01a092a3-94b4-7095-9e22-bafc11e0e96f",
       "client_input": {
         "cpf_legado": "11111111111",
         "espera_ms": 3000
@@ -60,14 +60,14 @@
         "delay_ms": 3000
       },
       "final_status": "SUCCEEDED",
-      "delivery_id": "302a5d4c-d0cb-4746-a1df-e351ade76ea7",
+      "delivery_id": "8a9c2b30-15e5-406c-97c0-79f16569f405",
       "get_webhook_body_equality": "canonical-json-equal",
-      "representation_sha256": "d1b707ea02ad67b7cab27247539be201e1accf4297d9e2f24d08c378c0d43f0d"
+      "representation_sha256": "deeb14329a25bc6ceee6cc4bae838dd00a1aa0c2a3ba37b8d8289f5cc41426ab"
     },
     {
-      "profile": "legacy-profile-b-1789149851073",
-      "account": "legacy-account-b-1789149851073",
-      "protocol_id": "01a091a4-5821-78d8-8158-3828a03e9059",
+      "profile": "legacy-profile-b-1789166588894",
+      "account": "legacy-account-b-1789166588894",
+      "protocol_id": "01a092a3-a9fc-70cc-847c-d7af01086d8b",
       "client_input": {
         "documento": "11111111111",
         "atraso": 3000
@@ -77,11 +77,12 @@
         "delay_ms": 3000
       },
       "final_status": "SUCCEEDED",
-      "delivery_id": "7e963043-71a8-4375-aec5-5f5ae295e70d",
+      "delivery_id": "e123ff7c-003a-4175-a4ed-2c9c61fb10ad",
       "get_webhook_body_equality": "canonical-json-equal",
-      "representation_sha256": "58f9fe9113ff908ed3847b5a1ba64fee92a7534c6c0b08f2cbe071adbf2afec0"
+      "representation_sha256": "d63ca5fa033d16b73c9a4e694ba868a4985e024df64f630dde9fb1a061beb72b"
     }
   ],
   "semantic_equivalence": "ambos os contratos normalizaram para cpf/delay_ms e terminaram SUCCEEDED",
-  "finished_at": "2026-09-11T18:04:31.934Z"
+  "fixture_cleanup": "published legacy offers suspended",
+  "finished_at": "2026-09-11T22:43:24.503Z"
 }

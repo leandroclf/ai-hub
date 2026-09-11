@@ -144,7 +144,9 @@ services:
       QUEUE_NAMESPACE: r2-cell-a
       CONTROL_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_control?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
-      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+      # A rede bridge local do Compose usa endereços privados 172.16/12;
+      # a autorização continua limitada ao host:porta exato de cada origem.
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
     - 127.0.0.1:18081:8081
     stop_grace_period: 30s
@@ -200,7 +202,7 @@ services:
       QUEUE_NAMESPACE: r2-cell-a
       CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
-      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
     - 127.0.0.1:18080:8080
     stop_grace_period: 30s
@@ -261,7 +263,7 @@ services:
       QUEUE_NAMESPACE: r2-cell-a
       CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
-      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
     - 127.0.0.1:18082:8082
     stop_grace_period: 30s
@@ -320,7 +322,7 @@ services:
       QUEUE_NAMESPACE: r2-cell-a
       CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
-      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
     - 127.0.0.1:18083:8083
     stop_grace_period: 30s
@@ -376,7 +378,7 @@ services:
       QUEUE_NAMESPACE: r2-cell-a
       FINANCE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_finance?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
-      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-127.0.0.1/32};webhook-sink:8091=${R2_SINK_CIDR:-127.0.0.1/32};identity:8080=${R2_IDENTITY_CIDR:-127.0.0.1/32}
+      EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
     - 127.0.0.1:18084:8084
     stop_grace_period: 30s

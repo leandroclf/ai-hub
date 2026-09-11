@@ -25,6 +25,12 @@ async function publishResource(bearer,kind,id,data,name){
  if(published.status!==200||published.body.state!=='PUBLISHED')throw new Error(`publicação ${kind}/${id}: ${JSON.stringify(published.body)}`);
  return published.body;
 }
+async function suspendResource(bearer,resource){
+ const path=`${adminOrigin}/api/atlas/admin/v1/${resource.kind}/${encodeURIComponent(resource.id)}/${resource.version}/suspend`;
+ const suspended=await request(path,bearer,{method:'POST',headers:{'If-Match':`"${resource.revision}"`},body:JSON.stringify({reason:'encerramento de fixture legada local'})});
+ if(suspended.status!==200||suspended.body.state!=='SUSPENDED')throw new Error(`suspensão ${resource.kind}/${resource.id}: HTTP ${suspended.status} ${JSON.stringify(suspended.body)}`);
+ return suspended.body;
+}
 async function waitProtocol(bearer,id){
  const deadline=Date.now()+30000;
  let current={};
@@ -60,6 +66,7 @@ const bindingB=`legacy-binding-b-${suffix}`;
 const offerA=`legacy-offer-a-${suffix}`;
 const offerB=`legacy-offer-b-${suffix}`;
 const result={status:'FAIL',profile:'r2-cat-05-s01-legacy-contracts',suffix};
+const publishedLegacyOffers=[];
 try{
  const inputTarget={type:'object',properties:{cpf:{type:'string'},delay_ms:{type:'integer'}},required:[],additionalProperties:false};
  const outputTarget={type:'object',properties:{status:{type:'string'},provider_request_id:{type:'string'}},required:['status'],additionalProperties:false};
@@ -77,6 +84,7 @@ try{
  const offerDataB={...offerBase,technical_profile_id:profileB,technical_profile_version:1,routes:[{provider_account_id:accountB,provider_account_version:1,binding_id:bindingB,binding_version:1,priority:1,equivalence_id:'legacy-b',capacity_domain:'r4-poll-2'}]};
  const publishedOfferA=await publishResource(bearer,'offers',offerA,offerDataA,'Oferta contrato legado A');
  const publishedOfferB=await publishResource(bearer,'offers',offerB,offerDataB,'Oferta contrato legado B');
+ publishedLegacyOffers.push(publishedOfferA,publishedOfferB);
  const admissions=[];
  for(const [profile,account,input] of [[profileA,accountA,{cpf_legado:'11111111111',espera_ms:3000}],[profileB,accountB,{documento:'11111111111',atraso:3000}]]){
   const admission=await request(`${orbitaOrigin}/v1/protocols`,bearer,{method:'POST',headers:{'Idempotency-Key':`r2-cat-05-s01-${profile}`,'X-Tenant-Id':'acme'},body:JSON.stringify({mode:'ASYNC',provider_account_id:account,service_code:'protocolo-assincrono',service_version:1,input})});
@@ -102,4 +110,12 @@ try{
  if(admissions.length!==2)throw new Error('os dois contratos não foram executados');
  Object.assign(result,{status:'PASS',profiles:{a:{id:profileA,content_hash:publishedA.content_hash,input_fields:['cpf_legado','espera_ms'],mapping:dataA.input_mapping},b:{id:profileB,content_hash:publishedB.content_hash,input_fields:['documento','atraso'],mapping:dataB.input_mapping}},bindings:{a:{account:accountA,binding:bindingA,account_hash:publishedAccountA.content_hash,binding_hash:publishedBindingA.content_hash},b:{account:accountB,binding:bindingB,account_hash:publishedAccountB.content_hash,binding_hash:publishedBindingB.content_hash}},offers:{a:offerA,b:offerB},admissions,semantic_equivalence:'ambos os contratos normalizaram para cpf/delay_ms e terminaram SUCCEEDED'});
 }catch(error){result.error=error.message.split('\n')[0];process.exitCode=1}
-finally{result.finished_at=new Date().toISOString();await writeFile(evidencePath,`${JSON.stringify(result,null,2)}\n`);console.log(JSON.stringify(result,null,2))}
+finally{
+ try{
+  for(const resource of publishedLegacyOffers) await suspendResource(bearer,resource);
+  result.fixture_cleanup='published legacy offers suspended';
+ }catch(error){
+  result.cleanup_error=error.message.split('\n')[0];result.status='FAIL';process.exitCode=1;
+ }
+ result.finished_at=new Date().toISOString();await writeFile(evidencePath,`${JSON.stringify(result,null,2)}\n`);console.log(JSON.stringify(result,null,2))
+}
