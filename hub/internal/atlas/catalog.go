@@ -51,6 +51,7 @@ type CatalogData struct {
 	OutputSchema               json.RawMessage   `json:"output_schema"`
 	DataClass                  string            `json:"data_class"`
 	AdapterID                  string            `json:"adapter_id"`
+	AdapterContract            *AdapterContract  `json:"adapter_contract,omitempty"`
 	QualificationID            string            `json:"qualification_id"`
 	ClientSLASeconds           int               `json:"client_sla_seconds"`
 	ProviderSLASeconds         int               `json:"provider_sla_seconds"`
@@ -90,6 +91,14 @@ type CatalogData struct {
 	SecretRef                  string            `json:"secret_ref"`
 	SecretVersion              string            `json:"secret_version"`
 	Environment                string            `json:"environment"`
+}
+
+// AdapterContract contém somente a configuração declarativa permitida pelo
+// adapter genérico. Paths não carregam código, host, query ou fragmento; a
+// autoridade do endpoint continua sendo a provider_account homologada.
+type AdapterContract struct {
+	SubmitPath string `json:"submit_path,omitempty"`
+	StatusPath string `json:"status_path,omitempty"`
 }
 
 type Route struct {
@@ -161,6 +170,17 @@ func ValidateResource(r Resource) Validation {
 	if err != nil {
 		bad("data", "objeto JSON inválido")
 		return v
+	}
+	if d.AdapterContract != nil {
+		if !validAdapterPath(d.AdapterContract.SubmitPath, false) {
+			bad("adapter_contract.submit_path", "path declarativo inválido")
+		}
+		if !validAdapterPath(d.AdapterContract.StatusPath, true) {
+			bad("adapter_contract.status_path", "path declarativo deve conter somente um placeholder {id}")
+		}
+	}
+	if d.AdapterID == "rest-json-v1" && (r.Kind == "services" || r.Kind == "technical-profiles") && (d.AdapterContract == nil || d.AdapterContract.SubmitPath == "" || d.AdapterContract.StatusPath == "") {
+		bad("adapter_contract", "rest-json-v1 exige paths declarativos de submit e status")
 	}
 	if r.Kind == "applications" || r.Kind == "offers" || r.Kind == "technical-profiles" || r.Kind == "clients" {
 		if r.TenantID == "" {
@@ -325,6 +345,37 @@ func ValidateResource(r Resource) Validation {
 	}
 	return v
 }
+
+func validAdapterPath(path string, status bool) bool {
+	if len(path) == 0 || len(path) > 256 || !strings.HasPrefix(path, "/") || strings.Contains(path, "//") || strings.Contains(path, "..") || strings.ContainsAny(path, "?#%\\") {
+		return false
+	}
+	if status {
+		if strings.Count(path, "{id}") != 1 {
+			return false
+		}
+		path = strings.Replace(path, "{id}", "", 1)
+	}
+	return !strings.ContainsAny(path, "{}\x00\n\r\t")
+}
+
+// ValidateAdapterContract aplica a política comum usada pelo catálogo e pelo
+// transporte: o contrato é opcional quando o adapter possui defaults, mas não
+// pode ser parcialmente definido nem carregar host, query, fragmento ou
+// conteúdo executável.
+func ValidateAdapterContract(c AdapterContract) error {
+	if c.SubmitPath == "" && c.StatusPath == "" {
+		return nil
+	}
+	if c.SubmitPath == "" || c.StatusPath == "" {
+		return errors.New("adapter contract must define submit_path and status_path together")
+	}
+	if !validAdapterPath(c.SubmitPath, false) || !validAdapterPath(c.StatusPath, true) {
+		return errors.New("adapter contract path is invalid")
+	}
+	return nil
+}
+
 func safeField(s string) bool {
 	if s == "" || len(s) > 128 {
 		return false

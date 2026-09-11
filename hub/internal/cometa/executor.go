@@ -251,7 +251,11 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	e.log.Debug("enviando chamada ao provedor", "trace_id", cmd.TraceID, "operation_id", operationID,
 		"provider_base_url", pa.BaseURL, "provider_mode", pa.ProviderMode, "attempt_id", attemptID)
 
-	httpReq, err := adapter.BuildSubmitRequest(ctx, pa.BaseURL, cmd, pa.ProviderMode, callbackURL)
+	contract := atlas.AdapterContract{}
+	if target.AdapterContract != nil {
+		contract = *target.AdapterContract
+	}
+	httpReq, err := adapter.BuildSubmitRequest(ctx, pa.BaseURL, cmd, contract, pa.ProviderMode, callbackURL)
 	if err != nil {
 		releaseCapacity("request-build-failed")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)

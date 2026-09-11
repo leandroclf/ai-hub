@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/contracts/files"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/providersim"
@@ -39,8 +40,8 @@ var compiledAdapters = map[string]struct{}{
 // Isso impede que um ID de catálogo seja confundido com transporte disponível
 // e permite homologar um contrato REST real sem importar o servidor simulado.
 type ProviderAdapter interface {
-	BuildSubmitRequest(context.Context, string, dispatch.Command, string, string) (*http.Request, error)
-	BuildStatusRequest(context.Context, string, string) (*http.Request, error)
+	BuildSubmitRequest(context.Context, string, dispatch.Command, atlas.AdapterContract, string, string) (*http.Request, error)
+	BuildStatusRequest(context.Context, string, atlas.AdapterContract, string) (*http.Request, error)
 	DecodeResult(int, []byte) (providersim.OperationResult, error)
 }
 
@@ -55,7 +56,7 @@ type restJSONSubmitRequest struct {
 	CallbackURL    string            `json:"callback_url,omitempty"`
 }
 
-func (providerSimAdapter) BuildSubmitRequest(ctx context.Context, baseURL string, cmd dispatch.Command, providerMode, callbackURL string) (*http.Request, error) {
+func (providerSimAdapter) BuildSubmitRequest(ctx context.Context, baseURL string, cmd dispatch.Command, _ atlas.AdapterContract, providerMode, callbackURL string) (*http.Request, error) {
 	req := providersim.SubmitRequest{
 		ProtocolID:      externalIdempotencyKey(cmd),
 		FileRefs:        cmd.FileRefs,
@@ -68,7 +69,7 @@ func (providerSimAdapter) BuildSubmitRequest(ctx context.Context, baseURL string
 	return newJSONRequest(ctx, http.MethodPost, strings.TrimRight(baseURL, "/")+"/v1/operations", req)
 }
 
-func (providerSimAdapter) BuildStatusRequest(ctx context.Context, baseURL, providerRequestID string) (*http.Request, error) {
+func (providerSimAdapter) BuildStatusRequest(ctx context.Context, baseURL string, _ atlas.AdapterContract, providerRequestID string) (*http.Request, error) {
 	return newStatusRequest(ctx, baseURL, providerRequestID)
 }
 
@@ -80,7 +81,11 @@ func (providerSimAdapter) DecodeResult(status int, body []byte) (providersim.Ope
 // provedores que expõem POST/GET JSON. Ele não conhece o provider-sim: envia
 // uma chave de idempotência, a entrada transformada e referências de arquivos
 // e exige a resposta estrita provider_request_id/status.
-func (restJSONAdapter) BuildSubmitRequest(ctx context.Context, baseURL string, cmd dispatch.Command, providerMode, callbackURL string) (*http.Request, error) {
+func (restJSONAdapter) BuildSubmitRequest(ctx context.Context, baseURL string, cmd dispatch.Command, contract atlas.AdapterContract, providerMode, callbackURL string) (*http.Request, error) {
+	submitPath, _, err := restJSONPaths(contract)
+	if err != nil {
+		return nil, err
+	}
 	payload := restJSONSubmitRequest{
 		IdempotencyKey: externalIdempotencyKey(cmd),
 		Mode:           providerMode,
@@ -88,11 +93,16 @@ func (restJSONAdapter) BuildSubmitRequest(ctx context.Context, baseURL string, c
 		FileRefs:       cmd.FileRefs,
 		CallbackURL:    callbackURL,
 	}
-	return newJSONRequest(ctx, http.MethodPost, strings.TrimRight(baseURL, "/")+"/v1/operations", payload)
+	return newJSONRequest(ctx, http.MethodPost, strings.TrimRight(baseURL, "/")+submitPath, payload)
 }
 
-func (restJSONAdapter) BuildStatusRequest(ctx context.Context, baseURL, providerRequestID string) (*http.Request, error) {
-	return newStatusRequest(ctx, baseURL, providerRequestID)
+func (restJSONAdapter) BuildStatusRequest(ctx context.Context, baseURL string, contract atlas.AdapterContract, providerRequestID string) (*http.Request, error) {
+	_, statusPath, err := restJSONPaths(contract)
+	if err != nil {
+		return nil, err
+	}
+	endpoint := strings.TrimRight(baseURL, "/") + strings.Replace(statusPath, "{id}", url.PathEscape(providerRequestID), 1)
+	return newStatusRequestEndpoint(ctx, endpoint, providerRequestID)
 }
 
 func (restJSONAdapter) DecodeResult(status int, body []byte) (providersim.OperationResult, error) {
@@ -117,11 +127,28 @@ func newStatusRequest(ctx context.Context, baseURL, providerRequestID string) (*
 		return nil, errors.New("provider request ID is required")
 	}
 	endpoint := strings.TrimRight(baseURL, "/") + "/v1/operations/" + url.PathEscape(providerRequestID)
+	return newStatusRequestEndpoint(ctx, endpoint, providerRequestID)
+}
+
+func newStatusRequestEndpoint(ctx context.Context, endpoint, providerRequestID string) (*http.Request, error) {
+	if strings.TrimSpace(providerRequestID) == "" {
+		return nil, errors.New("provider request ID is required")
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, errors.New("adapter status request invalid")
 	}
 	return req, nil
+}
+
+func restJSONPaths(contract atlas.AdapterContract) (string, string, error) {
+	if contract.SubmitPath == "" && contract.StatusPath == "" {
+		contract = atlas.AdapterContract{SubmitPath: "/v1/operations", StatusPath: "/v1/operations/{id}"}
+	}
+	if err := atlas.ValidateAdapterContract(contract); err != nil {
+		return "", "", err
+	}
+	return contract.SubmitPath, contract.StatusPath, nil
 }
 
 func decodeOperationResult(status int, body []byte) (providersim.OperationResult, error) {

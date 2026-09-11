@@ -167,6 +167,24 @@ func TestCatalogValidation(t *testing.T) {
 	if v := ValidateResource(validPolicy); !v.Valid {
 		t.Fatalf("política de SLA válida rejeitada: %+v", v)
 	}
+	validREST := validPolicy
+	validREST.ID = "rest-service"
+	validREST.Data = raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "MONITOR_ONLY", ProviderMode: "async_poll", AdapterID: "rest-json-v1", AdapterContract: &AdapterContract{SubmitPath: "/analise", StatusPath: "/consulta/{id}"}, QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})
+	if v := ValidateResource(validREST); !v.Valid {
+		t.Fatalf("contrato REST declarativo válido rejeitado: %+v", v)
+	}
+	missingREST := validREST
+	missingREST.ID = "rest-service-missing-contract"
+	missingREST.Data = raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "MONITOR_ONLY", ProviderMode: "async_poll", AdapterID: "rest-json-v1", QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})
+	if v := ValidateResource(missingREST); v.Valid || v.FieldErrors["adapter_contract"] == "" {
+		t.Fatalf("contrato REST ausente aceito: %+v", v)
+	}
+	invalidREST := validREST
+	invalidREST.ID = "rest-service-invalid-contract"
+	invalidREST.Data = raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "MONITOR_ONLY", ProviderMode: "async_poll", AdapterID: "rest-json-v1", AdapterContract: &AdapterContract{SubmitPath: "https://provider.example/analise", StatusPath: "/consulta/{id}{id}"}, QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})
+	if v := ValidateResource(invalidREST); v.Valid || v.FieldErrors["adapter_contract.submit_path"] == "" || v.FieldErrors["adapter_contract.status_path"] == "" {
+		t.Fatalf("contrato REST inseguro aceito: %+v", v)
+	}
 	invalidPolicy := validPolicy
 	invalidPolicy.ID = "invalid-sla-policy"
 	invalidPolicy.Data = raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "RETRY_FOREVER", ProviderMode: "async_poll", AdapterID: "provider-sim", QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})

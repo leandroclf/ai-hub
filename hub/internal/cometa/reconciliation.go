@@ -127,7 +127,11 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if err != nil {
 		return dispatch.Result{}, errors.New("reconciliation binding invalid")
 	}
-	req, err := adapter.BuildStatusRequest(ctx, pa.BaseURL, claim.ProviderRequestID)
+	contract := atlas.AdapterContract{}
+	if target.AdapterContract != nil {
+		contract = *target.AdapterContract
+	}
+	req, err := adapter.BuildStatusRequest(ctx, pa.BaseURL, contract, claim.ProviderRequestID)
 	if err != nil {
 		return dispatch.Result{}, fmt.Errorf("reconciliation request invalid: %w", err)
 	}

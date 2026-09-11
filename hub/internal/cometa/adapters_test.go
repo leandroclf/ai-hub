@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/contracts/files"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/providerauth"
@@ -82,7 +83,7 @@ func TestVersionedRESTAdapterUsesIndependentHTTPContract(t *testing.T) {
 		RequestBody: map[string]string{"marker": "from-client"},
 		FileRefs: []files.Reference{{ID: "file-42", Version: "v3", SHA256: "sha-42", Size: 7,
 			ContentType: "application/json", Purpose: "INPUT", State: "READY"}},
-	}, "sync", "")
+	}, atlas.AdapterContract{}, "sync", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestVersionedRESTAdapterBuildsEscapedStatusRequest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	request, err := adapter.BuildStatusRequest(context.Background(), "https://provider.example/api/", "external/request 42")
+	request, err := adapter.BuildStatusRequest(context.Background(), "https://provider.example/api/", atlas.AdapterContract{}, "external/request 42")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +150,7 @@ func TestVersionedRESTAdapterUsesAPIKeyAndAsyncMarker(t *testing.T) {
 			return
 		}
 		statusKey = r.Header.Get("X-API-Key")
-		if r.Method != http.MethodGet || r.URL.Path != "/v1/operations/external-async-42" {
+		if r.Method != http.MethodGet || r.URL.Path != "/consulta/external-async-42" {
 			t.Fatalf("consulta REST assíncrona inesperada: %s %s", r.Method, r.URL.Path)
 		}
 		_, _ = io.WriteString(w, `{"provider_request_id":"external-async-42","status":"SUCCEEDED","detail":"real-rest-marker"}`)
@@ -161,9 +162,13 @@ func TestVersionedRESTAdapterUsesAPIKeyAndAsyncMarker(t *testing.T) {
 		t.Fatal(err)
 	}
 	command := dispatch.Command{CommandID: "command-async-42", ProtocolID: "protocol-async-42", RequestBody: map[string]string{"marker": "async"}}
-	restRequest, err := adapter.BuildSubmitRequest(context.Background(), server.URL, command, "async_poll", "")
+	contract := atlas.AdapterContract{SubmitPath: "/analise", StatusPath: "/consulta/{id}"}
+	restRequest, err := adapter.BuildSubmitRequest(context.Background(), server.URL, command, contract, "async_poll", "")
 	if err != nil {
 		t.Fatal(err)
+	}
+	if restRequest.URL.Path != "/analise" {
+		t.Fatalf("path de submit REST não respeitou contrato declarativo: %s", restRequest.URL.Path)
 	}
 	cache := providerauth.NewTokenCache("127.0.0.1:1")
 	defer cache.Close()
@@ -184,7 +189,7 @@ func TestVersionedRESTAdapterUsesAPIKeyAndAsyncMarker(t *testing.T) {
 	if err != nil || accepted.Status != "PENDING" {
 		t.Fatalf("aceite assíncrono REST inválido: %+v %v", accepted, err)
 	}
-	statusRequest, err := adapter.BuildStatusRequest(context.Background(), server.URL, accepted.ProviderRequestID)
+	statusRequest, err := adapter.BuildStatusRequest(context.Background(), server.URL, contract, accepted.ProviderRequestID)
 	if err != nil {
 		t.Fatal(err)
 	}

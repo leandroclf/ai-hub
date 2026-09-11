@@ -98,7 +98,11 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil {
 		return unknown("poll_binding_invalid")
 	}
-	req, err := adapter.BuildStatusRequest(ctx, pa.BaseURL, c.ProviderRequestID)
+	contract := atlas.AdapterContract{}
+	if target.AdapterContract != nil {
+		contract = *target.AdapterContract
+	}
+	req, err := adapter.BuildStatusRequest(ctx, pa.BaseURL, contract, c.ProviderRequestID)
 	if err != nil {
 		return unknown("poll_request_invalid")
 	}
