@@ -8,6 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 	"time"
 )
 
@@ -61,6 +63,41 @@ func (p CapacityPolicy) validate() error {
 type CapacityController struct{ db *sql.DB }
 
 func NewCapacityController(db *sql.DB) *CapacityController { return &CapacityController{db: db} }
+
+// InstallPoliciesFromEnv carrega somente políticas previamente aprovadas pelo
+// operador. O manifesto não contém limites comerciais implícitos: quando a
+// configuração não existe, nenhum domínio é criado e a chamada que escolher
+// um domínio falha fechada em Acquire.
+func InstallPoliciesFromEnv(ctx context.Context, c *CapacityController) error {
+	raw := strings.TrimSpace(os.Getenv("CAPACITY_POLICY_JSON"))
+	domains := strings.Split(strings.TrimSpace(os.Getenv("CAPACITY_DOMAINS")), ",")
+	if raw == "" && (len(domains) == 0 || domains[0] == "") {
+		return nil
+	}
+	if c == nil || raw == "" || len(raw) > 64*1024 {
+		return ErrCapacityPolicy
+	}
+	var policy CapacityPolicy
+	if json.Unmarshal([]byte(raw), &policy) != nil {
+		return ErrCapacityPolicy
+	}
+	seen := map[string]bool{}
+	for _, domain := range domains {
+		domain = strings.TrimSpace(domain)
+		if domain == "" || seen[domain] {
+			continue
+		}
+		seen[domain] = true
+		policy.Domain = domain
+		if err := c.InstallPolicy(ctx, policy); err != nil {
+			return fmt.Errorf("install capacity policy %s: %w", domain, err)
+		}
+	}
+	if len(seen) == 0 {
+		return ErrCapacityPolicy
+	}
+	return nil
+}
 
 // InstallPolicy only accepts a new domain or the identical frozen projection.
 // Changing a budget requires an explicit migration/reconciliation workflow;
@@ -229,6 +266,27 @@ func (c *CapacityController) CompleteTransport(ctx context.Context, p CapacityPe
 	return tx.Commit()
 }
 
+// Release cancela uma concessão antes do transporte começar. É usado quando
+// a custódia concorrente identifica uma operação já existente ou quando a
+// preparação local falha; não altera o feedback adaptativo nem libera uma
+// obrigação externa pendente.
+func (c *CapacityController) Release(ctx context.Context, p CapacityPermit, evidence string) error {
+	if evidence == "" {
+		return ErrCapacityPolicy
+	}
+	result, err := c.db.ExecContext(ctx, `UPDATE capacity_permits
+		SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$5
+		WHERE domain_id=$1 AND permit_id=$2 AND owner_id=$3 AND epoch=$4 AND transport_open`, p.Domain, p.ID, p.Owner, p.Epoch, evidence)
+	if err != nil {
+		return err
+	}
+	n, _ := result.RowsAffected()
+	if n != 1 {
+		return ErrCapacityFence
+	}
+	return nil
+}
+
 // ResolvePending is for a separately authorized reconciler with positive proof
 // that the external operation/transport ended. Time passing is never evidence.
 // The original epoch identifies the obligation; it cannot authorize a new send.
@@ -237,6 +295,25 @@ func (c *CapacityController) ResolvePending(ctx context.Context, domain, id stri
 		return ErrCapacityPolicy
 	}
 	result, err := c.db.ExecContext(ctx, `UPDATE capacity_permits SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$4 WHERE domain_id=$1 AND permit_id=$2 AND epoch=$3 AND (transport_open OR pending_external)`, domain, id, epoch, evidence)
+	if err != nil {
+		return err
+	}
+	n, _ := result.RowsAffected()
+	if n != 1 {
+		return ErrCapacityFence
+	}
+	return nil
+}
+
+// ResolvePendingByID fecha a obrigação externa criada pela submissão quando a
+// observação terminal chega por polling, callback ou reconciliação. O domínio
+// vem do snapshot imutável da rota e o permit_id é o operation_id; não há
+// criação de uma nova concessão nem reciclagem por expiração.
+func (c *CapacityController) ResolvePendingByID(ctx context.Context, domain, id, evidence string) error {
+	if domain == "" || id == "" || evidence == "" {
+		return ErrCapacityPolicy
+	}
+	result, err := c.db.ExecContext(ctx, `UPDATE capacity_permits SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$3 WHERE domain_id=$1 AND permit_id=$2 AND pending_external`, domain, id, evidence)
 	if err != nil {
 		return err
 	}

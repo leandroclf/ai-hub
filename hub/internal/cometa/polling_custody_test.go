@@ -204,6 +204,16 @@ func (pollFixtureVault) Resolve(_ context.Context, ref, version string) (provide
 func TestPostgresPollingAuthenticatedHTTP(t *testing.T) {
 	s, cmd := pollDB(t)
 	ctx := context.Background()
+	capacity := NewCapacityController(s.db)
+	capacityPolicy := CapacityPolicy{Domain: "synthetic-poll-capacity-" + cmd.CommandID, Version: "fixture-v1", EvidenceRef: "synthetic-poll-capacity", ValidUntil: time.Now().Add(time.Hour), MaxConcurrent: 8, MinConcurrent: 5, ReconciliationReserve: 1, MaxPending: 8, RatePerWindow: 200, WindowMillis: 1000, LeaseMillis: 5000, StableMillis: 100, LatencyThresholdMillis: 100, TenantLimits: map[string]int{cmd.TenantID: 2}, TenantPendingLimits: map[string]int{cmd.TenantID: 4}, TenantRateLimits: map[string]int{cmd.TenantID: 90}}
+	if err := capacity.InstallPolicy(ctx, capacityPolicy); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		s.db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityPolicy.Domain)
+		s.db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain)
+		s.db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityPolicy.Domain)
+	})
 	var calls atomic.Int32
 	var revoked atomic.Bool
 	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -244,7 +254,7 @@ func TestPostgresPollingAuthenticatedHTTP(t *testing.T) {
 	u, _ := url.Parse(provider.URL)
 	t.Setenv("EGRESS_PRIVATE_RULES", u.Host+"=127.0.0.1/32")
 	account, _ := json.Marshal(map[string]any{"base_url": provider.URL, "auth_type": "BASIC", "auth_username": "tenant-user", "polling": PollPolicy{1, 8, 1, 0, 100}})
-	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)}}
+	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)}, SelectedRoute: atlas.Route{CapacityDomain: capacityPolicy.Domain}}
 	cmd.ConfigSnapshot, _ = json.Marshal(snapshot)
 	raw, _ := json.Marshal(cmd)
 	if _, err := s.db.Exec(`UPDATE operations SET command=$2 WHERE operation_id=$1`, cmd.CommandID, raw); err != nil {
@@ -256,6 +266,7 @@ func TestPostgresPollingAuthenticatedHTTP(t *testing.T) {
 		t.Fatal(err)
 	}
 	exec := NewExecutor(s, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: pollFixtureVault{}})
+	exec.SetCapacityController(capacity)
 	result, _ := exec.requestPoll(ctx, claim)
 	if result.Kind != dispatch.FactSucceeded || calls.Load() != 1 {
 		t.Fatalf("HTTP observation=%+v calls=%d", result, calls.Load())
@@ -267,6 +278,10 @@ func TestPostgresPollingAuthenticatedHTTP(t *testing.T) {
 	}
 	if err := s.CompletePoll(ctx, claim, result, 0); err != nil {
 		t.Fatal(err)
+	}
+	state, err := capacity.State(ctx, capacityPolicy.Domain)
+	if err != nil || state.TransportOpen != 0 || state.PendingExternal != 0 {
+		t.Fatalf("status capacity was not settled: %+v %v", state, err)
 	}
 	t.Log("Actual local HTTP GET used dedicated decrypted Basic secret, workload-authenticated current binding and pinned egress; revoked binding prevented next provider call; terminal receipt persisted")
 }

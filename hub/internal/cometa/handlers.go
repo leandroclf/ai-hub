@@ -149,6 +149,13 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
+	// Only a complete terminal observation is eligible for orphan custody.
+	// This keeps malformed or merely pending traffic from consuming the
+	// recoverable inbox quota before operation correlation exists.
+	if result.ProviderRequestID == "" || (result.Status != "SUCCEEDED" && result.Status != "FAILED") {
+		http.Error(w, "invalid callback observation", http.StatusBadRequest)
+		return
+	}
 	token := r.URL.Query().Get("token")
 	if err := h.store.AuthenticateCallback(r.Context(), operationID, token); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

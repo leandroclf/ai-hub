@@ -14,11 +14,13 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
+	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/providersim"
 )
@@ -45,6 +47,7 @@ type Executor struct {
 	atlas      *atlasclient.Client
 	log        *slog.Logger
 	clients    *egress.Pool
+	capacity   *CapacityController
 	selfURL    string
 	tokenCache *providerauth.TokenCache
 }
@@ -54,6 +57,68 @@ type Executor struct {
 // provedor simulado em modo async_callback.
 func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, selfURL string, tokenCache *providerauth.TokenCache) *Executor {
 	return &Executor{store: store, atlas: atlas, log: log, clients: egress.NewPool(egress.FromEnv()), selfURL: selfURL, tokenCache: tokenCache}
+}
+
+// SetCapacityController conecta a autoridade global de capacidade ao caminho
+// real de execução. O setter mantém fixtures legadas sem política explícita
+// compatíveis; serviços configurados com capacity_domain continuam falhando
+// fechado quando a autoridade não foi instalada.
+func (e *Executor) SetCapacityController(c *CapacityController) { e.capacity = c }
+
+func (e *Executor) acquireCapacity(ctx context.Context, cmd dispatch.Command, snapshot atlas.OfferSnapshot, action, id, owner string) (CapacityPermit, bool, error) {
+	domain := snapshot.SelectedRoute.CapacityDomain
+	if domain == "" || e.capacity == nil {
+		return CapacityPermit{}, false, nil
+	}
+	permit, err := e.capacity.Acquire(ctx, domain, id, cmd.TenantID, cmd.CellID, owner, action)
+	return permit, true, err
+}
+
+func (e *Executor) releaseCapacity(ctx context.Context, permit CapacityPermit, evidence string) {
+	if e.capacity == nil || permit.ID == "" {
+		return
+	}
+	releaseCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+	if err := e.capacity.Release(releaseCtx, permit, evidence); err != nil {
+		e.log.Error("capacity release failed", "domain", permit.Domain, "permit_id", permit.ID, "error", err)
+	}
+}
+
+func (e *Executor) settleCapacity(ctx context.Context, permit CapacityPermit, started time.Time, result dispatch.Result, externalPending bool) {
+	if e.capacity == nil || permit.ID == "" {
+		return
+	}
+	evidence := result.EvidenceID
+	if evidence == "" {
+		// O attempt_id foi gravado antes do I/O e é a evidência mínima para
+		// fechar o orçamento quando a custódia do resultado também falhou.
+		evidence = "attempt:" + permit.ID
+	}
+	signal := "UNAVAILABLE"
+	if result.Kind == dispatch.FactSucceeded || result.Kind == dispatch.FactFailed || (externalPending && result.ProviderRequestID != "") {
+		signal = "SUCCESS"
+	} else if strings.Contains(strings.ToLower(result.ErrorCode), "timeout") {
+		signal = "TIMEOUT"
+	} else if strings.Contains(strings.ToLower(result.ErrorCode), "429") || strings.Contains(strings.ToLower(result.ErrorCode), "thrott") {
+		signal = "THROTTLED"
+	}
+	settleCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+	if err := e.capacity.CompleteTransport(settleCtx, permit, signal, time.Since(started), externalPending, evidence); err != nil {
+		e.log.Error("capacity settlement failed", "domain", permit.Domain, "permit_id", permit.ID, "signal", signal, "error", err)
+	}
+}
+
+func (e *Executor) resolveCapacityPending(ctx context.Context, cmd dispatch.Command, snapshot atlas.OfferSnapshot, evidence string) {
+	if e.capacity == nil || snapshot.SelectedRoute.CapacityDomain == "" || evidence == "" {
+		return
+	}
+	resolveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+	if err := e.capacity.ResolvePendingByID(resolveCtx, snapshot.SelectedRoute.CapacityDomain, cmd.CommandID, evidence); err != nil && !errors.Is(err, ErrCapacityFence) {
+		e.log.Error("capacity pending resolution failed", "domain", snapshot.SelectedRoute.CapacityDomain, "operation_id", cmd.CommandID, "error", err)
+	}
 }
 
 // Execute processa um dispatch.Command: cria a operacao, resolve
@@ -116,11 +181,32 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	pa.ProviderAccountID = snapshot.Account.ID
 
 	binding, _ := atlas.DecodeCatalogData(snapshot.Binding)
+	capacityPermit, capacityEnabled, err := e.acquireCapacity(ctx, cmd, snapshot, "SUBMIT", operationID, "submit-"+idgen.New())
+	if err != nil {
+		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactRejected, ErrorCode: "capacity_unavailable"}
+	}
+	capacitySettled := false
+	var sentAt time.Time
+	releaseCapacity := func(evidence string) {
+		if capacityEnabled && !capacitySettled {
+			e.releaseCapacity(ctx, capacityPermit, evidence)
+			capacitySettled = true
+		}
+	}
+	settleCapacity := func(result dispatch.Result, externalPending bool) dispatch.Result {
+		if capacityEnabled && !capacitySettled {
+			e.settleCapacity(ctx, capacityPermit, sentAt, result, externalPending)
+			capacitySettled = true
+		}
+		return result
+	}
 	claim, owned, err := e.store.PrepareSubmission(ctx, cmd, cred.BindingID, binding.SecretVersion)
 	if err != nil {
+		releaseCapacity("submission-preparation-failed")
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "preparation_unavailable"}
 	}
 	if !owned {
+		releaseCapacity("duplicate-operation-custody")
 		r, err := e.store.DurableResult(ctx, cmd)
 		if err == nil {
 			return r
@@ -128,10 +214,12 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown}
 	}
 	attemptID := claim.AttemptID
-	sentAt := time.Now()
+	sentAt = time.Now()
 	client, err := e.clients.Client(pa.BaseURL, 15*time.Second)
 	if err != nil {
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
+		result := e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
+		releaseCapacity("egress-refused-before-provider")
+		return result
 	}
 
 	fail := shouldFail(cmd.RequestBody)
@@ -139,6 +227,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 
 	req := providersim.SubmitRequest{
 		ProtocolID:      cmd.ProtocolID,
+		FileRefs:        cmd.FileRefs,
 		Mode:            providersim.Mode(pa.ProviderMode),
 		DelayMs:         delayMs,
 		Fail:            fail,
@@ -154,6 +243,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	body, _ := json.Marshal(req)
 	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, pa.BaseURL+"/v1/operations", bytes.NewReader(body))
 	if err != nil {
+		releaseCapacity("request-build-failed")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
@@ -164,6 +254,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef,
 		TokenTTLSeconds: pa.TokenTTLSeconds,
 	}, httpReq); err != nil {
+		releaseCapacity("provider-authentication-failed")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", err)
 	}
 
@@ -171,38 +262,39 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	if err != nil {
 		// Falha de comunicacao: efeito possivelmente enviado e
 		// desconhecido (EXE-09/EXE-04) — nao inventar resposta final.
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "transport_error", err)
+		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "transport_error", err), true)
 	}
 	defer resp.Body.Close()
 
 	receivedAt := time.Now()
 	var result providersim.OperationResult
 	if err := json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&result); err != nil || result.ProviderRequestID == "" || (result.Status != "SUCCEEDED" && result.Status != "FAILED" && result.Status != "PENDING") {
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_provider_response", fmt.Errorf("invalid provider response"))
+		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_provider_response", fmt.Errorf("invalid provider response")), true)
 	}
 	if _, err := e.store.db.ExecContext(ctx, "UPDATE attempts SET sent_at=$2,received_at=$3 WHERE attempt_id=$1", attemptID, sentAt, receivedAt); err != nil {
-		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "receipt_unavailable"}
+		return settleCapacity(dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "receipt_unavailable"}, true)
 	}
 
 	switch resp.StatusCode {
 	case http.StatusOK: // Provider final must have explicit terminal semantics.
 		if result.Status == "PENDING" {
-			return e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_final", fmt.Errorf("pending result on final response"))
+			return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_final", fmt.Errorf("pending result on final response")), true)
 		}
-		return e.finalize(ctx, cmd, operationID, result)
+		final := e.finalize(ctx, cmd, operationID, result)
+		return settleCapacity(final, final.Kind == dispatch.FactUnknown)
 	case http.StatusAccepted: // provedor assincrono: pendente
 		if result.Status != "PENDING" {
-			return e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_acceptance", fmt.Errorf("terminal result on pending response"))
+			return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_acceptance", fmt.Errorf("terminal result on pending response")), true)
 		}
 		saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 		defer cancel()
 		durable, err := e.store.ConserveAcceptance(saveCtx, cmd, result.ProviderRequestID, pa.ProviderMode == string(providersim.ModeAsyncPoll))
 		if err != nil {
-			return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "acceptance_custody_unavailable"}
+			return settleCapacity(dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "acceptance_custody_unavailable"}, true)
 		}
-		return durable
+		return settleCapacity(durable, true)
 	default:
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado"))
+		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado")), true)
 	}
 }
 
@@ -374,7 +466,11 @@ func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID str
 	} else {
 		return dispatch.Result{}, errors.New("invalid callback status")
 	}
-	return e.store.ConserveObservation(ctx, command, response, "CALLBACK")
+	durable, err := e.store.ConserveObservation(ctx, command, response, "CALLBACK")
+	if err == nil {
+		e.resolveCapacityPending(ctx, command, snapshot, durable.EvidenceID)
+	}
+	return durable, err
 }
 
 func factKindFor(state State) dispatch.FactKind {

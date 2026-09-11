@@ -25,6 +25,10 @@ type Submission struct {
 	CallbackToken string
 }
 
+var ErrCallbackInboxQuota = errors.New("callback inbox quota exceeded")
+
+const callbackInboxMaxReceived = 10000
+
 // PrepareSubmission grants the first submitter exclusive ownership and records
 // its attempt before any external I/O. A duplicate never acquires permission to
 // resubmit an operation whose effect may already exist.
@@ -112,17 +116,70 @@ func (s *Store) AuthenticateCallback(ctx context.Context, operationID, token str
 // somente como hash; a reconciliação posterior decide se ele pertence à
 // operação que apareceu.
 func (s *Store) StoreOrphanCallback(ctx context.Context, operationID, token string, body []byte) error {
-	if operationID == "" || token == "" || len(body) == 0 {
+	if operationID == "" || token == "" || len(body) == 0 || len(body) > 512*1024 {
 		return errors.New("invalid orphan callback")
 	}
 	sum := sha256.Sum256(body)
-	_, err := s.db.ExecContext(ctx, `
+	tokenHash := callbackTokenHash(token)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	// A bounded global counter prevents an unknown operation id from being
+	// used as an unbounded ingress queue. The advisory lock makes the quota
+	// decision serializable without holding a row lock for every orphan.
+	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72820311)"); err != nil {
+		return err
+	}
+	var known bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(
+		SELECT 1 FROM callback_inbox
+		WHERE operation_id=$1 AND body_sha256=$2 AND token_hash=$3
+	)`, operationID, hex.EncodeToString(sum[:]), tokenHash).Scan(&known); err != nil {
+		return err
+	}
+	if !known {
+		var received int
+		if err = tx.QueryRowContext(ctx, "SELECT count(*) FROM callback_inbox WHERE disposition='RECEIVED'").Scan(&received); err != nil {
+			return err
+		}
+		if received >= callbackInboxMaxReceived {
+			return ErrCallbackInboxQuota
+		}
+	}
+	if _, err = tx.ExecContext(ctx, `
 		INSERT INTO callback_inbox(inbox_id,operation_id,token_hash,body_sha256,body)
 		VALUES($1,$2,$3,$4,$5)
-		ON CONFLICT(operation_id,body_sha256)
+		ON CONFLICT(operation_id,body_sha256,token_hash)
 		DO UPDATE SET occurrences=callback_inbox.occurrences+1
-	`, idgen.New(), operationID, callbackTokenHash(token), hex.EncodeToString(sum[:]), body)
-	return err
+	`, idgen.New(), operationID, tokenHash, hex.EncodeToString(sum[:]), body); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// PruneCallbackInbox removes only processed evidence older than the explicit
+// retention window. RECEIVED items are never deleted by maintenance, so a
+// temporary outage cannot turn into silent loss of a callback obligation.
+func (s *Store) PruneCallbackInbox(ctx context.Context, olderThan time.Duration, limit int) (int, error) {
+	if olderThan < 24*time.Hour || limit < 1 || limit > 1000 {
+		return 0, errors.New("invalid callback inbox retention")
+	}
+	result, err := s.db.ExecContext(ctx, `DELETE FROM callback_inbox
+		WHERE inbox_id IN (
+			SELECT inbox_id FROM callback_inbox
+			WHERE disposition IN ('APPLIED','REJECTED')
+			  AND processed_at IS NOT NULL
+			  AND processed_at < clock_timestamp()-make_interval(secs=>$1::double precision)
+			ORDER BY processed_at
+			LIMIT $2
+		)`, olderThan.Seconds(), limit)
+	if err != nil {
+		return 0, err
+	}
+	count, _ := result.RowsAffected()
+	return int(count), nil
 }
 
 // ReconcileCallbackInbox reapplies callbacks received before operation
@@ -158,7 +215,7 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	type item struct {
 		inboxID, operationID, receivedHash, expectedHash string
 		body, commandRaw                                 []byte
-		epoch, processingAttempts                       int64
+		epoch, processingAttempts                        int64
 	}
 	items := make([]item, 0, limit)
 	for rows.Next() {

@@ -68,3 +68,15 @@ func TestPostgresOperationResourceScope(t *testing.T) {
 	}
 	t.Log("real PostgreSQL + HTTP handler: workload resource scope enforced for tenant/application/cell; humans denied; binding references omitted")
 }
+
+func TestCallbackRejectsNonTerminalObservationBeforeOrphanCustody(t *testing.T) {
+	t.Setenv("CALLBACK_INGRESS_KEY", "fixture-ingress")
+	h := NewHandlers(nil, nil)
+	r := httptest.NewRequest(http.MethodPost, "/callbacks/550e8400-e29b-41d4-a716-446655440000?token=fixture-capability", strings.NewReader(`{"provider_request_id":"provider-correlation","status":"PENDING"}`))
+	r.Header.Set("X-Provider-Callback-Key", "fixture-ingress")
+	w := httptest.NewRecorder()
+	h.handleCallback(w, r)
+	if w.Code != http.StatusBadRequest {
+		t.Fatalf("non-terminal callback entered orphan path: status=%d body=%s", w.Code, w.Body.String())
+	}
+}

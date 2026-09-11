@@ -65,6 +65,11 @@ func (e *Executor) observePoll(ctx context.Context, c PollClaim) {
 	defer done()
 	if err := e.store.CompletePoll(saveCtx, c, r, retryAfter); err != nil && !errors.Is(err, ErrPollFence) {
 		e.log.Error("polling receipt custody failed", "operation_id", c.Command.CommandID)
+	} else if err == nil && (r.Kind == dispatch.FactSucceeded || r.Kind == dispatch.FactFailed) {
+		var snapshot atlas.OfferSnapshot
+		if json.Unmarshal(c.Command.ConfigSnapshot, &snapshot) == nil {
+			e.resolveCapacityPending(ctx, c.Command, snapshot, "poll-attempt:"+c.AttemptID)
+		}
 	}
 }
 
@@ -110,43 +115,65 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if err != nil || !owned {
 		return unknown("poll_fence_expired")
 	}
+	capacityPermit, capacityEnabled, err := e.acquireCapacity(ctx, c.Command, snap, "STATUS", c.AttemptID, c.Owner)
+	if err != nil {
+		return unknown("poll_capacity_unavailable")
+	}
+	capacitySettled := false
+	var transportStarted time.Time
+	settleCapacity := func(result dispatch.Result) dispatch.Result {
+		if capacityEnabled && !capacitySettled {
+			e.settleCapacity(ctx, capacityPermit, transportStarted, result, false)
+			capacitySettled = true
+		}
+		return result
+	}
 	if _, err = e.store.db.ExecContext(ctx, `UPDATE attempts SET sent_at=clock_timestamp() WHERE attempt_id=$1 AND operation_id=$2`, c.AttemptID, c.Command.CommandID); err != nil {
+		if capacityEnabled {
+			e.releaseCapacity(ctx, capacityPermit, "poll-attempt-unavailable")
+		}
 		return unknown("poll_attempt_unavailable")
 	}
+	transportStarted = time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		return unknown("poll_transport_failed")
+		r, retryAfter := unknown("poll_transport_failed")
+		return settleCapacity(r), retryAfter
 	}
 	defer resp.Body.Close()
 	retryAfter := pollRetryAfter(resp.Header.Get("Retry-After"), time.Now())
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024+1))
 	if err != nil || len(body) > 256*1024 {
-		return unknown("poll_body_invalid")
+		r, retryAfter := unknown("poll_body_invalid")
+		return settleCapacity(r), retryAfter
 	}
 	if resp.StatusCode != http.StatusOK {
 		r, _ := unknown("poll_http_" + strconv.Itoa(resp.StatusCode))
-		return r, retryAfter
+		return settleCapacity(r), retryAfter
 	}
 	var result providersim.OperationResult
 	if json.Unmarshal(body, &result) != nil || result.ProviderRequestID != c.ProviderRequestID {
-		return unknown("poll_response_invalid")
+		r, retryAfter := unknown("poll_response_invalid")
+		return settleCapacity(r), retryAfter
 	}
 	if result.Status == "PENDING" {
 		r, _ := unknown("poll_pending")
 		r.ResponseBody = result
-		return r, retryAfter
+		return settleCapacity(r), retryAfter
 	}
 	if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
-		return unknown("poll_status_invalid")
+		r, retryAfter := unknown("poll_status_invalid")
+		return settleCapacity(r), retryAfter
 	}
 	if _, err = atlas.TransformJSON(body, nil, target.OutputSchema); err != nil {
-		return unknown("poll_output_contract_failed")
+		r, retryAfter := unknown("poll_output_contract_failed")
+		return settleCapacity(r), retryAfter
 	}
 	kind := dispatch.FactSucceeded
 	if result.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return dispatch.Result{Kind: kind, ProviderRequestID: c.ProviderRequestID, ResponseBody: result}, retryAfter
+	return settleCapacity(dispatch.Result{Kind: kind, ProviderRequestID: c.ProviderRequestID, ResponseBody: result}), retryAfter
 }
 
 func pollRetryAfter(value string, now time.Time) time.Duration {

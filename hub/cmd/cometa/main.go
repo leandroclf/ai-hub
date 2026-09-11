@@ -52,7 +52,13 @@ func main() {
 	atlas := atlasclient.New(atlasURL, 30*time.Second)
 	tokenCache := providerauth.NewTokenCache(redisAddr)
 	defer tokenCache.Close()
+	capacity := cometa.NewCapacityController(db)
+	if err := cometa.InstallPoliciesFromEnv(context.Background(), capacity); err != nil {
+		log.Error("falha ao instalar políticas de capacidade", "error", err)
+		panic(err)
+	}
 	exec := cometa.NewExecutor(store, atlas, log, selfURL, tokenCache)
+	exec.SetCapacityController(capacity)
 	handlers := cometa.NewHandlers(exec, store)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

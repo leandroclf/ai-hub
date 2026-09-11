@@ -26,11 +26,20 @@ func RunCallbackInboxWorker(ctx context.Context, store *Store, exec *Executor, i
 	owner := "callback-reconciler-" + idgen.New()
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
+	lastPrune := time.Time{}
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
+			if lastPrune.IsZero() || time.Since(lastPrune) >= time.Hour {
+				if removed, err := store.PruneCallbackInbox(ctx, 7*24*time.Hour, 100); err != nil {
+					log.Error("callback inbox retention failed", "error", err)
+				} else if removed > 0 {
+					log.Info("callback inbox retention applied", "removed", removed)
+				}
+				lastPrune = time.Now()
+			}
 			_, err := store.ReconcileCallbackInboxBatch(ctx, owner, 25, func(ctx context.Context, id string, observed dispatch.Result) error {
 				status := "FAILED"
 				if observed.Kind == dispatch.FactSucceeded {

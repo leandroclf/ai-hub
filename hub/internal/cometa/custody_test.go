@@ -128,6 +128,39 @@ func TestCallbackCapabilityIsRandomAndStoredOnlyAsHash(t *testing.T) {
 	}
 }
 
+func TestPostgresOrphanCapabilityHashDoesNotShadowValidCallback(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	operationID := idgen.New()
+	body := []byte(`{"provider_request_id":"provider-correlation","status":"SUCCEEDED"}`)
+	t.Cleanup(func() { _, _ = db.Exec("DELETE FROM callback_inbox WHERE operation_id=$1", operationID) })
+	if err = store.StoreOrphanCallback(context.Background(), operationID, "invalid-capability", body); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.StoreOrphanCallback(context.Background(), operationID, "invalid-capability", body); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.StoreOrphanCallback(context.Background(), operationID, "valid-capability", body); err != nil {
+		t.Fatal(err)
+	}
+	var rows, occurrences int
+	if err = db.QueryRow("SELECT count(*),coalesce(sum(occurrences),0) FROM callback_inbox WHERE operation_id=$1", operationID).Scan(&rows, &occurrences); err != nil {
+		t.Fatal(err)
+	}
+	if rows != 2 || occurrences != 3 {
+		t.Fatalf("orphan identity was collapsed incorrectly: rows=%d occurrences=%d", rows, occurrences)
+	}
+	t.Log("same callback bytes with different capability hashes remain distinct; exact duplicate increments occurrences")
+}
+
 func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) {
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
 	if dsn == "" {
@@ -143,8 +176,16 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 	db.SetMaxOpenConns(8)
 	store := NewStore(db)
 	id := idgen.New()
+	capacity := NewCapacityController(db)
+	capacityPolicy := CapacityPolicy{Domain: "synthetic-executor-capacity-" + id, Version: "fixture-v1", EvidenceRef: "synthetic-executor-capacity", ValidUntil: time.Now().Add(time.Hour), MaxConcurrent: 8, MinConcurrent: 5, ReconciliationReserve: 1, MaxPending: 8, RatePerWindow: 200, WindowMillis: 1000, LeaseMillis: 5000, StableMillis: 100, LatencyThresholdMillis: 100, TenantLimits: map[string]int{"drop-synthetic": 2}, TenantPendingLimits: map[string]int{"drop-synthetic": 4}, TenantRateLimits: map[string]int{"drop-synthetic": 90}}
+	if err := capacity.InstallPolicy(context.Background(), capacityPolicy); err != nil {
+		t.Fatal(err)
+	}
 	cmd := dispatch.Command{CommandID: id, ProtocolID: idgen.New(), TenantID: "drop-synthetic", ApplicationID: "app-a", CellID: "r2-cell-a", ProviderAccountID: "account", StepDeadline: time.Now().Add(time.Minute), RequestBody: map[string]any{"force_drop_after_effect": true}}
 	t.Cleanup(func() {
+		db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityPolicy.Domain)
 		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", id)
 		db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", id)
 		db.Exec("DELETE FROM attempts WHERE operation_id=$1", id)
@@ -171,7 +212,7 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 	}))
 	defer catalog.Close()
 	account, _ := json.Marshal(map[string]any{"base_url": providerHTTP.URL, "provider_mode": "sync", "auth_type": "NONE"})
-	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object","properties":{}}}`)}}
+	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object","properties":{}}}`)}, SelectedRoute: atlas.Route{CapacityDomain: capacityPolicy.Domain}}
 	cmd.ConfigSnapshot, _ = json.Marshal(snapshot)
 	tokenFile := t.TempDir() + "/secret"
 	if err := os.WriteFile(tokenFile, []byte("fixture"), 0600); err != nil {
@@ -181,6 +222,7 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 	t.Setenv("WORKLOAD_CLIENT_ID", "fixture")
 	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", tokenFile)
 	exec := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: dropFixtureVault{}})
+	exec.SetCapacityController(capacity)
 	first := exec.Execute(context.Background(), cmd)
 	t.Logf("first execution: %+v", first)
 	if first.Kind != dispatch.FactUnknown || !first.Durable {
@@ -203,6 +245,14 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 	}
 	if effects.Effects != 1 {
 		t.Fatalf("external effect was reexecuted: %d", effects.Effects)
+	}
+	state, err := capacity.State(context.Background(), capacityPolicy.Domain)
+	if err != nil || state.TransportOpen != 0 || state.PendingExternal != 1 {
+		t.Fatalf("capacity did not retain uncertain effect: %+v %v", state, err)
+	}
+	var permits int
+	if err = db.QueryRow("SELECT count(*) FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain).Scan(&permits); err != nil || permits != 1 {
+		t.Fatalf("capacity permit count=%d error=%v", permits, err)
 	}
 }
 

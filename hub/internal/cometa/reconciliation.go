@@ -138,32 +138,50 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if err = e.tokenCache.Apply(ctx, client, snap.Account.ID, providerauth.Config{BindingID: cred.BindingID, TenantID: claim.Command.TenantID, Environment: os.Getenv("ENVIRONMENT"), SecretVersion: binding.SecretVersion, AuthType: pa.AuthType, Username: pa.AuthUsername, SecretRef: cred.SecretRef, APIKeyHeader: pa.APIKeyHeader, TokenURL: pa.OAuthTokenURL, ClientID: pa.OAuthClientID, ClientSecretRef: cred.SecretRef, MTLSCertificateRef: pa.MTLSCertificateRef, TokenTTLSeconds: pa.TokenTTLSeconds}, req); err != nil {
 		return dispatch.Result{}, fmt.Errorf("reconciliation authentication unavailable: %w", err)
 	}
+	capacityPermit, capacityEnabled, err := e.acquireCapacity(ctx, claim.Command, snap, "STATUS", "reconcile-"+claim.RequestID+"-"+idgen.New(), claim.Owner)
+	if err != nil {
+		return dispatch.Result{}, fmt.Errorf("reconciliation capacity unavailable: %w", err)
+	}
+	capacitySettled := false
+	transportStarted := time.Now()
+	settleCapacity := func(result dispatch.Result) dispatch.Result {
+		if capacityEnabled && !capacitySettled {
+			e.settleCapacity(ctx, capacityPermit, transportStarted, result, false)
+			capacitySettled = true
+		}
+		return result
+	}
+	unknown := func(code string) dispatch.Result {
+		return dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: claim.ProviderRequestID, Kind: dispatch.FactUnknown, ErrorCode: code}
+	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return dispatch.Result{}, fmt.Errorf("reconciliation status request failed: %w", err)
+		return settleCapacity(unknown("reconciliation_transport_failed")), fmt.Errorf("reconciliation status request failed: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return dispatch.Result{}, errors.New("reconciliation status unavailable")
+		return settleCapacity(unknown("reconciliation_status_unavailable")), errors.New("reconciliation status unavailable")
 	}
 	var result providersim.OperationResult
 	if json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&result) != nil || result.ProviderRequestID != claim.ProviderRequestID {
-		return dispatch.Result{}, errors.New("reconciliation response invalid")
+		return settleCapacity(unknown("reconciliation_response_invalid")), errors.New("reconciliation response invalid")
 	}
 	if result.Status == "PENDING" {
-		return dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: dispatch.FactUnknown, ResponseBody: result}, nil
+		pending := unknown("reconciliation_provider_pending")
+		pending.ResponseBody = result
+		return settleCapacity(pending), nil
 	}
 	if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
-		return dispatch.Result{}, errors.New("reconciliation status invalid")
+		return settleCapacity(unknown("reconciliation_status_invalid")), errors.New("reconciliation status invalid")
 	}
 	if _, err = atlas.TransformJSON(mustJSON(result), nil, target.OutputSchema); err != nil {
-		return dispatch.Result{}, errors.New("reconciliation output contract failed")
+		return settleCapacity(unknown("reconciliation_output_contract_failed")), errors.New("reconciliation output contract failed")
 	}
 	kind := dispatch.FactSucceeded
 	if result.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: result}, nil
+	return settleCapacity(dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: result}), nil
 }
 
 func mustJSON(value any) []byte {
@@ -213,6 +231,10 @@ func RunReconciliationWorker(ctx context.Context, store *Store, exec *Executor, 
 			if conserveErr != nil {
 				_ = store.ReleaseReconciliation(ctx, claim, conserveErr.Error())
 				continue
+			}
+			var snapshot atlas.OfferSnapshot
+			if json.Unmarshal(claim.Command.ConfigSnapshot, &snapshot) == nil {
+				exec.resolveCapacityPending(ctx, claim.Command, snapshot, durable.EvidenceID)
 			}
 			if err = store.ResolveReconciliation(ctx, claim, durable.EvidenceID); err != nil {
 				log.Error("reconciliation resolution unavailable", "error", err)
