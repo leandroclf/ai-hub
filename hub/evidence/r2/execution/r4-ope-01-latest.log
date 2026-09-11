@@ -1,0 +1,17 @@
+R4-OPE-01 — L1, cofre indisponível e coordenação limitada
+source_commit=ce7bc8f
+commands:
+  go test -race -count=1 ./internal/providerauth
+  go test -race -count=1 ./...
+  go vet ./...
+result=PASS
+observations:
+  - token OAuth válido foi reutilizado em L1 depois que o resolver ficou indisponível;
+    o endpoint de token foi consultado uma única vez;
+  - a chave inclui ambiente, tenant, binding, conta, endpoint, client e versão,
+    impedindo fallback para outro binding;
+  - espera em keyed lock bloqueado retornou context.Canceled;
+  - rotação de 2.048 chaves manteve o mapa em no máximo 1.024 locks rastreados;
+  - tokens não foram enviados ao Redis nem gravados no artefato.
+limitation=resolver sintético e servidor HTTP local; não é prova de disponibilidade,
+latência ou rotação de um cofre/AWS regional em produção.

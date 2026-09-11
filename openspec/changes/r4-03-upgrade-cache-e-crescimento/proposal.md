@@ -2,9 +2,14 @@
 ## Change ID
 r4-03-upgrade-cache-e-crescimento
 ## Status
-Em execução — upgrade/migração qualificados; cache e crescimento ainda parciais.
+Em execução — upgrade/migração e os cenários focados de cache/coordenação foram
+qualificados; integração regional do cofre e crescimento em produção ainda
+permanecem parciais.
 ## Why
-Tokens deixaram Redis e lock passou a ser por chave. Contudo, Resolve é chamado antes do L1; prova com L1 válido e cofre indisponível falha. locks cresce sem remoção por binding/versão e mutex não respeita cancelamento durante espera.
+Tokens deixaram Redis e lock passou a ser por chave. A prova atual confirma L1
+válido durante indisponibilidade do resolver, isolamento por binding/versão,
+limite de locks e cancelamento durante espera; a validação de cofre/AWS regional
+e crescimento sob tráfego produtivo ainda não foi realizada.
 0002_provider_auth.sql já existente na R2 foi alterada para API_KEY e header. O runner checksum-guardado para em 0002 de um banco previamente migrado, antes de executar a nova 0004. Comparação dos bytes/hashes comprova alteração; falha SQL integrada ainda não foi executada nesta auditoria.
 Paginação eliminou recusa acima de 100, mas agrega todas as páginas em resources antes de filtrar aplicação/serviço. Portanto CPU/memória/round-trips continuam proporcionais ao total de ofertas do tenant e o control plane ainda é consultado por pedido.
 ## Context
