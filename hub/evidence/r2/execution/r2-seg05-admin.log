@@ -1,0 +1,14 @@
+R2-SEG-05 qualification
+source_commit=f2df3f5
+backend_command=go test -count=1 -v ./internal/atlas ./internal/platform/auth -run 'TestR2Seg05|TestPublicErrorsCarryCorrelationWithoutInternalDetails'
+=== RUN   TestR2Seg05Scenarios
+=== RUN   TestR2Seg05Scenarios/R2-SEG-05-S01_alteracao_atribuivel
+--- PASS: TestR2Seg05Scenarios (0.27s)
+=== RUN   TestPublicErrorsCarryCorrelationWithoutInternalDetails
+--- PASS: TestPublicErrorsCarryCorrelationWithoutInternalDetails (0.00s)
+=== RUN   TestR2Seg05S03BackendErrorScenario
+--- PASS: TestR2Seg05S03BackendErrorScenario (0.00s)
+PASS
+frontend_command=PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/browser-smoke.mjs
+frontend_result=PASS; OIDC password/OTP, no persistent token or PKCE state, logout API returned HTTP 401, 390px viewport without overflow
+limitation=R2-SEG-05-S02 browser logout is covered by the real Chromium smoke; provider/coffer failure injection remains outside this local proof.

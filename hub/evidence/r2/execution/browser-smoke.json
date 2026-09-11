@@ -6,12 +6,12 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789109470456"
+    "resource": "browser-client-1789111898546"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789109520953"
+    "resource": "browser-product-1789111951085"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -38,7 +38,7 @@
     "status": "PASS"
   },
   {
-    "check": "No persistent token and PKCE transaction removed",
+    "check": "R2-SEG-05-S02 session state has no persistent token and PKCE transaction removed",
     "status": "PASS",
     "storageKeys": {
       "local": [],
@@ -85,12 +85,12 @@
     }
   },
   {
-    "check": "Logout revokes browser access to administrative API",
+    "check": "R2-SEG-05-S02 logout revokes browser access to administrative API",
     "status": "PASS",
     "httpStatus": 401
   },
   {
-    "check": "Logout navigation",
+    "check": "R2-SEG-05-S02 logout navigation",
     "status": "OBSERVED",
     "origin": "http://localhost:18085"
   }
