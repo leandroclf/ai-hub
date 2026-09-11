@@ -1,7 +1,9 @@
 package atlas
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -25,6 +27,10 @@ type ImportBatch struct {
 	State           string       `json:"state"`
 	Items           []ImportItem `json:"items"`
 	ExecutableCount int          `json:"executable_count"`
+}
+
+func sameImportItem(a, b ImportItem) bool {
+	return a.ID == b.ID && a.Method == b.Method && a.Path == b.Path && a.AuthType == b.AuthType && a.State == b.State
 }
 
 // Sanitization uses an allowlist: credentials, headers, examples, scripts,
@@ -195,21 +201,40 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 	id := hash[:32]
 	body, _ := json.Marshal(items)
 	var previous []byte
-	err = h.store.db.QueryRowContext(r.Context(), `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES($1,$2,'sanitized-inventory',$3,$4,$5) ON CONFLICT(tenant_id,source_hash) DO UPDATE SET source_hash=EXCLUDED.source_hash RETURNING items`, contentHash([]string{tenant, id})[:32], hash, p.Subject, tenant, body).Scan(&previous)
+	err = h.store.db.QueryRowContext(r.Context(), `SELECT items FROM catalog_imports WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`, tenant).Scan(&previous)
+	if errors.Is(err, sql.ErrNoRows) {
+		previous = nil
+	} else if err != nil {
+		catalogError(w, err)
+		return
+	}
+	var storedID string
+	err = h.store.db.QueryRowContext(r.Context(), `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES($1,$2,'sanitized-inventory',$3,$4,$5) ON CONFLICT(tenant_id,source_hash) DO UPDATE SET source_hash=EXCLUDED.source_hash RETURNING id`, contentHash([]string{tenant, id})[:32], hash, p.Subject, tenant, body).Scan(&storedID)
 	if err != nil {
 		catalogError(w, err)
 		return
 	}
-	// Compare retained identity against prior batches; never update executable catalog.
+	_ = storedID
+	// Compare only the sanitized inventory against the latest prior batch;
+	// executable catalog rows are never created or modified by an import.
+	var prior []ImportItem
+	if len(previous) > 0 && json.Unmarshal(previous, &prior) != nil {
+		writeErr(w, 503, "catalog_unavailable", "inventário anterior inválido; preserve o lote e tente novamente")
+		return
+	}
+	priorByID := make(map[string]ImportItem, len(prior))
+	for _, item := range prior {
+		priorByID[item.ID] = item
+	}
 	for i := range items {
-		var n int
-		err = h.store.db.QueryRowContext(r.Context(), `SELECT count(*) FROM catalog_imports, jsonb_array_elements(items) item WHERE tenant_id=$1 AND source_hash<>$2 AND item->>'id'=$3`, tenant, hash, items[i].ID).Scan(&n)
-		if err != nil {
-			catalogError(w, err)
-			return
-		}
-		if n > 0 {
-			items[i].Difference = "EXISTING"
+		old, ok := priorByID[items[i].ID]
+		switch {
+		case !ok:
+			items[i].Difference = "NEW"
+		case sameImportItem(old, items[i]):
+			items[i].Difference = "UNCHANGED"
+		default:
+			items[i].Difference = "CHANGED"
 		}
 	}
 	writeJSON(w, 201, ImportBatch{ID: contentHash([]string{tenant, id})[:32], SourceHash: hash, State: "STAGED", Items: items})

@@ -398,3 +398,50 @@ func TestCatalogPostgresPaginationAndStaging(t *testing.T) {
 		t.Fatal("import changed catalog")
 	}
 }
+
+func TestCatalogImportDiffStates(t *testing.T) {
+	s := integrationStore(t)
+	ctx := context.Background()
+	p := auth.Principal{Subject: "operator-a", TenantID: "acme", MFA: true, Roles: []string{"tenant_operator"}, Scopes: []string{"catalog:read", "catalog:write"}, ExpiresAt: time.Now().Add(time.Hour)}
+	mux := http.NewServeMux()
+	NewHandlers(s).Register(mux)
+	post := func(t *testing.T, body string) ImportBatch {
+		t.Helper()
+		req := httptest.NewRequest(http.MethodPost, "/admin/v1/imports?tenant_id=acme", strings.NewReader(body)).WithContext(auth.WithPrincipal(ctx, p))
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		if rec.Code != http.StatusCreated {
+			t.Fatalf("importação retornou %d: %s", rec.Code, rec.Body.String())
+		}
+		var batch ImportBatch
+		if err := json.Unmarshal(rec.Body.Bytes(), &batch); err != nil {
+			t.Fatal(err)
+		}
+		return batch
+	}
+	first := post(t, `{"collection":{"item":[{"request":{"method":"GET","url":{"raw":"https://api.example.test/old"},"auth":{"type":"none"}}}]}}`)
+	if len(first.Items) != 1 || first.Items[0].Difference != "NEW" {
+		t.Fatalf("primeiro inventário não identificado como novo: %+v", first.Items)
+	}
+	second := post(t, `{"collection":{"item":[{"request":{"method":"GET","url":{"raw":"https://api.example.test/old"},"auth":{"type":"bearer"}}},{"request":{"method":"POST","url":{"raw":"https://api.example.test/new"},"auth":{"type":"none"}}}]}}`)
+	byPath := map[string]string{}
+	for _, item := range second.Items {
+		byPath[item.Path] = item.Difference
+	}
+	if byPath["/old"] != "CHANGED" || byPath["/new"] != "NEW" {
+		t.Fatalf("diff da segunda importação incorreto: %+v", byPath)
+	}
+	third := post(t, `{"collection":{"item":[{"request":{"method":"GET","url":{"raw":"https://api.example.test/old"},"auth":{"type":"bearer"}}},{"request":{"method":"POST","url":{"raw":"https://api.example.test/new"},"auth":{"type":"none"}}}]}}`)
+	for _, item := range third.Items {
+		if item.Difference != "UNCHANGED" {
+			t.Fatalf("reimportação idêntica não foi marcada como inalterada: %+v", third.Items)
+		}
+	}
+	var resources int
+	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM catalog_resources`).Scan(&resources); err != nil {
+		t.Fatal(err)
+	}
+	if resources != 0 {
+		t.Fatalf("importação criou catálogo executável: %d", resources)
+	}
+}
