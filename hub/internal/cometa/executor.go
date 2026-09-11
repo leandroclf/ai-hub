@@ -232,6 +232,10 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		releaseCapacity("capacity-lease-budget-exhausted")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
 	}
+	if err := e.store.ValidateSubmission(ctx, claim); err != nil {
+		releaseCapacity("submission-fence-before-provider-auth")
+		return e.submissionFenceFailure(ctx, cmd, attemptID)
+	}
 	client, err := e.clients.Client(pa.BaseURL, effectiveBudget)
 	if err != nil {
 		result := e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
@@ -294,6 +298,10 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		releaseCapacity("capacity-fence-before-submit")
 		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
 	}
+	if err := e.store.ValidateSubmission(ctx, claim); err != nil {
+		releaseCapacity("submission-fence-before-submit")
+		return e.submissionFenceFailure(ctx, cmd, attemptID)
+	}
 
 	resp, err := client.Do(httpReq)
 	if err != nil {
@@ -333,6 +341,18 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	default:
 		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado")), true)
 	}
+}
+
+func (e *Executor) submissionFenceFailure(ctx context.Context, cmd dispatch.Command, attemptID string) dispatch.Result {
+	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
+	defer cancel()
+	result := dispatch.Result{CommandID: cmd.CommandID, OperationID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "submission_fence"}
+	_, _ = e.store.db.ExecContext(saveCtx, "UPDATE attempts SET received_at=clock_timestamp(),error_code=$2 WHERE attempt_id=$1 AND operation_id=$3", attemptID, result.ErrorCode, cmd.CommandID)
+	durable, err := e.store.ConserveObservation(saveCtx, cmd, result, "SUBMIT_FENCE", attemptID)
+	if err != nil {
+		return result
+	}
+	return durable
 }
 
 func externalIdempotencyKey(cmd dispatch.Command) string {

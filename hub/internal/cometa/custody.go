@@ -28,6 +28,10 @@ type Submission struct {
 
 var ErrCallbackInboxQuota = errors.New("callback inbox quota exceeded")
 
+// ErrSubmissionFence indica que o owner da submissao perdeu a autoridade
+// duravel antes de atravessar a fronteira de I/O externo.
+var ErrSubmissionFence = errors.New("submission lease no longer authoritative")
+
 const callbackInboxMaxReceived = 10000
 
 // PrepareSubmission grants the first submitter exclusive ownership and records
@@ -80,6 +84,39 @@ func (s *Store) PrepareSubmission(ctx context.Context, cmd dispatch.Command, bin
 		return Submission{}, false, err
 	}
 	return claim, true, nil
+}
+
+// ValidateSubmission verifica a identidade completa da submissao, seu epoch e
+// a validade da lease imediatamente antes de qualquer I/O externo. Uma lease
+// expirada nunca pode ser renovada implicitamente pelo worker atrasado.
+func (s *Store) ValidateSubmission(ctx context.Context, claim Submission) error {
+	if claim.Command.CommandID == "" || claim.Command.ProtocolID == "" || claim.Command.TenantID == "" || claim.Command.ApplicationID == "" || claim.Command.CellID == "" || claim.Command.ProviderAccountID == "" || claim.Owner == "" || claim.Epoch < 1 {
+		return ErrSubmissionFence
+	}
+	raw, err := json.Marshal(claim.Command)
+	if err != nil {
+		return err
+	}
+	sum := sha256.Sum256(raw)
+	var valid bool
+	err = s.db.QueryRowContext(ctx, `SELECT EXISTS(
+		SELECT 1 FROM operations
+		WHERE operation_id=$1 AND protocol_id=$2 AND provider_account_id=$3
+		  AND tenant_id=$4 AND application_id=$5 AND cell_id=$6
+		  AND state='SUBMITTING'
+		  AND submit_owner=$7 AND submit_epoch=$8
+		  AND submit_lease_until>clock_timestamp()
+		  AND command_hash=$9
+	)`, claim.Command.CommandID, claim.Command.ProtocolID, claim.Command.ProviderAccountID,
+		claim.Command.TenantID, claim.Command.ApplicationID, claim.Command.CellID,
+		claim.Owner, claim.Epoch, hex.EncodeToString(sum[:])).Scan(&valid)
+	if err != nil {
+		return err
+	}
+	if !valid {
+		return ErrSubmissionFence
+	}
+	return nil
 }
 
 func newCallbackToken() (string, error) {

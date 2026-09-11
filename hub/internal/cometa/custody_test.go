@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -108,6 +109,39 @@ func TestPostgresSubmissionAndObservationCustody(t *testing.T) {
 		t.Fatalf("late observation changed final: %+v %v", again, e)
 	}
 	t.Log("24 submit contenders: one owner and prewritten attempt; 12 observations: one terminal fact; actual response retained; tenant conflict denied; late UNKNOWN preserved as receipt")
+}
+
+func TestPostgresSubmissionLeaseFencesStaleOwner(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	ctx := context.Background()
+	id := idgen.New()
+	cmd := dispatch.Command{CommandID: id, ProtocolID: idgen.New(), TenantID: "submit-fence", ApplicationID: "app-a", CellID: "r2-cell-a", ProviderAccountID: "fixture", StepDeadline: time.Now().Add(time.Minute), ConfigSnapshot: json.RawMessage(`{"version":1}`)}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", id)
+		db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", id)
+		db.Exec("DELETE FROM attempts WHERE operation_id=$1", id)
+		db.Exec("DELETE FROM operations WHERE operation_id=$1", id)
+	})
+	claim, owned, err := store.PrepareSubmission(ctx, cmd, "binding", "v1")
+	if err != nil || !owned {
+		t.Fatalf("prepare: claim=%+v owned=%t err=%v", claim, owned, err)
+	}
+	if _, err = db.Exec("UPDATE operations SET submit_lease_until=clock_timestamp()-interval '1 second' WHERE operation_id=$1", id); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.ValidateSubmission(ctx, claim); !errors.Is(err, ErrSubmissionFence) {
+		t.Fatalf("expired submission lease accepted: %v", err)
+	}
+	t.Log("expired submit lease fences the stale owner before external I/O")
 }
 
 func TestCallbackCapabilityIsRandomAndStoredOnlyAsHash(t *testing.T) {
