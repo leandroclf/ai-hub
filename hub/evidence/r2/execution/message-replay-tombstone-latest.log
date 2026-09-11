@@ -1,0 +1,9 @@
+AI Hub R2 — replay antigo e tombstone lógico de evento
+date=2026-09-11
+environment=local-compose-postgres-fixture
+secrets=omitted
+
+command=R2_CORE_TEST_DSN=<fixture> go test -race -count=1 -v ./internal/orbita -run TestOperationFactPostgresCustody
+result=PASS
+observed=replay do mesmo evento após a finalização encontrou inbox APPLIED/tombstone lógico, não criou nova finalização nem novo outbox; identidade reutilizada com conteúdo divergente permaneceu em quarentena
+scope=PostgreSQL real do laboratório; a prova não equivale a retenção regional ou política produtiva de arquivamento

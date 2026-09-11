@@ -113,6 +113,19 @@ func TestOperationFactPostgresCustody(t *testing.T) {
 	if err = db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, p.ProtocolID).Scan(&count); err != nil || count != 1 {
 		t.Fatalf("duplicate final outbox: %d %v", count, err)
 	}
+	// A mensagem antiga reaparece depois de o protocolo já estar terminal.
+	// O inbox aplicado funciona como tombstone lógico: a deduplicação encerra
+	// o replay sem uma segunda finalização, fato ou efeito downstream.
+	if err = s.ConsumeOperationFact(ctx, m, f); err != nil {
+		t.Fatalf("replay antigo não foi absorvido pelo tombstone lógico: %v", err)
+	}
+	if err = db.QueryRow(`SELECT disposition FROM orbita_fact_inbox WHERE event_id=$1`, m.Envelope.EventID).Scan(&disposition); err != nil || disposition != "APPLIED" {
+		t.Fatalf("tombstone lógico do replay antigo: disposition=%s err=%v", disposition, err)
+	}
+	if err = db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, p.ProtocolID).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("replay antigo criou novo fato final: %d %v", count, err)
+	}
+	t.Log("replay antigo após finalização: inbox APPLIED/tombstone lógico, sem nova finalização ou outbox")
 	// Reusing an event identity with different content is quarantined.
 	conflict := fact
 	conflict.ResponseBody = map[string]any{"result_marker": "tampered"}

@@ -101,6 +101,7 @@ R2-CAT-08-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestCatalogP
 R2-DAD-02-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestFinalizeMaterializesLargeResultAndLinksAfterCommit e TestPostgresS3MultipartFileRef custodeiam resultado volumoso via FileRef
 R2-DAD-03-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestPostgresS3MultipartFileRef permite expurgo somente após remoção do pin e deixa tombstone
 R2-DAD-03-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestPostgresS3MultipartFileRef mantém objeto protegido enquanto o pin de obrigação está aberto
+R2-DAD-03-S03;PASS_INTEGRADO_LOCAL;message-replay-tombstone-latest.log — TestOperationFactPostgresCustody repetiu evento após finalização, preservou inbox APPLIED/tombstone lógico, não criou novo outbox e quarentenou identidade divergente
 R2-DAD-04-S03;PASS_INTEGRADO_LOCAL;rls-runtime-latest.log — rls-runtime-proof.sh rejeita acesso cross-tenant nas bases control/core/finance com hub_runtime
 R2-DAD-05-S01;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh confronta digests/contagens e bloqueia readmissão antes da reconciliação; objetos produtivos não fizeram parte desta fixture
 R2-DAD-05-S02;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh consulta o oráculo externo sem replay e preserva a readmissão desabilitada; parceiro comercial não foi usado
