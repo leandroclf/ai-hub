@@ -1,4 +1,13 @@
 cenario;resultado;evidencia
+R2-SEG-01-S01;PASS_UNITARIO;r2-security.log — TestR2Seg01Scenarios/R2-SEG-01-S01_cliente_autorizado
+R2-SEG-01-S02;PASS_INTEGRADO_LOCAL;r2-security.log — TestR2Seg01Scenarios/R2-SEG-01-S02_tentativa_entre_tenants com middleware JWT e headers removidos
+R2-SEG-01-S03;PASS_INTEGRADO_LOCAL;r2-security.log — TestR2Seg01Scenarios/R2-SEG-01-S03_token_invalido com 401/403 e zero efeitos
+R2-SEG-02-S01;PASS_UNITARIO;r2-security.log — TestR2Seg02Scenarios/R2-SEG-02-S01_chamada_interna_permitida
+R2-SEG-02-S02;PASS_UNITARIO;r2-security.log — TestR2Seg02Scenarios/R2-SEG-02-S02_bypass_pela_porta_interna
+R2-SEG-02-S03;PASS_UNITARIO;r2-security.log — TestR2Seg02Scenarios/R2-SEG-02-S03_pool_reutilizado
+R2-SEG-03-S01;PASS_INTEGRADO;r2-security.log — TestR2Seg03Scenarios/R2-SEG-03-S01_diagnostico_de_desenvolvedor com PostgreSQL real
+R2-SEG-03-S02;PASS_INTEGRADO;r2-security.log — TestR2Seg03Scenarios/R2-SEG-03-S02_sem_elevacao_implicita com PostgreSQL real
+R2-SEG-03-S03;PASS_INTEGRADO;r2-security.log — TestR2Seg03Scenarios/R2-SEG-03-S03_auditoria_indisponivel com PostgreSQL real
 R2-FIN-01-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S01_snapshot_frozen com PostgreSQL real
 R2-FIN-01-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S02_client_direct com PostgreSQL real
 R2-FIN-01-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S03_submit_then_expiry com PostgreSQL real
@@ -46,7 +55,7 @@ R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação com
 R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
 R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;generate-openspec-inventory.py derivou 201 requisitos e 732 cenários das 29 specs, sem IDs duplicados e com digest de fonte
-R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 55 resultados associados e 677 explicitamente NAO_QUALIFICADO_NESTA_RODADA
+R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 64 resultados associados e 668 explicitamente NAO_QUALIFICADO_NESTA_RODADA
 R4-QUA-01-S03;PARCIAL;matriz e digest de fonte registrados; hash final do working tree permanece dependente do commit e do artefato de proveniência da rodada
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes

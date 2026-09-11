@@ -1,0 +1,32 @@
+R2 security scenarios
+Source commit: 698ac65
+Command: R2_CORE_TEST_DSN=postgres://... go test -count=1 -v ./internal/platform/auth ./internal/orbita -run 'TestR2Seg(01|02|03)Scenarios$'
+
+=== RUN   TestR2Seg01Scenarios
+=== RUN   TestR2Seg01Scenarios/R2-SEG-01-S01_cliente_autorizado
+=== RUN   TestR2Seg01Scenarios/R2-SEG-01-S02_tentativa_entre_tenants
+=== RUN   TestR2Seg01Scenarios/R2-SEG-01-S03_token_invalido
+--- PASS: TestR2Seg01Scenarios (0.46s)
+    --- PASS: TestR2Seg01Scenarios/R2-SEG-01-S01_cliente_autorizado (0.00s)
+    --- PASS: TestR2Seg01Scenarios/R2-SEG-01-S02_tentativa_entre_tenants (0.19s)
+    --- PASS: TestR2Seg01Scenarios/R2-SEG-01-S03_token_invalido (0.27s)
+=== RUN   TestR2Seg02Scenarios
+=== RUN   TestR2Seg02Scenarios/R2-SEG-02-S01_chamada_interna_permitida
+=== RUN   TestR2Seg02Scenarios/R2-SEG-02-S02_bypass_pela_porta_interna
+=== RUN   TestR2Seg02Scenarios/R2-SEG-02-S03_pool_reutilizado
+--- PASS: TestR2Seg02Scenarios (0.00s)
+    --- PASS: TestR2Seg02Scenarios/R2-SEG-02-S01_chamada_interna_permitida (0.00s)
+    --- PASS: TestR2Seg02Scenarios/R2-SEG-02-S02_bypass_pela_porta_interna (0.00s)
+    --- PASS: TestR2Seg02Scenarios/R2-SEG-02-S03_pool_reutilizado (0.00s)
+PASS
+ok  	ai-hub/hub/internal/platform/auth	0.464s
+=== RUN   TestR2Seg03Scenarios
+=== RUN   TestR2Seg03Scenarios/R2-SEG-03-S01_diagnostico_de_desenvolvedor
+=== RUN   TestR2Seg03Scenarios/R2-SEG-03-S02_sem_elevacao_implicita
+=== RUN   TestR2Seg03Scenarios/R2-SEG-03-S03_auditoria_indisponivel
+--- PASS: TestR2Seg03Scenarios (0.02s)
+    --- PASS: TestR2Seg03Scenarios/R2-SEG-03-S01_diagnostico_de_desenvolvedor (0.01s)
+    --- PASS: TestR2Seg03Scenarios/R2-SEG-03-S02_sem_elevacao_implicita (0.00s)
+    --- PASS: TestR2Seg03Scenarios/R2-SEG-03-S03_auditoria_indisponivel (0.00s)
+PASS
+ok  	ai-hub/hub/internal/orbita	0.026s

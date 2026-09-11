@@ -17,6 +17,7 @@ limites arquiteturais.
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` + `custody_test.go` | Snapshot de destino webhook e orçamento de entrega | PASS de teste PostgreSQL; versão aceita é congelada, entrega usa o snapshot persistido e o permit é encerrado com sinal/evidência |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
 | `hub/internal/atlas/catalog_handlers.go` + `hub/internal/atlas/imports.go` + `hub/internal/libra/handlers.go` + `hub/internal/pulsar/handlers.go` | Fronteira administrativa Atlas/Libra/Pulsar | PASS local; rotas exigem sessão humana com MFA, papel compatível com a ação e bloqueiam workload; publicação e escritas financeiras exigem `hub_admin`, redelivery/destino exigem operador ou `hub_admin`, com regressão unitária/integrada |
+| `hub/evidence/r2/execution/r2-security.log` | R2-SEG-01/02/03 | PASS local; nove cenários nomeados cobrem identidade e 401/403 sem efeito, workloads por célula, ausência de bypass, contexto sem vazamento entre requisições, leitura administrativa com MFA/justificativa e negativa sanitizada quando a auditoria está indisponível |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
 | `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; quatro ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
 | `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
@@ -51,7 +52,8 @@ limites arquiteturais.
 | `docker compose ls`, `docker ps -a` | proveniência do runtime local |
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 55 com evidência existente e 677 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/evidence/r2/execution/r2-security.log` | nove cenários R2-SEG-01/02/03 nomeados; PostgreSQL real na prova de auditoria e negativa sanitizada |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 64 com evidência existente e 668 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -89,8 +91,8 @@ foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race do
 módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
-fonte: 732 cenários, dos quais 55 possuem resultado/evidência já registrada e
-677 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
+fonte: 732 cenários, dos quais 64 possuem resultado/evidência já registrada e
+668 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
 e não substitui a execução dos cenários restantes.
 
 Esses resultados fecham os gates locais correspondentes, mas não promovem como
