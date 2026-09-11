@@ -52,6 +52,10 @@ reprodutível.
   de réplica e duas células preservaram reservas A/B, cercaram owner stale e
   isolaram rate limit por tenant. Isso não qualifica autoscaling cloud ou
   provisionamento de novas células.
+- Política de escala: PASS estrutural; KEDA declara sinal de backlog pendente,
+  HPA/PDB/topology spread estão presentes e o overlay ppd fixa envelope 3→6.
+  O ensaio de backlog real sob CPU baixa e o provisionamento cloud permanecem
+  pendentes.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos

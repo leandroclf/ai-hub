@@ -95,6 +95,8 @@ R2-OPE-02-S03;PASS_ESTRUTURAL;environment-boundary-latest.log — promotion-gate
 R2-OPE-03-S01;PASS_INTEGRADO_LOCAL;optional-dependency-runtime-latest.log — Alloy indisponível, readiness/liveness de Órbita e Cometa preservadas e Atlas/Pulsar/Libra sem reinício
 R2-OPE-03-S03;PASS_INTEGRADO_LOCAL;provider-outage-runtime-latest.json — provider-sim fora, SYNC respondeu 504 sem sucesso fictício, GET preservou estado, capacidade fechou transporte e workloads não afetados não reiniciaram
 R2-OPE-04-S03;PASS_UNITARIO;capacity-quota-latest.log — 60 contenders em réplicas/células, limites A/B preservados, expiração não reciclada por owner stale e rate limit isolado
+R2-OPE-04-S01;PARCIAL_ESTRUTURAL;scaling-policy-latest.log — KEDA consulta backlog pendente e HPA/PDB/topology spread estão declarados; backlog real sob CPU baixa ainda não foi ensaiado
+R2-OPE-04-S02;PASS_ESTRUTURAL;scaling-policy-latest.log — ppd declara envelope 3→6 réplicas, PDB e placement por hostname; provisionamento cloud e nova célula permanecem fora
 R2-OPE-03-S02;PASS_UNITARIO;go test ./internal/platform/httpserver — TestShutdownWaitsForAcceptedRequest drena requisição aceita antes de encerrar
 R2-OPE-07-S03;PASS_UNITARIO;go test ./internal/platform/httpserver — TestTelemetryDropsWithoutBlockingBusiness limita buffer e sinaliza descarte sem bloquear negócio
 R2-ADM-11-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal recusa fechamento com obrigações pendentes e mantém o estado financeiro não conciliado

@@ -1,0 +1,5 @@
+SCALING_POLICY_PROOF=START
+kubectl={   "clientVersion": {     "major": "1",     "minor": "32",     "gitVersion": "v1.32.3",     "gitCommit": "32cc146f75aad04beaaa245a7157eb35063a9f99",     "gitTreeState": "clean",     "buildDate": "2025-03-11T19:58:53Z",     "goVersion": "go1.23.6",     "compiler": "gc",     "platform": "linux/amd64"   },   "kustomizeVersion": "v5.5.0" }
+ppd PASS hpa=4 keda=1 pdb=5 floor=3 ceiling=6 digest=8b4b6254b1e23346a5c64d3154ce8b3b704c2075bcb13191db1a99013a61deb9
+local-kind PASS hpa=4 keda=1 floor=2 digest=c27ba801d7bc9597f6b31f667934f5245171a9673af9dd66facf99570af0fd61
+SCALING_POLICY_PROOF=PASS backlog_signal=postgres_pending_deliveries placement=topology_spread pbd=maxUnavailable-1
