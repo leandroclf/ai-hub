@@ -92,7 +92,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.2 Qualificar R2-INT-02 com oráculos independentes
+- [x] 3.2 Qualificar R2-INT-02 com oráculos independentes
   - Objective: Executar R2-INT-02-S01, R2-INT-02-S02, R2-INT-02-S03. Caso indispensável: Rotação e cache; esperado: cache antigo não é reutilizado indevidamente; operação já aceita conserva conta, snapshot e pagador.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa/executor.go`; `hub/internal/providerauth/client.go`.
   - Depends on: 2.2; fixtures de r2-09; dependências de integração pertinentes.
@@ -106,14 +106,14 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.4 Qualificar R2-INT-04 com oráculos independentes
+- [x] 3.4 Qualificar R2-INT-04 com oráculos independentes
   - Objective: Executar R2-INT-04-S01, R2-INT-04-S02, R2-INT-04-S03, R2-INT-04-S04. Caso indispensável: Falha de recibo; esperado: ACK 2xx não é emitido; o parceiro pode retransmitir conforme contrato.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa/poller.go`; `hub/internal/cometa/handlers.go`.
   - Depends on: 2.4; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.5 Qualificar R2-INT-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-INT-05 com oráculos independentes
   - Objective: Executar R2-INT-05-S01, R2-INT-05-S02, R2-INT-05-S03, R2-INT-05-S04. Caso indispensável: Timeout após envio; esperado: somente consulta/reconciliação segura é permitida antes de autorizar nova execução.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa`; `hub/internal/atlasclient/client.go`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.
