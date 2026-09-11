@@ -10,6 +10,7 @@
 | `browser-smoke.json` | Chromium autenticado com OIDC/PKCE, senha+OTP, portal administrativo, readback, conflito `If-Match`, financeiro, logout, isolamento e viewport de 390 px: 24 verificações, 23 `PASS`, 1 `OBSERVED`, sem `FAIL` | Não substitui a matriz integral de autorização, WCAG formal ou entrega comercial |
 | `compose.yaml` + `nginx.conf` | Egress padrão do Compose passou a autorizar a bridge privada real (`172.16.0.0/12`) com restrição por host/porta; o portal passou a resolver upstreams Docker dinamicamente após recriação de serviços e os endpoints protegidos voltaram a responder JSON 401 em vez de 502/404: PASS | Somente laboratório local; CIDRs/portas continuam parâmetros explícitos para ambientes não locais |
 | `kind-continuity-latest.log` + `compose-recreation-latest.log` | Kind independente com 3 nós e dependências `cluster-owned` recuperou Cometa/Pulsar em 4.486/4.494 ms; recriação controlada do Atlas preservou catálogo/protocolos sem remover volumes: PASS | Ensaio local; não qualifica HA regional, recriação de nó, AWS ou carga prolongada |
+| `catalog-migration-rollback-latest.log` | R2-CAT-04.1: em três bancos temporários, a migration aditiva converteu dois serviços legados em drafts com IDs/proveniência preservados; recuo suspendeu v2, manteve v1 e um protocolo aceito com snapshot v1; replay idempotente: PASS | Bancos temporários PostgreSQL locais; não substitui rollback de versão publicada em ambiente produtivo ou recuperação regional |
 
 ## Atualização da rodada R4 — 10/09/2026
 

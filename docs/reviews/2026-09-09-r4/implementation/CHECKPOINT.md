@@ -34,6 +34,12 @@ observações idempotentes; o financeiro passou com `outbox=27`, `facts=13`,
 quarentena inválida. O contrato legado passou com limpeza das ofertas
 temporárias publicadas.
 
+R2-04/4.1 também foi comprovado em ensaio cercado: a migration aditiva
+materializou dois serviços legados como drafts rastreáveis, o recuo suspendeu
+somente v2 e preservou v1, histórico de publicação e protocolo aceito com
+snapshot v1; o replay foi idempotente. Os bancos temporários foram removidos
+sem alterar o volume oficial.
+
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A

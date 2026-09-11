@@ -1,6 +1,6 @@
 # Tasks: Catálogo operável, produtos compostos e contratos por cliente
 
-Status: **comportamentos e provas concluídos; migração/rollback e fechamento permanecem abertos**. Os 24 cenários de catálogo têm resultado explícito; os gates de migração e recuo ainda exigem ensaio próprio. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **comportamentos e provas concluídos; 4.1 comprovado; integração e fechamento permanecem abertos**. Os 24 cenários de catálogo têm resultado explícito e a prova cercada de migração/recuo foi registrada; gates fora do envelope local continuam abertos. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -143,12 +143,13 @@ Status: **comportamentos e provas concluídos; migração/rollback e fechamento 
 
 ## 4. Integração, migração e fechamento
 
-- [ ] 4.1 Ensaiar migração e recuo sem perda de obrigações
+- [x] 4.1 Ensaiar migração e recuo sem perda de obrigações
   - Objective: Transformar catálogo atual em rascunhos de origem rastreável; manter IDs e consultas históricas. Campos herdados por tenant viram defaults explícitos, nunca autorização a qualquer serviço. Reconciliar importação com diff sem limpeza global.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 2.x concluídas; plano de rollback do design.
   - Validation: Backfill em lotes, comparação de contagens/hashes e restart/rollback com estado em voo; adaptar ao escopo UI/documental sem inventar migração de dados.
   - Completion criteria: Histórico, identidade e obrigações preservados; procedimento e limitações registrados.
+  - Evidence: `hub/evidence/r2/execution/catalog-migration-rollback-latest.log`; dois serviços legados foram materializados como drafts rastreáveis, v2 foi suspensa sem alterar v1, um protocolo aceito manteve snapshot v1 e o replay do migrador permaneceu idempotente.
 
 - [ ] 4.2 Qualificar a fatia integrada e observabilidade
   - Objective: Executar cenários IT pertinentes com consumidores/produtores reais de ensaio e jornadas administrativas afetadas; provar alerta/runbook de falha principal.

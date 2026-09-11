@@ -14,7 +14,7 @@
 
 - [ ] Contratos concretos e decisões técnicas aplicáveis qualificados.
 - [ ] Cada tarefa 2.x implementada e sua 3.x comprovada.
-- [ ] Migração/rollback 4.1 ensaiados.
+- [x] Migração/rollback 4.1 ensaiados; prova cercada em PostgreSQL temporário registrada em `hub/evidence/r2/execution/catalog-migration-rollback-latest.log`.
 - [ ] Integração, segurança, jornadas UI e operação pertinentes comprovadas.
 - [ ] P-01 a P-11 aplicáveis aprovados para ativação do perfil, sem extrapolar prova local.
 - [ ] Auditoria/rastreabilidade atualizadas sem concluir baseline não entregue.
