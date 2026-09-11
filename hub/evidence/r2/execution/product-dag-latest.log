@@ -1,0 +1,21 @@
+AI Hub R4 — evidência do plano de produto
+Data: 2026-09-11
+Commit: 5453d34
+Ambiente: PostgreSQL do Compose oficial ai_hub_r3qual; dados sintéticos; nenhuma credencial registrada.
+
+Comandos:
+  R2_CORE_TEST_DSN='postgres://hub:r2-local-fixture@127.0.0.1:15432/hub_core?sslmode=disable' go test -count=1 ./internal/orbita -run 'TestProductPlan' -v
+  R2_CORE_TEST_DSN='postgres://hub:r2-local-fixture@127.0.0.1:15432/hub_core?sslmode=disable' go test -race -count=1 ./internal/orbita -run 'TestBuildProductPlan|TestProductPlanPersists'
+  go test ./...
+  go vet ./...
+  npm run build (hub/admin-ui)
+
+Resultados:
+  PASS — A/B independentes respeitam max_parallel=2; C permanece PENDING até A e B.
+  PASS — saída persistida de A alimenta o comando de C somente após as pré-condições.
+  PASS — o consumidor operation.observed aceita command_id por etapa e finaliza o produto uma única vez.
+  PASS — COMPENSATE cria uma etapa/intenção separada, muda A para COMPENSATING/COMPENSATED e mantém o produto FAILED.
+  PASS — migrações core/0044, 0045 e 0046 aplicadas pelo serviço migrate sem alterar checksums históricos.
+  PASS — suíte Go, vet e build do portal.
+
+Limite: esta evidência comprova a integração durável em PostgreSQL e o caminho de código da admissão; a jornada HTTP com catálogo real, provedor e todas as matrizes de falha ainda precisa de qualificação dedicada.

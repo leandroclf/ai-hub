@@ -20,6 +20,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Ofertas | consulta `LIMIT 2` + `EXPLAIN (ANALYZE, BUFFERS)` | PASS de caminho; índice parcial `catalog_offer_eligibility_lookup` confirmado quando o planner usa índice; catálogo pequeno pode escolher seq scan por custo |
 | Restore | `R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual2 bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
 | Kind/HA | `hub/deploy/r2/kind/bootstrap-independent.sh` + `continuity-runtime-proof.sh` | PASS local independente; PostgreSQL, LocalStack, Keycloak, Alloy, provider-sim, webhook-sink, observabilidade, Kong e UI materializados no cluster; cinco workloads em duas réplicas; Cometa/Pulsar recuperados após exclusão controlada com RTO observado de 4,453 ms/4,481 ms |
+| Produto/DAG durável | `R2_CORE_TEST_DSN=... go test -race -count=1 ./internal/orbita -run 'TestProductPlan'` | PASS; etapas e dependências persistidas, limite de paralelismo, consolidação por fatos e compensação separada; evidência em `hub/evidence/r2/execution/product-dag-latest.log` |
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
@@ -60,11 +61,13 @@ portal, cache, ofertas, restore e HA do laboratório. Ela não equivale à
 conclusão integral dos 201 requisitos/732 cenários nem à homologação de
 provedores reais, AWS regional, multi-célula ou produção.
 
-Ainda permanecem fora do fechamento integral, entre outros, o executor de DAG
-conectado ao atendimento, capacidade adaptativa e budgets em todo I/O,
-integração completa de FileRefs/financeiro/webhooks, fencing geral de efeito
-incerto, projeção de catálogo em escala e a matriz integral de
-requisitos/cenários. O perfil Kind independente fecha o gate local de
-dependências e endpoints; não substitui IaC/HA regional dos ambientes remotos.
+A execução durável do DAG agora está conectada à admissão de produtos e tem
+evidência própria; a jornada HTTP com catálogo/provedor real ainda precisa de
+qualificação dedicada. Permanecem fora do fechamento integral, entre outros,
+capacidade adaptativa e budgets em todo I/O, integração completa de
+FileRefs/financeiro/webhooks, fencing geral de efeito incerto, projeção de
+catálogo em escala e a matriz integral de requisitos/cenários. O perfil Kind
+independente fecha o gate local de dependências e endpoints; não substitui
+IaC/HA regional dos ambientes remotos.
 Esses itens continuam marcados como abertos no backlog R4 e não foram
 convertidos em PASS por inferência a partir desta execução local.
