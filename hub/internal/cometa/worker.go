@@ -119,7 +119,7 @@ func RunCommandWorker(ctx context.Context, q *queue.Client, queueURL string, exe
 			} else {
 				result = exec.Execute(execCtx, cmd)
 			}
-			log.Info("worker processou comando", "kind", result.Kind, "durable", result.Durable, "error_code", result.ErrorCode)
+			log.Info("worker processou comando", "trace_id", cmd.TraceID, "protocol_id", cmd.ProtocolID, "kind", result.Kind, "durable", result.Durable, "error_code", result.ErrorCode)
 			if reason := commandResultQuarantineReason(result); reason != "" {
 				if err := quarantineCommand(ctx, exec.store.db, m, reason); err != nil {
 					log.Error("worker: quarentena da rejeicao indisponivel", "error", err, "error_code", result.ErrorCode)

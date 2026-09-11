@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "profile": "r2-ope-07-s01-traceability",
+  "key": "r2-ope-07-s01-trace-1789151610436",
+  "admission": {
+    "status": 202,
+    "http_trace_id_present": true,
+    "protocol_id": "01a091bf-0676-7c28-b666-3292ab552381"
+  },
+  "final_status": "SUCCEEDED",
+  "durable": {
+    "status": "SUCCEEDED",
+    "trace_id": "01a091bf-066a-71dd-9e1b-e479e8727346",
+    "protocol_id": "01a091bf-0676-7c28-b666-3292ab552381",
+    "tenant_id": "acme"
+  },
+  "timeline": {
+    "status": 200,
+    "events": 2
+  },
+  "metrics": {
+    "histogram_series_present": true,
+    "forbidden_business_id_labels": false
+  },
+  "logs": {
+    "trace_in_orbita": true,
+    "trace_in_cometa": true
+  },
+  "elapsed_ms": 1752,
+  "finished_at": "2026-09-11T18:33:32.188Z"
+}
