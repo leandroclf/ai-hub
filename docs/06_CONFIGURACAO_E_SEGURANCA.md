@@ -33,6 +33,16 @@ Base32 público abaixo, sem espaços:
 
 `IFES2SCVIIWVEMRNJVDECLKLIVMS2MBR`
 
+`JBSWY3DPEHPK3PXP` é um segredo de exemplo do TOTP e não funciona nesta
+fixture. Para conferir o código vigente no terminal, sem emitir token, use:
+
+```bash
+python3 hub/deploy/r2/scripts/token.py --otp
+```
+
+Digite o campo `otp` imediatamente no formulário; `window_seconds` indica o
+tempo restante da janela atual.
+
 O valor Base32 é a representação de cadastro; o Keycloak armazena a chave ASCII
 equivalente para manter compatibilidade com a credencial importada do fixture.
 O gerador de token e a prova de compatibilidade derivam os mesmos bytes a partir

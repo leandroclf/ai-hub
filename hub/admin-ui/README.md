@@ -52,6 +52,11 @@ após uma mensagem de erro e mantenha relógio do host e do container
 sincronizados. O formulário limpa o campo quando o Keycloak rejeita o código;
 isso não indica, por si só, senha incorreta.
 
+O segredo `JBSWY3DPEHPK3PXP` é apenas um exemplo genérico e não pertence à
+fixture R2. Para obter o código da fixture vigente sem emitir token, execute
+`python3 hub/deploy/r2/scripts/token.py --otp` e informe o valor de `otp`
+imediatamente, antes de expirar `window_seconds`.
+
 No logout, o portal revoga a sessão local e envia o `id_token_hint` ao endpoint
 OIDC antes de retornar ao portal. Isso encerra a sessão SSO do usuário atual e
 evita que uma segunda identidade nominal do laboratório seja rejeitada como
