@@ -18,13 +18,30 @@ fi
 mkdir -p "$(dirname "$evidence_file")"
 exec > >(tee "$evidence_file")
 
-query="SELECT p.domain_id, p.permit_id, o.command->>'protocol_id'
-        FROM capacity_permits p
-        JOIN operations o ON o.operation_id=p.permit_id::uuid
-        WHERE p.pending_external
-          AND p.domain_id LIKE 'r4-%'
-          AND COALESCE(o.provider_request_id,'')=''
-        ORDER BY p.domain_id,p.created_at"
+# A capacidade normalmente referencia uma operação durável. Durante uma
+# interrupção entre a confirmação da outbox e a projeção de operações, a
+# operação pode não estar mais disponível, mas o evento operation.observed
+# continua sendo a fonte de identidade do protocolo. Esse fallback só aceita
+# eventos UNKNOWN sem provider_request_id; qualquer correlação externa mantém
+# a obrigação protegida.
+query="SELECT p.domain_id,
+              p.permit_id,
+              COALESCE(o.command->>'protocol_id', observed.payload->>'protocol_id')
+       FROM capacity_permits p
+       LEFT JOIN operations o ON o.operation_id=p.permit_id::uuid
+       LEFT JOIN LATERAL (
+         SELECT payload
+         FROM outbox
+         WHERE aggregate_id=p.permit_id::text
+           AND event_type='operation.observed'
+         ORDER BY created_at DESC
+         LIMIT 1
+       ) observed ON true
+       WHERE p.pending_external
+         AND p.domain_id LIKE 'r4-%'
+         AND COALESCE(o.provider_request_id, observed.payload->>'provider_request_id','')=''
+         AND COALESCE(o.command->>'protocol_id', observed.payload->>'protocol_id','')<>''
+       ORDER BY p.domain_id,p.created_at"
 
 rows=$(docker exec "$postgres" psql -U hub -d hub_core -At -F $'\t' -v ON_ERROR_STOP=1 -c "$query")
 closed=0
