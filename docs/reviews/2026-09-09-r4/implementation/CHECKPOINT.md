@@ -18,6 +18,13 @@ idempotência; o teste de budget efetivo passou. O Browser Harness percorreu as
 `PASS-EXPLORATORY`; a descoberta automática do daemon headless continua
 indisponível.
 
+Atualização posterior: o commit `0a57029` corrigiu a autoridade interna da
+fila LocalStack, a quarentena durável de envelopes inválidos/comandos
+expirados e a preservação de falhas recuperáveis para redelivery. A prova do
+produto foi repetida após reconciliação positiva da fixture local e passou com
+duas etapas, dois efeitos e idempotência; o runner fechou quatro ausências
+comprovadas (`closed=4 protected=0`).
+
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG e o editor administrativo de mapeamento. Permanecem explícitos os gaps
 arquiteturais do backlog herdado, dependências Compose no renderer do kind,

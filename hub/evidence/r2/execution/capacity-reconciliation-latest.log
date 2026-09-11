@@ -1,13 +1,5 @@
-CLOSED domain=r4-poll-1 permit=01a08e25-99f3-7e81-8026-545c27f87e35 protocol=01a08e25-99f3-7e80-b5e8-8e9cff5dcdea evidence=local-oracle-absence:01a08e25-99f3-7e80-b5e8-8e9cff5dcdea
-CLOSED domain=r4-poll-1 permit=01a08e25-9a36-7c26-9cfa-66e52ec97e9e protocol=01a08e25-9a36-7c24-81d7-946d01df1598 evidence=local-oracle-absence:01a08e25-9a36-7c24-81d7-946d01df1598
-CLOSED domain=r4-poll-1 permit=01a08e29-b56b-76c7-807a-9fb06442c834 protocol=01a08e29-b56b-76c3-87b3-dcb3f7ac000f evidence=local-oracle-absence:01a08e29-b56b-76c3-87b3-dcb3f7ac000f
-CLOSED domain=r4-poll-1 permit=01a08e29-b5ab-7634-94fc-a77d8e243d12 protocol=01a08e29-b5ab-762f-9902-103c1034809f evidence=local-oracle-absence:01a08e29-b5ab-762f-9902-103c1034809f
-CLOSED domain=r4-poll-2 permit=01a08e25-9a0b-7e56-be1d-e282f81c9152 protocol=01a08e25-9a0b-7e53-9ec4-e5dd21562ac9 evidence=local-oracle-absence:01a08e25-9a0b-7e53-9ec4-e5dd21562ac9
-CLOSED domain=r4-poll-2 permit=01a08e29-b581-7b24-91d3-3633668b6266 protocol=01a08e29-b581-7b22-913d-d2691c4f4abf evidence=local-oracle-absence:01a08e29-b581-7b22-913d-d2691c4f4abf
-CLOSED domain=r4-sync permit=01a08e25-9984-7ac4-bd0e-178547e0ddb6 protocol=01a08e25-9984-7abe-a0d3-76e4dfefa2c2 evidence=local-oracle-absence:01a08e25-9984-7abe-a0d3-76e4dfefa2c2
-CLOSED domain=r4-sync permit=01a08e25-adcf-7e7c-a71e-28bde103239d protocol=01a08e25-adcf-7e7a-b991-41053907afc3 evidence=local-oracle-absence:01a08e25-adcf-7e7a-b991-41053907afc3
-CLOSED domain=r4-sync permit=01a08e25-adfd-7950-9b0b-c7ae728a751d protocol=01a08e25-adfd-794c-8e41-28cd39e78a61 evidence=local-oracle-absence:01a08e25-adfd-794c-8e41-28cd39e78a61
-CLOSED domain=r4-sync permit=01a08e29-b4fe-76dc-9c75-aaae6b02802e protocol=01a08e29-b4fe-76da-8dfe-5881705fac80 evidence=local-oracle-absence:01a08e29-b4fe-76da-8dfe-5881705fac80
-CLOSED domain=r4-sync-failure permit=01a08e25-99c7-7308-9040-62a4d013cbcb protocol=01a08e25-99c7-7305-9e9e-61230fe307e5 evidence=local-oracle-absence:01a08e25-99c7-7305-9e9e-61230fe307e5
-CLOSED domain=r4-sync-failure permit=01a08e29-b53d-7243-a63e-e698dc494aa5 protocol=01a08e29-b53d-7240-97ba-48e00556594e evidence=local-oracle-absence:01a08e29-b53d-7240-97ba-48e00556594e
-summary closed=12 protected=0
+CLOSED domain=r4-poll-1 permit=01a08ec3-d278-7815-9877-18b0bf906a57 protocol=01a08ec3-d278-7687-8177-2e719ab0522d evidence=local-oracle-absence:01a08ec3-d278-7687-8177-2e719ab0522d
+CLOSED domain=r4-poll-1 permit=01a08ec3-d278-7949-b608-8daf23f999d3 protocol=01a08ec3-d278-7687-8177-2e719ab0522d evidence=local-oracle-absence:01a08ec3-d278-7687-8177-2e719ab0522d
+CLOSED domain=r4-poll-1 permit=01a08f18-ddc2-7bd4-873f-0ab6aab66faf protocol=01a08f18-ddc2-79b8-9b21-868254a94078 evidence=local-oracle-absence:01a08f18-ddc2-79b8-9b21-868254a94078
+CLOSED domain=r4-poll-1 permit=01a08f18-ddc2-7d54-bf1d-f0d3f840af2c protocol=01a08f18-ddc2-79b8-9b21-868254a94078 evidence=local-oracle-absence:01a08f18-ddc2-79b8-9b21-868254a94078
+summary closed=4 protected=0

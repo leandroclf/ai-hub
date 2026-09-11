@@ -96,6 +96,32 @@ O incidente demonstra que a execução deve usar `bootstrap.sh` ou fornecer as
 CIDRs descobertas no ambiente do Compose; `docker compose up` isolado pode
 reintroduzir os defaults de loopback e não é um procedimento de qualificação.
 
+### Correção de fila e recuperação de comandos — 11/09/2026
+
+Uma repetição posterior da prova encontrou uma segunda causa independente:
+`CreateQueue` do LocalStack devolve uma URL com hostname externo, enquanto o
+worker dentro do Compose precisa usar `http://localstack:4566`. A mudança
+`0a57029` normaliza essa autoridade somente no ambiente local, mantém URLs de
+produção intocadas e registra a URL efetiva no log de prontidão do broker.
+
+O mesmo commit passou a impedir que um comando com `StepDeadline` vencido
+entre no executor. O envelope é conservado em `message_quarantine` antes do
+ACK com razão `expired_command_deadline`; envelopes inválidos e rejeições
+determinísticas recebem a mesma proteção. Falhas recuperáveis, como
+`capacity_unavailable`, não são descartadas e seguem para redelivery.
+
+Durante o diagnóstico, 15 mensagens antigas expiradas foram isoladas. Quatro
+permits de `r4-poll-1` ainda tinham `pending_external`; o runner
+`reconcile-local-pending.sh` consultou o provider-sim e fechou somente os
+casos com HTTP 404 (`closed=4 protected=0`). Nenhum efeito externo presente
+foi encerrado por essa rotina.
+
+Após a reconciliação, o probe HTTP `product-runtime-proof.mjs` passou com a
+chave `r4-product-http-1789109019646`: admissão `202`, duas operações e dois
+efeitos independentes, consolidação pública `SUCCEEDED` e repetição da chave
+sem novo plano ou efeito. O log saneado está em
+`hub/evidence/r2/execution/product-http-latest.log`.
+
 ## Limites e pendências explícitas
 
 Esta rodada fecha a sequência operacional local de seed, carga, callback,

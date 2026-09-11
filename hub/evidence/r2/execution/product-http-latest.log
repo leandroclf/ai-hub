@@ -1,10 +1,10 @@
 {
-  "key": "r4-product-http-1789104098588",
+  "key": "r4-product-http-1789109019646",
   "evidence": [
     {
       "check": "admissão HTTP do produto composto",
       "status": "PASS",
-      "protocol_id": "01a08eea-11ee-749b-a31c-7f507a55d17e",
+      "protocol_id": "01a08f35-28b8-7916-82c7-22f133614a25",
       "initial_status": 202
     },
     {
@@ -12,7 +12,7 @@
       "status": "PASS",
       "final_status": "SUCCEEDED",
       "final_body": {
-        "protocol_id": "01a08eea-11ee-749b-a31c-7f507a55d17e",
+        "protocol_id": "01a08f35-28b8-7916-82c7-22f133614a25",
         "status": "SUCCEEDED",
         "result_version": 1,
         "result": {

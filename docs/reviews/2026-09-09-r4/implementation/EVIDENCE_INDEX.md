@@ -18,7 +18,7 @@ limites arquiteturais.
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
 | `hub/internal/atlas/catalog_handlers.go` + `hub/internal/atlas/imports.go` + `hub/internal/libra/handlers.go` + `hub/internal/pulsar/handlers.go` | Fronteira administrativa Atlas/Libra/Pulsar | PASS local; rotas exigem sessão humana com MFA, papel compatível com a ação e bloqueiam workload; publicação e escritas financeiras exigem `hub_admin`, redelivery/destino exigem operador ou `hub_admin`, com regressão unitária/integrada |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
-| `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; 12 ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
+| `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; quatro ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
 | `hub/internal/pulsar/custody_test.go` | Entrega concorrente com capacidade `FETCH` | PASS com PostgreSQL real; duas entregas HMAC concorrentes, `transport_open=0` e `pending_external=0` |
 | `hub/deploy/r2/tests/webhook-capacity-runtime.sh` + `webhook-capacity-latest.log` | Entrega no worker Pulsar real do Compose | PASS; delivery sintética chegou a `DELIVERED` e o permit `r4-webhook` terminou `open=0`, `pending=0`, com limpeza do registro de teste |
 | `hub/deploy/r2/tests/finance-runtime-proof.sh` + `finance-runtime-latest.log` | Incidência financeira do workload autorizado | PASS; outbox com `SUBMITTED`/`STATUS` carregou `attempt_id`, Libra recebeu fatos de custo/receita, inbox foi persistida, journal balanceou por moeda e não houve quarentena de incidência inválida |
@@ -43,7 +43,7 @@ limites arquiteturais.
 | `hub/migrations/control/0002_provider_auth.sql` | checksum histórico R2 `37241e604376471efd7de394e9394673feaec0a32476a517c38363890dad1541` |
 | `hub/deploy/r2/scripts/migrate.sh` | reconciliação restrita e falha para hash desconhecido |
 | `hub/migrations/core/0036_callback_inbox_leases.sql` | lease/epoch/claim aditivo para recuperação da inbox |
-| `hub/internal/cometa/worker.go` | worker autônomo, lote limitado e disposição de poison item |
+| `hub/internal/cometa/worker.go` | worker autônomo, lote limitado, quarentena durável de poison item/comando expirado e redelivery preservada para falhas recuperáveis |
 | `hub/migrations/control/0037_catalog_offer_lookup.sql` | índice parcial do conjunto elegível de ofertas |
 | `hub/internal/atlas/offers.go` | consulta seletiva com limite de ambiguidade |
 | `COMPOSE-INTEGRATED.md` | bootstrap, OIDC, upgrade, probes e testes integrados locais |
@@ -96,3 +96,23 @@ e não substitui a execução dos cenários restantes.
 Esses resultados fecham os gates locais correspondentes, mas não promovem como
 concluídos o adapter/provedor comercial, a qualificação regional ou a matriz
 integral de requisitos e cenários.
+
+### Atualização operacional posterior — 11/09/2026
+
+O worker Cometa passou a receber a URL interna
+`http://localstack:4566/...` mesmo quando o LocalStack devolve a autoridade
+externa `sqs.*.localstack.cloud`; o comportamento é restrito a
+`ENVIRONMENT=local` e tem testes unitários, mantendo URLs produtivas
+inalteradas. A execução também detecta `StepDeadline` vencido antes de abrir
+custódia/egresso e grava o envelope completo em `message_quarantine` antes de
+remover a mensagem. Rejeições determinísticas são isoladas após quarentena;
+falhas recuperáveis de capacidade/credencial continuam elegíveis a redelivery.
+
+O backlog antigo da fila continha 15 comandos expirados e quatro permits de
+submissão com ausência comprovada no oráculo local. Os primeiros foram
+quarentenados como `expired_command_deadline`; os permits foram fechados pelo
+runner de reconciliação somente após HTTP 404 do provider-sim, resultando em
+`closed=4 protected=0`. Depois disso, `product-runtime-proof.mjs` passou com a
+chave `r4-product-http-1789109019646`, duas etapas/operações/efeitos e
+duplicata idempotente sem novo efeito. Essa prova permanece limitada à
+fixture local e não encerra o fencing geral nem a matriz integral.

@@ -57,6 +57,25 @@ resposta divergente fica como recibo de investigação e não produz estado ou
 outbox da operação protegida. O Browser Smoke também confirmou que, após o
 logout, uma chamada sem credencial à API administrativa retorna HTTP 401.
 
+## Atualização operacional — 11/09/2026
+
+Após o bootstrap oficial do único Compose, o worker Cometa foi corrigido para
+normalizar a URL externa devolvida pelo LocalStack para a autoridade interna
+do serviço, detectar `StepDeadline` vencido antes da execução e conservar o
+envelope completo em quarentena antes do ACK. Rejeições determinísticas são
+isoladas; falhas recuperáveis permanecem sujeitas a redelivery. A submissão
+também valida a posse durável da operação por tenant, aplicação, célula, epoch,
+lease e hash do comando antes da autenticação e imediatamente antes do POST,
+sem reenvio quando a posse é perdida.
+
+O backlog local diagnosticado continha 15 comandos expirados e quatro permits
+com `pending_external`. Os comandos foram quarentenados e os permits só foram
+fechados após o provider-sim confirmar HTTP 404, com `closed=4 protected=0`.
+Na sequência, a prova HTTP do produto passou novamente com duas etapas,
+dois efeitos independentes, consolidação `SUCCEEDED` e repetição idempotente
+sem novo efeito; o resultado está em
+`hub/evidence/r2/execution/product-http-latest.log`.
+
 ## Limite de conclusão
 
 Este resultado não declara conclusão integral dos 201 requisitos/732 cenários

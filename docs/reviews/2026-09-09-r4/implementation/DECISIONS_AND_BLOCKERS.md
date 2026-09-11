@@ -56,6 +56,15 @@
   está disponível. A reconciliação de `UNKNOWN` sem `provider_request_id` é
   rejeitada e auditada com `REJECTED`/`no_provider_correlation`; não há replay
   cego.
+- A fila de comandos local usa a autoridade interna do LocalStack após a
+  criação idempotente, porque a URL externa retornada pelo simulador não é
+  roteável a partir dos containers. O worker registra bytes originais em
+  quarentena antes do ACK para envelopes inválidos, deadlines vencidos e
+  rejeições determinísticas; capacidade/credencial continuam em redelivery.
+- A submissão Cometa agora exige a posse durável da operação (tenant,
+  aplicação, célula, epoch, lease e hash do comando) antes da autenticação e
+  novamente imediatamente antes do POST. Perda da posse conserva `UNKNOWN`
+  sem disparar um segundo efeito.
 
 ## Bloqueios e limites ainda reproduzíveis
 

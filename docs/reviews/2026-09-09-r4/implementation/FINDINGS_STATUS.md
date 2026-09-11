@@ -4,8 +4,9 @@ Fechados nesta fatia: F-R4-05 e F-R4-06 em testes unitários; F-R4-01 no roteame
 
 Avançaram com implementação e evidência local: F-R4-02 (ingresso público,
 validação terminal, deduplicação por capability, quota de bytes/itens e
-retenção limitada), F-R4-03 (worker autônomo com lote/claim/lease/epoch e
-poison isolado), F-R4-04 (resultado compartilhado entre submit/poll/callback),
+retenção limitada), F-R4-03 (worker autônomo com lote/claim/lease/epoch,
+poison isolado e quarentena de deadlines), F-R4-04 (resultado compartilhado
+entre submit/poll/callback),
 F-R4-09 (consulta indexada seletiva), F-R4-11 (portal administrativo com
 OIDC, operações, financeiro, SLA e destinos) e F-R4-12 (pools HTTP por
 origem). O vínculo de capacidade passou a cobrir `SUBMIT`, `STATUS` e
@@ -16,7 +17,8 @@ F-R4-09, F-R4-10, F-R4-11 e F-R4-12. O Browser Harness passou como
 `PASS-EXPLORATORY` com CDP explícito; o Playwright determinístico, a carga
 autorizada, RLS, restore, HA local e produto HTTP local têm evidências atuais.
 A matriz integral dos 201 requisitos/732 cenários, provedores reais, fencing
-geral (apesar do fencing positivo específico de correlation no polling),
+geral (apesar do fencing positivo específico de correlation no polling e da
+barreira pré-I/O de submissão),
 budgets completos, financeiro/entrega produtivos e projeção em escala ainda não
 foram demonstrados. Nenhum P0 aberto foi reclassificado como
 concluído apenas por documentação.

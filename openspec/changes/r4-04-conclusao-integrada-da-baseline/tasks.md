@@ -92,7 +92,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-03 Concluir e requalificar R3-EXE-03 — Recuperação de efeito incerto e fencing.
-  - Objective: Worker de inbox e reconciliação agora usam lote, claim, lease e epoch, com isolamento de poison item; o polling também valida positivamente o `provider_request_id` congelado e conserva divergência sem publicar efeito; permanece sem prova o fairness sob execução longa e o fencing geral de efeitos UNKNOWN/SUBMIT.
+  - Objective: Worker de inbox e reconciliação agora usam lote, claim, lease e epoch, com isolamento de poison item; o polling também valida positivamente o `provider_request_id` congelado e conserva divergência sem publicar efeito; a submissão valida lease/epoch/hash da operação antes da autenticação e imediatamente antes do I/O, convertendo perda de posse em `UNKNOWN` durável sem reenvio. Permanecem sem prova o fairness sob execução longa, a recuperação positiva de efeitos após perda de correlação e o fencing geral de efeitos UNKNOWN/SUBMIT.
   - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/executor.go, hub/internal/orbita/intents.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -104,7 +104,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-05 Concluir e requalificar R3-EXE-05 — Topologia de mensagens e quarentena recuperável.
-  - Objective: Topologia/outboxes/consumidor financeiro não mudaram. Quarentena financeira continua só hash.
+  - Objective: O broker local agora normaliza a URL externa do LocalStack para a autoridade interna do Compose; o worker registra bytes de envelopes inválidos, comandos expirados e rejeições determinísticas em quarentena durável antes do ACK, preservando falhas recuperáveis para redelivery. A topologia produtiva, o consumidor financeiro e a quarentena recuperável fora da fixture local ainda requerem qualificação; a quarentena financeira continua só hash.
   - Likely files/components: hub/internal/queue/bootstrap.go, hub/internal/queue/queue.go, hub/internal/libra/consumers.go, hub/internal/libra/store.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
