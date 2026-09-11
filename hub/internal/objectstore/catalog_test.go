@@ -93,6 +93,23 @@ func TestPostgresS3MultipartFileRef(t *testing.T) {
 	if len(session.Uploads) != 3 {
 		t.Fatalf("multipart urls=%d", len(session.Uploads))
 	}
+	incomplete, err := catalog.CreateSession(ctx, "tenant-a", UploadRequest{Size: size, SHA256: sha, ContentType: "application/octet-stream", Purpose: "TEST", Class: "SYNTHETIC", Region: "fixture-local"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = catalog.Complete(ctx, "tenant-a", incomplete.FileRef.ID, []CompletedPart{{PartNumber: 1, ETag: "missing-part"}}); !errors.Is(err, ErrIntegrity) {
+		t.Fatalf("multipart incompleto aceito ou erro inesperado: %v", err)
+	}
+	var incompleteState string
+	if err = db.QueryRow("SELECT state FROM file_refs WHERE id=$1 AND tenant_id=$2", incomplete.FileRef.ID, "tenant-a").Scan(&incompleteState); err != nil {
+		t.Fatal(err)
+	}
+	if incompleteState != "UPLOADING" {
+		t.Fatalf("multipart incompleto mudou para estado incorreto: %s", incompleteState)
+	}
+	if _, err = db.Exec("DELETE FROM file_refs WHERE id=$1 AND tenant_id=$2", incomplete.FileRef.ID, "tenant-a"); err != nil {
+		t.Fatal(err)
+	}
 	if _, err = catalog.Resolve(ctx, "tenant-b", session.FileRef.ID); !errors.Is(err, ErrNotFound) {
 		t.Fatal("cross tenant upload visible")
 	}

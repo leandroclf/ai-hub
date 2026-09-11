@@ -51,6 +51,7 @@
 | `admin-usability-recovery-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; teclado preservou JSON inválido com foco no alerta e revisão obsoleta produziu HTTP 412 recuperável com texto/diff preservados | Fixture local; não substitui auditoria WCAG formal nem rede externa degradada |
 | `admin-session-scope-smoke.json` | Ensaio Chromium/API curto: `PASS`; autoridade respondeu 403 a consulta cross-tenant e UI preservou `acme` sem contexto global | Fixture OIDC local; não substitui prova regional de IdP |
 | `admin-legacy-contract-smoke.json` | R2-ADM-07-S01; ensaio Chromium: `PASS`; perfil JSON/polling, oferta polling/callback e mesmo corpo final entre protocolo e webhook | Fixture OIDC, PostgreSQL e provider-sim locais; não substitui homologação comercial externa |
+| `multipart-incomplete-smoke.json` | R2-DAD-01-S03; teste PostgreSQL/LocalStack: `PASS`; parte ausente foi recusada e a referência permaneceu `UPLOADING` | Fixture local; não substitui validação regional de storage |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026
