@@ -1,0 +1,31 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "check": "oferta publicada seleciona conta explicitamente elegível",
+      "status": "PASS",
+      "offer_id": "offer-r4-async",
+      "route": {
+        "provider_account_version": 1,
+        "provider_account_id": "prov-poll-2",
+        "binding_id": "bind-r4-poll-2",
+        "binding_version": 1,
+        "priority": 2,
+        "equivalence_id": "r4-async",
+        "capacity_domain": "r4-poll-2"
+      },
+      "content_hash": "4519ec5ddef297e8b9bb147757305f1637889992f13ea975319c51f22496e52c"
+    },
+    {
+      "check": "conta escolhida fora da oferta é recusada antes do efeito",
+      "status": "PASS",
+      "http_status": 403,
+      "error_code": "offer_not_eligible"
+    },
+    {
+      "check": "resolução não amplia escopo para outro tenant",
+      "status": "PASS",
+      "http_status": 403
+    }
+  ]
+}
