@@ -1,0 +1,14 @@
+[
+  {
+    "check": "Admin technical profile explains retry TTL bounded by client SLA",
+    "status": "PASS",
+    "profile": "browser-ttl-profile-1789135597773",
+    "validation": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls\n\nTTL efetivo: 28s · Hash: c7ece43c32a743bd516af579afda700dc19fd362cb098bc52e84811299024926"
+  },
+  {
+    "check": "Admin technical profile blocks SYNC incompatible with async provider",
+    "status": "PASS",
+    "profile": "browser-sync-profile-1789135598087",
+    "error": "modes: SYNC exige provedor síncrono e orçamento qualificado compatível"
+  }
+]
