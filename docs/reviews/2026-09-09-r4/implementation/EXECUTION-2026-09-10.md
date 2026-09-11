@@ -278,3 +278,10 @@ público contra PostgreSQL real com um protocolo `WAITING_PROVIDER` e outro
 representação final persistida, incluindo `SLA_EXCEEDED`. O ensaio não possui
 cliente de provedor no caminho do handler, portanto comprova a autoridade local
 e a ausência de polling nessa consulta, mas não substitui homologação externa.
+
+O ensaio complementar `webhook-retry-representation-smoke.json` provocou 500
+na primeira tentativa e 204 na segunda. O PostgreSQL manteve uma única entrega
+com duas tentativas, ambas com os mesmos bytes, hash, evento e delivery ID; o
+servidor independente verificou o HMAC de cada requisição. O cenário
+R2-EXE-08-S01 permanece parcial porque a composição da mesma jornada POST final,
+GET público e duas reentregas ainda precisa ser executada em um único oráculo.

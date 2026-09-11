@@ -1,0 +1,16 @@
+{
+  "check": "Reentrega preserva bytes da representação final e valida HMAC",
+  "status": "PASS",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -tags=e2e -count=1 ./internal/pulsar -run '^TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC$' -v",
+  "oracle": {
+    "attempts": 2,
+    "first_http_status": 500,
+    "second_http_status": 204,
+    "same_body_bytes": true,
+    "same_event_and_delivery_identity": true,
+    "hmac_verified_each_attempt": true,
+    "delivery_state": "DELIVERED",
+    "database": "PostgreSQL 16"
+  },
+  "limitation": "A prova cobre a custódia/reentrega webhook; a igualdade com a resposta POST final e o GET público é mantida em testes Orbita separados."
+}
