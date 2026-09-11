@@ -1,0 +1,14 @@
+{
+  "check": "Finalização e expiração concorrentes têm uma única arbitragem terminal",
+  "status": "PASS",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -tags=e2e -count=1 ./internal/orbita -run '^TestFinalizeAndExpiryRaceProducesOneTerminalFact$' -v",
+  "oracle": {
+    "database": "PostgreSQL 16",
+    "terminal_transitions": 1,
+    "result_version": 1,
+    "protocol_version": 1,
+    "finalized_facts": 1,
+    "observed_winner": "EXPIRED"
+  },
+  "limitation": "A disputa foi exercitada com deadline futuro; não substitui o ensaio de commit lento na fronteira exata do prazo."
+}

@@ -58,6 +58,7 @@
 | `public-representation-state-smoke.json` | R2-EXE-08-S03; teste PostgreSQL/HTTP público: `PASS`; estados `WAITING_PROVIDER` e `EXPIRED` retornaram 200 pela custódia local, sem sucesso fictício e sem regenerar bytes finais | Fixture local; ausência de polling foi observada no handler, sem homologação de provedor comercial |
 | `webhook-retry-representation-smoke.json` | R2-EXE-08-S01; teste PostgreSQL/HTTP: `PASS`; primeira tentativa 500 e segunda 204 reutilizaram os mesmos bytes, identidade, hash e HMAC | A igualdade com POST/GET é coberta por testes Orbita separados; jornada única ainda não promovida |
 | `result-reconciliation-smoke.json` | R2-DAD-02-S03; teste PostgreSQL/LocalStack: `PASS`; objeto em `VALIDATING` foi reconciliado para `ORPHAN`, obrigação incorreta recusada e obrigação original ligada como `READY` com pin | Fixture local de storage; não substitui falha regional ou banco distribuído |
+| `finalize-expiry-race-smoke.json` | R2-EXE-06-S03; teste PostgreSQL: `PASS`; disputa de finalização/expiração produziu uma única transição terminal e um único fato final | Deadline futuro; não substitui ensaio de commit lento na fronteira exata |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026

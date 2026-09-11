@@ -292,3 +292,10 @@ upload concluído e o commit do protocolo deixando a referência em
 validou o conteúdo e promoveu a referência a `ORPHAN`; uma tentativa de ligá-la
 a outra obrigação foi recusada, e somente a obrigação original criou o pin e
 promoveu o estado para `READY`. Nenhum provedor foi chamado ou reexecutado.
+
+O ensaio `finalize-expiry-race-smoke.json` iniciou simultaneamente os caminhos
+de sucesso e expiração com a mesma versão esperada. O lock e a condição de
+versão do PostgreSQL permitiram somente uma transição terminal, com
+`result_version=1`, `version=1` e um único `protocol.finalized`; nesta rodada,
+o vencedor observado foi `EXPIRED`. O resultado não é usado como prova do
+cenário de commit lento na fronteira exata do deadline.

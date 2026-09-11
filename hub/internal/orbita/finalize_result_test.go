@@ -176,6 +176,67 @@ func TestFinalizeLateSuccessBecomesExpired(t *testing.T) {
 	t.Logf("late success was arbitrated as EXPIRED with SLA_EXCEEDED and no provider result: protocol=%s", p.ProtocolID)
 }
 
+func TestFinalizeAndExpiryRaceProducesOneTerminalFact(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(8)
+	ctx := context.Background()
+	store := NewStore(db)
+	now := time.Now().UTC()
+	tenant := "finalize-expiry-race-" + idgen.New()
+	p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "finalize-expiry-race-cell", IdempotencyKey: "finalize-expiry-race-key", RequestHash: "finalize-expiry-race-hash", RequestBody: json.RawMessage(`{"input":"fixture"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+	c := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"fixture":true}`), EconomicSnapshot: json.RawMessage(`{}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
+	if _, created, err := store.Admit(ctx, p, c, "fixture", false); err != nil || !created {
+		t.Fatalf("admit: created=%v err=%v", created, err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+	})
+
+	finalizer := NewFinalizer(store, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	go func() {
+		<-start
+		_, err := finalizer.Finalize(ctx, "success-race", tenant, p.ProtocolID, 0, StatusSucceeded, FinalBody{Result: map[string]any{"winner": "success"}}, "")
+		results <- err
+	}()
+	go func() {
+		<-start
+		_, err := finalizer.Finalize(ctx, "expiry-race", tenant, p.ProtocolID, 0, StatusExpired, FinalBody{ErrorCode: "SLA_EXCEEDED"}, "SLA_EXCEEDED")
+		results <- err
+	}()
+	close(start)
+	if first, second := <-results, <-results; first != nil || second != nil {
+		t.Fatalf("corrida retornou erro: first=%v second=%v", first, second)
+	}
+
+	got, err := store.Get(ctx, tenant, p.ProtocolID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !IsTerminal(got.Status) || got.ResultVersion != 1 || got.Version != 1 {
+		t.Fatalf("corrida deixou estado não terminal/inconsistente: status=%s result_version=%d version=%d", got.Status, got.ResultVersion, got.Version)
+	}
+	var facts int
+	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND event_type='protocol.finalized'", p.ProtocolID).Scan(&facts); err != nil {
+		t.Fatal(err)
+	}
+	if facts != 1 {
+		t.Fatalf("corrida publicou %d fatos terminais, esperado 1", facts)
+	}
+	t.Logf("PostgreSQL: finalização e expiração concorrentes convergiram para uma única transição %s, result_version=1 e um protocol.finalized", got.Status)
+}
+
 func TestFinalizeRejectsSuccessAfterProviderSLABreach(t *testing.T) {
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
 	if dsn == "" {
