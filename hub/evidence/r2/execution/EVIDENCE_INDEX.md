@@ -48,6 +48,7 @@
 | `admin-protocol-scope-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; resultado materializado sem provider e isolamento de filtro tenant-only | Não substitui ensaio comercial de todas as timelines |
 | `admin-sla-freshness-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; geração, watermark, atraso observado e exportação CSV limitada/auditada | Fixture local; não homologa retenção/entrega comercial do relatório |
 | `admin-finance-adjustment-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; ajuste compensatório preparado com razão, autoaprovação bloqueada e aprovação por `auditor-global` distinto com recibo `approved` | Fixture local; a auditoria financeira produtiva e o ERP comercial permanecem fora |
+| `admin-usability-recovery-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; teclado preservou JSON inválido com foco no alerta e revisão obsoleta produziu HTTP 412 recuperável com texto/diff preservados | Fixture local; não substitui auditoria WCAG formal nem rede externa degradada |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026

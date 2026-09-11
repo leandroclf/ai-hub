@@ -1,0 +1,18 @@
+[
+  {
+    "check": "Admin invalid form keeps JSON input, identifies field error and focuses alert summary via keyboard",
+    "status": "PASS",
+    "active_role": "alert",
+    "field": "adapter_contract",
+    "preserved": "{ \"submit_path\": }",
+    "aria_invalid": "true"
+  },
+  {
+    "check": "Admin stale revision exposes recoverable conflict with local input and server diff",
+    "status": "PASS",
+    "status_code": 412,
+    "local_input": "Cliente browser-recovery-1789137079360-a4b36005 edição local preservada",
+    "local_diff_preserved": true,
+    "server_diff_present": true
+  }
+]
