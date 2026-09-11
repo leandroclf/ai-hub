@@ -10,10 +10,10 @@ limites arquiteturais.
 | Evidência | Escopo | Resultado |
 |---|---|---|
 | `hub/evidence/r2/execution/authorized-load-latest.log` | Carga autenticada com seed versionado | PASS; oito caminhos, falha controlada e idempotência |
-| `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, SLA, destinos versionados, logout e viewport móvel |
+| `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout e viewport móvel |
 | Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP | BLOCKED-ENVIRONMENT; executável presente, daemon sem `DevToolsActivePort` utilizável |
 | `hub/internal/cometa/custody.go` + migração `0041` | Inbox de callback | PASS de implementação/testes focados; identidade por capability, limites de bytes/itens e retenção periódica; qualificação externa ainda aberta |
-| `hub/internal/cometa/capacity.go` + executor/poller/reconciliation + `hub/internal/pulsar/worker.go` | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS`, reconciliação e `FETCH` de webhook; fencing validado antes da autenticação e do I/O externo; budgets integrais ainda abertos |
+| `hub/internal/cometa/capacity.go` + executor/poller/reconciliation + `hub/internal/pulsar/worker.go` | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS`, reconciliação e `FETCH` de webhook; fencing validado antes da autenticação e do I/O externo; budget efetivo limitado por snapshot, contexto, lease e margem |
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` + `custody_test.go` | Snapshot de destino webhook e orçamento de entrega | PASS de teste PostgreSQL; versão aceita é congelada, entrega usa o snapshot persistido e o permit é encerrado com sinal/evidência |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
 | `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
@@ -24,7 +24,9 @@ limites arquiteturais.
 | `hub/internal/cometa/polling_custody.go` + `hub/internal/libra/consumers.go` | Separação entre estado operacional e incidência econômica | PASS com PostgreSQL real; aceitação UNKNOWN publica `SUBMITTED`, polling publica `STATUS` por tentativa e fencing não publica observação não autorizada |
 | `hub/evidence/r2/execution/provider-output-custody-latest.log` | Perfil técnico, `OutputMapping` e separação de recibo bruto/resultado normalizado | PASS com PostgreSQL real; submit/poll/callback/reconciliação projetam a saída pelo snapshot e o corpo recebido é preservado em `provider_receipts` com hash |
 | `hub/evidence/r2/execution/result-file-custody-latest.log` | Custódia de resultado volumoso | PASS com PostgreSQL real e LocalStack; upload streaming acima do limite inline, `ORPHAN` antes do commit, `FileRef` na representação e `LinkResult` pós-commit |
-| `hub/evidence/r2/execution/product-dag-latest.log` | Plano de produto, dependências, paralelismo, consolidação e compensação | PASS de integração durável em PostgreSQL e testes de concorrência; jornada HTTP/provedor e matriz integral ainda abertas |
+| `hub/evidence/r2/execution/product-dag-latest.log` | Plano de produto, dependências, paralelismo, consolidação e compensação | PASS de integração durável em PostgreSQL e testes de concorrência; jornada HTTP local também comprovada, enquanto provedor comercial e matriz integral continuam abertos |
+| `hub/evidence/r2/execution/product-http-latest.log` | Admissão HTTP de produto composto no provider-sim | PASS; duas etapas independentes produziram dois efeitos, GET finalizou `SUCCEEDED` e repetição idempotente não criou novo efeito |
+| `hub/evidence/r2/execution/capacity-budget-latest.log` | Budget efetivo de I/O externo | PASS; snapshot de oferta, contexto, lease e margem limitam a janela; carga prolongada e provedor comercial continuam fora do gate local |
 | `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | `hub/evidence/r2/execution/kind-continuity-latest.log` | Kind independente, bootstrap offline, UI/gateway, dependências, perda controlada de Cometa/Pulsar | PASS; três nós, seis dependências cluster-owned, cinco workloads, Jobs de migração/OIDC, RTO observado de 4,453 ms/4,481 ms; volume efêmero de laboratório |
 | Kind `ai-hub-r2` compatibilidade Compose | Prontidão, métricas, HPA/KEDA e recuperação | PASS histórico do perfil Compose-linked; o perfil independente agora é o gate de continuidade principal |
@@ -54,3 +56,17 @@ limites arquiteturais.
 | 10/09/2026: Browser Harness | `hub/deploy/r2/tests/browser-harness/run.sh` | BLOCKED-ENVIRONMENT: executável instalado, mas Chrome/daemon não expôs `DevToolsActivePort` utilizável |
 
 Nenhuma evidência histórica foi promovida como PASS de integração.
+
+## Atualização da retomada de 11/09/2026
+
+O produto composto foi exercitado pela API pública após seed versionado do
+catálogo: o probe `product-runtime-proof.mjs` observou duas operações e dois
+efeitos distintos no provider-sim, finalização `SUCCEEDED` e repetição da mesma
+chave sem aumento de efeitos. A reconciliação administrativa agora rejeita e
+audita `UNKNOWN` sem `provider_request_id`, em vez de sugerir replay sem
+correlação. O finalizador também usa o snapshot do protocolo quando o intent
+histórico está ausente, preservando a confirmação durável.
+
+Esses resultados fecham os gates locais correspondentes, mas não promovem como
+concluídos o adapter/provedor comercial, a qualificação regional ou a matriz
+integral de requisitos e cenários.

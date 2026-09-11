@@ -1,0 +1,34 @@
+# Evidência: budget efetivo de I/O externo
+
+Data: 2026-09-11
+Runtime: Compose oficial `ai_hub_r3qual`; testes determinísticos sem segredo.
+
+## Execução
+
+```text
+go test -count=1 ./internal/cometa -run 'TestProviderHTTPBudgetUsesFrozenTargetBudget|TestEffectiveHTTPBudgetNeverExceedsLeaseOrContext' -v
+```
+
+Resultado observado:
+
+```text
+=== RUN   TestProviderHTTPBudgetUsesFrozenTargetBudget
+--- PASS: TestProviderHTTPBudgetUsesFrozenTargetBudget (0.00s)
+=== RUN   TestEffectiveHTTPBudgetNeverExceedsLeaseOrContext
+--- PASS: TestEffectiveHTTPBudgetNeverExceedsLeaseOrContext (0.00s)
+PASS
+ok      ai-hub/hub/internal/cometa  0.004s
+```
+
+## Interpretação
+
+- O budget específico de `sync_http_budget_seconds` é lido do snapshot aceito;
+  quando ausente, aplica-se o fallback definido pelo executor.
+- A janela efetiva é limitada pelo contexto da chamada, pela lease de
+  capacidade e pela margem de segurança; lease expirada não autoriza I/O.
+- Executor, polling, reconciliação e entrega webhook usam a capacidade ligada
+  ao caminho antes da autenticação e imediatamente antes do transporte.
+
+Esta evidência fecha a integração determinística do budget efetivo. Ensaios
+prolongados de carga, expiração durante tráfego real e homologação de provedor
+comercial continuam sendo gates externos à prova local.

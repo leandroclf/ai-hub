@@ -21,6 +21,8 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Restore | `R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual2 bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
 | Kind/HA | `hub/deploy/r2/kind/bootstrap-independent.sh` + `continuity-runtime-proof.sh` | PASS local independente; PostgreSQL, LocalStack, Keycloak, Alloy, provider-sim, webhook-sink, observabilidade, Kong e UI materializados no cluster; cinco workloads em duas réplicas; Cometa/Pulsar recuperados após exclusão controlada com RTO observado de 4,453 ms/4,481 ms |
 | Produto/DAG durável | `R2_CORE_TEST_DSN=... go test -race -count=1 ./internal/orbita -run 'TestProductPlan'` | PASS; etapas e dependências persistidas, limite de paralelismo, consolidação por fatos e compensação separada; evidência em `hub/evidence/r2/execution/product-dag-latest.log` |
+| Produto/DAG via HTTP | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs` | PASS; produto com duas etapas independentes, duas operações/efeitos no provider-sim, GET final `SUCCEEDED` e duplicata idempotente sem novo efeito; `hub/evidence/r2/execution/product-http-latest.log` |
+| Budget efetivo de I/O | `go test -count=1 ./internal/cometa -run 'TestProviderHTTPBudgetUsesFrozenTargetBudget\|TestEffectiveHTTPBudgetNeverExceedsLeaseOrContext' -v` | PASS; budget do snapshot limitado por contexto, lease e margem; `hub/evidence/r2/execution/capacity-budget-latest.log` |
 | Resultado volumoso/FileRef | `go test -count=1 ./internal/orbita -run TestFinalizeMaterializesLargeResultAndLinksAfterCommit` + `go test -tags=e2e ... ./internal/objectstore -run TestPostgresS3MultipartFileRef` | PASS; resultado acima de 1 MiB usa upload streaming, fica `ORPHAN` até o protocolo confirmar e é exposto como `FileRef`; LocalStack real comprovou multipart, verificação/download e retenção |
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
@@ -47,6 +49,14 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
   não cobre o timeout mais a margem de segurança; respostas/timeout fecham-no
   com sinal, latência e evidência. O runtime Compose instala o domínio
   `r4-webhook` sem alterar os volumes existentes.
+- O executor de produto usa uma chave externa estável por comando de etapa,
+  preservando a chave do protocolo nas operações simples. O probe HTTP criou
+  duas etapas independentes, observou dois efeitos distintos e confirmou que a
+  repetição da requisição retornou o mesmo protocolo sem novo efeito.
+- A reconciliação administrativa rejeita `UNKNOWN` sem `provider_request_id`
+  com estado `REJECTED`, auditoria e indicação explícita de ausência de
+  correlação externa. O finalizador consegue materializar o fato a partir do
+  snapshot do protocolo quando o intent histórico não está disponível.
 - Resultado acima de 1 MiB não é colocado no JSONB do protocolo: o finalizador
   faz upload streaming pela autoridade de objetos, conserva a referência como
   `ORPHAN` antes do commit e executa `LinkResult` depois da representação final.
@@ -70,12 +80,12 @@ portal, cache, ofertas, restore e HA do laboratório. Ela não equivale à
 conclusão integral dos 201 requisitos/732 cenários nem à homologação de
 provedores reais, AWS regional, multi-célula ou produção.
 
-A execução durável do DAG agora está conectada à admissão de produtos e tem
-evidência própria; a jornada HTTP com catálogo/provedor real ainda precisa de
-qualificação dedicada. Permanecem fora do fechamento integral, entre outros,
-budgets integrais de I/O, qualificação de adapter/provedor real, vinculação
-produtiva de financeiro/webhooks, fencing de efeitos cujo provider_request_id
-já foi perdido, projeção de catálogo em escala e a matriz integral de
+A execução durável do DAG agora está conectada à admissão de produtos e a
+jornada HTTP local com provider-sim tem evidência dedicada. Permanecem fora do
+fechamento integral, entre outros, carga prolongada e expiração durante I/O,
+qualificação de adapter/provedor real, vinculação produtiva de
+financeiro/webhooks, fencing positivo de efeitos cujo `provider_request_id` já
+foi perdido, projeção de catálogo em escala e a matriz integral de
 requisitos/cenários. O perfil Kind independente fecha o gate local de
 dependências e endpoints; não substitui IaC/HA regional dos ambientes remotos.
 Esses itens continuam marcados como abertos no backlog R4 e não foram

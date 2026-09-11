@@ -48,6 +48,14 @@
   mas chega ao Libra como `SUBMITTED`; todo `STATUS` conservado carrega seu
   `attempt_id`. O gate local confirmou fatos, inbox e partidas balanceadas sem
   quarentena de incidência inválida.
+- A execução de produtos compostos usa o `command_id` como chave de
+  idempotência externa de cada etapa, mantendo o `protocol_id` nas operações
+  simples. O probe HTTP comprovou duas etapas independentes, dois efeitos
+  distintos e duplicata sem novo efeito.
+- O finalizador aceita o snapshot do protocolo quando um intent histórico não
+  está disponível. A reconciliação de `UNKNOWN` sem `provider_request_id` é
+  rejeitada e auditada com `REJECTED`/`no_provider_correlation`; não há replay
+  cego.
 
 ## Bloqueios e limites ainda reproduzíveis
 
@@ -60,9 +68,10 @@
   tarefas funcionais nem os 25 itens herdados de R4-04.
 - Permanecem sem homologação provedores comerciais, AWS regional, decisões
   comerciais/SLO externas e a matriz integral de 201 requisitos/732 cenários.
-- A jornada HTTP do executor DAG com catálogo/provedor real, budgets integrais
-  de I/O, fencing de efeitos cujo `provider_request_id` já foi perdido,
-  políticas produtivas de retenção, projeções de catálogo em escala e
-  telemetria bilateral continuam sem demonstração integral.
+- A jornada HTTP do executor DAG com catálogo/provedor comercial, carga
+  prolongada/expiração durante I/O, fencing positivo de efeitos cujo
+  `provider_request_id` já foi perdido, políticas produtivas de retenção,
+  projeções de catálogo em escala e telemetria bilateral continuam sem
+  demonstração integral. O budget efetivo local já está ligado e testado.
 - Gaps arquiteturais remanescentes estão listados em `EXECUTION-2026-09-10.md`
   e não foram reclassificados como PASS por inferência.

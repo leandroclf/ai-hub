@@ -6,8 +6,17 @@
 |---|---|---|
 | `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos, `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
 | `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, CRUD/readback, navegação, logout e 390 px: PASS | Não substitui matriz completa de autorização |
-| Browser Harness | Cenário documentado percorreu 16 rotas em CDP dedicado e viewport 390×844: `PASS-EXPLORATORY` | Exploratório; Playwright continua gate bloqueador |
+| Browser Harness | Runner instalado, mas o daemon local não expôs `DevToolsActivePort`/CDP utilizável: `BLOCKED-ENVIRONMENT` | Exploratório; Playwright é o gate determinístico do frontend |
 | cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
+
+## Atualização da retomada de 11/09/2026
+
+| Artefato | Procedimento e resultado | Limite |
+|---|---|---|
+| `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito | Provider-sim local; não homologa provedor comercial ou matriz completa |
+| `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
+| `browser-smoke.json` | PASS; portal também persiste e relê mapeamento de entrada entre etapas | Não substitui matriz completa de autorização e negativos |
+| `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
 
 Origem: HEAD `a39d394b0d87185ed4cc3861c12ec45f2c302d9e`, branch `r2-implementation`, alterações não commitadas. Ambiente: laboratório isolado `ai-hub-r2`, PostgreSQL16, LocalStack3.8, Keycloak26.7.3; dados sintéticos. Coleta em 07–08/09/2026. A existência de teste com nome de cenário não encerra requisito sem revisar seu oráculo e a integração.
 
