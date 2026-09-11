@@ -21,13 +21,24 @@ import (
 // Offer resolves a published, tenant/application scoped snapshot. Authorization
 // decisions are never served past the validity returned by its owner.
 func (c *Client) Offer(ctx context.Context, tenant, application, service string, serviceVersion int, account string) (atlas.OfferSnapshot, error) {
+	key := fmt.Sprintf("offer:%s:%s:%s:%d:%s", tenant, application, service, serviceVersion, account)
 	q := url.Values{"tenant_id": {tenant}, "application_id": {application}, "service_code": {service}, "service_version": {strconv.Itoa(serviceVersion)}, "provider_account_id": {account}}
 	var out atlas.OfferSnapshot
 	_, err := c.getJSON(ctx, "/v1/offers/resolve?"+q.Encode(), &out)
-	if err == nil && (!time.Now().Before(out.ValidUntil) || out.Hash == "") {
-		err = fmt.Errorf("atlasclient: snapshot expired or invalid")
+	if err == nil {
+		if !time.Now().Before(out.ValidUntil) || out.Hash == "" {
+			return atlas.OfferSnapshot{}, fmt.Errorf("atlasclient: snapshot expired or invalid")
+		}
+		c.setCached(key, out)
+		return out, nil
 	}
-	return out, err
+	if cached, ok := c.getCached(key); ok {
+		candidate, valid := cached.(atlas.OfferSnapshot)
+		if valid && candidate.Hash != "" && time.Now().Before(candidate.ValidUntil) {
+			return candidate, nil
+		}
+	}
+	return atlas.OfferSnapshot{}, err
 }
 
 // Client e o cliente HTTP do Atlas com cache local.
