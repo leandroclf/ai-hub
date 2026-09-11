@@ -137,6 +137,9 @@ try {
  if(overflow)process.exitCode=1;
  await page.getByRole('button',{name:'Sair',exact:true}).click();
  await page.waitForTimeout(1000);
+ const unauthenticatedStatus=await page.request.get('http://localhost:13000/api/atlas/admin/v1/clients?tenant_id=acme').then(response=>response.status());
+ if(unauthenticatedStatus!==401)throw new Error(`API administrativa sem sessão retornou HTTP ${unauthenticatedStatus}`);
+ evidence.push({check:'Logout revokes browser access to administrative API',status:'PASS',httpStatus:unauthenticatedStatus});
  evidence.push({check:'Logout navigation',status:'OBSERVED',origin:new URL(page.url()).origin});
  console.log(JSON.stringify(evidence,null,2));
 } catch(error) {evidence.push({check:'browser flow',status:'FAIL',error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}

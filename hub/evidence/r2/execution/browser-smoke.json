@@ -6,12 +6,12 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789104122199"
+    "resource": "browser-client-1789106516704"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789104180968"
+    "resource": "browser-product-1789106550939"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -83,6 +83,11 @@
       "scrollWidth": 390,
       "scrollContainers": []
     }
+  },
+  {
+    "check": "Logout revokes browser access to administrative API",
+    "status": "PASS",
+    "httpStatus": 401
   },
   {
     "check": "Logout navigation",
