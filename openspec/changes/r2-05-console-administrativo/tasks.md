@@ -1,24 +1,24 @@
 # Tasks: Console administrativo completo e orientado às jornadas
 
-Status: **todas abertas**. Este arquivo planeja implementação futura; esta revisão só produziu documentação. Dependências de change: r2-01-identidade-e-isolamento
+Status: **comportamentos e provas concluídos; migração/rollback e fechamento permanecem abertos**. Os 36 cenários administrativos estão qualificados localmente; os gates de migração e recuo ainda não foram encerrados. Dependências de change: r2-01-identidade-e-isolamento
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `hub/admin-ui/src`; `hub/admin-ui/package.json`; `hub/admin-ui/vite.config.ts`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
   - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `hub/admin-ui/src`; `hub/admin-ui/package.json`; `hub/admin-ui/vite.config.ts`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
   - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `hub/admin-ui/src`; `hub/admin-ui/package.json`; `hub/admin-ui/vite.config.ts`.
   - Depends on: 1.2.
@@ -27,84 +27,84 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 2. Comportamentos
 
-- [ ] 2.1 Sessão, contexto e navegação administrativa
+- [x] 2.1 Sessão, contexto e navegação administrativa
   - Objective: Entregar o comportamento R2-ADM-01 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-01, SEG-01, SEG-04.
   - Likely files/components: `hub/admin-ui/src/App.tsx`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-01; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.1; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.2 Listagens reais e detalhe editável
+- [x] 2.2 Listagens reais e detalhe editável
   - Objective: Entregar o comportamento R2-ADM-02 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-01, CAT-01, CFG-06.
   - Likely files/components: `hub/admin-ui/src/pages/shared.ts`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Clientes, aplicações e ofertas contratadas
+- [x] 2.3 Clientes, aplicações e ofertas contratadas
   - Objective: Entregar o comportamento R2-ADM-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-01, CFG-06, CAT-02, CAT-11.
   - Likely files/components: `hub/admin-ui/src/pages/ClientsPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.4 Catálogo importado e serviços executáveis
+- [x] 2.4 Catálogo importado e serviços executáveis
   - Objective: Entregar o comportamento R2-ADM-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CAT-01, CAT-02, CFG-02, COM-02.
   - Likely files/components: `hub/admin-ui/src/pages/ServicesPage.tsx`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.5 Produtos agregados e compostos
+- [x] 2.5 Produtos agregados e compostos
   - Objective: Entregar o comportamento R2-ADM-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CAT-03, CAT-04, CAT-05, CAT-07, CAT-08.
   - Likely files/components: `hub/admin-ui/src/pages/ProductsPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-05; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.5; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.6 Provedores, vínculos e saúde de integração
+- [x] 2.6 Provedores, vínculos e saúde de integração
   - Objective: Entregar o comportamento R2-ADM-06 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-05, SEG-05, OPE-07, CAT-06.
   - Likely files/components: `hub/admin-ui/src/pages/ProviderAccountsPage.tsx`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-06; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.6; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.7 Contratos técnicos e políticas temporais
+- [x] 2.7 Contratos técnicos e políticas temporais
   - Objective: Entregar o comportamento R2-ADM-07 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CAT-09, CFG-04, FIN-03, EXE-10, EXE-11.
   - Likely files/components: `hub/admin-ui/src/pages/TechnicalProfilesPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-07; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.7; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.8 Busca e timeline operacional de protocolos
+- [x] 2.8 Busca e timeline operacional de protocolos
   - Objective: Entregar o comportamento R2-ADM-08 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-03, SEG-04, EXE-07, DAD-04.
   - Likely files/components: `hub/admin-ui/src/pages/ProtocolsPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-08; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.8; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.9 Entregas e reprocessamento com segurança de efeito
+- [x] 2.9 Entregas e reprocessamento com segurança de efeito
   - Objective: Entregar o comportamento R2-ADM-09 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-03, EXE-08, EXE-09, SEG-04.
   - Likely files/components: `hub/admin-ui/src/pages/DeliveriesPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-09; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.9; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.10 SLA bilateral e painéis operacionais consultáveis
+- [x] 2.10 SLA bilateral e painéis operacionais consultáveis
   - Objective: Entregar o comportamento R2-ADM-10 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-06, OPE-10, CFG-03.
   - Likely files/components: `hub/admin-ui/src/pages/SLAReportsPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-10; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.10; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.11 Financeiro de compra, venda e conciliação
+- [x] 2.11 Financeiro de compra, venda e conciliação
   - Objective: Entregar o comportamento R2-ADM-11 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-01, FIN-02, FIN-06, FIN-07, FIN-08, FIN-10.
   - Likely files/components: `hub/admin-ui/src/pages/FinancePage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-ADM-11; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.11; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.12 Qualidade de uso, acessibilidade e integração real
+- [x] 2.12 Qualidade de uso, acessibilidade e integração real
   - Objective: Entregar o comportamento R2-ADM-12 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-01, QUA-03, QUA-04.
   - Likely files/components: `hub/admin-ui/src/index.css`; `hub/admin-ui/src/api/atlasClient.ts`; `hub/api/openapi-internal.yaml`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.

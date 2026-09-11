@@ -1,24 +1,24 @@
 # Tasks: Catálogo operável, produtos compostos e contratos por cliente
 
-Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação têm prova integral; ofertas, agregação, perfis e onboarding permanecem abertos onde faltam cenários. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **comportamentos e provas concluídos; migração/rollback e fechamento permanecem abertos**. Os 24 cenários de catálogo têm resultado explícito; os gates de migração e recuo ainda exigem ensaio próprio. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
   - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
   - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 1.2.
