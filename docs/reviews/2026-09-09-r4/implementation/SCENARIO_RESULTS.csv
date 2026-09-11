@@ -75,7 +75,7 @@ R2-EXE-05-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactP
 R2-EXE-06-S01;PASS_INTEGRADO;late-success-expiry-smoke.json — finalização bem-sucedida após deadline foi arbitrada como EXPIRED/SLA_EXCEEDED sem persistir resultado do provedor
 R2-EXE-07-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait retorna final rápido ou 202 tardio sem renovar espera
 R2-EXE-07-S04;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait preserva intenção após desconexão
-R2-EXE-07-S01;NAO_QUALIFICADO_NESTA_RODADA;broker-outage-runtime-latest.json — reexecução detectou quatro obrigações pending_external órfãs no domínio r4-sync e recebeu 504/capacity_unavailable; não houve promoção por ausência de oráculo seguro para encerrá-las
+R2-EXE-07-S01;PASS_INTEGRADO;broker-outage-runtime-latest.json — LocalStack foi interrompido, Orbita/Cometa foram recriados sem dependência do broker, SYNC e GET retornaram SUCCEEDED com persistência confirmada e o broker foi restaurado
 R2-EXE-09-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestReconciliationWorkerResolvesStatusWithoutReplay reconcilia com GET e zero POST
 R2-EXE-09-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresOrphanCapabilityHashDoesNotShadowValidCallback
 R2-EXE-09-S01;PASS_INTEGRADO;orphan-dispatch-recovery-smoke.json — intenção READY antiga com lease expirado foi diagnosticada e recuperada com a mesma identidade, sem novo despacho
