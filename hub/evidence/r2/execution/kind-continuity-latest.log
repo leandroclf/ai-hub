@@ -20,3 +20,9 @@ KIND_INDEPENDENT_BOOTSTRAP=PASS namespace=ai-hub-local-kind dependencies=cluster
 pod_recovery workload=cometa rto_ms=4440 available=2/2
 pod_recovery workload=pulsar rto_ms=4414 available=2/2
 CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
+
+Reexecução 2026-09-11 após qualificação de overlays:
+pod_recovery workload=cometa rto_ms=4398 available=2/2
+pod_recovery workload=pulsar rto_ms=4421 available=2/2
+CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
+Limite preservado: a execução recria pods e verifica dependências cluster-owned, mas não recria um nó/contêiner Kind; R3-OPE-02-S02 permanece não qualificado.

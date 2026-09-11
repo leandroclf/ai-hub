@@ -36,7 +36,7 @@
 | `finance-runtime-proof.sh` | `FINANCE_RUNTIME_PROOF=PASS`: outbox 58, fatos 21, custo 8, receita 13, inbox 58, journal balanceado e zero quarentena inválida | Janela local de 900s; não homologa ERP |
 | `webhook-capacity-runtime.sh` | `PASS`: delivery `d38017c0-2e2f-4ed1-b46b-5796569733cf`, `open=0`, `pending=0` | Endpoint webhook sintético |
 | `restore-reconciliation.sh` | `PASS`: três bancos restaurados por contagem/digest, 0 objetos S3 e oráculo externo observado sem replay | Restore local; sem AWS/provedor comercial |
-| `continuity-runtime-proof.sh` | `PASS`: 3 nós, 5 workloads cluster-owned; RTO Cometa 4664ms e Pulsar 4445ms | Ensaio Kind local |
+| `continuity-runtime-proof.sh` | `PASS`: 3 nós, 5 workloads cluster-owned; reexecução mais recente com RTO Cometa 4398ms e Pulsar 4421ms | Ensaio Kind local; recriação de nó/contêiner Kind permanece fora |
 | `browser-smoke.json` | 23 verificações: 22 `PASS` e 1 `OBSERVED`, sem `FAIL` | Não substitui matriz integral |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
