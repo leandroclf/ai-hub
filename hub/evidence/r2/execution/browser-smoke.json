@@ -18,12 +18,12 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789120156404"
+    "resource": "browser-client-1789121052920"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789120200930"
+    "resource": "browser-product-1789121100939"
   },
   {
     "check": "URL navigation and real authenticated provider list",

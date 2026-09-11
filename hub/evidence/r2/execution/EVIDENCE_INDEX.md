@@ -25,6 +25,8 @@
 
 ## Atualização operacional posterior — 11/09/2026
 
+| `identity-global-reader.json` | `python3 hub/deploy/r2/tests/identity-scope-proof.py`: `IDENTITY_SCOPE_PROOF=PASS`; `auditor-global` emite sujeito, MFA e `admin:cross_tenant`, Atlas/Órbita permitem leitura administrativa mascarada, escrita retorna 403 e `leitor-a` não cruza tenant | Fixture OIDC local, PostgreSQL e dados sintéticos; não substitui homologação produtiva |
+
 O runner de reconciliação local fechou quatro permits `pending_external` após
 confirmar HTTP 404 no provider-sim (`closed=4 protected=0`). A prova não fecha
 obrigações cujo efeito externo esteja presente. O worker Cometa também passou a

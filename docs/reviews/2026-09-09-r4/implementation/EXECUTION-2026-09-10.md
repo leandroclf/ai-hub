@@ -132,6 +132,15 @@ sem novo plano ou efeito. O log saneado está em
 
 ### Qualificação adicional de catálogo, dados e portal — 11/09/2026
 
+O runner `identity-scope-proof.py` confirmou a fronteira do leitor global no
+runtime persistido: `auditor-global` emite sujeito, `pwd+otp`, papel
+`hub_protocol_reader` e `admin:cross_tenant`; leituras administrativas de
+Atlas e Órbita entre tenants retornaram 200 sem campos de segredo, a tentativa
+de escrita retornou 403 e `leitor-a` permaneceu restrito ao próprio tenant.
+Consultas globais continuam exigindo finalidade e são registradas como
+`READ` na tabela de auditoria. O fixture não representa uma concessão de
+produção.
+
 Os testes focados de Atlas e Órbita foram reexecutados com `-race` usando
 PostgreSQL real: publicação imutável, conflito de revisão, DAG/fan-out,
 projeção JSON estrita, importação em staging com diff, sanitização e paginação

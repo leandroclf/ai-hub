@@ -31,11 +31,8 @@
         {
           "name": "subject",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-property-mapper",
+          "protocolMapper": "oidc-sub-mapper",
           "config": {
-            "user.attribute": "id",
-            "claim.name": "sub",
-            "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true"
           }
@@ -109,6 +106,7 @@
         }
       ],
       "defaultClientScopes": [
+        "admin:cross_tenant",
         "catalog:publish",
         "catalog:read",
         "catalog:write",
@@ -140,11 +138,8 @@
         {
           "name": "subject",
           "protocol": "openid-connect",
-          "protocolMapper": "oidc-usermodel-property-mapper",
+          "protocolMapper": "oidc-sub-mapper",
           "config": {
-            "user.attribute": "id",
-            "claim.name": "sub",
-            "jsonType.label": "String",
             "access.token.claim": "true",
             "id.token.claim": "true"
           }
@@ -218,6 +213,7 @@
         }
       ],
       "defaultClientScopes": [
+        "admin:cross_tenant",
         "catalog:publish",
         "catalog:read",
         "catalog:write",
@@ -779,6 +775,14 @@
   ],
   "clientScopes": [
     {
+      "name": "admin:cross_tenant",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true",
+        "display.on.consent.screen": "false"
+      }
+    },
+    {
       "name": "catalog:publish",
       "protocol": "openid-connect",
       "attributes": {
@@ -924,6 +928,12 @@
     }
   ],
   "scopeMappings": [
+    {
+      "clientScope": "admin:cross_tenant",
+      "roles": [
+        "hub_protocol_reader"
+      ]
+    },
     {
       "clientScope": "catalog:publish",
       "roles": [

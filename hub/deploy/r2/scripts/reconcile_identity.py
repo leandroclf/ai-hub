@@ -54,17 +54,17 @@ def reconcile_user(t, username, tenant, app, cell, role):
     roles=request("/admin/realms/%s/roles/%s"%(REALM,role),token=t)[1]
     request("/admin/realms/%s/users/%s/role-mappings/realm"%(REALM,uid),"POST",[roles],t)
 
-def reconcile_admin_scope(t):
-    """Garante o escopo administrativo em realms importados anteriormente."""
+def reconcile_client_scope(t, scope_name, role_name):
+    """Garante um escopo administrativo nos dois clientes da fixture."""
     scopes=request("/admin/realms/%s/client-scopes"%REALM,token=t)[1]
-    scope=next((item for item in scopes if item.get("name")=="protocols:reconcile"),None)
+    scope=next((item for item in scopes if item.get("name")==scope_name),None)
     if not scope:
-        request("/admin/realms/%s/client-scopes"%REALM,"POST",{"name":"protocols:reconcile","protocol":"openid-connect","attributes":{"include.in.token.scope":"true","display.on.consent.screen":"false"}},t)
+        request("/admin/realms/%s/client-scopes"%REALM,"POST",{"name":scope_name,"protocol":"openid-connect","attributes":{"include.in.token.scope":"true","display.on.consent.screen":"false"}},t)
         scopes=request("/admin/realms/%s/client-scopes"%REALM,token=t)[1]
-        scope=next(item for item in scopes if item.get("name")=="protocols:reconcile")
-    role=request("/admin/realms/%s/roles/hub_admin"%REALM,token=t)[1]
+        scope=next(item for item in scopes if item.get("name")==scope_name)
+    role=request("/admin/realms/%s/roles/%s"%(REALM,role_name),token=t)[1]
     mapped=request("/admin/realms/%s/client-scopes/%s/scope-mappings/realm"%(REALM,scope["id"]),token=t)[1]
-    if not any(item.get("name")=="hub_admin" for item in mapped):
+    if not any(item.get("name")==role_name for item in mapped):
         request("/admin/realms/%s/client-scopes/%s/scope-mappings/realm"%(REALM,scope["id"]),"POST",[role],t)
     for client_id in ("ai-hub-admin","ai-hub-fixture"):
         clients=request("/admin/realms/%s/clients?clientId=%s"%(REALM,client_id),token=t)[1]
@@ -73,6 +73,30 @@ def reconcile_admin_scope(t):
         default=request("/admin/realms/%s/clients/%s/default-client-scopes"%(REALM,client["id"]),token=t)[1]
         if not any(item.get("id")==scope["id"] for item in default):
             request("/admin/realms/%s/clients/%s/default-client-scopes/%s"%(REALM,client["id"],scope["id"]),"PUT",None,t)
+
+def remove_invalid_subject_mappers(t, client):
+    """Remove mapper legado que sobrescreve a claim OIDC reservada `sub`."""
+    mappers=request("/admin/realms/%s/clients/%s/protocol-mappers/models"%(REALM,client["id"]),token=t)[1]
+    for mapper in mappers:
+        config=mapper.get("config",{})
+        if (mapper.get("protocolMapper")=="oidc-usermodel-property-mapper"
+                and config.get("claim.name")=="sub"
+                and config.get("user.attribute")=="id"):
+            request("/admin/realms/%s/clients/%s/protocol-mappers/models/%s"%(REALM,client["id"],mapper["id"]),"DELETE",token=t)
+
+def ensure_subject_mapper(t, client):
+    """Garante o mapper oficial do Keycloak para a claim reservada `sub`."""
+    mappers=request("/admin/realms/%s/clients/%s/protocol-mappers/models"%(REALM,client["id"]),token=t)[1]
+    subject=next((mapper for mapper in mappers if mapper.get("protocolMapper")=="oidc-sub-mapper"),None)
+    if subject:
+        config=subject.setdefault("config",{})
+        changed=False
+        for key in ("access.token.claim","id.token.claim"):
+            if config.get(key)!="true": config[key]="true"; changed=True
+        if changed:
+            request("/admin/realms/%s/clients/%s/protocol-mappers/models/%s"%(REALM,client["id"],subject["id"]),"PUT",subject,t)
+        return
+    request("/admin/realms/%s/clients/%s/protocol-mappers/models"%(REALM,client["id"]),"POST",{"name":"subject","protocol":"openid-connect","protocolMapper":"oidc-sub-mapper","config":{"access.token.claim":"true","id.token.claim":"true"}},t)
 
 def main():
     for _ in range(30):
@@ -84,10 +108,13 @@ def main():
     for name, label in (("tenant_id","Tenant"),("application_id","Application"),("cell_id","Cell")):
         attrs[name]={"name":name,"displayName":label,"permissions":{"view":["admin","user"],"edit":["admin"]},"multivalued":False}
     profile["attributes"]=list(attrs.values()); request("/admin/realms/%s/users/profile"%REALM,"PUT",profile,t)
-    clients=request("/admin/realms/%s/clients?clientId=ai-hub-admin"%REALM,token=t)[1]; client=clients[0]
-    if not any(m.get("name")=="subject" for m in client.get("protocolMappers",[])):
-        request("/admin/realms/%s/clients/%s/protocol-mappers/models"%(REALM,client["id"]),"POST",{"name":"subject","protocol":"openid-connect","protocolMapper":"oidc-usermodel-property-mapper","config":{"user.attribute":"id","claim.name":"sub","jsonType.label":"String","access.token.claim":"true","id.token.claim":"true"}},t)
-    reconcile_admin_scope(t)
+    for client_id in ("ai-hub-admin","ai-hub-fixture"):
+        clients=request("/admin/realms/%s/clients?clientId=%s"%(REALM,client_id),token=t)[1]
+        if not clients: raise RuntimeError("cliente OIDC ausente: "+client_id)
+        remove_invalid_subject_mappers(t,clients[0])
+        ensure_subject_mapper(t,clients[0])
+    reconcile_client_scope(t,"protocols:reconcile","hub_admin")
+    reconcile_client_scope(t,"admin:cross_tenant","hub_protocol_reader")
     for user in USERS: reconcile_user(t,*user)
     print("identity reconciliation: PASS")
 if __name__=="__main__": main()

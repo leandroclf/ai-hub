@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-11",
+  "environment": "local",
+  "fixture_user": "auditor-global",
+  "role": "hub_protocol_reader",
+  "tenant_id": "",
+  "claims": {
+    "subject_present": true,
+    "amr": ["pwd", "otp"],
+    "admin_cross_tenant": true
+  },
+  "checks": {
+    "atlas_cross_tenant_read": {"status": 200, "secret_fields": false},
+    "orbita_cross_tenant_diagnostic": {"status": 200, "secret_fields": false},
+    "global_write": {"status": 403},
+    "tenant_reader_cross_tenant_read": {"status": 403}
+  },
+  "audit": {
+    "action": "READ",
+    "requested_tenant": "acme",
+    "reason_required": true,
+    "mfa": true
+  },
+  "procedure": "python3 hub/deploy/r2/tests/identity-scope-proof.py",
+  "limitation": "fixture local e dados sintéticos; não homologa identidade ou cluster produtivo"
+}

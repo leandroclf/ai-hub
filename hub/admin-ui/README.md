@@ -52,6 +52,22 @@ após uma mensagem de erro e mantenha relógio do host e do container
 sincronizados. O formulário limpa o campo quando o Keycloak rejeita o código;
 isso não indica, por si só, senha incorreta.
 
+O usuário sintético `auditor-global` representa o perfil nominal
+`hub_protocol_reader`. Ele só recebe `admin:cross_tenant` quando o token também
+contém MFA; a permissão permite consultas administrativas auditadas entre
+tenants e não concede escrita, replay, financeiro ou segredos. A prova local
+reprodutível é:
+
+```bash
+python3 hub/deploy/r2/tests/identity-scope-proof.py
+```
+
+O runner mantém o token apenas em memória, confirma `sub`, `pwd+otp`, papel e
+escopo, consulta Atlas/Órbita sem campos sensíveis, tenta uma escrita e valida
+que `leitor-a` não cruza para `beta`. A consulta administrativa global deve
+informar tenant-alvo e finalidade; o backend registra essa leitura na trilha
+de auditoria.
+
 Segredos de provedor e webhook nunca são digitados nem exibidos em claro.
 As telas trabalham somente com referências versionadas, como `secret_ref` e
 `secret_version`.
