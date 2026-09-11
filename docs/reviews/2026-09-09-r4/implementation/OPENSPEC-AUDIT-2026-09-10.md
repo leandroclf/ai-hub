@@ -4,7 +4,11 @@
 
 O comando `npx --yes @fission-ai/openspec@latest validate --all --strict --no-interactive --json` passou em **21/21 changes**, sem falhas. Isso confirma a validade estrutural dos artefatos OpenSpec; não confirma a implementação integral dos requisitos.
 
-O working tree estava limpo no SHA `7cd4a39fdbf4375cc0f246305c3220ec0b2bd9a3`. A auditoria encontrou quatro changes R4 em execução, com tarefas ainda abertas por falta de evidência de integração completa. Nenhuma tarefa foi encerrada por inspeção textual isolada.
+O working tree foi posteriormente evoluído por fatias verticais e a auditoria
+deve ser lida junto do checkpoint e da execução mais recente. As quatro
+changes R4 continuam em execução, com tarefas ainda abertas por falta de
+evidência de integração completa. Nenhuma tarefa foi encerrada por inspeção
+textual isolada.
 
 ## Sequência aplicada
 
@@ -19,10 +23,10 @@ O working tree estava limpo no SHA `7cd4a39fdbf4375cc0f246305c3220ec0b2bd9a3`. A
 
 | Change | Situação | Tarefas encerráveis nesta rodada | Pendências bloqueadoras |
 |---|---|---|---|
-| r4-01 callbacks | Parcial | revalidação; parte do worker/caminho compartilhado | autenticação por conta, quota/retention e cenário externo ponta a ponta |
+| r4-01 callbacks | Parcial | revalidação; worker, ingresso público, validação terminal, quota/retention e deduplicação por capability | autenticação por conta e cenário externo ponta a ponta |
 | r4-02 contratos JSON | Implementação e testes unitários concluídos | contrato, implementação e qualificação dos seis cenários R4 | rollout/upgrade específico e requalificação herdada |
 | r4-03 upgrade/cache | Parcial | upgrade/reconciliação histórica e migração aditiva | revogação/cancelamento/crescimento e prova de projeção/ofertas |
-| r4-04 conclusão integrada | Parcial | revalidação | inventário regenerado de todos os cenários, console integrado, kind estável, carga, HA e ausência de skips obrigatórios |
+| r4-04 conclusão integrada | Parcial | revalidação, console Playwright, carga, RLS, restore e HA local | inventário regenerado de todos os cenários, Browser Harness bloqueado por CDP, kind independente, ausência de skips obrigatórios e gaps arquiteturais |
 
 ## Evidências consideradas
 
@@ -31,9 +35,11 @@ O working tree estava limpo no SHA `7cd4a39fdbf4375cc0f246305c3220ec0b2bd9a3`. A
 - `go test ./...`, `go test -race ./...` e validações de migração: evidências registradas na rodada.
 - Compose oficial `ai_hub_r3qual`: bootstrap, probes e testes integrados locais executados.
 - Restore lógico: três bancos, contagens e digests consistentes; S3 restaurado sem divergência.
-- Browser smoke: evidência histórica PASS preservada; uma tentativa posterior falhou por ambiente/execução e não foi promovida como PASS.
-- Kind: bootstrap chegou ao runtime, mas o cluster existente apresentou DNS/rede residual e workloads instáveis; não é PASS de kind completo.
-- Carga: scripts foram corrigidos para portas/projeto oficiais; execução sem token retornou 401, portanto não é qualificação de carga autorizada.
+- Browser smoke: evidência atual PASS com OIDC/OTP, readback, SLA, destinos versionados, logout e viewport 390px.
+- Browser Harness: executável instalado, mas execução atual é `BLOCKED-ENVIRONMENT` por ausência de `DevToolsActivePort`/CDP utilizável.
+- Kind: três nós, réplicas, métricas/HPA/KEDA e recuperação local observados; dependências ainda apontam para Compose e não formam um cluster de produção independente.
+- Carga: execução autorizada atual passou nos oito caminhos, com idempotência e callback; execução sem token continua sendo apenas negativa de autorização.
+- RLS/restore: prova cross-tenant passou em control/core/finance e restore novo comparou contagens/digests e S3 sem replay.
 
 ## Regra de conclusão
 
@@ -41,10 +47,15 @@ Uma tarefa só deve receber `[x]` quando o comando, SHA, ambiente, resultado obs
 
 ## Próxima sequência obrigatória
 
-1. Corrigir/recriar somente o laboratório kind `ai-hub-r2`, após confirmação para a remoção do cluster residual.
-2. Reexecutar os cinco deployments, métricas, HPA/KEDA, probes, rollout e uma falha controlada de pod.
-3. Corrigir o fluxo browser autenticado e executar criação, edição, restauração, simulação, publicação, logout e negativas de autorização.
-4. Obter token de fixture de forma controlada e executar carga autorizada com taxa, duração, percentis, erros e isolamento registrados.
-5. Completar cenários de callbacks/inbox, revogação de cache e resolução de ofertas em crescimento.
-6. Regenerar a matriz integral de requisitos/cenários e somente então avaliar o encerramento de r4-04.
-
+1. Independizar os serviços e dependências do laboratório kind `ai-hub-r2` e
+   repetir rollout, drenagem, falhas e continuidade com o envelope completo.
+2. Ampliar o browser determinístico para as mutações e negativas de todas as
+   jornadas, e repetir o Browser Harness quando o ambiente CDP estiver
+   disponível.
+3. Completar a qualificação de callbacks/inbox, revogação de cache, budgets
+   de capacidade/I/O, crescimento de ofertas, financeiro, FileRefs e destinos
+   ponta a ponta.
+4. Fechar fencing geral de efeito incerto, executor DAG ligado ao atendimento
+   e telemetria bilateral verificável.
+5. Regenerar a matriz integral de requisitos/cenários e somente então avaliar
+   o encerramento de r4-04.

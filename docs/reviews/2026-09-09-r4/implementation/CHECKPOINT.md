@@ -7,12 +7,13 @@ consultado no log após o commit.
 
 Executado: OpenSpec strict `21/21` — PASS; `npm run build` no portal — PASS;
 `go test -race -count=1 ./...` e `go vet ./...` — PASS; `git diff --check` —
-PASS. O Compose `ai_hub_r3qual` passou por bootstrap, seed versionado,
-probes, carga autenticada, callbacks, migrações, restore e testes integrados.
-O restore comparou digests dos três bancos e S3. O cluster kind tem três nós,
-readiness, métricas/HPA/KEDA e recuperação de pods em duas réplicas. O smoke
-Chromium e o Browser Harness passaram; este último é exploratório e não
-substitui Playwright.
+PASS. O Compose `ai_hub_r3qual` passou por seed versionado, carga autorizada,
+callbacks, migrações, RLS, restore e testes integrados. O restore comparou
+digests dos três bancos e S3 com alvo novo e sem replay externo. O cluster kind
+tem três nós, readiness, métricas/HPA/KEDA e recuperação de pods em duas
+réplicas. O smoke Chromium autenticado passou; o Browser Harness está
+`BLOCKED-ENVIRONMENT` porque o daemon não encontrou `DevToolsActivePort`/CDP
+utilizável e continua sendo exploratório.
 
 Estado atual: sequência operacional local concluída. Permanecem explícitos os
 gaps arquiteturais do backlog herdado, dependências Compose no renderer do

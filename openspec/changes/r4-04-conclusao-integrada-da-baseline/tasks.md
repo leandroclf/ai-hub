@@ -86,13 +86,13 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-02 Concluir e requalificar R3-EXE-02 — Callback com confirmação de custódia.
-  - Objective: Capability e recibo antes de ACK foram adicionados. Nova inbox tem lacunas de autenticação/deduplicação e recuperador; rota segue sob JWT Hub.
+  - Objective: Capability, recibo antes de ACK, validação terminal e ingresso público por chave foram adicionados. A inbox agora isola a identidade da capability, impõe limite de bytes/itens e retenção de processados; ainda falta qualificar autenticação por conta e o cenário externo ponta a ponta.
   - Likely files/components: hub/internal/cometa/handlers.go, hub/internal/cometa/executor.go, hub/cmd/cometa/main.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-03 Concluir e requalificar R3-EXE-03 — Recuperação de efeito incerto e fencing.
-  - Objective: PrepareSubmission/UNKNOWN sem recuperador geral e sem fencing de egress continuam. Inbox não resolve incerteza de SUBMIT.
+  - Objective: Worker de inbox e reconciliação agora usam lote, claim, lease e epoch, com isolamento de poison item; permanece sem prova o fairness sob execução longa e o fencing geral de efeitos UNKNOWN/SUBMIT.
   - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/executor.go, hub/internal/orbita/intents.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -134,7 +134,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-10 Concluir e requalificar R3-INT-01 — Controle adaptativo conectado a todo I/O.
-  - Objective: Capacity continua sem ligação a Execute/requestPoll; código desse controlador e consumidores permanece igual.
+  - Objective: Capacity agora está conectado ao Execute do Cometa, ao polling e à reconciliação, com sinais de sucesso, timeout, throttling e indisponibilidade; permanece aberta a qualificação integral por domínio e de todos os I/O.
   - Likely files/components: hub/internal/cometa/capacity.go, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -152,25 +152,25 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-13 Concluir e requalificar R3-ADM-01 — Fronteira administrativa e aplicação.
-  - Objective: Papel hub_protocol_reader, MFA e o escopo OIDC protocols:reconcile agora são obrigatórios no admin; o fixture hub_admin entrega o novo escopo. Requalificar política de aplicação/mascaramento e browser sem afirmar bypass corrigido ainda existente.
+  - Objective: Papel `hub_protocol_reader`, MFA e o escopo OIDC `protocols:reconcile` estão aplicados no admin; o fixture `hub_admin` entrega o escopo. A política de tenant/cross-tenant e a ausência de segredo em claro têm cobertura local; ainda falta a matriz completa de revogação, mascaramento e negativa por jornada.
   - Likely files/components: hub/internal/orbita/admin.go, hub/internal/platform/auth/auth.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-14 Concluir e requalificar R3-ADM-02 — Ações operacionais com API efetiva.
-  - Objective: A ação de reconciliação de protocolos agora possui API Orbita e worker Cometa duráveis, idempotentes, auditados e sem replay de provedor; ainda faltam as demais ações operacionais, IDs de entrega e rotas SLA compatíveis.
+  - Objective: Reconciliação de protocolos, redelivery de entregas e consulta de SLA agora possuem rotas Orbita/Pulsar, recibos auditáveis e jornadas no portal; ainda faltam a matriz completa de ações, IDs/efeitos de entrega e negativas por papel.
   - Likely files/components: hub/admin-ui/src/pages/OperationsPage.tsx, hub/internal/pulsar/handlers.go, hub/internal/orbita/admin.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-15 Concluir e requalificar R3-ADM-03 — Comandos financeiros compatíveis.
-  - Objective: Frontend/handlers financeiros não mudaram; payload/tenant/datas e fluxo idempotente continuam pendentes.
+  - Objective: Frontend e handlers financeiros agora usam payloads compatíveis, tenant explícito, datas UTC e ações idempotentes de fechamento, ajuste, divergência e recibo de exportação; ainda falta demonstrar o fluxo financeiro ponta a ponta e sua segregação de aprovação.
   - Likely files/components: hub/admin-ui/src/pages/FinancePage.tsx, hub/internal/libra/handlers.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-16 Concluir e requalificar R3-ADM-04 — Formulários completos e tempo local.
-  - Objective: Catálogo UI não mudou; multimodalidade, campos auth, fuso e lookups continuam pendentes.
+  - Objective: Catálogo UI agora cobre os modos de recurso, campos de autenticação, referências de segredo e edição de data/hora UTC/local; ainda faltam lookups completos, cobertura multimodal e a matriz browser de todas as jornadas.
   - Likely files/components: hub/admin-ui/src/pages/CatalogPage.tsx, hub/admin-ui/src.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -188,13 +188,13 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-19 Concluir e requalificar R3-FIN-03 — Destino de webhook congelado por aplicação.
-  - Objective: Pulsar não mudou; seleção de destinos atuais em vez de snapshot continua.
+  - Objective: O aceite congela snapshots versionados de destino por aplicação/tenant, e Pulsar entrega somente o snapshot persistido no fato; permanece aberta a qualificação ponta a ponta com aplicações A/B, rotação e redelivery.
   - Likely files/components: hub/internal/pulsar/custody.go, hub/internal/orbita/finalize.go, hub/internal/pulsar/handlers.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-20 Concluir e requalificar R3-OPE-01 — Objetos conectados ao fluxo e retenção.
-  - Objective: Objetos/admissão não mudaram; integração de FileRefs/resultados no adapter permanece pendente.
+  - Objective: FileRefs agora são fixados na admissão e encaminhados ao provider-sim; integração de resultados, adapter real, retenção e qualificação de isolamento entre tenants permanecem pendentes.
   - Likely files/components: hub/internal/objectstore/catalog.go, hub/internal/objectstore/retention.go, hub/internal/cometa/executor.go, hub/internal/orbita/admission.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -212,19 +212,19 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-23 Concluir e requalificar R3-OPE-04 — Autoridade durável, isolamento e restore.
-  - Objective: Migrações de callback adicionadas, mas alteração de migração histórica cria novo risco de upgrade. RLS/restore sem prova integrada atual.
+  - Objective: Migrações aditivas de callback, RLS runtime e restore/reconciliation foram revalidados; o harness agora recusa alvos de restore já existentes. Permanecem a prova integral de upgrade/rollback e a cobertura de autoridade durável de todos os domínios.
   - Likely files/components: hub/migrations/core, hub/migrations/control, hub/internal/platform/pg, hub/internal/orbita/admission.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-24 Concluir e requalificar R3-OPE-05 — SLA bilateral e telemetria verificável.
-  - Objective: UI SLA/telemetria não mudaram; sinais reais de domínio e consulta bilateral pendentes.
+  - Objective: A API e o painel de SLA bilateral agora leem snapshots persistidos de protocolo e expõem os estados de cliente/provedor; permanecem pendentes sinais de domínio bilaterais completos, telemetria e alertas verificáveis.
   - Likely files/components: hub/internal/platform/httpserver/telemetry.go, hub/admin-ui/src/pages/OperationsPage.tsx, hub/deploy/r2.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-25 Concluir e requalificar R3-QUA-01 — Qualificação integral do SHA sem skips ocultos.
-  - Objective: OpenSpec strict atual 17/17 e build/race passam nesta auditoria; 18 testes skip. Matriz omite 416 cenários v4 e relatórios são contraditórios.
+  - Objective: OpenSpec strict 21/21, build, vet, race, browser determinístico, carga autorizada, RLS e restore passam nesta iteração; Browser Harness continua bloqueado pelo ambiente e a matriz ainda mantém 416 cenários v4 sem execução integral, além de skips e gaps arquiteturais explícitos.
   - Likely files/components: hub/internal/atlas/catalog_test.go, hub/internal/cometa/custody_test.go, docs/reviews/2026-09-07-r2/implementation/FINAL_REPORT.md.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.

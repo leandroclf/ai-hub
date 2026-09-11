@@ -18,8 +18,8 @@ R4-CBK-01-S01;PASS_ESTRUTURAL;rota pública /callbacks separada do JWT
 R4-CBK-01-S02;PASS_INTEGRADO_LOCAL;provider-sim em Compose concluiu callback e o efeito foi observado
 R4-CBK-01-S03;PASS_UNITARIO;chave de ingresso constante e capability por operação
 R4-CBK-02-S01;PASS_INTEGRADO_LOCAL;inbox PostgreSQL foi exercitada pela carga e terminou sem RECEIVED pendente
-R4-CBK-02-S02;PENDENTE;quota/retenção ainda não qualificados
-R4-CBK-02-S03;PENDENTE;conflito legítimo/órfão não executado
+R4-CBK-02-S02;IMPLEMENTADO_UNITARIO;inbox deduplica por operation/body/capability, rejeita payload vazio ou acima de 512 KiB e mantém quota global de RECEIVED
+R4-CBK-02-S03;IMPLEMENTADO_UNITARIO;capability hashes distintos para o mesmo body não colidem; retenção limitada de itens processados é executada pelo worker
 R4-CBK-03-S01;PASS_INTEGRADO_LOCAL;worker autônomo processou callback no Compose com autoridade PostgreSQL
 R4-CBK-03-S02;PASS_INTEGRADO_LOCAL;claim/lease/epoch e recuperação foram exercitados no fluxo integrado
 R4-CBK-03-S03;IMPLEMENTADO_UNITARIO;poison item isolado após três tentativas, ensaio de justiça pendente
@@ -29,9 +29,9 @@ R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preserv
 R4-QUA-01-S01;PASS_ESTRUTURAL;inventário de união presente no pacote
 R4-QUA-01-S02;PENDENTE;matriz de resultados ainda não regenerada
 R4-QUA-01-S03;PENDENTE;hash final depende do working tree
-R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, logout e viewport 390px
-R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente passou no Playwright e 16 rotas foram percorridas no harness, mutações de cada jornada ainda não são equivalentes
+R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
+R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes
 R4-QUA-02-S03;PARCIAL;ausência de token persistido passou, matriz de negativas de autorização pendente
 R4-QUA-03-S01;PASS;go test ./... verde
-R4-QUA-03-S02;PASS_INTEGRADO;Compose, kind recriado, readiness, métricas/HPA e recuperação de pod
-R4-QUA-03-S03;PARCIAL_INTEGRADO;restore, carga autenticada e HA local passaram, kind ainda usa dependências Compose e não representa produção
+R4-QUA-03-S02;PASS_INTEGRADO;Compose, kind, readiness, métricas/HPA e recuperação de pod
+R4-QUA-03-S03;PARCIAL_INTEGRADO;restore, RLS, carga autenticada e HA local passaram, kind ainda usa dependências Compose e não representa produção

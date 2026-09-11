@@ -9,17 +9,17 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Gate | Comando/artefato | Resultado |
 |---|---|---|
 | Catálogo versionado | `node hub/deploy/r2/tests/catalog-seed.mjs` | PASS; seed idempotente via `admin/v1`, validação/publicação com `If-Match`, qualificação/célula sintéticas somente no fixture autorizado |
-| Carga autorizada | `R2_EVIDENCE_PREFIX=r4-authorized-20260910-final node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos e idempotência, log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` |
-| Callback | Carga acima + duas negativas HTTP no `/callbacks/{operation}` | PASS; callback concluiu, chave de ingresso inválida e capability inválida retornaram 401 |
-| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, criação/leitura durável, navegação, logout, storage sem sessão persistida e viewport móvel sem overflow |
-| Browser Harness | `browser-harness < hub/deploy/r2/tests/browser-harness/scenarios/admin-console.py` | PASS-EXPLORATORY; 16 rotas, CDP dedicado, 390×844 aplicado via Emulation, conteúdo útil e sem overflow |
+| Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` |
+| Callback | Carga acima + testes focados de inbox/validação terminal | PASS parcial; callback concluiu, ingress key/capability inválidos retornaram 401, deduplicação por capability, quota e retenção têm implementação e testes focados; cenários externos completos ainda abertos |
+| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, criação/leitura durável, SLA, destinos versionados, navegação, logout, storage sem sessão persistida e viewport móvel sem overflow |
+| Browser Harness | `browser-harness < hub/deploy/r2/tests/browser-harness/scenarios/admin-console.py` | BLOCKED-ENVIRONMENT; executável instalado, mas o daemon local não encontrou `DevToolsActivePort`/CDP utilizável |
 | Cache de autenticação | `go test -race -count=1 ./internal/providerauth` | PASS; isolamento por binding, revogação, expiração, coordenação cancelável e máximo de 1024 locks rastreados |
 | Redis opcional | Compose profile `cache`, `redis-cli ping` e `INFO keyspace` | PASS; `PONG`, keyspace vazio; Cometa permanece sem dependência autoritativa de Redis e sem token persistido |
 | Ofertas | consulta `LIMIT 2` + `EXPLAIN (ANALYZE, BUFFERS)` | PASS de caminho; índice parcial `catalog_offer_eligibility_lookup` confirmado quando o planner usa índice; catálogo pequeno pode escolher seq scan por custo |
-| Restore | `R2_RESTORE_SUFFIX=r4_final_20260910 bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; 16 efeitos observados sem replay e re-admissão mantida desabilitada |
+| Restore | `R2_RESTORE_SUFFIX=r4_sequence_20260910b bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; oito efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
 | Kind/HA | cluster `ai-hub-r2`, três nós, réplicas e exclusão controlada de pods | PASS local; Atlas, Órbita, Cometa, Pulsar e Libra recuperaram réplicas em workers distintos; métricas, HPA e KEDA disponíveis |
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS |
-| Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 38 módulos |
+| Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
 
 ## Detalhes observados
@@ -31,8 +31,17 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
   quatro observações.
 - A inbox de callback terminou sem itens `RECEIVED`; os efeitos do simulador
   foram observados sem reenvio durante o restore.
-- O cenário exploratório do Browser Harness continua sendo auxiliar. O gate
-  bloqueador do frontend permanece o Playwright determinístico.
+- O ingresso de callback rejeitou observações sem `provider_request_id` ou não
+  terminais antes de criar custódia órfã; a inbox usa `(operation_id,
+  body_sha256, token_hash)`, limite de bytes/itens e limpeza limitada de itens
+  processados.
+- A capacidade está ligada às concessões de `SUBMIT`, `STATUS` de polling e
+  reconciliação, com sinais de sucesso, timeout, throttling e indisponibilidade.
+- O aceite congelou destinos de webhook por tenant/aplicação e o Pulsar
+  consumiu somente o snapshot persistido no fato, sem consultar uma versão
+  dinâmica posterior.
+- O cenário exploratório do Browser Harness continua auxiliar e bloqueado por
+  CDP nesta máquina; o gate bloqueador do frontend é o Playwright determinístico.
 
 ## Limites e pendências explícitas
 
@@ -42,9 +51,9 @@ conclusão integral dos 201 requisitos/732 cenários nem à homologação de
 provedores reais, AWS regional, multi-célula ou produção.
 
 Ainda permanecem fora do fechamento integral, entre outros, o executor de DAG
-conectado ao atendimento, capacidade adaptativa ligada a todo I/O, pools HTTP
-reutilizáveis, integração completa de FileRefs/financeiro/webhooks, fencing
-geral de efeito incerto, projeção de catálogo em escala, dependências próprias
-do kind sem endpoints Compose e a matriz integral de requisitos/cenários.
+conectado ao atendimento, capacidade adaptativa e budgets em todo I/O,
+integração completa de FileRefs/financeiro/webhooks, fencing geral de efeito
+incerto, projeção de catálogo em escala, dependências próprias do kind sem
+endpoints Compose e a matriz integral de requisitos/cenários.
 Esses itens continuam marcados como abertos no backlog R4 e não foram
 convertidos em PASS por inferência a partir desta execução local.

@@ -6,10 +6,22 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789080525075"
+    "resource": "browser-client-1789088551960"
   },
   {
     "check": "URL navigation and real authenticated provider list",
+    "status": "PASS"
+  },
+  {
+    "check": "Admin bilateral SLA report reads persisted protocol snapshots",
+    "status": "PASS"
+  },
+  {
+    "check": "Admin destination publish, reload and durable readback",
+    "status": "PASS"
+  },
+  {
+    "check": "Admin versioned webhook destinations reads persisted application snapshot policy",
     "status": "PASS"
   },
   {
@@ -52,7 +64,22 @@
         "display": "block",
         "direction": "row"
       }
-    ]
+    ],
+    "overflowInfo": {
+      "viewport": 390,
+      "scrollWidth": 390,
+      "scrollContainers": [
+        {
+          "element": "div",
+          "className": "table-scroll",
+          "clientWidth": 314,
+          "scrollWidth": 802,
+          "width": 316,
+          "right": 353,
+          "overflowX": "auto"
+        }
+      ]
+    }
   },
   {
     "check": "Logout navigation",

@@ -17,15 +17,24 @@
   únicos inserts diretos são a qualificação e a célula do laboratório, porque
   esta baseline não oferece endpoint administrativo para esses dois registros.
 
-## Resolvido nesta rodada operacional
+## Resolvido ou avançado nesta rodada operacional
 
 - A carga antes bloqueada por `offer_not_eligible` passou após o seed
   versionado, cobrindo oito caminhos e idempotência.
-- O Browser Harness foi instalado externamente em versão `0.1.13` e passou
-  com CDP dedicado, sessão de fixture e 16 rotas em viewport 390×844.
+- O Playwright determinístico passou com sessão OIDC/OTP, mutações de
+  catálogo e destinos, SLA, logout e viewport 390×844. O Browser Harness foi
+  instalado externamente em versão `0.1.13`, mas o daemon não encontrou um
+  Chrome com `DevToolsActivePort` utilizável e permanece bloqueado pelo
+  ambiente.
 - Kind/HA foi ensaiado com cinco deployments em duas réplicas; perda
   controlada de pods de Cometa e Pulsar foi recuperada sem perda de prontidão.
 - Restore comparou contagens/digests dos bancos e objetos sem replay externo.
+- A inbox de callback passou a separar a identidade da capability, limitar
+  payloads/itens e remover processados de forma limitada; a validação terminal
+  ocorre antes da custódia órfã.
+- A capacidade foi conectada ao `SUBMIT`, ao `STATUS` de polling e à
+  reconciliação. Destinos de webhook agora são congelados na admissão e
+  transportados no fato final.
 
 ## Bloqueios e limites ainda reproduzíveis
 
@@ -36,5 +45,9 @@
   tarefas funcionais nem os 25 itens herdados de R4-04.
 - Permanecem sem homologação provedores comerciais, AWS regional, decisões
   comerciais/SLO externas e a matriz integral de 201 requisitos/732 cenários.
+- O executor DAG ligado ao atendimento, fencing geral de efeitos UNKNOWN,
+  budgets integrais de I/O, resultados de FileRefs no adapter real, projeções
+  de catálogo em escala e telemetria bilateral continuam sem demonstração
+  integral.
 - Gaps arquiteturais remanescentes estão listados em `EXECUTION-2026-09-10.md`
   e não foram reclassificados como PASS por inferência.

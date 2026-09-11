@@ -1,102 +1,109 @@
-# Atlas — Console administrativo (admin-ui)
+# AI Hub R4 — Portal administrativo
 
-Interface administrativa web do Atlas (plano de controle do Hub de
-Interoperabilidade), implementando a decisão arquitetural **ARQ-04**: "Atlas
-interface — TypeScript + React, aplicação web administrativa com formulários
-tipados, visualização de contratos e timeline".
+O `admin-ui` é o portal web administrativo do AI Hub. A aplicação é uma SPA
+em Vite, React e TypeScript e é servida pelo Nginx da stack R2/R4. O portal
+consome as APIs reais de Atlas, Órbita, Cometa, Pulsar e Libra por meio do
+proxy same-origin configurado em `hub/deploy/r2/nginx.conf`.
 
-Stack: **Vite + React + TypeScript**. Não usa Next.js/SSR — o `design.md` do
-projeto já registra explicitamente que "SSR/Next.js não é dependência
-necessária" para esta interface.
+## Execução local
 
-## Pré-requisitos
-
-- Node.js 18+ e npm.
-- O backend Atlas real precisa estar no ar, escutando em `http://localhost:8081`
-  (rota HTTP definida em `hub/cmd/atlas/main.go` e `hub/internal/atlas/handlers.go`).
-  Suba-o via a stack docker compose do repositório:
-
-  ```bash
-  cd ../deploy
-  docker compose up -d atlas
-  ```
-
-  (ou suba a stack inteira, se preferir: `docker compose up -d`).
-
-## Rodando em desenvolvimento
+O laboratório oficial usa um único projeto Compose:
 
 ```bash
-npm install
+docker compose ls
+docker ps -a
+docker compose -p ai_hub_r3qual -f hub/deploy/r2/compose.yaml up -d
+```
+
+Com a stack ativa, o portal fica disponível em
+`http://localhost:13000`. Para desenvolvimento isolado:
+
+```bash
+npm ci
 npm run dev
 ```
 
-O Vite abre em `http://localhost:5173` (padrão). O `vite.config.ts` configura
-um proxy de `/api` para `http://localhost:8081`, então **todas** as chamadas
-do frontend usam o prefixo relativo `/api/v1/...` (ver
-`src/api/atlasClient.ts`) — nunca uma URL absoluta. Isso é necessário porque o
-backend Go do Atlas **não configura CORS** (e este scaffold não altera o
-backend para isso); em dev, o proxy do Vite contorna a questão fazendo a
-chamada parecer same-origin do ponto de vista do navegador.
+O build de produção é validado por `npm run build`, que executa a checagem
+TypeScript e o build Vite. A imagem oficial do Compose usa `Dockerfile.ui` e
+mantém o proxy reverso no mesmo origin da SPA.
 
-Esse mesmo padrão de prefixo relativo também permite, no futuro, servir esta
-UI atrás do gateway Kong já existente (`hub/deploy/kong/kong.yml`), bastando
-reescrever `/api` → `http://atlas:8081` na borda em vez de no Vite.
+## Autenticação e segurança
 
-## Build de produção
+O acesso usa Authorization Code + PKCE no realm OIDC configurado pelas
+variáveis `VITE_OIDC_ISSUER` e `VITE_OIDC_CLIENT_ID`. O fixture local usa
+senha e OTP; o portal recebe o access token somente em memória, remove a
+transação PKCE após o callback e renova a sessão até logout ou expiração.
 
-```bash
-npm run build
-```
+As APIs enviam `Authorization: Bearer` apenas quando há sessão válida. O
+backend continua sendo a autoridade para tenant, papel, MFA e escopo. A UI
+não deve ser exposta fora de um ambiente protegido apenas porque o build
+passou.
 
-Roda `tsc -b` (checagem de tipos) seguido de `vite build`, gerando os
-artefatos estáticos em `dist/`. Servir esses artefatos em produção exigiria
-decidir como o prefixo `/api` será roteado até o Atlas (proxy reverso próprio,
-ou uma rota Kong análoga à existente para `/admin/atlas`) — isso não está
-implementado neste scaffold.
+Segredos de provedor e webhook nunca são digitados nem exibidos em claro.
+As telas trabalham somente com referências versionadas, como `secret_ref` e
+`secret_version`.
 
-## O que esta interface cobre
+## Jornadas disponíveis
 
-Quatro telas (abas simples dentro de `App.tsx`, sem `react-router` — mantido
-deliberadamente simples), cada uma cobrindo exatamente as rotas HTTP reais do
-Atlas (nenhum endpoint foi inventado):
+O menu é filtrado pelos escopos devolvidos pelo backend e cobre:
 
-1. **Catálogo de serviços** — publicar um serviço novo (`POST /v1/services`) e
-   consultar por código+versão (`GET /v1/services/{code}/{version}`).
-2. **Contas de provedor** — cadastrar (`POST /v1/provider-accounts`) e
-   consultar por ID (`GET /v1/provider-accounts/{id}`).
-3. **Vínculos de credencial** — cadastrar vínculo (`POST /v1/credential-bindings`)
-   e resolver credencial por tenant+conta (`GET /v1/credentials/resolve`).
-4. **Contratos** — cadastrar/atualizar (`POST /v1/contracts`) e consultar por
-   tenant (`GET /v1/contracts/{tenantId}`).
+- catálogo versionado de clientes, aplicações, serviços, produtos, ofertas,
+  importações, provedores, contas externas, vínculos, perfis técnicos,
+  políticas e contratos;
+- protocolos, entregas e timeline de protocolos;
+- reconciliação autorizada de protocolo e redelivery de entrega esgotada;
+- destinos de webhook versionados, por tenant ou aplicação, com URL,
+  política de tentativas e referência de segredo persistidas;
+- apuração de SLA bilateral baseada no snapshot persistido da operação;
+- consultas e comandos financeiros para contas, fatos, journal, fechamentos,
+  ajustes, divergências e recibos de exportação.
 
-O Atlas não expõe endpoints de "listar todos" (só busca por chave exata), então
-as tabelas de cada tela mostram um histórico local da sessão do navegador
-(itens publicados/consultados), não uma fonte de verdade persistida.
+As ações de efeito operacional dependem do escopo apropriado, justificativa e,
+quando exigido pelo contrato, MFA e segregação de funções. Paginação, filtros
+de tenant e `If-Match`/idempotência são tratados pelas APIs; o frontend não
+substitui essas verificações.
 
-### Segredos de credencial (CFG-05)
+## Validação de frontend
 
-A tela de vínculo de credencial **nunca** tem um campo para digitar ou exibir
-o segredo em si (ex.: `client_secret`, API key em claro). Apenas o campo
-`secret_ref` (referência/caminho no cofre) é cadastrado, refletindo CFG-05:
-"o segredo é escrito no cofre por fluxo restrito, sem leitura posterior em
-claro pela interface". Isso está documentado também em comentários no código
-(`src/api/atlasClient.ts` e `src/pages/CredentialBindingsPage.tsx`).
+Use os gates nesta ordem quando a demanda envolver o portal:
 
-## Fora do escopo
+1. `npm run build` para compilação e tipos.
+2. Playwright determinístico:
 
-- **Autenticação real / OIDC (SEG-01)**: não implementada. A UI hoje não exige
-  login e não envia nenhum header de identidade/tenant nas chamadas — é um
-  placeholder de desenvolvimento local, sinalizado com um aviso fixo no topo
-  da aplicação (`App.tsx`). Não exponha este scaffold fora de um ambiente de
-  desenvolvimento confiável antes de resolver SEG-01.
-- **CORS no backend**: propositalmente não alterado — o Atlas continua sem
-  CORS; o frontend depende do proxy do Vite (dev) ou de um gateway comum
-  (produção) para funcionar.
-- **Visualização de timeline** (mencionada na ARQ-04) e outras visualizações
-  mais ricas de contrato: não implementadas neste scaffold mínimo — o Atlas
-  hoje não expõe dados de timeline/eventos, apenas o snapshot atual de cada
-  recurso.
-- Rota Kong dedicada para esta UI (`/admin/atlas-ui`): não adicionada neste
-  scaffold porque não há serviço/container desta UI no
-  `hub/deploy/docker-compose.yml` para o Kong apontar; o essencial pedido
-  (o frontend em si) está completo e documentado aqui.
+   ```bash
+   PLAYWRIGHT_MODULE=/home/leandro/IdeaProjects/lfsolucoes/ai-hub/hub/evidence/screenshots/node_modules/playwright-core/index.js \
+     R2_COMPOSE_PROJECT=ai_hub_r3qual \
+     node ../deploy/r2/tests/browser-smoke.mjs
+   ```
+
+   O smoke cobre OIDC/OTP, criação e readback durável, navegação autenticada,
+   SLA, publicação/readback de destino, ausência de token persistido,
+   logout e viewport de 390 px. A execução cria apenas dados sintéticos no
+   laboratório; não use contas ou endpoints reais.
+
+3. Browser Harness, quando a demanda exigir exploração visual, acessibilidade
+   ou diagnóstico assistido. Ele é opcional, exploratório e não substitui o
+   Playwright:
+
+   ```bash
+   ../deploy/r2/tests/browser-harness/run.sh
+   ```
+
+   Instalação, sessão, classificação `PASS-EXPLORATORY`/
+   `BLOCKED-ENVIRONMENT` e regras para não registrar cookies, tokens ou OTP
+   estão documentadas em
+   [`hub/deploy/r2/tests/browser-harness/README.md`](../deploy/r2/tests/browser-harness/README.md).
+
+O resultado do smoke é salvo em
+`hub/evidence/r2/execution/browser-smoke.json`; revisar o status de cada
+check, e não apenas o código de saída do processo, antes de promover a
+evidência.
+
+## Limites conhecidos
+
+O portal não é uma aprovação de produção por si só. A qualificação integral
+do AI Hub ainda exige cobertura dos requisitos e cenários herdados, testes de
+provedores reais, matriz completa de negativas por papel, finanças e entregas
+ponta a ponta, além dos gates de kind/HA, restore e observabilidade. Consulte
+`docs/reviews/2026-09-09-r4/implementation/` para a situação atual e os
+limites explicitamente mantidos como `OPEN`.

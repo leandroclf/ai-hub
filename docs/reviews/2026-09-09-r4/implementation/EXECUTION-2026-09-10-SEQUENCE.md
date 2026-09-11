@@ -2,10 +2,11 @@
 
 ## Resultado desta iteração
 
-Esta iteração fecha a correção de prazo do polling e requalifica os gates
-locais disponíveis. O OpenSpec estrito permanece válido em 21/21 mudanças.
-As tarefas B-R4 continuam abertas quando o critério exige cobertura integral
-dos cenários, integração ainda ausente ou validação de ambiente não
+Esta iteração fecha a correção de prazo do polling, conecta capacidade aos
+transportes de execução e reconciliação, amplia o portal e requalifica os
+gates locais disponíveis. O OpenSpec estrito permanece válido em 21/21
+mudanças. As tarefas B-R4 continuam abertas quando o critério exige cobertura
+integral dos cenários, integração ainda ausente ou validação de ambiente não
 reprodutível.
 
 ## Evidências executadas
@@ -17,22 +18,23 @@ reprodutível.
 - OpenSpec: `validate --all --strict --no-interactive --json`: PASS, 21/21.
 - Seed do catálogo: PASS, recursos existentes e versionados.
 - Playwright determinístico: PASS para OIDC Authorization Code + PKCE + OTP,
-  persistência do admin, navegação autenticada, ausência de tokens persistentes,
-  viewport de 390px e logout.
+  persistência do admin, navegação autenticada, SLA bilateral, destinos
+  versionados, ausência de tokens persistentes, viewport de 390px e logout.
 - Carga autorizada: PASS em SYNC sucesso/falha, ASYNC polling A/B, callback,
   AUTO, saldo estrito e credencial dedicada; idempotência observada quatro
   vezes para o mesmo protocolo.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
-- Restore/reconciliation com sufixo `r4_sequence_20260910`: PASS para bancos
-  control/core/finance, objetos e oracle de efeitos externos sem replay.
+- Restore/reconciliation com sufixo `r4_sequence_20260910b`: PASS para bancos
+  control/core/finance, objetos e oracle de efeitos externos sem replay. O
+  script também recusa alvos de banco/bucket já existentes antes de iniciar.
 - Kind existente `ai-hub-r2`: workloads atlas, orbita, cometa, pulsar e libra
   em `Running`; escala manual para duas réplicas por workload: PASS; PDBs,
   HPA/KEDA e placement em dois workers observados.
 - Browser Harness: `BLOCKED-ENVIRONMENT`, pois o daemon não encontrou
   `DevToolsActivePort`/CDP no navegador local. Não é falha funcional do portal
   e não substitui o gate Playwright.
-- Carga autorizada pós-rebuild (`r4-authorized-1789081369162`): PASS após a
+- Carga autorizada pós-rebuild (`r4-authorized-1789087778741`): PASS após a
   conexão dos pools HTTP; os oito cenários terminaram conforme esperado e a
   mesma chave produziu quatro observações do mesmo protocolo.
 - Reconciliação administrativa de protocolo: PASS no teste de integração com
@@ -67,13 +69,20 @@ ser gravada. O bootstrap do Cometa inicia esse worker junto do polling e da
 inbox de callbacks; a cobertura PostgreSQL comprova takeover seguro no fluxo
 normal e zero submissão durante a reconciliação.
 
+A inbox de callback passou a validar payload terminal antes da custódia órfã,
+separar duplicatas pela identidade da capability, impor limite de 512 KiB e
+10.000 itens recebidos e remover processados de forma limitada e periódica.
+O snapshot de destinos por aplicação/tenant é capturado na admissão e
+transportado até o fato final, de onde o Pulsar entrega URL e política sem
+consultar uma versão posterior.
+
 ## Pendências que impedem declaração integral
 
 Ainda não há evidência suficiente para fechar a missão completa de 201
 requisitos/732 cenários. Permanecem no OpenSpec os itens de executor DAG,
-capacidade ligada a todo I/O, budgets completos de pools HTTP, operações
-administrativas e financeiras completas além da reconciliação de protocolos,
-FileRefs no fluxo, fencing geral de efeito incerto, projeções escaláveis,
+capacidade e budgets completos em todo I/O, operações administrativas e
+financeiras completas além da reconciliação de protocolos, FileRefs/resultados
+no adapter real, fencing geral de efeito incerto, projeções escaláveis,
 telemetria bilateral e matriz integral sem lacunas.
 
 O resultado desta execução deve ser lido como `PASS` dos gates listados e
