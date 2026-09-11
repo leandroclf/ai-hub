@@ -26,7 +26,7 @@ textual isolada.
 | r4-01 callbacks | Parcial | revalidação; worker, ingresso público, validação terminal, quota/retention e deduplicação por capability | autenticação por conta e cenário externo ponta a ponta |
 | r4-02 contratos JSON | Implementação e testes unitários concluídos | contrato, implementação e qualificação dos seis cenários R4 | rollout/upgrade específico e requalificação herdada |
 | r4-03 upgrade/cache | Parcial | upgrade/reconciliação histórica e migração aditiva | revogação/cancelamento/crescimento e prova de projeção/ofertas |
-| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório e inventário de fonte 201/732 | matriz de resultados integral, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
+| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório, inventário de fonte 201/732 e matriz explícita de 732 resultados | 696 cenários ainda não qualificados, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
 
 ## Evidências consideradas
 
@@ -51,6 +51,10 @@ textual isolada.
   ou sessão sem MFA mesmo com escopo compatível; operações financeiras de
   escrita exigem `hub_admin`. Os testes novos passaram em RED→GREEN e a suíte
   Go completa, race dos módulos críticos e `go vet` permaneceram verdes.
+- Rastreamento integral: `generate-openspec-results.py` gerou 732 linhas a
+  partir do inventário; 36 foram associados às evidências existentes e 696
+  receberam `NAO_QUALIFICADO_NESTA_RODADA`. O resultado não é aprovação dos
+  cenários sem execução.
 
 ## Regra de conclusão
 
@@ -69,6 +73,6 @@ Uma tarefa só deve receber `[x]` quando o comando, SHA, ambiente, resultado obs
    destinos ponta a ponta.
 4. Homologar adapter/provedor comercial e fechar fencing positivo de efeitos
    incertos com correlação externa; completar telemetria bilateral e alertas.
-5. Gerar a matriz de resultados a partir do inventário com comandos e evidências
-   no mesmo SHA, validar o digest após mudanças e somente então avaliar o
+5. Revalidar a matriz de resultados de 732 linhas após cada mudança de fonte,
+   aumentar gradualmente a cobertura de evidências e somente então avaliar o
    encerramento de r4-04.

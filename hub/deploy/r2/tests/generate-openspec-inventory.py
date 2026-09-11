@@ -66,6 +66,13 @@ def source_digest(paths: list[Path], root: Path) -> str:
     return digest.hexdigest()
 
 
+def display_path(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
 def collect_specs(root: Path) -> tuple[list[Requirement], list[Scenario], str]:
     specs = sorted((root / "openspec" / "changes").glob("*/specs/*/spec.md"))
     if not specs:
@@ -195,7 +202,7 @@ def main() -> int:
         f"source_digest=sha256:{digest}"
     )
     if args.output is not None:
-        print(f"output={output.relative_to(root).as_posix()}")
+        print(f"output={display_path(output, root)}")
     return 0
 
 

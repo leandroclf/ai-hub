@@ -224,7 +224,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-25 Concluir e requalificar R3-QUA-01 — Qualificação integral do SHA sem skips ocultos.
-  - Objective: OpenSpec strict 21/21, build, vet, race, browser determinístico, carga autorizada, RLS e restore passam nesta iteração; Browser Harness continua bloqueado pelo ambiente e a matriz ainda mantém 416 cenários v4 sem execução integral, além de skips e gaps arquiteturais explícitos.
+  - Objective: OpenSpec strict 21/21, build, vet, race, browser determinístico, carga autorizada, RLS e restore passam nesta iteração; a matriz integral agora tem 732 linhas explícitas, com 36 cenários associados a evidências e 696 marcados `NAO_QUALIFICADO_NESTA_RODADA`; Browser Harness continua exploratório e skips/gaps arquiteturais permanecem explícitos.
   - Likely files/components: hub/internal/atlas/catalog_test.go, hub/internal/cometa/custody_test.go, docs/reviews/2026-09-07-r2/implementation/FINAL_REPORT.md.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
