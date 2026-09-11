@@ -42,6 +42,7 @@
 | `admin-client-lifecycle-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; pendência de capacidade e suspensão com 1 protocolo `RUNNING` sintético | Fixture local; não substitui aprovação de capacidade cloud nem operação comercial |
 | `admin-import-preview-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; preview `STAGED`, diff de endpoints e `IMPORTED_NOT_EXECUTABLE` sem retenção de segredo | Não publica serviço nem qualifica adapter externo |
 | `admin-service-publication-smoke.json` | Ensaio Chromium curto: 3 verificações `PASS`; qualificação vigente, publicação v1 sem chamadas ao provedor e rejeição de mutação com HTTP 409 | Fixture local; não substitui homologação comercial externa |
+| `admin-product-simulation-smoke.json` | Ensaio Chromium curto: 2 verificações `PASS`; DAG/tabela, ausência de efeitos no provider-sim e ciclo bloqueado | Não executa chamadas faturáveis nem substitui qualificação de carga |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026

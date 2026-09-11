@@ -141,7 +141,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.5 Qualificar R2-ADM-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-ADM-05 com oráculos independentes
   - Objective: Executar R2-ADM-05-S01, R2-ADM-05-S02, R2-ADM-05-S03. Caso indispensável: Simulação sem efeitos; esperado: nenhuma chamada faturável real é feita; relatório identifica fixture e versões.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/admin-ui/src/pages/ProductsPage.tsx (novo proposto)`; `hub/admin-ui/src/api/atlasClient.ts`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.

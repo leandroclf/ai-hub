@@ -1,0 +1,23 @@
+[
+  {
+    "check": "Admin product simulation shows parallel/dependent graph and tabular order without provider effects",
+    "status": "PASS",
+    "product": "browser-product-simulation-1789134715461",
+    "layers": "Após o grupo anterior: etapa_a, etapa_b\nApós o grupo anterior: etapa_c",
+    "fixture": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls",
+    "provider_effects_before": {
+      "effects": 0,
+      "protocols": 0
+    },
+    "provider_effects_after": {
+      "effects": 0,
+      "protocols": 0
+    }
+  },
+  {
+    "check": "Admin product validation identifies cycle members and blocks publication",
+    "status": "PASS",
+    "product": "browser-product-simulation-1789134715461",
+    "error": "ciclo entre passos: etapa_a, etapa_c"
+  }
+]

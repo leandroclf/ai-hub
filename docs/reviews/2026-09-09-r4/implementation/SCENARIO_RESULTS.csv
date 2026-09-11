@@ -164,6 +164,8 @@ R2-ADM-04-S01;PASS_INTEGRADO_LOCAL;admin-import-preview-smoke.json — preview S
 R2-ADM-04-S02;PASS_INTEGRADO_LOCAL;admin-service-publication-smoke.json — serviço com adapter/schema/modo e qualificação vigente foi validado, publicado em v1 e tentativa de mutação retornou 409 preservando hash
 R2-ADM-04-S03;PASS_INTEGRADO_LOCAL;admin-import-preview-smoke.json — endpoint importado sem adapter permaneceu explicitamente IMPORTED_NOT_EXECUTABLE e nenhum segredo do arquivo foi retido
 R2-ADM-05-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — editor de produto criou duas etapas e persistiu dependência/mapeamento entre etapas
+R2-ADM-05-S02;PASS_INTEGRADO_LOCAL;admin-product-simulation-smoke.json — ciclo entre etapa_a e etapa_c foi identificado no relatório de validação e bloqueou a publicação
+R2-ADM-05-S03;PASS_INTEGRADO_LOCAL;admin-product-simulation-smoke.json — grafo/tabela mostrou etapas paralelas e dependente, fixture sem chamadas ao provedor e provider-sim permaneceu em effects=0/protocols=0
 R2-ADM-08-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — operador consultou detalhe persistido de protocolo e o leitor global consultou UUID cross-tenant com justificativa auditada
 R2-ADM-10-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — painel de SLA bilateral leu snapshots persistidos e foi exibido em Chromium autenticado
 R2-CAT-03-S01;PARCIAL_INTEGRADO;product-dag-latest.log + product-http-latest.log — A/B independentes respeitam max_parallel=2 e dois efeitos reais são consolidados; medição de sobreposição de traces permanece pendente
