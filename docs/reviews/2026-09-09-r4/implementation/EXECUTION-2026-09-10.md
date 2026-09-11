@@ -38,7 +38,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Falha de lote de importação | `ATLAS_TEST_DSN=... go test -race -count=1 -v ./internal/atlas -run 'TestCatalogImport(FailurePreservesPreviousBatchAndExecutableCatalog|DiffStates)'` | PASS integrado local; inventário anterior inconsistente retornou `503/catalog_unavailable` antes da gravação, o staging anterior permaneceu único e nenhum recurso executável foi criado (`R2-CAT-07-S02`) |
 | Publicação de serviço qualificado | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-service-publication-smoke.mjs` | PASS; validação usou qualificação vigente e fixture sem chamadas ao provedor, publicação apresentou v1 imutável, PATCH posterior retornou 409 com hash preservado e `leitor-a` recuperou a mesma revisão após logout/refresh (`R2-CAT-08-S02`) |
 | Snapshot no aceite | `R2_CORE_TEST_DSN=... go test -race -count=1 -v ./internal/orbita -run TestAdmissionFreezesConfigSnapshotAtAcceptance` | Evidência complementar; PostgreSQL preservou projeção v1 no protocolo e na intenção após alteração local para v2 (`R2-CAT-06-S01`) |
-| Revogação de credencial com L1 expirado | `go test -race -count=1 ./internal/providerauth -run TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues` | PARCIAL integrado para `R2-CAT-06-S03`; material revogado não gerou `Authorization` e binding saudável renovou, mas a combinação com snapshot histórico permanece aberta |
+| Revogação de credencial com L1 expirado | `R2_CORE_TEST_DSN=... go test -race -count=1 -v ./internal/cometa -run '^TestPostgresPollingAuthenticatedHTTP$'` + `go test -race -count=1 ./internal/providerauth -run TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues` | PASS integrado local para `R2-CAT-06-S03`; polling HTTP real usou binding v1 do snapshot, revogação durante trabalho pendente bloqueou novo acesso sem novo efeito no provedor e encerrou recibo/capacidade; o teste de OAuth confirma que o L1 revogado não é reutilizado |
 | Contrato legado e imutabilidade de perfil | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-legacy-contract-smoke.mjs` + `admin-service-publication-smoke.mjs` | PARCIAL integrado; um contrato legado confirmou equivalência GET/webhook e uma versão publicada preservou hash/revisão; segundo cliente e migração v2 permanecem abertos (`R2-CAT-05-S01/S03`) |
 | Simulação e ciclo de produto administrativo | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-product-simulation-smoke.mjs` | PASS; grafo/tabela exibiu A/B paralelos e C dependente, provider-sim permaneceu em `effects=0/protocols=0` e ciclo A↔C foi bloqueado |
 | Fan-out abusivo no produto | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-product-simulation-smoke.mjs` | PASS integrado local; rascunho com 21 etapas recebeu `valid=false`/`máximo de 20 passos`, não foi publicado e não alterou efeitos/protocolos do provider-sim (`R2-CAT-03-S03`) |
@@ -377,3 +377,19 @@ Esse resultado promove R2-CAT-06-S01 para `PASS_INTEGRADO_LOCAL`. A prova é de
 laboratório com `provider-sim`, PostgreSQL e LocalStack; revogação de segredo e
 execução histórica durante indisponibilidade do Atlas continuam sendo cobertas
 pelos cenários específicos R2-CAT-06-S02/S03.
+
+### Revogação durante trabalho com snapshot histórico — 11/09/2026
+
+`TestPostgresPollingAuthenticatedHTTP`, executado com PostgreSQL real e `-race`,
+conservou no comando o binding v1 do snapshot, realizou uma consulta HTTP real
+com o segredo resolvido, revogou o binding no catálogo enquanto ainda havia
+trabalho pendente e recusou a consulta seguinte antes de alcançar o provedor.
+O teste confirmou zero novo efeito externo, recibo terminal e capacidade
+transportada de volta a zero. A prova unitária
+`TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues` permanece
+como complemento específico da invalidação do cache L1 e da continuidade
+isolada de outro binding.
+
+Esse resultado promove R2-CAT-06-S03 para `PASS_INTEGRADO_LOCAL` e encerra a
+qualificação da fatia R2-CAT-06. O limite permanece local: cofre e provedor
+comercial não foram homologados.

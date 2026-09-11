@@ -62,7 +62,7 @@ Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação t�
   - Validation: Teste de domínio/contrato dos limites de R2-CAT-05; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.5; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.6 Snapshot e projeções independentes de consulta por pedido
+- [x] 2.6 Snapshot e projeções independentes de consulta por pedido
   - Objective: Entregar o comportamento R2-CAT-06 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline FIN-03, CFG-02, DAD-08, DAD-10, ARQ-02.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/migrations/control`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -120,7 +120,7 @@ Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação t�
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.6 Qualificar R2-CAT-06 com oráculos independentes
+- [x] 3.6 Qualificar R2-CAT-06 com oráculos independentes
   - Objective: Executar R2-CAT-06-S01, R2-CAT-06-S02, R2-CAT-06-S03. Caso indispensável: Revogação de segurança; esperado: política de revogação de segurança prevalece para novos acessos ao segredo; preserva histórico sem reutilizar credencial proibida.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/atlas`; `hub/internal/atlasclient`.
   - Depends on: 2.6; fixtures de r2-09; dependências de integração pertinentes.
