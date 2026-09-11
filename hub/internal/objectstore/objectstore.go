@@ -12,11 +12,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/smithy-go"
@@ -36,7 +39,15 @@ type Client struct {
 }
 
 func New(ctx context.Context, endpoint, region, bucket string) (*Client, error) {
-	cfg, e := awsconfig.LoadDefaultConfig(ctx, awsconfig.WithRegion(region))
+	configOptions := []func(*awsconfig.LoadOptions) error{awsconfig.WithRegion(region)}
+	if isLocalObjectEndpoint(endpoint) {
+		// LocalStack não possui SSO/IAM. O cliente de laboratório deve ser
+		// determinístico mesmo quando a máquina hospedeira tem um perfil AWS
+		// configurado; nunca consultar credenciais externas para um endpoint
+		// local.
+		configOptions = append(configOptions, awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider("test", "test", "")))
+	}
+	cfg, e := awsconfig.LoadDefaultConfig(ctx, configOptions...)
 	if e != nil {
 		return nil, e
 	}
@@ -51,6 +62,15 @@ func New(ctx context.Context, endpoint, region, bucket string) (*Client, error) 
 		publicClient = s3.NewFromConfig(cfg, func(o *s3.Options) { o.BaseEndpoint = aws.String(endpoint); o.UsePathStyle = true })
 	}
 	return &Client{s3: client, presign: s3.NewPresignClient(publicClient), Bucket: bucket}, nil
+}
+
+func isLocalObjectEndpoint(endpoint string) bool {
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		return false
+	}
+	host := strings.ToLower(u.Hostname())
+	return host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "localstack"
 }
 func (c *Client) EnsureBucket(ctx context.Context) error {
 	_, e := c.s3.CreateBucket(ctx, &s3.CreateBucketInput{Bucket: aws.String(c.Bucket)})
