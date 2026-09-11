@@ -330,7 +330,21 @@ de sucesso e expiração com a mesma versão esperada. O lock e a condição de
 versão do PostgreSQL permitiram somente uma transição terminal, com
 `result_version=1`, `version=1` e um único `protocol.finalized`; nesta rodada,
 o vencedor observado foi `EXPIRED`. O resultado não é usado como prova do
- cenário de commit lento na fronteira exata do deadline.
+cenário de commit lento na fronteira exata do deadline.
+
+### Migração versionada de schema no portal — 11/09/2026
+
+O smoke `admin-service-publication-smoke.json` passou a criar uma segunda
+versão do serviço após a publicação da v1. A v2 removeu o campo `marker` dos
+schemas de entrada e saída, foi validada/publicada como identidade versionada,
+enquanto a tentativa de alterar diretamente a v1 continuou retornando HTTP
+409. A consulta posterior confirmou que a v1 permaneceu `PUBLISHED` com o
+mesmo `content_hash`, e o segundo operador recuperou a mesma revisão pelo
+portal após logout/refresh.
+
+Esse resultado fortalece a evidência de R2-CAT-05-S03, mas mantém o cenário
+como parcial: ainda falta exercitar um protocolo v1 efetivamente em voo durante
+a publicação da v2 e confirmar seu resultado final pelo caminho HTTP.
 
 ### Cache de projeção Atlas em indisponibilidade — 11/09/2026
 

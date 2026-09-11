@@ -2,30 +2,46 @@
   {
     "check": "Admin service validation uses current qualification and no-provider-call fixture",
     "status": "PASS",
-    "service": "browser-publication-1789146083396",
-    "validation": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls\n\nTTL efetivo: 10s · Hash: 2f0e2b5ef0a81588e6f2f79c3523f259d46a296b43820c8f2fcbab86cd4bebc5"
+    "service": "browser-publication-1789148018985",
+    "validation": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls\n\nTTL efetivo: 10s · Hash: 37d9687a9a6f47989a71a26f41c0c023fff06a0cbf563117e197b5cab258d12e"
   },
   {
     "check": "Admin publishes qualified service version and presents immutable state",
     "status": "PASS",
-    "service": "browser-publication-1789146083396",
+    "service": "browser-publication-1789148018985",
     "version": 1
   },
   {
     "check": "Published service rejects mutation and preserves content hash",
     "status": "PASS",
-    "service": "browser-publication-1789146083396",
+    "service": "browser-publication-1789148018985",
     "version": 1,
     "mutation_status": 409,
     "state": "PUBLISHED"
   },
   {
+    "check": "Incompatible schema migration creates immutable v2 while preserving the published v1 contract",
+    "status": "PASS",
+    "service": "browser-publication-1789148018985",
+    "version_1": {
+      "state": "PUBLISHED",
+      "content_hash": "37d9687a9a6f47989a71a26f41c0c023fff06a0cbf563117e197b5cab258d12e"
+    },
+    "version_2": {
+      "state": "PUBLISHED",
+      "version": 2,
+      "removed_fields": [
+        "marker"
+      ]
+    }
+  },
+  {
     "check": "Second same-tenant operator refreshes the published URL and reads the persisted version",
     "status": "PASS",
-    "service": "browser-publication-1789146083396",
+    "service": "browser-publication-1789148018985",
     "version": 1,
     "reader": "leitor-a",
     "revision": 2,
-    "content_hash": "2f0e2b5ef0a81588e6f2f79c3523f259d46a296b43820c8f2fcbab86cd4bebc5"
+    "content_hash": "37d9687a9a6f47989a71a26f41c0c023fff06a0cbf563117e197b5cab258d12e"
   }
 ]
