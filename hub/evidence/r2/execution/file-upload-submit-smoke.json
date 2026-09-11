@@ -1,0 +1,17 @@
+[
+  {
+    "check": "upload HTTP direto e confirmação de FileRef",
+    "status": "PASS",
+    "file_ref": "66440aa6-548c-43c6-a7b5-6399f87d2abd",
+    "state": "READY",
+    "sha256": "a49ef18599f86ace2a5af5e4832dbd2dd74c002e825a285dbb76d7533b876386"
+  },
+  {
+    "check": "admissão real referencia FileRef confirmado",
+    "status": "PASS",
+    "protocol_id": "01a090f2-d139-74c3-8a46-4210acab1553",
+    "http_status": 504,
+    "acceptance_preserved": true,
+    "retention_pin": "1"
+  }
+]
