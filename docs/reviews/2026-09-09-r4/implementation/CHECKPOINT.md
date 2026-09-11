@@ -52,6 +52,11 @@ foi coberta com PostgreSQL fechado, e o RLS cross-tenant foi revalidado nas trê
 bases. A implementação local está corrigida, mas réplica atrasada e writer
 alternativo regional continuam fora do perfil de laboratório.
 
+No R2-08, a plataforma local persistente e o cenário de dependência opcional
+desligada foram revalidados: o Compose oficial manteve migrations idempotentes,
+volumes e workloads de negócio, enquanto Alloy/Redis fora não causaram cascata.
+Os gates de cinco ambientes, escala efetiva e HA regional continuam abertos.
+
 R2-DAD-05/2.5 foi promovido como comportamento local implementado: o restore
 isolado compara contagens e digests, bloqueia egress/readmissão durante a
 reconciliação e consulta o oráculo externo sem replay. A prova de falha
