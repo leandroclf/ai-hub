@@ -99,9 +99,9 @@ R2-QUA-04-S01;PASS_ESTRUTURAL;OPENSPEC-AUDIT-2026-09-10.md — changes R2 e hist
 R4-CTR-01-S01;PASS;go test atlas — null não vira string
 R4-CTR-01-S02;PASS;go test atlas — string não vira integer
 R4-CTR-01-S03;PASS;go test atlas — EOF estrito
-R4-CTR-02-S01;PASS;go test atlas — minimum aplicado
-R4-CTR-02-S02;PASS;go test atlas — integer exato
-R4-CTR-02-S03;PASS;go test atlas — keyword não suportada recusada
+R4-CTR-02-S01;PASS;go test -race atlas — minimum/maximum, enum e keyword desconhecida aplicados ou recusados integralmente
+R4-CTR-02-S02;PASS;go test -race atlas — igualdade matemática exata para 1, 1.0 e 1e0, sem conversão float64
+R4-CTR-02-S03;PASS;go test -race atlas — keyword aninhada e schema acima do limite de profundidade recusados antes da publicação/runtime
 R4-OPE-01-S01;PASS_INTEGRADO;LocalStack secret fixture e teste de cofre versionado
 R4-OPE-01-S02;PASS_UNITARIO;cache por binding, revogação exata e expiração local cobertos por go test -race
 R4-OPE-01-S03;PASS_UNITARIO;coordenação por chave e limite de 1024 locks rastreados cobertos por go test -race, carga prolongada permanece pendente

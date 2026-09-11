@@ -8,6 +8,7 @@
 | `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, editor de contrato REST declarativo, CRUD/readback, navegação, logout, troca segura de usuário, leitor global cross-tenant com finalidade, `tenant_reader` sem formulário de escrita de destinos, HTTP 401 pós-logout e 390 px: PASS | Não substitui matriz completa de autorização |
 | Browser Harness | Runner instalado; com `BU_CDP_URL=http://127.0.0.1:9222` percorreu 16 rotas e viewport 390×844: `PASS-EXPLORATORY` | Descoberta automática do daemon headless continua indisponível; Playwright é o gate determinístico |
 | `r2-rest-adapter-latest.log` | `go test -count=1 -race -v ./internal/cometa -run 'TestAdapterRegistry\|TestVersionedRESTAdapter'`: PASS; `rest-json-v1` independente do simulador, paths declarativos `/analise` e `/consulta/{id}`, API Key por binding, SYNC/ASYNC, resposta estrita e Cometa reconstruído | Contrato local de homologação; não é provedor comercial nem qualificação produtiva |
+| `r4-ctr-02-latest.log` | `go test -race -count=1 ./internal/atlas`, suíte Go/race, `go vet`, `catalog-seed` e OpenSpec strict: PASS; 21 changes válidas, subconjunto `ai-hub-json-schema-subset/v1`, igualdade matemática de números, integer exato, keywords aninhadas e limites de profundidade/nós | Rollout/rollback e cenários herdados completos permanecem abertos |
 | cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
 
 ## Atualização da retomada de 11/09/2026

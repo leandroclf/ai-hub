@@ -28,19 +28,19 @@
   - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
 
 ## 3. R4-CTR-02 — Dialeto de schema publicado e semântica numérica
-- [ ] 3.1 Fixar contrato e reproduzir contraexemplos.
+- [x] 3.1 Fixar contrato e reproduzir contraexemplos.
   - Objective: tornar F-R4-06 observável sem enfraquecer regra.
   - Likely files/components: hub/internal/atlas/offers.go, hub/internal/atlas/offers.go, hub/internal/atlas/catalog.go.
   - Depends on: 1.1.
   - Validation: R4-CTR-02-S01/S02/S03 e regressão herdada.
   - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
-- [ ] 3.2 Implementar fluxo, dados e integração.
+- [x] 3.2 Implementar fluxo, dados e integração.
   - Objective: O Hub SHALL declarar dialeto/subconjunto e compilar/validar schemas na publicação, recusando keywords não suportadas em qualquer nível. Publicação e runtime usam a mesma semântica; equivalência numérica e tipo integer devem seguir o dialeto documentado com precisão exata. Limitar profundidade/custo sem ignorar regras.
   - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
   - Depends on: 3.1 e dependências do backlog R4.
   - Validation: integração real e negativas de autorização/erro.
   - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
-- [ ] 3.3 Qualificar e anexar evidência.
+- [x] 3.3 Qualificar e anexar evidência.
   - Objective: fechar cenários e requisitos herdados R3-CAT-01, R2-CAT-01, R2-CAT-05.
   - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
   - Depends on: 3.2.

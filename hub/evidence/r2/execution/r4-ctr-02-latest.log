@@ -1,0 +1,29 @@
+R4-CTR-02 — evidência de contrato JSON estrito
+Data: 2026-09-11
+Commit do código qualificado: 3458eed
+Ambiente: pacote Go local e Compose ai_hub_r3qual; dados sintéticos
+
+Comandos executados:
+- go test -race -count=1 ./internal/atlas
+- go test -race -count=1 ./...
+- go vet ./...
+- R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/catalog-seed.mjs
+- /home/leandro/.npm/_npx/20f2b75ddc8bce88/node_modules/.bin/openspec validate --all --strict --no-interactive --json
+
+Resultado:
+- PASS no pacote Atlas e na suíte Go completa com race detector.
+- PASS no go vet.
+- PASS no seed real do catálogo após rebuild do Atlas; 21 recursos existentes
+  foram lidos sem alteração indevida.
+- PASS nos cenários R4-CTR-02-S01/S02/S03 por testes focados: minimum/maximum
+  não são ignorados, enum numérico usa igualdade matemática exata, integer
+  aceita representação JSON semanticamente inteira como 1e0 e keywords
+  desconhecidas/aninhamento excessivo são recusados.
+- O resultado de validação declara ai-hub-json-schema-subset/v1.
+- PASS estrutural OpenSpec: 21 changes válidas, 0 falhas. O binário foi
+  chamado por caminho absoluto porque `openspec` não estava no PATH.
+
+Limites:
+- A prova usa o provider-sim/Compose local e não homologa provedor comercial.
+- O rollout/rollback de uma versão publicada ainda é uma tarefa operacional
+  separada e permanece aberto.

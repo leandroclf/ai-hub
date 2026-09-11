@@ -27,6 +27,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
+| Contratos JSON estritos | `hub/evidence/r2/execution/r4-ctr-02-latest.log` | PASS local; dialeto `ai-hub-json-schema-subset/v1`, enum numérico matemático, integer exato e limites de schema; rollout/rollback ainda aberto |
 | R2-03/R2-02 complementar | `hub/evidence/r2/execution/r2-int-exe-qualification.log` | PASS seletivo; credenciais dedicadas, mTLS, polling/callback, prazos, SLA bilateral, idempotência, fencing, custódia e reconciliação; cenários fora do envelope local permanecem não qualificados |
 | R2-04/R2-07 complementar | `hub/evidence/r2/execution/r2-cat-dad-qualification.log` | PASS seletivo; catálogo versionado, conflito de revisão, DAG, JSON estrito, importação/diff, paginação, FileRef, pins e restore controlado; limites de storage comercial/regional permanecem abertos |
 | R2-08/R2-09 complementar | `hub/evidence/r2/execution/rls-runtime-latest.log` + `kind-continuity-latest.log` | PASS seletivo; RLS nas três bases, bootstrap Kind independente, UI/gateway e recuperação de workloads; SLO/load, ambientes remotos e HA regional permanecem abertos |
