@@ -1,0 +1,9 @@
+[
+  {
+    "check": "Admin denies tenant reader URL outside scope at authority and keeps UI context scoped",
+    "status": "PASS",
+    "authority_status": 403,
+    "visible_tenant": "acme",
+    "cross_tenant_input": 0
+  }
+]

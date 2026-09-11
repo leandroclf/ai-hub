@@ -113,7 +113,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 3. Provas por requisito
 
-- [ ] 3.1 Qualificar R2-ADM-01 com oráculos independentes
+- [x] 3.1 Qualificar R2-ADM-01 com oráculos independentes
   - Objective: Executar R2-ADM-01-S01, R2-ADM-01-S02, R2-ADM-01-S03. Caso indispensável: Logout; esperado: não reaparecem dados, filtros sensíveis ou permissões do anterior.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/admin-ui/src/App.tsx`; `hub/admin-ui/src/api/atlasClient.ts`.
   - Depends on: 2.1; fixtures de r2-09; dependências de integração pertinentes.

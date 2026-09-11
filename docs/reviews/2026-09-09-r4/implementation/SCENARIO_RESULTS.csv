@@ -156,6 +156,7 @@ R2-ADM-11-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal consulta contas
 R2-ADM-11-S03;PASS_INTEGRADO_LOCAL;admin-finance-adjustment-smoke.json — Chromium preparou ajuste compensatório com razão, exibiu bloqueio de autoaprovação e um auditor-global distinto aprovou com recibo persistido
 R2-ADM-01-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — Chromium completou Authorization Code + PKCE, senha e OTP e abriu a área administrativa real
 R2-ADM-01-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — logout removeu a sessão e a API administrativa respondeu 401 sem credencial
+R2-ADM-01-S02;PASS_INTEGRADO_LOCAL;admin-session-scope-smoke.json — leitor de acme recebeu 403 ao consultar beta na autoridade e a UI manteve tenant acme sem controle cross-tenant
 R2-ADM-02-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — listagem real de serviços abriu editor de contrato REST declarativo e preservou readback
 R2-ADM-02-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — resposta 200 não-JSON da autoridade foi recusada sem falso sucesso e a lista anterior foi preservada
 R2-ADM-02-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — revisão concorrente produziu 412 e o portal preservou a edição local exibindo a versão atual do servidor
