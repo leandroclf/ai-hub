@@ -81,6 +81,7 @@ R2-EXE-06-S01;PASS_INTEGRADO;late-success-expiry-smoke.json — finalização be
 R2-EXE-07-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait retorna final rápido ou 202 tardio sem renovar espera
 R2-EXE-07-S04;PASS_INTEGRADO;r2-int-exe-qualification.log — TestAutoPostgresBoundedWait preserva intenção após desconexão
 R2-EXE-07-S01;PASS_INTEGRADO;broker-outage-runtime-latest.json — LocalStack foi interrompido, Orbita/Cometa foram recriados sem dependência do broker, SYNC e GET retornaram SUCCEEDED com persistência confirmada e o broker foi restaurado
+R2-EXE-07-S02;PASS_INTEGRADO_LOCAL;admin-technical-policy-smoke.json + offer-resolution-runtime-latest.json — publicação/resolução rejeitaram SYNC incompatível com provedor async_poll com erro explícito, sem ativar a oferta e sem escolher ASYNC automaticamente
 R2-EXE-09-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestReconciliationWorkerResolvesStatusWithoutReplay reconcilia com GET e zero POST
 R2-EXE-09-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresOrphanCapabilityHashDoesNotShadowValidCallback
 R2-EXE-09-S01;PASS_INTEGRADO;orphan-dispatch-recovery-smoke.json — intenção READY antiga com lease expirado foi diagnosticada e recuperada com a mesma identidade, sem novo despacho

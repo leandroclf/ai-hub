@@ -69,7 +69,7 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-06; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.6; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.7 SYNC direto e AUTO com espera limitada
+- [x] 2.7 SYNC direto e AUTO com espera limitada
   - Objective: Entregar o comportamento R2-EXE-07 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-02, EXE-14, COM-01, COM-06, CAT-11.
   - Likely files/components: `hub/internal/orbita/handlers.go`; `hub/internal/orbita/dispatcher.go`; `hub/internal/platform/httpserver/httpserver.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -134,7 +134,7 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.7 Qualificar R2-EXE-07 com oráculos independentes
+- [x] 3.7 Qualificar R2-EXE-07 com oráculos independentes
   - Objective: Executar R2-EXE-07-S01, R2-EXE-07-S02, R2-EXE-07-S03, R2-EXE-07-S04. Caso indispensável: Cliente desconecta; esperado: custódia/reconciliação continua com contexto interno limitado; retry e GET recuperam a mesma identidade.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/orbita/handlers.go`; `hub/internal/orbita/dispatcher.go`.
   - Depends on: 2.7; fixtures de r2-09; dependências de integração pertinentes.
