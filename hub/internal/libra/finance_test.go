@@ -68,6 +68,43 @@ func financeDB(t *testing.T) *Store {
 	}
 	return NewStore(db)
 }
+
+func TestFinanceAdminRequiresInteractiveMFA(t *testing.T) {
+	t.Setenv("CELL_ID", "r2-cell-a")
+	s := financeDB(t)
+	h := NewHandlers(s, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	base := auth.Principal{Subject: "operator", TenantID: "acme", Scopes: []string{"finance:read"}, Roles: []string{"tenant_reader"}, ExpiresAt: time.Now().Add(time.Hour)}
+	for name, principal := range map[string]auth.Principal{
+		"sem mfa": base,
+		"workload": func() auth.Principal {
+			p := base
+			p.MFA = true
+			p.Workload = true
+			p.CellID = "r2-cell-a"
+			p.Roles = []string{"workload_libra"}
+			return p
+		}(),
+	} {
+		t.Run(name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/admin/v1/finance/facts?tenant_id=acme", nil).WithContext(auth.WithPrincipal(context.Background(), principal))
+			response := httptest.NewRecorder()
+			h.handleAdmin(response, req)
+			if response.Code != http.StatusForbidden {
+				t.Fatalf("sessão não interativa aceita: status=%d body=%s", response.Code, response.Body.String())
+			}
+		})
+	}
+
+	valid := base
+	valid.MFA = true
+	req := httptest.NewRequest(http.MethodGet, "/admin/v1/finance/facts?tenant_id=acme", nil).WithContext(auth.WithPrincipal(context.Background(), valid))
+	response := httptest.NewRecorder()
+	h.handleAdmin(response, req)
+	if response.Code != http.StatusOK {
+		t.Fatalf("sessão financeira válida recusada: status=%d body=%s", response.Code, response.Body.String())
+	}
+}
+
 func snapshot() Snapshot {
 	return Snapshot{ContractID: "fixture-sale-v1", Version: 1, Currency: "BRL", SettlementParty: "HUB", Buy: []PricingRule{{ContractID: "fixture-buy", Version: 1, Meter: "submit", Amount: "0.2", Incidence: []string{"SUBMITTED", "SUCCEEDED"}, UnitScope: "OPERATION"}}, Sell: []PricingRule{{Meter: "product", Amount: "1", Incidence: []string{"SUCCEEDED", "PARTIALLY_SUCCEEDED"}, UnitScope: "PROTOCOL"}}}
 }

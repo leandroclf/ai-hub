@@ -152,6 +152,36 @@ func TestCatalogValidation(t *testing.T) {
 		t.Fatal("hash depends on json whitespace/order")
 	}
 }
+
+func TestAdminScopeRequiresInteractiveMFA(t *testing.T) {
+	ctx := context.Background()
+	base := auth.Principal{Subject: "operator", TenantID: "acme", Scopes: []string{"catalog:read"}, Roles: []string{"tenant_reader"}, ExpiresAt: time.Now().Add(time.Hour)}
+	for name, principal := range map[string]auth.Principal{
+		"sem mfa": base,
+		"workload": func() auth.Principal {
+			p := base
+			p.MFA = true
+			p.Workload = true
+			p.CellID = "r2-cell-a"
+			return p
+		}(),
+	} {
+		t.Run(name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/admin/v1/providers?tenant_id=acme", nil).WithContext(auth.WithPrincipal(ctx, principal))
+			if tenant, ok := adminScope(req); ok || tenant != "" {
+				t.Fatalf("identidade administrativa indevidamente aceita: tenant=%q ok=%v", tenant, ok)
+			}
+		})
+	}
+
+	valid := base
+	valid.MFA = true
+	req := httptest.NewRequest(http.MethodGet, "/admin/v1/providers?tenant_id=acme", nil).WithContext(auth.WithPrincipal(ctx, valid))
+	if tenant, ok := adminScope(req); !ok || tenant != "acme" {
+		t.Fatalf("sessão administrativa válida recusada: tenant=%q ok=%v", tenant, ok)
+	}
+}
+
 func integrationStore(t *testing.T) *Store {
 	t.Helper()
 	dsn := os.Getenv("ATLAS_TEST_DSN")
@@ -250,7 +280,7 @@ func TestCatalogPostgresConcurrencyPublicationAndIsolation(t *testing.T) {
 	h := NewHandlers(s)
 	mux := http.NewServeMux()
 	h.Register(mux)
-	principal := auth.Principal{Subject: "operator-b", TenantID: "beta", MFA: true, Scopes: []string{"catalog:read", "catalog:write", "integrations:read", "integrations:write"}, ExpiresAt: time.Now().Add(time.Hour)}
+	principal := auth.Principal{Subject: "operator-b", TenantID: "beta", MFA: true, Roles: []string{"tenant_operator"}, Scopes: []string{"catalog:read", "catalog:write", "integrations:read", "integrations:write"}, ExpiresAt: time.Now().Add(time.Hour)}
 	req := httptest.NewRequest("GET", "/admin/v1/providers/fixture-provider/1", nil).WithContext(auth.WithPrincipal(ctx, principal))
 	response := httptest.NewRecorder()
 	mux.ServeHTTP(response, req)
@@ -281,7 +311,7 @@ func TestCatalogPostgresPaginationAndStaging(t *testing.T) {
 	if err != nil || len(b) != 12 || a[24].ID >= b[0].ID {
 		t.Fatalf("page2 %d %v", len(b), err)
 	}
-	p := auth.Principal{Subject: "operator-a", TenantID: "acme", Scopes: []string{"catalog:read", "catalog:write"}, ExpiresAt: time.Now().Add(time.Hour)}
+	p := auth.Principal{Subject: "operator-a", TenantID: "acme", MFA: true, Roles: []string{"tenant_operator"}, Scopes: []string{"catalog:read", "catalog:write"}, ExpiresAt: time.Now().Add(time.Hour)}
 	mux := http.NewServeMux()
 	NewHandlers(s).Register(mux)
 	body := []byte(`{"collection":{"item":[{"request":{"method":"GET","url":"https://api.example.test/test?token=secret"}}]}}`)

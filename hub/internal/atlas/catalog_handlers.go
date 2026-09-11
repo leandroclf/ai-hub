@@ -38,6 +38,14 @@ func adminScope(r *http.Request) (string, bool) {
 	if !ok {
 		return "", false
 	}
+	// A signed workload token may carry catalog scopes for service-to-service
+	// reads, but it is never an administrative session. Likewise, a scope
+	// without MFA must not reach a mutating or sensitive catalog endpoint.
+	// Role checks remain explicit here so a malformed scope mapping cannot
+	// turn a workload or ordinary session into an operator.
+	if p.Workload || !p.MFA || (!p.HasRole("hub_admin") && !p.HasRole("tenant_operator") && !p.HasRole("tenant_reader") && !p.HasRole("hub_protocol_reader")) {
+		return "", false
+	}
 	tenant := r.URL.Query().Get("tenant_id")
 	if tenant == "" {
 		tenant = p.TenantID

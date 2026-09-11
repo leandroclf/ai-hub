@@ -93,6 +93,13 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		auth.Error(w, 401, "unauthenticated")
 		return
 	}
+	// Finance admin is a human, MFA-authenticated surface. Workload tokens
+	// keep their separate /internal/reservations authority and must never be
+	// able to turn a finance scope into an administrative read or mutation.
+	if p.Workload || !p.MFA || (!p.HasRole("hub_admin") && !p.HasRole("hub_protocol_reader") && !p.HasRole("tenant_reader") && !p.HasRole("tenant_operator")) {
+		auth.Error(w, 403, "forbidden")
+		return
+	}
 	tenant := r.URL.Query().Get("tenant_id")
 	if tenant == "" {
 		tenant = p.TenantID
@@ -105,6 +112,10 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	scope := "finance:read"
 	if r.Method != "GET" {
 		scope = "finance:write"
+		if !p.HasRole("hub_admin") {
+			auth.Error(w, 403, "forbidden")
+			return
+		}
 	}
 	if strings.HasSuffix(path, "/approve") {
 		scope = "finance:approve"
