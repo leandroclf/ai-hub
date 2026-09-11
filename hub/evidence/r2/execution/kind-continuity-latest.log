@@ -14,3 +14,9 @@ pod_recovery workload=pulsar rto_ms=4481 available=2/2
 CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
 
 Limites: Kind continua sendo laboratório local; os volumes são efêmeros, não representam multi-AZ, e RPO é coberto pelo gate de restore por digest, não por uma promessa de réplica regional.
+
+Reexecução 2026-09-11 após bootstrap em cluster novo e instalação de metrics-server/KEDA:
+KIND_INDEPENDENT_BOOTSTRAP=PASS namespace=ai-hub-local-kind dependencies=cluster-owned workloads=5 ui=admin-ui gateway=kong
+pod_recovery workload=cometa rto_ms=4440 available=2/2
+pod_recovery workload=pulsar rto_ms=4414 available=2/2
+CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate

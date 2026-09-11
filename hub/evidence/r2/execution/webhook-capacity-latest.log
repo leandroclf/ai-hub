@@ -7,3 +7,6 @@ capacity: 1|open=0|pending=0
 domínio: r4-webhook
 secret_version: obtido do VersionId efetivo do LocalStack, sem segredo em claro
 diagnóstico anterior: Pulsar com CIDRs de loopback recusou a entrega antes do POST; bootstrap/recriação controlada recalculou as CIDRs internas atuais.
+
+Reexecução 2026-09-11 após normalização da fila local:
+PASS delivery=478b45c4-d79c-4d45-ad48-7acac3c33f2f capacity=1|open=0|pending=0

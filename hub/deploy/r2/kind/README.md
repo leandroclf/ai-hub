@@ -14,7 +14,10 @@ Pré-requisitos: Docker, Python 3, `kubectl`, acesso ao binário `kind` e o
 Compose oficial do AI Hub já qualificado ou parado conforme a política do
 repositório. O bootstrap é offline para imagens: quando a imagem de terceiros
 não está disponível no formato aceito pelo containerd do Kind, ele a
-reempacota localmente e a carrega nos três nós.
+reempacota localmente e a carrega nos três nós. Antes de aplicar os workloads,
+ele instala as versões fixadas do metrics-server e do KEDA e aguarda o CRD
+`ScaledObject`; assim, o perfil não depende de um cluster previamente preparado
+para aceitar o autoscaling do Pulsar.
 
 ```bash
 cd hub

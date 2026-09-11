@@ -18,3 +18,8 @@ restore objects: 0
 external effect oracle before reconciliation: {"effects":8,"protocols":8}
 RESTORE_RECONCILIATION=PASS databases=control,core,finance suffix=r4_20260911qual1 bucket=r2-custody-restore-r4-20260911qual1
 The provider oracle was observed without replay; re-admission remains disabled during restore.
+
+Reexecução 2026-09-11:
+Comando: R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual3 bash hub/deploy/r2/tests/restore-reconciliation.sh
+RESTORE_RECONCILIATION=PASS databases=control,core,finance suffix=r4_20260911qual3 bucket=r2-custody-restore-r4-20260911qual3
+Oráculo externo antes da reconciliação: {"effects":10,"protocols":10}; nenhum replay foi executado e a readmissão permaneceu desabilitada.
