@@ -1,0 +1,13 @@
+ENVIRONMENT_BOUNDARY_PROOF=START
+kubectl={   "clientVersion": {     "major": "1",     "minor": "32",     "gitVersion": "v1.32.3",     "gitCommit": "32cc146f75aad04beaaa245a7157eb35063a9f99",     "gitTreeState": "clean",     "buildDate": "2025-03-11T19:58:53Z",     "goVersion": "go1.23.6",     "compiler": "gc",     "platform": "linux/amd64"   },   "kustomizeVersion": "v5.5.0" }
+overlay=local-kind PASS namespace=ai-hub-local-kind digest=c27ba801d7bc9597f6b31f667934f5245171a9673af9dd66facf99570af0fd61
+overlay=dev PASS namespace=ai-hub-dev digest=7d451ab7213fc6f037b33e57281b6d12fa59bfedaf0da2390942ebf2f3cf168e
+overlay=hom PASS namespace=ai-hub-hom digest=a886a975be0b4a81b79a0f42dea942eafb585414623b1619cc48aca330acba29
+overlay=ppd PASS namespace=ai-hub-ppd digest=8b4b6254b1e23346a5c64d3154ce8b3b704c2075bcb13191db1a99013a61deb9
+overlay=prd PASS namespace=ai-hub-prd digest=607ef642e9b6a9ca93c23662e0daeb19c64d758b7e334c4748533d8de50d971c
+PROMOTION_GATE=BLOCK environment=prd missing=qualification_profile,environment_isolation_proof,P-01,P-08,P-10
+promotion_prd_missing_profile PASS blocked_as_expected
+promotion_dev PASS PROMOTION_GATE=ALLOW environment=dev reason=non-production-profile
+promotion_prd_qualified_fixture PASS PROMOTION_GATE=ALLOW environment=prd profile=synthetic-qualification-fixture approvals=P-01,P-08,P-10
+ENVIRONMENT_BOUNDARY_PROOF=PASS overlays=5 unique_namespaces=5 production_gate=blocked_without_profile
+evidence=hub/evidence/r2/execution/environment-boundary-latest.log

@@ -37,6 +37,10 @@ reprodutível.
   recriados sem dependências, permaneceram prontos e executaram SYNC/GET com
   `SUCCEEDED`. O broker foi restaurado ao final e a única fixture sintética
   sem efeito da primeira tentativa foi fechada pelo oráculo 404 local.
+- Ambientes/promoção: PASS estrutural; os cinco overlays renderizaram namespaces
+  distintos e referências de segredo sem valores materializados. O gate bloqueou
+  `prd` sem perfil/aprovações P-01/P-08/P-10 e permitiu `dev`; o isolamento
+  cross-environment com IdP e credenciais efetivas ainda é parcial.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos
