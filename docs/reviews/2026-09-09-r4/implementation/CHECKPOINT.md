@@ -2,8 +2,9 @@
 
 Data: 2026-09-11 (America/Sao_Paulo)
 
-HEAD do checkpoint: commit de consolidação desta rodada; o SHA final deve ser
-consultado no log após o commit. O código do adapter REST está em `ac9b346`.
+HEAD do checkpoint: consultar `git log` após o commit de consolidação desta
+rodada. O código do adapter REST está em `ac9b346` e as evidências integradas
+mais recentes foram consolidadas em `94afa58`.
 
 Executado: OpenSpec strict `21/21` — PASS; `npm run build` no portal — PASS;
 `go test -race -count=1 ./...`, `go vet ./...` e `git diff --check` — PASS. O
@@ -22,8 +23,10 @@ Atualização posterior: o commit `0a57029` corrigiu a autoridade interna da
 fila LocalStack, a quarentena durável de envelopes inválidos/comandos
 expirados e a preservação de falhas recuperáveis para redelivery. A prova do
 produto foi repetida após reconciliação positiva da fixture local e passou com
-duas etapas, dois efeitos e idempotência; o runner fechou quatro ausências
-comprovadas (`closed=4 protected=0`).
+duas etapas, dois efeitos e idempotência; o runner fechou dez ausências
+comprovadas (`closed=10 protected=0`). A carga autorizada mais recente usou
+`r4-authorized-1789127281502`; restore, RLS, financeiro, webhook e continuidade
+também foram repetidos com resultado PASS.
 
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`

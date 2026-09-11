@@ -105,13 +105,21 @@ também valida a posse durável da operação por tenant, aplicação, célula, 
 lease e hash do comando antes da autenticação e imediatamente antes do POST,
 sem reenvio quando a posse é perdida.
 
-O backlog local diagnosticado continha 15 comandos expirados e quatro permits
+O backlog local diagnosticado continha 15 comandos expirados e dez permits
 com `pending_external`. Os comandos foram quarentenados e os permits só foram
-fechados após o provider-sim confirmar HTTP 404, com `closed=4 protected=0`.
+fechados após o provider-sim confirmar HTTP 404, com `closed=10 protected=0`.
 Na sequência, a prova HTTP do produto passou novamente com duas etapas,
 dois efeitos independentes, consolidação `SUCCEEDED` e repetição idempotente
 sem novo efeito; o resultado está em
 `hub/evidence/r2/execution/product-http-latest.log`.
+
+A carga autorizada subsequente passou com o prefixo
+`r4-authorized-1789127281502`; financeiro, webhook, RLS, restore por digest,
+continuidade Kind e o smoke Playwright também passaram. O Browser Harness
+percorreu as 16 rotas com sessão OIDC/OTP qualificada, viewport 390×844 e
+resultado `PASS-EXPLORATORY`. Durante a repetição foram renovados o upstream
+do `admin-ui` após rebuild da Órbita e as CIDRs internas do Pulsar; nenhuma
+dessas correções alterou dados produtivos ou versionou segredos.
 
 ## Limite de conclusão
 
