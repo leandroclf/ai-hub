@@ -1,0 +1,13 @@
+Comando: R2_CORE_TEST_DSN=<fixture hub_core> go test -race -count=1 -v ./internal/orbita -run TestProductOptionalFailureFinalizesPartialWithDurableStepStates
+Ambiente: PostgreSQL 16 local, dados sintéticos, corrida Go com detector de race.
+Resultado:
+=== RUN   TestProductOptionalFailureFinalizesPartialWithDurableStepStates
+--- PASS: TestProductOptionalFailureFinalizesPartialWithDurableStepStates (0.14s)
+PASS
+
+Oráculos: AdmitProduct persistiu A obrigatório e B opcional; os dois fatos foram
+consumidos pela inbox/finalizador; o protocolo terminou PARTIALLY_SUCCEEDED;
+final_body preservou A em steps e B uma única vez em failed_steps; estados
+duráveis foram A:SUCCEEDED,B:FAILED.
+Limite: esta prova qualifica a custódia e a representação parcial no core, mas
+não fecha a incidência financeira de somente marcos elegíveis.

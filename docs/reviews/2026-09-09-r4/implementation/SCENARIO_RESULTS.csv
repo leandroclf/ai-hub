@@ -199,6 +199,7 @@ R2-ADM-10-S03;PASS_INTEGRADO_LOCAL;admin-sla-freshness-smoke.json — exportaç�
 R2-ADM-08-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — operador consultou detalhe persistido de protocolo e o leitor global consultou UUID cross-tenant com justificativa auditada
 R2-ADM-10-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — painel de SLA bilateral leu snapshots persistidos e foi exibido em Chromium autenticado
 R2-CAT-03-S01;PASS_INTEGRADO;product-http-latest.log — produto composto HTTP consolidou A/B independentes com max_parallel=2, duas operações/efeitos reais e início das operações sobreposto em 35 ms
+R2-CAT-03-S02;PARCIAL_INTEGRADO;product-optional-partial-postgres.log — PostgreSQL confirmou A obrigatório SUCCEEDED e B opcional FAILED, representação PARTIALLY_SUCCEEDED e estados duráveis; incidência financeira de marcos elegíveis permanece aberta
 R2-DAD-01-S01;PASS_INTEGRADO_LOCAL;file-upload-submit-smoke.json — upload HTTP direto, confirmação READY por hash e admissão real com FileRef; o protocolo conservou o aceite e criou o pin de retenção mesmo diante de resposta 504 de execução
 R2-DAD-01-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — FileRef pronto de tenant-a não pode ser baixado por tenant-b e a admissão consulta tenant_id sem revelar referência alheia
 R2-DAD-01-S03;PASS_INTEGRADO_LOCAL;multipart-incomplete-smoke.json — confirmação com parte ausente retornou erro de integridade e a FileRef permaneceu UPLOADING, nunca READY
