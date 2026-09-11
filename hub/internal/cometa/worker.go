@@ -3,6 +3,7 @@ package cometa
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -74,6 +75,7 @@ func RunCallbackInboxWorker(ctx context.Context, store *Store, exec *Executor, i
 // retorna por HTTP: e publicado como fato (outbox -> SNS), consumido
 // pela Orbita para finalizar o protocolo.
 func RunCommandWorker(ctx context.Context, q *queue.Client, queueURL string, exec *Executor, log *slog.Logger) {
+	log.Info("worker de comandos iniciado", "queue_url", queueURL)
 	for {
 		select {
 		case <-ctx.Done():
@@ -86,13 +88,24 @@ func RunCommandWorker(ctx context.Context, q *queue.Client, queueURL string, exe
 			time.Sleep(2 * time.Second)
 			continue
 		}
+		if len(msgs) > 0 {
+			log.Info("worker recebeu lote de comandos", "count", len(msgs))
+		}
 		for _, m := range msgs {
 			var cmd dispatch.Command
 			if json.Unmarshal(m.Envelope.Payload, &cmd) != nil || cmd.DispatchMode != dispatch.DispatchQueued || cmd.CellID != os.Getenv("CELL_ID") || m.Envelope.TenantID != cmd.TenantID || m.Envelope.EventID != cmd.CommandID || m.Envelope.Type != "command.dispatch" || m.Envelope.Producer != "orbita" || m.Envelope.SchemaVersion != 1 {
-				sum := sha256.Sum256(m.RawBody)
-				_, err := exec.store.db.ExecContext(ctx, `INSERT INTO message_quarantine(consumer,body_sha256,body,reason) VALUES('cometa', $1,$2,'invalid_command_envelope') ON CONFLICT(consumer,body_sha256) DO UPDATE SET last_seen_at=clock_timestamp(),occurrences=message_quarantine.occurrences+1`, hex.EncodeToString(sum[:]), m.RawBody)
-				if err == nil {
+				if err := quarantineCommand(ctx, exec.store.db, m, "invalid_command_envelope"); err == nil {
 					_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
+				} else {
+					log.Error("worker: quarentena do envelope indisponivel", "error", err)
+				}
+				continue
+			}
+			if commandDeadlineExpired(cmd, time.Now()) {
+				if err := quarantineCommand(ctx, exec.store.db, m, "expired_command_deadline"); err == nil {
+					_ = q.Delete(ctx, queueURL, m.ReceiptHandle)
+				} else {
+					log.Error("worker: quarentena do comando expirado indisponivel", "error", err)
 				}
 				continue
 			}
@@ -106,6 +119,17 @@ func RunCommandWorker(ctx context.Context, q *queue.Client, queueURL string, exe
 			} else {
 				result = exec.Execute(execCtx, cmd)
 			}
+			log.Info("worker processou comando", "kind", result.Kind, "durable", result.Durable, "error_code", result.ErrorCode)
+			if reason := commandResultQuarantineReason(result); reason != "" {
+				if err := quarantineCommand(ctx, exec.store.db, m, reason); err != nil {
+					log.Error("worker: quarentena da rejeicao indisponivel", "error", err, "error_code", result.ErrorCode)
+					continue
+				}
+				if err := q.Delete(ctx, queueURL, m.ReceiptHandle); err != nil {
+					log.Warn("worker: ACK da rejeicao indisponivel; redelivery e segura", "error", err, "error_code", result.ErrorCode)
+				}
+				continue
+			}
 			// Ack somente apos o efeito/intencao local estar
 			// confirmado (COM-03): Execute ja persistiu antes de
 			// retornar.
@@ -114,4 +138,29 @@ func RunCommandWorker(ctx context.Context, q *queue.Client, queueURL string, exe
 			}
 		}
 	}
+}
+
+func commandResultQuarantineReason(result dispatch.Result) string {
+	if result.Kind != dispatch.FactRejected {
+		return ""
+	}
+	switch result.ErrorCode {
+	case "invalid_command", "invalid_snapshot", "adapter_not_qualified", "adapter_unavailable", "binding_changed", "account_snapshot_invalid":
+		return "rejected_command:" + result.ErrorCode
+	default:
+		// Capacity and credential failures can recover without changing the
+		// accepted command. Preserve them for redelivery instead of dropping
+		// an obligation that may still be executable.
+		return ""
+	}
+}
+
+func commandDeadlineExpired(cmd dispatch.Command, now time.Time) bool {
+	return !cmd.StepDeadline.IsZero() && !now.Before(cmd.StepDeadline)
+}
+
+func quarantineCommand(ctx context.Context, db *sql.DB, m queue.ReceivedMessage, reason string) error {
+	sum := sha256.Sum256(m.RawBody)
+	_, err := db.ExecContext(ctx, `INSERT INTO message_quarantine(consumer,body_sha256,body,reason) VALUES('cometa', $1,$2,$3) ON CONFLICT(consumer,body_sha256) DO UPDATE SET last_seen_at=clock_timestamp(),occurrences=message_quarantine.occurrences+1,reason=EXCLUDED.reason`, hex.EncodeToString(sum[:]), m.RawBody, reason)
+	return err
 }

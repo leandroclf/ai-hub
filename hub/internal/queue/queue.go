@@ -12,6 +12,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -31,6 +32,8 @@ type Client struct {
 	SQS       *sqs.Client
 	SNS       *sns.Client
 	namespace string
+	endpoint  string
+	local     bool
 }
 
 func (c *Client) resourceName(name string) string {
@@ -95,7 +98,31 @@ func New(ctx context.Context, endpoint, region string) (*Client, error) {
 		SQS:       sqs.NewFromConfig(cfg, resolver),
 		SNS:       sns.NewFromConfig(cfg, snsResolver),
 		namespace: namespace,
+		endpoint:  strings.TrimRight(endpoint, "/"),
+		local:     os.Getenv("ENVIRONMENT") == "local",
 	}, nil
+}
+
+// normalizeQueueURL corrige o hostname externo que o LocalStack inclui na
+// resposta de CreateQueue. Dentro do Compose, esse hostname aponta para
+// loopback e não para o serviço localstack; o endpoint configurado pelo
+// workload é a autoridade de rede correta. URLs de produção permanecem
+// inalteradas.
+func (c *Client) normalizeQueueURL(raw string) (string, error) {
+	if !c.local || c.endpoint == "" || raw == "" {
+		return raw, nil
+	}
+	base, err := url.Parse(c.endpoint)
+	if err != nil || base.Scheme == "" || base.Host == "" {
+		return "", fmt.Errorf("queue: endpoint local invalido")
+	}
+	target, err := url.Parse(raw)
+	if err != nil || target.Scheme == "" || target.Host == "" {
+		return "", fmt.Errorf("queue: URL de fila invalida")
+	}
+	target.Scheme = base.Scheme
+	target.Host = base.Host
+	return target.String(), nil
 }
 
 // EnsureQueue cria a fila se ainda nao existir (idempotente o
@@ -113,7 +140,11 @@ func (c *Client) EnsureQueue(ctx context.Context, name string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("queue: criar fila %s: %w", name, err)
 	}
-	return aws.ToString(out.QueueUrl), nil
+	queueURL, err := c.normalizeQueueURL(aws.ToString(out.QueueUrl))
+	if err != nil {
+		return "", err
+	}
+	return queueURL, nil
 }
 
 // QueueARN retorna o ARN de uma fila a partir de sua URL — necessario

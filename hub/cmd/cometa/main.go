@@ -80,6 +80,7 @@ func main() {
 			log.Error("falha ao criar topico de fatos", "error", err)
 			return err
 		}
+		log.Info("broker de comandos pronto", "queue_url", commandsQueueURL, "facts_topic_arn", factsTopicARN)
 
 		// Relay da outbox (COM-03): publica fatos de operacao no SNS
 		// somente apos o commit local ja realizado pelo Executor.

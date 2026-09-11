@@ -16,8 +16,9 @@ func RunBootstrap(ctx context.Context, setup func() error, log *slog.Logger) {
 		}
 		if err := setup(); err == nil {
 			return
+		} else {
+			log.Warn("broker bootstrap unavailable; durable obligations retained", "error", err)
 		}
-		log.Warn("broker bootstrap unavailable; durable obligations retained")
 		timer := time.NewTimer(2 * time.Second)
 		select {
 		case <-ctx.Done():
