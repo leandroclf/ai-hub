@@ -172,9 +172,9 @@ R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de d
 R4-QUA-02-S03;PARCIAL_INTEGRADO;ausência de token persistido e HTTP 401 pós-logout no browser, Atlas/Libra/Pulsar sem MFA, workload administrativo, claims de papel incompatíveis e escrita financeira sem hub_admin recusados; matriz completa de negativas, revogação e mascaramento por jornada pendente
 R4-QUA-03-S01;PASS;go test ./... verde
 R4-QUA-03-S02;PASS_INTEGRADO;Compose, kind, readiness, métricas/HPA e recuperação de pod
-R4-QUA-03-S03;PARCIAL_INTEGRADO;restore, RLS, carga autenticada e HA local passaram, kind ainda usa dependências Compose e não representa produção
+R4-QUA-03-S03;PARCIAL_INTEGRADO;Compose recriado com preservação de 713 protocolos e catálogo; Kind independente reexecutado com dependências cluster-owned, 3 nós, 5 workloads e recuperação de Cometa/Pulsar em 4.486/4.494 ms; matriz integral, carga prolongada e perfil produtivo permanecem pendentes
 R3-OPE-02-S03;PASS_ESTRUTURAL;kustomize-overlay-latest.log — cinco overlays renderizados com 20 recursos, cinco imagens fixadas ai-hub-r2-<serviço>:r2, namespaces determinísticos e modo local ausente em prd
-R3-OPE-02-S02;PARCIAL_INTEGRADO;kind-node-restart-latest.log — worker Kind reiniciado e voltou a Ready em 1641 ms, cluster manteve três nós, cinco workloads distribuídos e dependências cluster-owned; recriação completa em máquina limpa permanece pendente
+R3-OPE-02-S02;PARCIAL_INTEGRADO;kind-continuity-latest.log — Kind independente manteve 3 nós, 5 workloads e dependências cluster-owned, recuperando Cometa/Pulsar em 4.486/4.494 ms; recriação completa de nó/máquina limpa permanece pendente
 R2-ADM-09-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — redelivery de entrega EXHAUSTED registra ação auditada RETRY_SCHEDULED ligada à entrega e aos mesmos bytes, sem novo submit
 R2-ADM-09-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — reconciliação de UNKNOWN sem provider_request_id é rejeitada de forma durável e auditada, sem oferecer replay genérico
 R2-ADM-09-S03;PASS_INTEGRADO_LOCAL;r2-security.log + browser-smoke.json — leitor administrativo sem escopo de escrita recebe 403 no endpoint de reconciliação e o portal não exibe ação de replay

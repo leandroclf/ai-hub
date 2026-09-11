@@ -36,7 +36,8 @@ qualificados. A prova estrutural de R3-OPE-02-S03 renderizou os cinco overlays
 Kustomize e confirmou imagens fixadas, namespaces determinísticos e ausência de
 modo local no `prd`; ela não promove os cenários de máquina limpa ou recriação
 de nós. Permanecem explícitos os gaps
-arquiteturais do backlog herdado, dependências Compose no renderer do kind,
+arquiteturais do backlog herdado, a reexecução independente do Kind com
+dependências `cluster-owned`,
 ausência de homologação de provedores/AWS reais, carga prolongada/expiração de
 I/O e matriz integral ainda não fechada. O adapter REST foi qualificado somente
 com endpoint HTTP local independente e não representa provedor comercial. Ver

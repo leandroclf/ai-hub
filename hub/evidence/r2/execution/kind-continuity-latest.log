@@ -1,28 +1,7 @@
-AI Hub R2 — qualificação local Kind independente — 2026-09-11
-Comando: R2_KIND_NAMESPACE=ai-hub-local-kind R2_REQUIRE_KIND_OWNED_DEPS=1 R2_CONTINUITY_DELETE_PODS=1 bash hub/deploy/r2/tests/continuity-runtime-proof.sh
-
-KIND_INDEPENDENT_BOOTSTRAP=PASS namespace=ai-hub-local-kind dependencies=cluster-owned workloads=5 ui=admin-ui gateway=kong
-Jobs: hub-migrate=Complete; identity-reconcile=Complete
-Dependências: postgres=10.244.2.30; localstack=10.244.1.26; identity=10.244.1.27; alloy=10.244.2.27; provider-sim=10.244.2.17; webhook-sink=10.244.1.19
-Porta administrativa alternativa para não conflitar com o Compose: admin-ui 23000->8080; identity 28085->8080; Kong 28000->8000.
-Admin UI estática: HTTP 200.
-OIDC discovery: PASS; issuer interno/externo da fixture retornado.
-Kong sem credencial: HTTP 401; nenhuma rota administrativa foi aceita anonimamente.
-
-pod_recovery workload=cometa rto_ms=4453 available=2/2
-pod_recovery workload=pulsar rto_ms=4481 available=2/2
+AI Hub R2 — prova runtime de continuidade Kind
+date=2026-09-11T22:21:36Z
+source_commit=3f344b3e7e05f78ea64f7bb4f4e02cfbd6c05922
+pod_recovery workload=cometa rto_ms=4486 available=2/2
+pod_recovery workload=pulsar rto_ms=4494 available=2/2
 CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
-
-Limites: Kind continua sendo laboratório local; os volumes são efêmeros, não representam multi-AZ, e RPO é coberto pelo gate de restore por digest, não por uma promessa de réplica regional.
-
-Reexecução 2026-09-11 após bootstrap em cluster novo e instalação de metrics-server/KEDA:
-KIND_INDEPENDENT_BOOTSTRAP=PASS namespace=ai-hub-local-kind dependencies=cluster-owned workloads=5 ui=admin-ui gateway=kong
-pod_recovery workload=cometa rto_ms=4440 available=2/2
-pod_recovery workload=pulsar rto_ms=4414 available=2/2
-CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
-
-Reexecução 2026-09-11 após qualificação de overlays:
-pod_recovery workload=cometa rto_ms=4398 available=2/2
-pod_recovery workload=pulsar rto_ms=4421 available=2/2
-CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
-Limite preservado: a execução recria pods e verifica dependências cluster-owned, mas não recria um nó/contêiner Kind; R3-OPE-02-S02 permanece não qualificado.
+recovery_note=first_attempt_detected_stale_kind_migration_job_with_missing_capacity_domains; bootstrap-independent-rerun_recreated_migration_job_and_restarted_failed_replicas; no_compose_volume_changed

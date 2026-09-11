@@ -23,7 +23,9 @@
 | `r4-ope-02-latest.log` | Runner real em três bancos temporários: instalação limpa, replay idempotente, checksum desconhecido rejeitado e variante conhecida de `0002` reconciliada com auditoria: PASS | Rollback de versão publicada permanece aberto |
 | `r4-ope-03-latest.log` | R4-OPE-03; R2-CAT-06-S02 — PostgreSQL real em schema descartável + cliente Atlas: 1.500 ofertas irrelevantes, dois candidatos elegíveis, `LIMIT 2`, plano indexado e fallback de projeção válida com recusa da vencida: PASS; Atlas oficial reconstruído no Compose | Não mede carga produtiva prolongada, memória/latência sob tráfego externo ou provedor comercial; cenário CAT-06 permanece unitário |
 | `r4-cbk-latest.log` | Cometa + PostgreSQL/HTTP local + `-race`: inbox limitada, capability inválida rejeitada, callback válido aplicado, custódia antes do ACK, revogação, correlação, conflito poll/callback e worker de reconciliação: PASS | Homologação de credencial por conta no gateway e provedor comercial continuam abertas |
-| cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
+| `kind-continuity-latest.log` | `continuity-runtime-proof.sh` no namespace `ai-hub-local-kind`: 3 nós Ready, 5 workloads com 2 réplicas distribuídas, PDB/HPA/KEDA válidos e recuperação controlada de Cometa/Pulsar em 4.486/4.494 ms; dependências `cluster-owned`: PASS | Ensaio Kind local; volumes são de laboratório, RPO usa o gate de restore por digest e não há alegação de HA regional |
+| `compose-recreation-latest.log` | Recriação controlada do Atlas com `--no-deps --force-recreate`: container mudou, 713 protocolos e todas as contagens do catálogo foram preservadas: PASS | Compose local e volumes locais; não substitui recuperação de desastre |
+| cache/HA/restore | Limite de locks, Redis vazio, duas réplicas Kind com dependências próprias e recuperação de pods, restore final por digest: PASS | Redis é dispensável; sem AWS/provedor comercial ou recriação completa de nó |
 
 ## Atualização da retomada de 11/09/2026
 

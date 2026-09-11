@@ -39,7 +39,7 @@ textual isolada.
 - Browser Harness: `PASS-EXPLORATORY` com `BU_CDP_URL` explícito, 16 rotas e
   viewport 390×844; a descoberta automática de Chrome headless permanece
   indisponível.
-- Kind: três nós, réplicas, métricas/HPA/KEDA e recuperação local observados; dependências ainda apontam para Compose e não formam um cluster de produção independente.
+- Kind: três nós, réplicas, métricas/HPA/KEDA e recuperação local observados; a reexecução independente confirmou dependências `cluster-owned`; isso continua sendo laboratório local e não forma HA de produção.
 - Carga: execução autorizada atual passou nos oito caminhos, com idempotência e callback; execução sem token continua sendo apenas negativa de autorização.
 - Produto/DAG: admissão HTTP local passou com duas etapas independentes, duas operações/efeitos no provider-sim, finalização `SUCCEEDED` e duplicata idempotente sem novo efeito.
 - Capacity: budget efetivo local passou com limite pelo snapshot da oferta, contexto, lease e margem; carga prolongada e expiração durante I/O continuam abertas.
