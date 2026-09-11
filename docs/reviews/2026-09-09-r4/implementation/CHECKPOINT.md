@@ -57,6 +57,15 @@ desligada foram revalidados: o Compose oficial manteve migrations idempotentes,
 volumes e workloads de negócio, enquanto Alloy/Redis fora não causaram cascata.
 Os gates de cinco ambientes, escala efetiva e HA regional continuam abertos.
 
+A qualificação local de observabilidade também foi reexecutada: a jornada ASYNC
+correlacionou trace durável entre intenção, Órbita, Cometa e timeline
+administrativa; o outbox envelhecido acionou `HubOutboxDelayed` durante a
+indisponibilidade do broker. O cleanup agora aguarda o LocalStack e reinicia
+somente Órbita, Cometa, Pulsar e Libra para recriar a topologia SQS, evitando
+deixar o Compose oficial degradado após a prova. Os logs, alertas, runbooks e
+limites estão em `hub/evidence/r2/execution/`; observabilidade gerenciada e
+investigação multi-região continuam abertas.
+
 R2-DAD-05/2.5 foi promovido como comportamento local implementado: o restore
 isolado compara contagens e digests, bloqueia egress/readmissão durante a
 reconciliação e consulta o oráculo externo sem replay. A prova de falha

@@ -15,6 +15,8 @@
 | `r2-dad-04-read-authority-latest.log` | R2-DAD-04: custódia local de representação e indisponibilidade da autoridade retornando 503 explícito, além de RLS cross-tenant em control/core/finance: PASS | Réplica atrasada, writer alternativo regional e HA de leitura permanecem fora |
 | `restore-reconciliation-latest.log` | R2-DAD-05-S01/S02 no perfil local: bancos e objetos restaurados em alvo isolado por contagem/digest, egress/readmissão bloqueados até confronto e oráculo externo observado sem replay: PASS | Não qualifica falha regional, PITR/AWS, réplica atrasada ou fencing de produção; R2-DAD-05-S03 permanece aberto |
 | `compose-bootstrap-current.log` + `optional-dependency-runtime-latest.log` | R2-OPE-01: plataforma Compose oficial reproduzida com migrations idempotentes, volumes preservados e dependências opcionais desligadas sem cascata nos workloads de negócio: PASS | Laboratório local; não qualifica máquina limpa, dependências gerenciadas ou HA regional |
+| `traceability-runtime-latest.json` | R2-OPE-07-S01 reexecutado após a recuperação da topologia SQS: admissão ASYNC, estado durável `SUCCEEDED`, trace presente na intenção e nos logs de Órbita/Cometa, timeline administrativa com eventos e métricas sem IDs de negócio: PASS | Fixture local; não substitui observabilidade gerenciada ou investigação multi-região |
+| `observability-outbox-runtime-latest.log` + `observability-alert-latest.log` | R2-OPE-07-S02/S03: outbox envelhecido com broker indisponível acionou `HubOutboxDelayed`; cleanup aguardou o LocalStack e reiniciou somente workers dependentes, recriando as cinco filas; regras/runbooks/dashboard passaram: PASS | Exercício local; não substitui alertas gerenciados em produção |
 
 ## Atualização da rodada R4 — 10/09/2026
 

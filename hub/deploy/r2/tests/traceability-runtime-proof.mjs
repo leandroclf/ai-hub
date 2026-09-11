@@ -19,7 +19,14 @@ function fixtureIP(service){
 function sql(statement){
  return execFileSync('docker',['exec',`${project}-postgres-1`,'psql','-U','hub','-d','hub_core','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim();
 }
-function logs(service){return execFileSync('docker',['logs','--since','45s',`${project}-${service}-1`],{encoding:'utf8',stdio:['ignore','pipe','pipe']})}
+function logs(service){
+ const output=execFileSync('docker',['logs','--since','45s','--tail','500',`${project}-${service}-1`],{
+  encoding:'utf8',
+  maxBuffer:2*1024*1024,
+  stdio:['ignore','pipe','pipe'],
+ });
+ return output;
+}
 async function call(url,bearer,options={}){
  const response=await fetch(url,{...options,headers:{authorization:`Bearer ${bearer}`,'X-Tenant-Id':'acme',...(options.headers||{})},signal:AbortSignal.timeout(10000)});
  return {status:response.status,headers:Object.fromEntries(response.headers),body:await response.json().catch(()=>({}))};

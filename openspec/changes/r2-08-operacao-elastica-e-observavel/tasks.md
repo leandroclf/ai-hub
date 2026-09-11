@@ -1,6 +1,6 @@
 # Tasks: Ambientes completos, disponibilidade, escala e observabilidade
 
-Status: **parcialmente concluído**. Probes de capacidade/drenagem e placement têm prova integral; ambientes, escala, telemetria, continuidade e promoção permanecem abertos onde a evidência é estrutural ou parcial. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **parcialmente concluído**. Probes de capacidade/drenagem, placement e telemetria local têm prova integral; ambientes, escala, continuidade, segurança de infraestrutura e promoção permanecem abertos onde a evidência é estrutural ou parcial. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -70,12 +70,13 @@ Status: **parcialmente concluído**. Probes de capacidade/drenagem e placement t
   - Validation: Teste de domínio/contrato dos limites de R2-OPE-06; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.6; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.7 Telemetria e SLA com investigação acionável
+- [x] 2.7 Telemetria e SLA com investigação acionável
   - Objective: Entregar o comportamento R2-OPE-07 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-03, OPE-06, OPE-10.
   - Likely files/components: `hub/deploy`; `hub/cmd`; `hub/internal/platform`; `hub/internal/atlasclient`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-OPE-07; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.7; sem flags que apresentem mock como fluxo real.
+  - Evidence: `hub/evidence/r2/execution/traceability-runtime-latest.json` e `observability-alert-latest.log`; trace durável, timeline administrativa, histograma sem IDs de negócio, alertas carregáveis e runbooks resolvidos.
 
 - [ ] 2.8 Segurança e reprodutibilidade de infraestrutura
   - Objective: Entregar o comportamento R2-OPE-08 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline ARQ-05, SEG-01, OPE-04, QUA-04.
@@ -142,6 +143,7 @@ Status: **parcialmente concluído**. Probes de capacidade/drenagem e placement t
   - Depends on: 2.7; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
+  - Evidence: `traceability-runtime-latest.json` (S01), `observability-outbox-runtime-latest.log` (S02) e `optional-dependency-runtime-latest.log` (S03); a perda do backend opcional não reiniciou workloads, a obrigação atrasada acionou `HubOutboxDelayed` e a jornada ASYNC manteve rastreabilidade durável. Não substitui observabilidade gerenciada.
 
 - [ ] 3.8 Qualificar R2-OPE-08 com oráculos independentes
   - Objective: Executar R2-OPE-08-S01, R2-OPE-08-S02, R2-OPE-08-S03. Caso indispensável: Atualização de dependência; esperado: registra suporte/licença, lock/digest, scan e ensaios de contrato; referência de versão não vira aprovação automática.

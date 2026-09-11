@@ -14,7 +14,11 @@ ROW_ID="observability-outbox-proof"
 cleanup() {
   set +e
   docker exec "$POSTGRES" psql -U hub_runtime -d hub_core -v ON_ERROR_STOP=1 -q -c "DELETE FROM outbox WHERE aggregate_type='protocol' AND aggregate_id='${ROW_ID}';" >/dev/null 2>&1
-  "${COMPOSE[@]}" up -d localstack >/dev/null 2>&1
+  # `stop` pode deixar o estado efêmero do LocalStack sem as filas declaradas.
+  # Aguarde o broker e reinicie somente os workers que recriam a topologia
+  # local; assim a prova nunca termina deixando o Compose oficial degradado.
+  "${COMPOSE[@]}" up -d --wait --wait-timeout 60 localstack >/dev/null 2>&1
+  "${COMPOSE[@]}" restart orbita cometa pulsar libra >/dev/null 2>&1
 }
 trap cleanup EXIT
 

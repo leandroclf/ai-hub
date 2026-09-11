@@ -1,6 +1,6 @@
 # Tasks: Catálogo operável, produtos compostos e contratos por cliente
 
-Status: **comportamentos e provas concluídos; 4.1 comprovado; integração e fechamento permanecem abertos**. Os 24 cenários de catálogo têm resultado explícito e a prova cercada de migração/recuo foi registrada; gates fora do envelope local continuam abertos. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **comportamentos, migração e qualificação local concluídos; gates externos permanecem abertos**. Os 24 cenários de catálogo têm resultado explícito, a prova cercada de migração/recuo foi registrada e a integração local com observabilidade foi revalidada; homologação comercial, carga prolongada e rollback produtivo continuam fora do envelope. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -151,16 +151,18 @@ Status: **comportamentos e provas concluídos; 4.1 comprovado; integração e fe
   - Completion criteria: Histórico, identidade e obrigações preservados; procedimento e limitações registrados.
   - Evidence: `hub/evidence/r2/execution/catalog-migration-rollback-latest.log`; dois serviços legados foram materializados como drafts rastreáveis, v2 foi suspensa sem alterar v1, um protocolo aceito manteve snapshot v1 e o replay do migrador permaneceu idempotente.
 
-- [ ] 4.2 Qualificar a fatia integrada e observabilidade
+- [x] 4.2 Qualificar a fatia integrada e observabilidade
   - Objective: Executar cenários IT pertinentes com consumidores/produtores reais de ensaio e jornadas administrativas afetadas; provar alerta/runbook de falha principal.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/evidence`.
   - Depends on: 3.x e 4.1; changes produtoras/consumidoras necessárias integradas.
   - Validation: Contrato/E2E e observabilidade; gates G0–G7 conforme perfil; não exigir cloud para prova que cabe no laboratório.
   - Completion criteria: Evidência separa laboratório, homologação e perfil operacional; qualquer gate não executado continua aberto.
+  - Evidence: `hub/evidence/r2/execution/catalog-legacy-contracts-runtime-latest.json`, `traceability-runtime-latest.json`, `observability-alert-latest.log` e `observability-outbox-runtime-latest.log`; a jornada local atravessou catálogo, execução, timeline, métricas e alerta de outbox atrasado, com runbook resolvido e cleanup do broker validado. Homologação comercial, alertas gerenciados e carga prolongada permanecem abertos.
 
-- [ ] 4.3 Atualizar rastreabilidade e concluir apenas o comprovado
+- [x] 4.3 Atualizar rastreabilidade e concluir apenas o comprovado
   - Objective: Atualizar matriz, auditoria, documentação e estado de tarefas conforme provas; preservar pendências e baseline.
   - Likely files/components: `IMPLEMENTATION_AUDIT.md`; `openspec/changes/r2-04-catalogo-produtos-e-contratos`; `docs/reviews/2026-09-07-r2`.
   - Depends on: 4.2.
   - Validation: OpenSpec strict, links/IDs e review de evidência.
   - Completion criteria: Nenhum requisito concluído por inferência; archive somente conforme plano de baseline e aceite real da change.
+  - Evidence: `hub/evidence/r2/execution/EVIDENCE_INDEX.md` e `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md`, atualizados com SHA, ambiente e limites da prova local.
