@@ -39,6 +39,14 @@ backend continua sendo a autoridade para tenant, papel, MFA e escopo. A UI
 não deve ser exposta fora de um ambiente protegido apenas porque o build
 passou.
 
+Para validar a fixture de identidade sem copiar token para arquivos, execute
+`python3 hub/deploy/r2/scripts/token.py operadora-a --claims` a partir da raiz
+do repositório. No login visual, o TOTP é uma janela de 30 segundos: gere o
+código imediatamente antes de pressionar `Sign In`, não reutilize um código
+após uma mensagem de erro e mantenha relógio do host e do container
+sincronizados. O formulário limpa o campo quando o Keycloak rejeita o código;
+isso não indica, por si só, senha incorreta.
+
 Segredos de provedor e webhook nunca são digitados nem exibidos em claro.
 As telas trabalham somente com referências versionadas, como `secret_ref` e
 `secret_version`.
@@ -70,6 +78,11 @@ O backend rejeita host absoluto, query, fragmento, traversal, placeholders
 adicionais e contrato parcial; a URL base continua sendo propriedade da conta
 externa homologada.
 
+Campos que referenciam outros catálogos exibem um filtro de pesquisa local
+por nome ou identificador. O filtro atua sobre as páginas carregadas pelo
+portal (até 1.000 registros por catálogo de referência); ele não substitui a
+paginação nem altera a consulta de autoridade do backend.
+
 ## Validação de frontend
 
 Use os gates nesta ordem quando a demanda envolver o portal:
@@ -83,10 +96,11 @@ Use os gates nesta ordem quando a demanda envolver o portal:
      node ../deploy/r2/tests/browser-smoke.mjs
    ```
 
-   O smoke cobre OIDC/OTP, criação e readback durável, navegação autenticada,
-   SLA, publicação/readback de destino, ausência de token persistido,
-   logout e viewport de 390 px. A execução cria apenas dados sintéticos no
-   laboratório; não use contas ou endpoints reais.
+   O smoke cobre OIDC/OTP, contrato REST declarativo, pesquisa local de
+   referências, criação e readback durável, navegação autenticada, SLA,
+   publicação/readback de destino, ausência de token persistido, logout e
+   viewport de 390 px. A execução cria apenas dados sintéticos no laboratório;
+   não use contas ou endpoints reais.
 
 3. Browser Harness, quando a demanda exigir exploração visual, acessibilidade
    ou diagnóstico assistido. Ele é opcional, exploratório e não substitui o

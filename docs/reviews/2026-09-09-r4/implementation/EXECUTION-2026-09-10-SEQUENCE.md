@@ -18,8 +18,9 @@ reprodutível.
 - OpenSpec: `validate --all --strict --no-interactive --json`: PASS, 21/21.
 - Seed do catálogo: PASS, recursos existentes e versionados.
 - Playwright determinístico: PASS para OIDC Authorization Code + PKCE + OTP,
-  persistência do admin, navegação autenticada, SLA bilateral, destinos
-  versionados, ausência de tokens persistentes, viewport de 390px e logout.
+  persistência do admin, filtro local de referências, navegação autenticada,
+  SLA bilateral, destinos versionados, ausência de tokens persistentes,
+  viewport de 390px e logout.
 - Editor de produto: PASS; o portal persiste e relê o mapeamento de entrada
   entre etapas dependentes.
 - Produto/DAG via HTTP: PASS; duas etapas independentes geraram duas operações

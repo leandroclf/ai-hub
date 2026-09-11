@@ -8,14 +8,18 @@
     "status": "PASS"
   },
   {
+    "check": "Admin reference editor filters loaded catalog options locally",
+    "status": "PASS"
+  },
+  {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789118872625"
+    "resource": "browser-client-1789119598326"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789118910916"
+    "resource": "browser-product-1789119630915"
   },
   {
     "check": "URL navigation and real authenticated provider list",
