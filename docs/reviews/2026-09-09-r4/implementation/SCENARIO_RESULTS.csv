@@ -8,6 +8,9 @@ R2-SEG-02-S03;PASS_UNITARIO;r2-security.log — TestR2Seg02Scenarios/R2-SEG-02-S
 R2-SEG-03-S01;PASS_INTEGRADO;r2-security.log — TestR2Seg03Scenarios/R2-SEG-03-S01_diagnostico_de_desenvolvedor com PostgreSQL real
 R2-SEG-03-S02;PASS_INTEGRADO;r2-security.log — TestR2Seg03Scenarios/R2-SEG-03-S02_sem_elevacao_implicita com PostgreSQL real
 R2-SEG-03-S03;PASS_INTEGRADO;r2-security.log — TestR2Seg03Scenarios/R2-SEG-03-S03_auditoria_indisponivel com PostgreSQL real
+R2-SEG-04-S01;PASS_INTEGRADO_LOCAL;r2-seg04-egress.log — HTTPS/TLS efetivo com transporte restrito à origem homologada
+R2-SEG-04-S02;PASS_INTEGRADO_LOCAL;r2-seg04-egress.log — SSRF/metadados recusados e redirect não seguido para outra origem
+R2-SEG-04-S03;PASS_INTEGRADO_LOCAL;r2-seg04-egress.log — rede privada limitada ao host e porta aprovados
 R2-FIN-01-S01;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S01_snapshot_frozen com PostgreSQL real
 R2-FIN-01-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S02_client_direct com PostgreSQL real
 R2-FIN-01-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-01-S03_submit_then_expiry com PostgreSQL real

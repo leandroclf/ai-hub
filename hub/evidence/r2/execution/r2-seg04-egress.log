@@ -1,0 +1,14 @@
+R2-SEG-04 qualification
+source_commit=e2c8ee5
+command=go test -count=1 -v ./internal/platform/egress -run '^TestR2Seg04Scenarios$'
+=== RUN   TestR2Seg04Scenarios
+=== RUN   TestR2Seg04Scenarios/R2-SEG-04-S01_destino_homologado
+=== RUN   TestR2Seg04Scenarios/R2-SEG-04-S02_ssrf_e_rebinding
+=== RUN   TestR2Seg04Scenarios/R2-SEG-04-S03_rede_privada_legitima
+--- PASS: TestR2Seg04Scenarios (0.00s)
+    --- PASS: TestR2Seg04Scenarios/R2-SEG-04-S01_destino_homologado (0.00s)
+    --- PASS: TestR2Seg04Scenarios/R2-SEG-04-S02_ssrf_e_rebinding (0.00s)
+    --- PASS: TestR2Seg04Scenarios/R2-SEG-04-S03_rede_privada_legitima (0.00s)
+PASS
+ok  ai-hub/hub/internal/platform/egress  0.007s
+limitation=the test exercises deny-before-connect and origin-constrained redirects; it does not claim a live DNS rebinding race.
