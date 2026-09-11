@@ -19,7 +19,8 @@ aplicação/serviço foi corrigido no HEAD atual: a resolução consulta o conju
 elegível diretamente no PostgreSQL, separa ofertas do tenant e globais para
 permitir uso do índice e limita a dois candidatos. A prova de crescimento sob
 tráfego produtivo, incluindo memória/latência e dependências comerciais, ainda
-permanece aberta.
+permanece aberta. O consumidor Atlas conserva projeção válida por chave completa
+durante indisponibilidade e recusa projeção vencida.
 ## Context
 Brownfield do commit b9d0f90ce02aa0c27cad546745153d160ff5867f. A baseline tem 189 requisitos/696 cenários.
 ## Problem

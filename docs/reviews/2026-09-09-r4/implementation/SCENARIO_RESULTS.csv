@@ -110,7 +110,7 @@ R4-OPE-02-S02;PASS_INTEGRADO;instalação/upgrade do projeto Compose concluídos
 R4-OPE-02-S03;PASS_ESTRUTURAL;runner mantém falha para hash desconhecido
 R4-OPE-03-S01;PASS_CAMINHO;consulta filtrada, carga publicada e EXPLAIN confirmando índice parcial quando selecionado
 R4-OPE-03-S02;PASS_CAMINHO;LIMIT 2 preserva diagnóstico de ambiguidade e carga final resolveu oferta publicada
-R4-OPE-03-S03;PENDENTE;projeção/Atlas fora não executados
+R4-OPE-03-S03;PASS_INTEGRADO_LOCAL;r4-ope-03-latest.log — atlasclient reutiliza projeção válida com Atlas indisponível e recusa projeção vencida; carga produtiva permanece pendente
 R4-CBK-01-S01;PASS_ESTRUTURAL;rota pública /callbacks separada do JWT
 R4-CBK-01-S02;PASS_INTEGRADO_LOCAL;provider-sim em Compose concluiu callback e o efeito foi observado
 R4-CBK-01-S03;PASS_UNITARIO;chave de ingresso constante e capability por operação

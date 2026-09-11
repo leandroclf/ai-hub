@@ -1,5 +1,5 @@
 R4-OPE-03 — resolução seletiva de ofertas e crescimento controlado
-source_commit=3846675
+source_commit=8aae6fb
 environment=local-compose-postgres-fixture
 database=PostgreSQL 16 no container ai_hub_r3qual-postgres-1
 command=ATLAS_TEST_DSN='postgres://hub:<fixture>@127.0.0.1:15432/hub_control?sslmode=disable' go test -race -count=1 ./internal/atlas -run TestOfferResolutionBoundsIndexedCandidates -v
@@ -12,7 +12,9 @@ observations:
   - tenant local e catálogo global usam ramos indexáveis separados por UNION ALL;
   - EXPLAIN (FORMAT JSON), com varredura sequencial desabilitada para o oráculo,
     confirmou catalog_offer_eligibility_lookup;
+  - atlasclient reutilizou projeção válida com Atlas indisponível e recusou a
+    mesma projeção após `ValidUntil`, sem fallback para snapshot vencido;
   - o serviço Atlas oficial foi reconstruído e reiniciado no projeto ai_hub_r3qual.
-validation=go test -race -count=1 ./internal/atlas; go test -race -count=1 ./...; go vet ./...; PASS
+validation=go test -race -count=1 ./internal/atlas ./internal/atlasclient; go test -race -count=1 ./...; go vet ./...; PASS
 limitation=fixture local e schema descartável; esta evidência não mede carga produtiva
 prolongada, memória/latência sob tráfego externo nem homologa provedor comercial.
