@@ -32,6 +32,16 @@ try{
  const afterResponse=await fetch(`http://localhost:13000/api/atlas/admin/v1/services/${encodeURIComponent(serviceCode)}/1?tenant_id=acme`,{headers:{Authorization:`Bearer ${accessToken}`}});const after=await afterResponse.json();
  if(after.name!==current.name||after.content_hash!==current.content_hash||after.state!=='PUBLISHED')throw new Error('conteúdo publicado mudou após tentativa de PATCH');
  evidence.push({check:'Published service rejects mutation and preserves content hash',status:'PASS',service:serviceCode,version:1,mutation_status:mutationResponse.status,state:after.state});
+ await page.getByRole('button',{name:'Sair',exact:true}).click();
+ await page.goto(`http://localhost:13000/services/${serviceCode}/1`);
+ await authenticate('leitor-a',new RegExp(`/services/${serviceCode}/1$`));
+ await page.getByText(/Cliente: acme · PUBLISHED/).waitFor();
+ const readerText=await page.locator('body').innerText();
+ const readerCode=await page.getByLabel('Código estável',{exact:true}).inputValue();
+ const readerResponse=await fetch(`http://localhost:13000/api/atlas/admin/v1/services/${encodeURIComponent(serviceCode)}/1?tenant_id=acme`,{headers:{Authorization:`Bearer ${accessToken}`}});
+ const reader=await readerResponse.json();
+ if(readerResponse.status!==200||readerCode!==serviceCode||!readerText.includes('PUBLISHED')||reader.content_hash!==current.content_hash||reader.revision!==current.revision)throw new Error(`segundo operador não recuperou a mesma revisão publicada após refresh: status=${readerResponse.status} código=${readerCode} revisão=${reader.revision} hash=${reader.content_hash}`);
+ evidence.push({check:'Second same-tenant operator refreshes the published URL and reads the persisted version',status:'PASS',service:serviceCode,version:1,reader:'leitor-a',revision:reader.revision,content_hash:reader.content_hash});
  console.log(JSON.stringify(evidence,null,2));
 }catch(error){evidence.push({check:'admin service publication',status:'FAIL',url:page.url(),error:error.message.split('\n')[0],bodyText:(await page.locator('body').innerText().catch(()=>'' )).slice(0,800)});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
 finally{await writeFile('hub/evidence/r2/execution/admin-service-publication-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()}

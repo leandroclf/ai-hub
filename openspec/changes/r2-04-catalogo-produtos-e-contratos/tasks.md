@@ -76,7 +76,7 @@ Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação t�
   - Validation: Teste de domínio/contrato dos limites de R2-CAT-07; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.7; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.8 Consulta administrativa persistente e onboarding
+- [x] 2.8 Consulta administrativa persistente e onboarding
   - Objective: Entregar o comportamento R2-CAT-08 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline CFG-01, CFG-06, CAT-11, DAD-11.
   - Likely files/components: `hub/internal/atlas`; `hub/internal/atlasclient`; `hub/internal/orbita`; `hub/migrations/control`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -134,7 +134,7 @@ Status: **parcialmente concluído**. Catálogo versionado e DAG/compensação t�
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.8 Qualificar R2-CAT-08 com oráculos independentes
+- [x] 3.8 Qualificar R2-CAT-08 com oráculos independentes
   - Objective: Executar R2-CAT-08-S01, R2-CAT-08-S02, R2-CAT-08-S03. Caso indispensável: Capacidade insuficiente; esperado: registra provisionamento automático e só ativa após qualificação; não aponta tráfego para célula incompleta.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/atlas`; `hub/internal/atlasclient`.
   - Depends on: 2.8; fixtures de r2-09; dependências de integração pertinentes.
