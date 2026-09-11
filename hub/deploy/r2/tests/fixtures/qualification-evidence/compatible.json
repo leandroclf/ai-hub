@@ -1,0 +1,11 @@
+{
+  "scenario_id": "R2-QUA-01-S02",
+  "status": "PASS_INTEGRADO_LOCAL",
+  "requirement": "Rastreabilidade do alvo até evidência",
+  "expected": ["status", "corpo", "identidade"],
+  "observed": ["status", "corpo", "identidade"],
+  "command": "go test -count=1 ./internal/qualification",
+  "environment": "local-compose-postgres-fixture",
+  "source_sha": "0123456789abcdef0123456789abcdef01234567",
+  "evidence": "hub/deploy/r2/tests/fixtures/qualification-evidence/qualification-evidence-test.log"
+}

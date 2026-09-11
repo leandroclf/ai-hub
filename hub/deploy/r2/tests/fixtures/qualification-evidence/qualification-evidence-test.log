@@ -1,0 +1,4 @@
+scenario_id=R2-QUA-01-S02
+expected=status,corpo,identidade
+observed=status,corpo,identidade
+result=PASS

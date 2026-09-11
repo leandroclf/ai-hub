@@ -10,8 +10,17 @@ approvals=" ${R2_PROMOTION_APPROVALS:-} "
 isolation=${R2_ENVIRONMENT_ISOLATION_PROOF:-}
 criticality=${R2_CRITICALITY_PROFILE:-standard}
 critical_approved=${R2_CRITICAL_PROFILE_APPROVED:-}
+evidence_manifest=${R2_QUALIFICATION_EVIDENCE_MANIFEST:-}
+evidence_validator="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-qualification-evidence.py"
 
 has_approval(){ [[ "$approvals" == *" $1 "* || "$approvals" == *" $1,"* || "$approvals" == *",$1 "* || "$approvals" == *",$1,"* ]]; }
+
+if [[ -n "$evidence_manifest" ]]; then
+  python3 "$evidence_validator" --manifest "$evidence_manifest" --root "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../../" && pwd)" --require-pass || {
+    echo "PROMOTION_GATE=BLOCK environment=$environment missing=qualification_evidence"
+    exit 1
+  }
+fi
 
 case "$environment" in
   local|dev|hom|ppd)
