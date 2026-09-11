@@ -8,9 +8,12 @@ if(!chromium) throw new Error('playwright-core sem export chromium');
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_BIN||'/usr/bin/google-chrome'});
 const page=await browser.newPage({viewport:{width:1365,height:900}});
 const evidence=[];
+const networkDiagnostics=[];
+page.on('response',response=>{if(response.url().includes('/api/pulsar/admin/v1/deliveries/')||response.url().includes('/api/orbita/admin/v1/protocols/'))networkDiagnostics.push({url:response.url(),status:response.status()})});
 const postgres=`${process.env.R2_COMPOSE_PROJECT||'ai_hub_r3qual'}-postgres-1`;
 let seededDelivery='';
 function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_core','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
+function sqlControl(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_control','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
 let phase='inicialização';
 async function authenticate(username,expectedURL){
  await page.getByRole('button',{name:'Entrar',exact:true}).click();
@@ -81,11 +84,19 @@ try {
  await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.reload({waitUntil:'networkidle'});
- await page.waitForTimeout(60500-(Date.now()%30000));
+ await page.waitForTimeout(31000-(Date.now()%30000));
  await authenticate('operadora-a',/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.waitForURL(/http:\/\/localhost:13000\/clients\/[^/]+\/1/);
  await page.locator(`input[value="Browser ${clientCode}"]`).waitFor();
  evidence.push({check:'Admin resource save, reload and durable readback',status:'PASS',resource:clientCode});
+ phase='conflito de edição administrativa';
+sqlControl(`UPDATE catalog_resources SET revision=revision+1,updated_at=clock_timestamp() WHERE kind='clients' AND id='${clientCode}' AND version=1`);
+ await page.getByLabel('Nome',{exact:true}).fill(`Browser ${clientCode} edição local`);
+ await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
+ await page.getByRole('heading',{name:'Outra revisão foi salva',exact:true}).waitFor();
+ await page.getByLabel('Sua edição',{exact:true}).waitFor();
+ await page.getByLabel('Versão atual',{exact:true}).waitFor();
+ evidence.push({check:'Admin edit conflict preserves local input and shows server diff',status:'PASS',resource:clientCode});
  phase='editor de produto e mapeamento dependente';
  const productCode=`browser-product-${Date.now()}`;
  await page.getByRole('link',{name:'Produtos',exact:true}).click();
@@ -108,7 +119,7 @@ try {
  await page.getByRole('button',{name:'Salvar rascunho',exact:true}).click();
  await page.waitForURL(/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  await page.reload({waitUntil:'networkidle'});
- await page.waitForTimeout(60500-(Date.now()%30000));
+ await page.waitForTimeout(31000-(Date.now()%30000));
  await authenticate('operadora-a',/http:\/\/localhost:13000\/products\/[^/]+\/1/);
  if(await page.locator('#step-1-input-mapping').inputValue()!=='{\n  "marker": "etapa_a.marker"\n}')throw new Error('input_mapping do produto não reapareceu no readback');
  evidence.push({check:'Admin product editor persists dependent input mapping',status:'PASS',resource:productCode});
@@ -275,7 +286,7 @@ try {
  await page.getByRole('button',{name:'Sair',exact:true}).click();
  await page.waitForTimeout(500);
  console.log(JSON.stringify(evidence,null,2));
-} catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
+} catch(error) {evidence.push({check:'browser flow',status:'FAIL',phase,url:page.url(),error:error.message.split('\n')[0],networkDiagnostics});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
 finally {
  if(seededDelivery){try{sql(`DELETE FROM webhook_audit WHERE resource='${seededDelivery}'`);sql(`DELETE FROM deliveries WHERE delivery_id='${seededDelivery}'`)}catch(error){console.error(`cleanup da fixture de redelivery falhou: ${error.message}`)}}
  await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()
