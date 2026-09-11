@@ -1,6 +1,6 @@
 # Tasks: Medição, saldo estrito, ledger e fechamento
 
-Status: **comportamentos e provas concluídos; integração/migração e fechamento permanecem abertos**. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados, r2-04-catalogo-produtos-e-contratos
+Status: **comportamentos, migração e qualificação local concluídos; integração comercial e produção permanecem abertas**. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados, r2-04-catalogo-produtos-e-contratos
 
 ## 1. Contratos e preparação
 
@@ -115,23 +115,26 @@ Status: **comportamentos e provas concluídos; integração/migração e fechame
 
 ## 4. Integração, migração e fechamento
 
-- [ ] 4.1 Ensaiar migração e recuo sem perda de obrigações
+- [x] 4.1 Ensaiar migração e recuo sem perda de obrigações
   - Objective: Migrar decimal sem converter por float; carregar fatos antigos em lote de abertura com proveniência LEGACY_UNVERIFIED onde snapshot faltar. Não inventar tarifas históricas. Bloquear fechamento definitivo até reconciliação e aprovação.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 2.x concluídas; plano de rollback do design.
   - Validation: Backfill em lotes, comparação de contagens/hashes e restart/rollback com estado em voo; adaptar ao escopo UI/documental sem inventar migração de dados.
   - Completion criteria: Histórico, identidade e obrigações preservados; procedimento e limitações registrados.
+  - Evidence: `hub/evidence/r2/execution/finance-migration-rollback-latest.log`; banco descartável recebeu fato legado, a migration preservou valor em `NUMERIC(30,8)` e `LEGACY_UNVERIFIED`, não reconstruiu snapshot/tarifa e o replay permaneceu idempotente sem tocar a base oficial.
 
-- [ ] 4.2 Qualificar a fatia integrada e observabilidade
+- [x] 4.2 Qualificar a fatia integrada e observabilidade
   - Objective: Executar cenários IT pertinentes com consumidores/produtores reais de ensaio e jornadas administrativas afetadas; provar alerta/runbook de falha principal.
   - Likely files/components: `hub/internal/libra`; `hub/internal/libraclient/client.go`; `hub/internal/atlas/store.go`; `hub/evidence`.
   - Depends on: 3.x e 4.1; changes produtoras/consumidoras necessárias integradas.
   - Validation: Contrato/E2E e observabilidade; gates G0–G7 conforme perfil; não exigir cloud para prova que cabe no laboratório.
   - Completion criteria: Evidência separa laboratório, homologação e perfil operacional; qualquer gate não executado continua aberto.
+  - Evidence: `hub/evidence/r2/execution/finance-runtime-latest.log`, `browser-smoke.json`, `traceability-runtime-latest.json` e `observability-alert-latest.log`; ledger balanceado, fatos/deduplicação, ajuste com aprovador distinto, fechamento bloqueado quando incompleto e telemetria local correlacionada. ERP/adquirente comercial e produção permanecem abertos.
 
-- [ ] 4.3 Atualizar rastreabilidade e concluir apenas o comprovado
+- [x] 4.3 Atualizar rastreabilidade e concluir apenas o comprovado
   - Objective: Atualizar matriz, auditoria, documentação e estado de tarefas conforme provas; preservar pendências e baseline.
   - Likely files/components: `IMPLEMENTATION_AUDIT.md`; `openspec/changes/r2-06-financeiro-auditavel`; `docs/reviews/2026-09-07-r2`.
   - Depends on: 4.2.
   - Validation: OpenSpec strict, links/IDs e review de evidência.
   - Completion criteria: Nenhum requisito concluído por inferência; archive somente conforme plano de baseline e aceite real da change.
+  - Evidence: `hub/evidence/r2/execution/EVIDENCE_INDEX.md` e `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md`, atualizados com precisão, proveniência e limites do ensaio financeiro.

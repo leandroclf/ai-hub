@@ -18,6 +18,7 @@
 | `traceability-runtime-latest.json` | R2-OPE-07-S01 reexecutado após a recuperação da topologia SQS: admissão ASYNC, estado durável `SUCCEEDED`, trace presente na intenção e nos logs de Órbita/Cometa, timeline administrativa com eventos e métricas sem IDs de negócio: PASS | Fixture local; não substitui observabilidade gerenciada ou investigação multi-região |
 | `observability-outbox-runtime-latest.log` + `observability-alert-latest.log` | R2-OPE-07-S02/S03: outbox envelhecido com broker indisponível acionou `HubOutboxDelayed`; cleanup aguardou o LocalStack e reiniciou somente workers dependentes, recriando as cinco filas; regras/runbooks/dashboard passaram: PASS | Exercício local; não substitui alertas gerenciados em produção |
 | `admin-portal-recreation-latest.log` | R2-ADM-12/4.1: SPA recriada no Compose oficial; quatro rotas renderizaram, APIs sem sessão permaneceram em `401` e contagens de `applications`, `clients`, `products` e `services` foram preservadas: PASS; migration de banco não aplicável à fatia | Não substitui rollback de imagem publicada, WCAG formal ou homologação de produção |
+| `finance-migration-rollback-latest.log` | R2-FIN-06/4.1: banco financeiro descartável recebeu fato legado, migration preservou `NUMERIC(30,8)` e `LEGACY_UNVERIFIED`, não inventou snapshot/tarifa e replay idempotente não duplicou o fato: PASS; base oficial não foi alterada | Não substitui backfill auditado de produção, ERP/adquirente ou rollback de versão publicada |
 
 ## Atualização da rodada R4 — 10/09/2026
 

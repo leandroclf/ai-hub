@@ -99,3 +99,10 @@ renderizando, as APIs seguiram protegidas sem sessão e as contagens dos quatro
 cadastros permaneceram idênticas. A fatia não possui migration própria de
 banco; o ensaio cobre rollout/recuo de UI no laboratório, enquanto rollback de
 imagem publicada, WCAG formal e promoção produtiva permanecem abertos.
+
+No financeiro, o ensaio aditivo em banco descartável preservou fato legado em
+`NUMERIC(30,8)` com proveniência `LEGACY_UNVERIFIED`, sem reconstruir snapshot
+ou tarifa histórica; a reaplicação não duplicou o fato e a base oficial não foi
+alterada. A integração local confirmou ledger balanceado, deduplicação,
+aprovação segregada e bloqueio de fechamento incompleto. ERP/adquirente,
+backfill produtivo e rollback de versão publicada continuam fora do envelope.
