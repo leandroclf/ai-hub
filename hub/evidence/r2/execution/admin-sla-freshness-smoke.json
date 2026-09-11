@@ -1,0 +1,7 @@
+[
+  {
+    "check": "Admin SLA panel shows generated time, watermark and observed lag",
+    "status": "PASS",
+    "freshness": "Atualização da projeção: 2026-09-11T14:11:15.677653678Z · watermark: 2026-09-10T20:39:58.63041Z · atraso observado: 63077.047s. Dados atrasados continuam identificados; não significam ausência de violações."
+  }
+]

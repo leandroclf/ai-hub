@@ -332,6 +332,8 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 	defer rows.Close()
 	items := []map[string]any{}
 	last := ""
+	generatedAt := time.Now().UTC()
+	watermarkAt := time.Time{}
 	for rows.Next() {
 		var protocolID, protocolTenant, applicationID, state string
 		var accepted, clientDeadline time.Time
@@ -367,6 +369,9 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		observedAt := time.Now().UTC()
 		if finalized.Valid {
 			observedAt = finalized.Time
+		}
+		if observedAt.After(watermarkAt) {
+			watermarkAt = observedAt
 		}
 		providerBreached := providerSLA > 0 && !observedAt.Before(providerDeadline)
 		providerOutcome := "NOT_CONFIGURED"
@@ -408,5 +413,8 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		next = base64.RawURLEncoding.EncodeToString(raw)
 	}
 	w.Header().Set("Cache-Control", "no-store")
-	writeJSON(w, 200, map[string]any{"items": items, "next_cursor": next})
+	if watermarkAt.IsZero() {
+		watermarkAt = generatedAt
+	}
+	writeJSON(w, 200, map[string]any{"items": items, "next_cursor": next, "generated_at": generatedAt, "watermark_at": watermarkAt, "watermark_lag_seconds": generatedAt.Sub(watermarkAt).Seconds()})
 }

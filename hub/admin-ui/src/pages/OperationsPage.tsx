@@ -10,6 +10,7 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
  const parts=route.split('?')[0].split('/').filter(Boolean);
  const id=parts[1]||'';
  const [items,setItems]=useState<RecordData[]>([]);
+ const [freshness,setFreshness]=useState<RecordData|null>(null);
  const [next,setNext]=useState('');
  const [detail,setDetail]=useState<RecordData|null>(null);
  const [timeline,setTimeline]=useState<RecordData[]>([]);
@@ -39,7 +40,7 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
    }).catch(e=>{if(!abort.signal.aborted)setError(String(e))}).finally(()=>{if(!abort.signal.aborted)setBusy(false)});
   }else{
    const params=new URLSearchParams(query);params.set('tenant_id',tenant);params.set('limit','25');
-   void api<Page<RecordData>>(`/admin/v1/${kind}?${params}`,{signal:abort.signal}).then(value=>{setItems(value.items||[]);setNext(value.next_cursor||'')}).catch(e=>{if(!abort.signal.aborted)setError(`Consulta indisponível; dados anteriores podem estar desatualizados. ${e}`)}).finally(()=>{if(!abort.signal.aborted)setBusy(false)});
+   void api<Page<RecordData>>(`/admin/v1/${kind}?${params}`,{signal:abort.signal}).then(value=>{setItems(value.items||[]);setNext(value.next_cursor||'');setFreshness(kind==='sla-reports'?value as unknown as RecordData:null)}).catch(e=>{if(!abort.signal.aborted)setError(`Consulta indisponível; dados anteriores podem estar desatualizados. ${e}`)}).finally(()=>{if(!abort.signal.aborted)setBusy(false)});
   }
   return()=>abort.abort();
  },[kind,tenant,route,refresh]);
@@ -66,6 +67,7 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
    {requiresReadReason&&<label>Finalidade da consulta<input name="read_reason" minLength={8} defaultValue={query.get('reason')||''}/></label>}
    <button disabled={busy}>Consultar</button><button type="button" onClick={()=>setRefresh(value=>value+1)}>Atualizar</button>
   </form>
+  {kind==='sla-reports'&&freshness&&<p role="status">Atualização da projeção: {String(freshness.generated_at||'')} · watermark: {String(freshness.watermark_at||'')} · atraso observado: {Number(freshness.watermark_lag_seconds||0).toFixed(3)}s. Dados atrasados continuam identificados; não significam ausência de violações.</p>}
   {!id&&<div className="table-scroll" tabIndex={0}>
    <table><thead><tr>{kind==='sla-reports'?<><th>Protocolo</th><th>Cliente</th><th>Estado</th><th>SLA cliente</th><th>SLA provedor</th><th>Observado em</th></>:<><th>Identificador</th><th>Cliente</th><th>Estado</th><th>Data</th></>}</tr></thead>
     <tbody>{items.map((row,index)=>{const key=String(row.protocol_id||row.delivery_id||row.id||index);return <tr key={key}>
