@@ -121,7 +121,7 @@ func (h *Handlers) handleServices(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := h.store.UpsertService(r.Context(), svc); err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusCreated, svc)
@@ -177,7 +177,7 @@ func (h *Handlers) handleGetService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusOK, svc)
@@ -198,7 +198,7 @@ func (h *Handlers) handleProviderAccounts(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err := h.store.UpsertProviderAccount(r.Context(), pa); err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusCreated, pa)
@@ -258,7 +258,7 @@ func (h *Handlers) handleGetProviderAccount(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusOK, pa)
@@ -278,7 +278,7 @@ func (h *Handlers) handleCredentialBindings(w http.ResponseWriter, r *http.Reque
 		cb.State = "ATIVO"
 	}
 	if err := h.store.UpsertCredentialBinding(r.Context(), cb); err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusCreated, cb)
@@ -303,7 +303,7 @@ func (h *Handlers) handleResolveCredential(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusOK, cb)
@@ -323,7 +323,7 @@ func (h *Handlers) handleContracts(w http.ResponseWriter, r *http.Request) {
 		c.CredentialModeRequired = "SHARED_HUB"
 	}
 	if err := h.store.UpsertContract(r.Context(), c); err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusCreated, c)
@@ -337,7 +337,7 @@ func (h *Handlers) handleGetContract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	writeJSON(w, http.StatusOK, c)

@@ -1,10 +1,9 @@
 _format_version: "3.0"
 # Configuracao declarativa do Portal (ARQ-01: "Portal — gateway: TLS,
 # autenticacao de borda, quotas tecnicas, rotas, limites de payload").
-# TLS termina fora deste arquivo (proxy real de producao); autenticacao
-# OAuth2/OIDC (SEG-01) e um placeholder aqui — nesta referencia local o
-# Portal apenas roteia, sem validar identidade, o que fica marcado como
-# gap explicito na auditoria (a Orbita aceita X-Tenant-Id diretamente).
+# TLS termina no proxy/gateway do ambiente. A autenticação OIDC é validada
+# novamente por cada serviço Go; o gateway não é a única autoridade. Headers de
+# identidade fornecidos pelo cliente não são usados pelos domínios.
 
 services:
   - name: orbita

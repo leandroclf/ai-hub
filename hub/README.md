@@ -61,11 +61,24 @@ Serviços e portas:
 | postgres | 5432 | três bases: hub_control, hub_core, hub_finance |
 | localstack | 4566 | SQS, SNS, S3 emulados |
 
+## Identidade local
+
+As APIs de negócio exigem `Authorization: Bearer` emitido pelo realm OIDC do
+ambiente. `X-Tenant-Id`, `X-Application-Id` e `X-Cell-Id` são removidos pelo
+middleware e nunca ampliam identidade. Para o laboratório R2, a reconciliação
+do realm cria os usuários sintéticos descritos em
+`deploy/r2/scripts/reconcile_identity.py`; a senha e o OTP devem ser fornecidos
+por variáveis do ambiente de execução e não são versionados.
+
+O portal usa Authorization Code + PKCE, mantém somente o access token em
+memória e limpa o estado ao sair ou ao expirar a sessão.
+
 ## Exemplo manual (SYNC direto)
 
 ```bash
 curl -X POST http://localhost:8080/v1/protocols \
-  -H 'Content-Type: application/json' -H 'X-Tenant-Id: acme' -H 'Idempotency-Key: exemplo-001' \
+  -H 'Authorization: Bearer <access-token-oidc>' \
+  -H 'Content-Type: application/json' -H 'Idempotency-Key: exemplo-001' \
   -d '{"mode":"SYNC","provider_account_id":"prov-sync-1","service_code":"consulta-cadastral","service_version":1,"input":{"cpf":"12345678900"}}'
 ```
 
@@ -79,13 +92,14 @@ go test -tags e2e ./test/e2e/...    # testes de integração — exigem a stack 
 
 ## Limitações desta referência (ver auditoria completa)
 
-- Autenticação real (OAuth2/OIDC — SEG-01) não implementada: `X-Tenant-Id` é aceito
-  diretamente pela Órbita, sem verificação de identidade. O Kong está no ar mas não
-  valida token algum.
+- O laboratório local usa Keycloak e tokens OIDC sintéticos; homologação de
+  provedores comerciais, PKI/mTLS de produção, AWS regional e políticas
+  comerciais continuam pendentes de ambiente e aprovação próprios.
 - Composição/agregação de múltiplos passos (CAT-03/04), planos comerciais avançados
-  (faixas, franquia) e os três modos explícitos de polling por vínculo (EXE-05) não
-  foram implementados nesta fatia — apenas serviço de passo único e preço unitário.
-- Segredos são referências fictícias (`vault://...`); não há integração real com
-  Secrets Manager/KMS.
+  (faixas, franquia) e execução integrada de produtos compostos ainda exigem
+  qualificação adicional; o executor DAG possui contrato e testes unitários,
+  mas não é usado como despachante de produto no fluxo público.
+- O laboratório resolve referências de segredo por fixture/LocalStack; a
+  integração regional com Secrets Manager/KMS real ainda não foi homologada.
 - Manifests Kubernetes e Terraform em `deploy/k8s` e `deploy/terraform` são
   **referência não aplicada** — não há cluster nem conta AWS disponível (P-01).

@@ -85,7 +85,7 @@ func (h *Handlers) handleGetInternal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	if p.CellID != principal.CellID {
@@ -106,19 +106,22 @@ func writeErr(w http.ResponseWriter, status int, code, msg string) {
 }
 
 // handleCreate implementa EXE-01 (admissao duravel) e EXE-02/EXE-14
-// (modos de atendimento e SYNC direto). tenant_id vem de um header
-// injetado pela borda confiavel (SEG-01); nesta referencia local, sem
-// OAuth2/OIDC real, o header e aceito diretamente — placeholder de
-// autenticacao, ver auditoria.
+// (modos de atendimento e SYNC direto). O tenant e a aplicação vêm do
+// principal autenticado pelo middleware OIDC/JWT; headers de identidade
+// fornecidos pelo chamador são removidos antes deste handler.
 func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeErr(w, http.StatusMethodNotAllowed, "method_not_allowed", "use POST")
 		return
 	}
+	if _, ok := auth.FromContext(r.Context()); !ok {
+		writeErr(w, http.StatusUnauthorized, "unauthorized", "identidade necessária")
+		return
+	}
 	tenantID, authorized := auth.PublicTenant(r.Context(), "protocols:write")
 	idempotencyKey := r.Header.Get("Idempotency-Key")
 	if !authorized {
-		writeErr(w, http.StatusUnauthorized, "forbidden", "identidade com permissão de criação necessária")
+		writeErr(w, http.StatusForbidden, "forbidden", "identidade sem permissão de criação")
 		return
 	}
 	if idempotencyKey == "" || len(idempotencyKey) > 200 {
@@ -374,8 +377,12 @@ func (h *Handlers) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tenantID, authorized := auth.PublicTenant(r.Context(), "protocols:read")
+	if _, ok := auth.FromContext(r.Context()); !ok {
+		writeErr(w, http.StatusUnauthorized, "unauthorized", "identidade necessária")
+		return
+	}
 	if !authorized {
-		writeErr(w, http.StatusUnauthorized, "forbidden", "identidade com permissão de leitura necessária")
+		writeErr(w, http.StatusForbidden, "forbidden", "identidade sem permissão de leitura")
 		return
 	}
 	protocolID := strings.TrimPrefix(r.URL.Path, "/v1/protocols/")
@@ -392,7 +399,7 @@ func (h *Handlers) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", err.Error())
+		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
 		return
 	}
 	status := http.StatusOK
