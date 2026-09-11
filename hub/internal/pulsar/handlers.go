@@ -44,6 +44,8 @@ func adminScope(w http.ResponseWriter, r *http.Request) (string, auth.Principal,
 		auth.Error(w, 401, "unauthenticated")
 		return "", p, false
 	}
+	readRole := p.HasRole("hub_admin") || p.HasRole("tenant_reader") || p.HasRole("tenant_operator") || p.HasRole("hub_protocol_reader")
+	writeRole := p.HasRole("hub_admin") || p.HasRole("tenant_operator")
 	tenant := r.URL.Query().Get("tenant_id")
 	if tenant == "" {
 		tenant = p.TenantID
@@ -52,7 +54,7 @@ func adminScope(w http.ResponseWriter, r *http.Request) (string, auth.Principal,
 	if r.Method != "GET" {
 		scope = "deliveries:write"
 	}
-	if p.Workload || tenant == "" || !auth.Authorize(r.Context(), scope, tenant) || (r.Method != "GET" && !p.MFA) {
+	if p.Workload || !p.MFA || tenant == "" || !auth.Authorize(r.Context(), scope, tenant) || (r.Method == "GET" && !readRole) || (r.Method != "GET" && !writeRole) {
 		auth.Error(w, 403, "forbidden")
 		return "", p, false
 	}
