@@ -151,6 +151,49 @@ func TestCatalogValidation(t *testing.T) {
 	if resourceHash(a) != resourceHash(b) {
 		t.Fatal("hash depends on json whitespace/order")
 	}
+	invalidOffer := Resource{Kind: "offers", ID: "offer", Version: 1, TenantID: "acme", Name: "Offer", Data: raw(CatalogData{
+		Modes: []string{"ASYNC"}, ClientSLASeconds: 30, FinalizationReserveSeconds: 1,
+		ApplicationID: "app", TargetKind: "services", TargetID: "service", TargetVersion: 1,
+		TechnicalProfileID: "profile", TechnicalProfileVersion: 1,
+		PurchaseContractID: "purchase", PurchaseContractVersion: 1,
+		SaleContractID: "sale", SaleContractVersion: 1,
+		Routes: []Route{{ProviderAccountID: "account", ProviderAccountVersion: 0, BindingID: "binding", BindingVersion: 1, CapacityDomain: "cell-a"}},
+	})}
+	if v := ValidateResource(invalidOffer); v.Valid || v.FieldErrors["routes"] == "" {
+		t.Fatalf("rota sem versão da conta aceita: %+v", v)
+	}
+}
+
+func TestCatalogPublicationRejectsBindingFromAnotherProviderAccount(t *testing.T) {
+	s := integrationStore(t)
+	ctx := context.Background()
+	for _, resource := range []Resource{
+		{Kind: "services", ID: "service", Version: 1, TenantID: "acme", Name: "Service", Data: raw(map[string]any{})},
+		{Kind: "technical-profiles", ID: "profile", Version: 1, TenantID: "acme", Name: "Profile", Data: raw(map[string]any{})},
+		{Kind: "contracts", ID: "purchase", Version: 1, TenantID: "acme", Name: "Purchase", Data: raw(map[string]any{})},
+		{Kind: "contracts", ID: "sale", Version: 1, TenantID: "acme", Name: "Sale", Data: raw(map[string]any{})},
+		{Kind: "provider-accounts", ID: "account-a", Version: 1, TenantID: "acme", Name: "Account A", Data: raw(map[string]any{})},
+		{Kind: "credential-bindings", ID: "binding-b", Version: 1, TenantID: "acme", Name: "Binding B", Data: raw(CatalogData{ProviderAccountID: "account-b", CredentialMode: "SHARED_HUB"})},
+	} {
+		if _, err := s.SaveResource(ctx, resource, 0, "fixture"); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := s.db.ExecContext(ctx, `UPDATE catalog_resources SET state='PUBLISHED' WHERE kind=$1 AND id=$2 AND version=$3`, resource.Kind, resource.ID, resource.Version); err != nil {
+			t.Fatal(err)
+		}
+	}
+	offer := Resource{Kind: "offers", ID: "offer", Version: 1, TenantID: "acme", Name: "Offer", Data: raw(CatalogData{
+		Modes: []string{"ASYNC"}, ClientSLASeconds: 30, FinalizationReserveSeconds: 1,
+		ApplicationID: "app", TargetKind: "services", TargetID: "service", TargetVersion: 1,
+		TechnicalProfileID: "profile", TechnicalProfileVersion: 1,
+		PurchaseContractID: "purchase", PurchaseContractVersion: 1,
+		SaleContractID: "sale", SaleContractVersion: 1,
+		Routes: []Route{{ProviderAccountID: "account-a", ProviderAccountVersion: 1, BindingID: "binding-b", BindingVersion: 1, CapacityDomain: "cell-a"}},
+	})}
+	v := s.ValidatePublication(ctx, offer)
+	if v.Valid || v.FieldErrors["routes/account-a"] == "" {
+		t.Fatalf("vínculo de conta diferente aceito: %+v", v)
+	}
 }
 
 func TestAdminScopeRequiresInteractiveMFA(t *testing.T) {

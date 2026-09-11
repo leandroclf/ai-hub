@@ -290,7 +290,7 @@ func ValidateResource(r Resource) Validation {
 			bad("routes", "entre 1 e 5 rotas elegíveis")
 		}
 		for _, rt := range d.Routes {
-			if rt.ProviderAccountID == "" || rt.BindingID == "" || rt.BindingVersion < 1 || rt.CapacityDomain == "" {
+			if rt.ProviderAccountID == "" || rt.ProviderAccountVersion < 1 || rt.BindingID == "" || rt.BindingVersion < 1 || rt.CapacityDomain == "" {
 				bad("routes", "conta, vínculo, versão e capacidade obrigatórios")
 			}
 			if len(d.Routes) > 1 && rt.EquivalenceID == "" {
@@ -504,6 +504,12 @@ func (s *Store) ValidatePublication(ctx context.Context, r Resource) Validation 
 		for _, rt := range d.Routes {
 			check("credential-bindings", rt.BindingID, rt.BindingVersion)
 			check("provider-accounts", rt.ProviderAccountID, rt.ProviderAccountVersion)
+			binding, bindingErr := s.GetResource(ctx, "credential-bindings", rt.BindingID, rt.BindingVersion)
+			bindingData, bindingDataErr := DecodeCatalogData(binding)
+			if bindingErr != nil || bindingDataErr != nil || bindingData.ProviderAccountID != rt.ProviderAccountID || (bindingData.CredentialMode == "TENANT_DEDICATED" && binding.TenantID != r.TenantID) {
+				v.Valid = false
+				v.FieldErrors["routes/"+rt.ProviderAccountID] = "vínculo não corresponde à conta ou ao cliente da rota"
+			}
 			account, err := s.GetResource(ctx, "provider-accounts", rt.ProviderAccountID, rt.ProviderAccountVersion)
 			ad, _ := DecodeCatalogData(account)
 			if err != nil || (contains(d.Modes, "SYNC") && ad.ProviderMode != "sync") {
