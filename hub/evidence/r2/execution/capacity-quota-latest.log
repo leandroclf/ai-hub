@@ -1,0 +1,11 @@
+=== RUN   TestPostgresCapacityAggregateReplicasCells
+    capacity_test.go:103: partial S03: 60 contenders; 3 replica identities/2 cells; A=2, B=2; no expiry recycling; stale owner fenced; positive reconciliation releases one; cancelled authority request denies
+--- PASS: TestPostgresCapacityAggregateReplicasCells (0.26s)
+=== RUN   TestPostgresCapacityAdaptiveAndPending
+    capacity_test.go:164: partial S01/S02: timeout/slow success reduce 8 to 5; stable evidence increases 5 to 6 to 7 to 8; UNKNOWN retains pending; STATUS and B eligible
+--- PASS: TestPostgresCapacityAdaptiveAndPending (0.20s)
+=== RUN   TestPostgresCapacityRollingRateIsolation
+    capacity_test.go:196: rolling 60-second rate: A denied after 2; B admits 2; global domain
+--- PASS: TestPostgresCapacityRollingRateIsolation (0.10s)
+PASS
+ok  	ai-hub/hub/internal/cometa	0.568s

@@ -15,6 +15,7 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/environment-boundary-latest.log` | R2-OPE-02-S02/S03 — fronteira ambiental e gate de promoção | PASS estrutural para namespaces e referências sem segredos materializados; gate de `prd` bloqueia sem perfil/aprovações e dev permanece permitido; cross-environment integrado ainda parcial |
 | `hub/evidence/r2/execution/optional-dependency-runtime-latest.log` | R2-OPE-03-S01 — dependência opcional fora | PASS local; Alloy indisponível, readiness/liveness de Órbita/Cometa mantidas e workloads não relacionados sem alteração de container ou reinício |
 | `hub/evidence/r2/execution/provider-outage-runtime-latest.json` + `provider-outage-reconciliation-latest.log` | R2-OPE-03-S03 — provedor fora | PASS local; provider-sim indisponível produz 504/UNKNOWN sem falso sucesso, GET preserva estado, capacidade fecha transporte e workloads não afetados não reiniciam; provider restaurado e fixture reconciliada por 404 |
+| `hub/evidence/r2/execution/capacity-quota-latest.log` | R2-OPE-04-S03 — quota esgotada e isolamento de capacidade | PASS unitário PostgreSQL; 60 contendores, limites por tenant, reserva de B, fencing de owner stale e rate limit sem roubo entre tenants; autoscaling cloud não qualificado |
 | `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, erro de JSON inválido sem falso sucesso, CRUD/readback, editor de contrato REST declarativo, filtro local de referências, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout, HTTP 401 pós-logout e viewport móvel |
 | `hub/evidence/r2/execution/browser-smoke.json` + `hub/evidence/r2/execution/r2-security.log` | R2-ADM-09-S01/S02/S03 e R2-ADM-11-S01/S03 | PASS local para redelivery auditado, reconciliação segura de `UNKNOWN`, negação de escrita ao leitor administrativo, leitura financeira persistida e bloqueio de autoaprovação; aprovação compensatória completa do ajuste permanece pendente |
 | Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP explícito `BU_CDP_URL=http://127.0.0.1:9222` | PASS-EXPLORATORY; descoberta automática do daemon headless ainda não funciona, evidência em `hub/evidence/r2/execution/browser-harness-latest.log` |
@@ -69,7 +70,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 149 com evidência existente e 583 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 150 com evidência existente e 582 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -82,6 +83,7 @@ limites arquiteturais.
 | 11/09/2026: ambientes/promoção | `bash hub/deploy/r2/tests/environment-boundary-proof.sh` | PASS estrutural: cinco namespaces, referências de segredos sem valores e gate de produção bloqueado sem qualificação |
 | 11/09/2026: dependência opcional | `bash hub/deploy/r2/tests/optional-dependency-runtime-proof.sh` | PASS local: Alloy indisponível durante recriação controlada, workloads elegíveis prontos e sem cascata de reinícios; cleanup restaurou Alloy |
 | 11/09/2026: provedor fora | `node hub/deploy/r2/tests/provider-outage-runtime-proof.mjs` | PASS local: provider-sim fora, 504/UNKNOWN sem falso sucesso, capacidade fechada, workloads não afetados preservados e reconciliação local posterior |
+| 11/09/2026: quota/capacidade | `R2_CORE_TEST_DSN=... go test -count=1 -v ./internal/cometa -run 'TestPostgresCapacity...'` | PASS unitário: contenders em réplicas/células, reserva entre tenants, fencing e rate limit isolados |
 
 O smoke Playwright mais recente também verificou a pesquisa local de
 referências no editor de ofertas (`Admin reference editor filters loaded
