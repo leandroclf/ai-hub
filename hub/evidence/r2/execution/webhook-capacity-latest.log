@@ -1,0 +1,7 @@
+Comando: bash hub/deploy/r2/tests/webhook-capacity-runtime.sh
+Projeto: ai_hub_r3qual
+Resultado: PASS
+delivery: sintética e removida pelo trap de limpeza
+capacity: 1|open=0|pending=0
+domínio: r4-webhook
+secret_version: obtido do VersionId efetivo do LocalStack, sem segredo em claro

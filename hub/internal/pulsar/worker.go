@@ -161,12 +161,12 @@ func (w *DeliveryWorker) attempt(ctx context.Context, d ClaimedDelivery) {
 	request.Header.Set("X-Hub-Delivery-Id", d.ID)
 	response, err := client.Do(request)
 	if err != nil {
-		completeCapacity("TIMEOUT", "webhook-transport-unconfirmed", time.Since(started))
+		completeCapacity("TIMEOUT", "webhook-transport-unconfirmed:"+d.ID, time.Since(started))
 		finish(0, "transport_unconfirmed")
 		return
 	}
 	defer response.Body.Close()
-	completeCapacity(webhookCapacitySignal(response.StatusCode), "webhook-http-receipt", time.Since(started))
+	completeCapacity(webhookCapacitySignal(response.StatusCode), "webhook-http-receipt:"+d.ID, time.Since(started))
 	finish(response.StatusCode, "")
 }
 
