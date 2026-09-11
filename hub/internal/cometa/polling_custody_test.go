@@ -290,7 +290,7 @@ func TestPostgresPollingAuthenticatedHTTP(t *testing.T) {
 			w.WriteHeader(401)
 			return
 		}
-		fmt.Fprint(w, `{"provider_request_id":"provider-correlation","status":"SUCCEEDED","result":{"marker":"actual-provider"}}`)
+		fmt.Fprint(w, `{"provider_request_id":"provider-correlation","status":"SUCCEEDED","detail":"actual-provider"}`)
 	}))
 	defer provider.Close()
 	identity := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
