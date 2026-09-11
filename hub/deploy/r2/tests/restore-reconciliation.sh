@@ -24,6 +24,11 @@ declare -A tables=(
 for domain in control core finance; do
   source="hub_${domain}"
   target="hub_${domain}_restore_${suffix}"
+  existing=$("${psql_hub[@]}" -d postgres -Atqc "SELECT 1 FROM pg_database WHERE datname = '$target'")
+  if [[ "$existing" == "1" ]]; then
+    echo "restore target database already exists: $target; choose a new R2_RESTORE_SUFFIX" >&2
+    exit 2
+  fi
   "${psql_hub[@]}" -d postgres -v target="$target" <<'SQL'
 SELECT format('CREATE DATABASE %I', :'target') WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname=:'target')\gexec
 SQL
@@ -42,6 +47,10 @@ done
 
 bucket_suffix=${suffix//_/-}
 bucket=${R2_RESTORE_BUCKET:-r2-custody-restore-${bucket_suffix}}
+if docker exec ai_hub_r3qual-localstack-1 awslocal s3api head-bucket --bucket "$bucket" >/dev/null 2>&1; then
+  echo "restore target bucket already exists: $bucket; choose a new R2_RESTORE_SUFFIX or R2_RESTORE_BUCKET" >&2
+  exit 2
+fi
 docker exec ai_hub_r3qual-localstack-1 awslocal s3 mb "s3://$bucket" >/dev/null
 docker exec ai_hub_r3qual-localstack-1 awslocal s3 sync s3://r2-custody "s3://$bucket" >/dev/null
 source_objects=$(docker exec ai_hub_r3qual-localstack-1 awslocal s3api list-objects-v2 --bucket r2-custody --query 'length(Contents || `[]`)' --output text)

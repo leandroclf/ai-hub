@@ -65,8 +65,10 @@ O runner usa o daemon local padrão, mantém uma única aba e executa o cenário
 `scenarios/admin-console.py`. O cenário percorre as 16 rotas administrativas
 da fixture, aplica efetivamente um viewport CDP de 390×844, confirma que cada
 tela contém conteúdo útil e verifica ausência de overflow horizontal. Ele não
-cria, publica, suspende ou exclui recursos. A rodada R4 foi reproduzida com
-`browser-harness 0.1.13` instalado fora do repositório.
+cria, publica, suspende ou exclui recursos. Fixe `browser-harness 0.1.13` fora
+do repositório quando a equipe precisar reproduzir o ambiente; nesta máquina
+o executável está instalado, mas o daemon fica `BLOCKED-ENVIRONMENT` quando o
+Chrome não expõe `DevToolsActivePort` ou uma sessão `BU_CDP_WS`.
 
 Para uma execução contra outro endereço:
 
