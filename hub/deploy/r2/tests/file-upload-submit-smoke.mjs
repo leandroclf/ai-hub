@@ -17,6 +17,7 @@ const evidence=[];
 const suffix=`${Date.now()}`;
 const policy=`SYNTHETIC-INPUT-${suffix}`;
 let fileID='';
+let protocolID='';
 let browser;
 
 function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_core','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
@@ -70,24 +71,44 @@ try{
  const key=`file-upload-submit-${suffix}`;
  const admitted=await request(bearer,'/v1/protocols',{method:'POST',headers:{'Idempotency-Key':key},body:JSON.stringify({file_refs:[fileID],mode:'SYNC',provider_account_id:'prov-sync-1',service_code:'consulta-cadastral',service_version:1,input:{cpf:'11111111111'}})});
  if(![200,202,504].includes(admitted.status)||!admitted.body.protocol_id)throw new Error(`admissão com FileRef: HTTP ${admitted.status} ${JSON.stringify(admitted.body)}`);
- const pinned=sql(`SELECT count(*) FROM object_retention_pins WHERE file_id='${fileID}' AND obligation_id='${admitted.body.protocol_id}'`);
- if(pinned!=='1')throw new Error(`admissão não criou pin de custódia: protocolo=${admitted.body.protocol_id} pins=${pinned}`);
- evidence.push({check:'admissão real referencia FileRef confirmado',status:'PASS',protocol_id:admitted.body.protocol_id,http_status:admitted.status,acceptance_preserved:true,retention_pin:pinned});
+ protocolID=admitted.body.protocol_id;
+ const pinned=sql(`SELECT count(*) FROM object_retention_pins WHERE file_id='${fileID}' AND obligation_id='${protocolID}'`);
+ if(pinned!=='1')throw new Error(`admissão não criou pin de custódia: protocolo=${protocolID} pins=${pinned}`);
+ evidence.push({check:'admissão real referencia FileRef confirmado',status:'PASS',protocol_id:protocolID,http_status:admitted.status,acceptance_preserved:true,retention_pin:pinned});
  console.log(JSON.stringify(evidence,null,2));
 }catch(error){
  evidence.push({check:'upload HTTP e submit com FileRef',status:'FAIL',error:error.message.split('\n')[0]});
  console.log(JSON.stringify(evidence,null,2));
  process.exitCode=1;
 }finally{
- if(fileID){
+ let protocolCleanupAllowed=true;
+ if(protocolID){
+  try{
+   let state=sql(`SELECT status FROM protocols WHERE protocol_id='${protocolID}'`);
+   for(let attempt=0;attempt<35&&!['SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED'].includes(state);attempt++){
+    execFileSync('sleep',['1']);
+    state=sql(`SELECT status FROM protocols WHERE protocol_id='${protocolID}'`);
+   }
+   if(['SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED'].includes(state)){
+    sql(`DELETE FROM polling_schedule WHERE operation_id IN (SELECT operation_id FROM operations WHERE protocol_id='${protocolID}')`);
+    sql(`DELETE FROM attempts WHERE operation_id IN (SELECT operation_id FROM operations WHERE protocol_id='${protocolID}')`);
+    sql(`DELETE FROM operations WHERE protocol_id='${protocolID}'`);
+    sql(`DELETE FROM command_intents WHERE protocol_id='${protocolID}'`);
+    sql(`DELETE FROM orbita_fact_inbox WHERE protocol_id='${protocolID}'`);
+    sql(`DELETE FROM outbox WHERE aggregate_id='${protocolID}'`);
+    sql(`DELETE FROM protocols WHERE protocol_id='${protocolID}'`);
+   }else{protocolCleanupAllowed=false;console.error(`cleanup protocolo preservado por não estar terminal: ${protocolID} state=${state}`)}
+  }catch(error){protocolCleanupAllowed=false;console.error(`cleanup protocolo falhou: ${error.message}`)}
+ }
+ if(fileID&&protocolCleanupAllowed){
   try{
    const object=sql(`SELECT object_key,COALESCE(object_version,'') FROM file_refs WHERE id='${fileID}'`);
    if(object){const [key,version]=object.split('|');execFileSync('docker',['exec',localstack,'awslocal','s3api','delete-object','--bucket','r2-custody','--key',key,...(version?[ '--version-id',version]:[])],{stdio:'ignore'});}
    sql(`DELETE FROM object_retention_pins WHERE file_id='${fileID}'`);
    sql(`DELETE FROM file_refs WHERE id='${fileID}'`);
   }catch(error){console.error(`cleanup FileRef falhou: ${error.message}`)}
- }
- try{sql(`DELETE FROM object_retention_policies WHERE class='${policy}'`)}catch(error){console.error(`cleanup policy falhou: ${error.message}`)}
+ }else if(fileID)console.error(`FileRef preservado com o protocolo aberto: ${fileID}`);
+ if(protocolCleanupAllowed)try{sql(`DELETE FROM object_retention_policies WHERE class='${policy}'`)}catch(error){console.error(`cleanup policy falhou: ${error.message}`)}
  await writeFile('hub/evidence/r2/execution/file-upload-submit-smoke.json',JSON.stringify(evidence,null,2)+'\n');
  if(browser)await browser.close();
 }
