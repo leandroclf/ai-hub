@@ -16,7 +16,9 @@ limites arquiteturais.
 | `hub/internal/cometa/capacity.go` + executor/poller/reconciliation | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS` e reconciliação, budgets integrais ainda abertos |
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` | Snapshot de destino webhook | PASS de teste PostgreSQL; versão aceita é congelada e entregue sem lookup dinâmico posterior |
 | `internal/providerauth` | Revogação, expiração e limite de locks | PASS com `go test -race -count=1` |
-| `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixo `r4_sequence_20260910c`; digest/contagem sem replay e colisão de alvos recusada |
+| `restore-reconciliation.sh` | Bancos control/core/finance e S3 | PASS com sufixos `r4_sequence_20260910c` e `r4_20260911qual2`; digest/contagem sem replay e colisão de alvos recusada |
+| `hub/evidence/r2/execution/capacity-reconciliation-latest.log` | Reconciliação controlada das concessões locais após falhas de transporte | PASS local; 12 ausências comprovadas pelo oráculo sintético fechadas, zero efeitos presentes protegidos; não aplicável a provedor comercial |
+| `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | Kind `ai-hub-r2` | Prontidão, métricas, HPA/KEDA e recuperação | PASS local; dependências ainda Compose-linked |
 
 ## Evidências históricas
@@ -40,7 +42,7 @@ limites arquiteturais.
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
 | 10/09/2026: kind, readiness, métricas/HPA e recuperação de pod | laboratório `ai-hub-r2` | PASS local; dependências completas ainda não estão dentro do cluster |
 | 10/09/2026: smoke Chromium autenticado | `hub/evidence/r2/execution/browser-smoke.json` | PASS: OIDC PKCE, senha/OTP, CRUD, readback, logout e 390px |
-| 10/09/2026: carga autorizada | `hub/evidence/generate_traffic.sh` | BLOCKED: token aceito, mas catálogo sem recursos/publicações e retorno `403 offer_not_eligible` |
+| 10/09/2026: carga autorizada | `hub/deploy/r2/tests/authorized-load.mjs` | PASS: oito caminhos autorizados, falha controlada, polling/callback/AUTO, saldo estrito, credencial dedicada e quatro observações idempotentes |
 | 10/09/2026: Browser Harness | `hub/deploy/r2/tests/browser-harness/run.sh` | BLOCKED-ENVIRONMENT: executável instalado, mas Chrome/daemon não expôs `DevToolsActivePort` utilizável |
 
 Nenhuma evidência histórica foi promovida como PASS de integração.

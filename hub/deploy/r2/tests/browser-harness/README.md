@@ -77,6 +77,38 @@ R2_ADMIN_URL=http://localhost:13000 browser-harness \
   < hub/deploy/r2/tests/browser-harness/scenarios/admin-console.py
 ```
 
+## Preparação e reconciliação da fixture local
+
+Quando uma imagem do laboratório for reconstruída, use o bootstrap oficial
+antes dos gates de frontend e carga:
+
+```bash
+R2_COMPOSE_PROJECT=ai_hub_r3qual bash hub/deploy/r2/scripts/bootstrap.sh
+```
+
+O script constrói as imagens antes de descobrir os IPs das fixtures e faz a
+subida final sem `--build`. Isso mantém as regras CIDR de egress do Cometa
+alinhadas aos containers efetivamente em execução. Não altere manualmente
+essas regras em um ambiente com provedor real.
+
+Uma falha de transporte pode deixar uma concessão da fixture em
+`pending_external`. Antes de repetir a carga, a reconciliação local pode ser
+executada somente com confirmação explícita:
+
+```bash
+R2_LOCAL_RECONCILIATION_CONFIRM=I_UNDERSTAND_LOCAL_FIXTURE \
+  bash hub/deploy/r2/tests/reconcile-local-pending.sh
+```
+
+O script consulta apenas domínios `r4-*`, pergunta ao oráculo sintético
+`/__qualification/protocols/<protocol_id>` e fecha a concessão somente diante
+de `404` (ausência comprovada de efeito). Uma resposta `200` protege a
+obrigação e interrompe a execução; respostas de erro também interrompem. Esse
+oráculo é exclusivo do laboratório local e nunca deve ser usado para concluir
+uma reconciliação de provedor comercial. O log gerado em
+`hub/evidence/r2/execution/capacity-reconciliation-latest.log` deve acompanhar
+a rodada.
+
 ## Evidência e classificação
 
 O resultado textual deve ser anexado à rodada em

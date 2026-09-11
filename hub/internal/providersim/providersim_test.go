@@ -74,3 +74,39 @@ func TestSubmitIsIdempotentAndExternalEffectCountedOnce(t *testing.T) {
 		t.Fatalf("external effect duplicated: %+v", observed)
 	}
 }
+
+func TestQualificationProtocolLookupDistinguishesAbsentEffect(t *testing.T) {
+	s := NewServer()
+	mux := http.NewServeMux()
+	s.Routes(mux)
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL + "/__qualification/protocols/absent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusNotFound {
+		resp.Body.Close()
+		t.Fatalf("absent protocol status=%d", resp.StatusCode)
+	}
+	resp.Body.Close()
+
+	resp, err = http.Post(ts.URL+"/v1/operations", "application/json", strings.NewReader(`{"protocol_id":"present","mode":"sync"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	resp, err = http.Get(ts.URL + "/__qualification/protocols/present")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	var got map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK || got["provider_request_id"] != "prov-req-000001" {
+		t.Fatalf("present protocol lookup status=%d body=%v", resp.StatusCode, got)
+	}
+}

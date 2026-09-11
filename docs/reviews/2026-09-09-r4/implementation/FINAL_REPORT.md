@@ -13,6 +13,15 @@ O relatório detalhado, com comandos, limites e proveniência, está em
 [`EXECUTION-2026-09-10.md`](EXECUTION-2026-09-10.md). Os artefatos dinâmicos
 estão em `hub/evidence/r2/execution/`.
 
+Na requalificação posterior, a suíte Go normal e com `-race`, o build do
+portal, Playwright, RLS, carga autorizada e restore passaram novamente. O
+bootstrap passou a preservar os IPs descobertos das fixtures após o build; as
+pendências locais de capacidade foram reconciliadas somente quando o oráculo
+sintético comprovou ausência de efeito (`404`), com confirmação explícita e
+registro em `capacity-reconciliation-latest.log`. O teste concorrente de
+admissão usa uma célula exclusiva por execução para não ser consumido pelo
+worker Orbita do laboratório.
+
 ## Resultado
 
 Implementação e qualificação local integradas passaram nos gates declarados.

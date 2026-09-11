@@ -1,37 +1,37 @@
 ### 1. SYNC sucesso (consulta-cadastral, prov-sync-1, tenant acme)
-{"protocol_id":"01a08df1-5ca9-7d59-a74b-fb8f595d49fb","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08df1-5ca9-7d59-a74b-fb8f595d49fb","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000001","status":"SUCCEEDED"}}}
+{"protocol_id":"01a08e3e-be35-7308-9529-f4ecf42a4163","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08e3e-be35-7308-9529-f4ecf42a4163","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000009","status":"SUCCEEDED"}}}
 HTTP 200
 
 ### 2. SYNC falha forcada
-{"protocol_id":"01a08df1-5cf1-737c-8d53-5036dd371c51","status":"FAILED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08df1-5cf1-737c-8d53-5036dd371c51","status":"FAILED","result_version":1,"result":{"provider_request_id":"prov-req-000002","status":"FAILED"}}}
+{"protocol_id":"01a08e3e-be73-746b-a289-4a36df0232a3","status":"FAILED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08e3e-be73-746b-a289-4a36df0232a3","status":"FAILED","result_version":1,"result":{"provider_request_id":"prov-req-000010","status":"FAILED"}}}
 HTTP 200
 
 ### 3. ASYNC polling, produto assincrono, provedor A (prov-poll-1)
-{"mode":"ASYNC","protocol_id":"01a08df1-5d1d-7eb4-a18e-e9fceb3c1d85","result_version":0,"status":"ACCEPTED"}
+{"mode":"ASYNC","protocol_id":"01a08e3e-bea1-7b5d-bf56-8cd44d4074cb","result_version":0,"status":"ACCEPTED"}
 
 HTTP 202
 
 ### 4. ASYNC polling, produto assincrono, provedor B (prov-poll-2)
-{"mode":"ASYNC","protocol_id":"01a08df1-5d32-794f-a288-2aa61baf0968","result_version":0,"status":"ACCEPTED"}
+{"mode":"ASYNC","protocol_id":"01a08e3e-beb7-7cec-bbc1-dc900b782651","result_version":0,"status":"ACCEPTED"}
 
 HTTP 202
 
 ### 5. ASYNC callback
-{"mode":"ASYNC","protocol_id":"01a08df1-5d45-7aa4-933b-584835185fd1","result_version":0,"status":"ACCEPTED"}
+{"mode":"ASYNC","protocol_id":"01a08e3e-becd-73dd-91a6-ee70c69a4d58","result_version":0,"status":"ACCEPTED"}
 
 HTTP 202
 
 ### 6. AUTO
-{"mode":"AUTO","protocol_id":"01a08df1-5d5b-7ac7-b7b6-2d420afa1a1a","result_version":0,"status":"ACCEPTED"}
+{"mode":"AUTO","protocol_id":"01a08e3e-bee1-76ae-99e4-34cab3572aa6","result_version":0,"status":"ACCEPTED"}
 
 HTTP 202
 
 ### 7. Saldo estrito - reserva dentro do limite (tenant acme-strict)
-{"protocol_id":"01a08df1-70f5-7890-9e35-96453e2d6de0","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08df1-70f5-7890-9e35-96453e2d6de0","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000007","status":"SUCCEEDED"}}}
+{"protocol_id":"01a08e3e-d27c-7b34-933c-6664c8545b7a","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08e3e-d27c-7b34-933c-6664c8545b7a","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000015","status":"SUCCEEDED"}}}
 HTTP 200
 
 ### 8. Credencial dedicada (tenant acme-dedicated)
-{"protocol_id":"01a08df1-7126-774a-afc2-c7e118849394","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08df1-7126-774a-afc2-c7e118849394","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000008","status":"SUCCEEDED"}}}
+{"protocol_id":"01a08e3e-d2ad-7f15-9f53-8dadc3c259a0","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08e3e-d2ad-7f15-9f53-8dadc3c259a0","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000016","status":"SUCCEEDED"}}}
 HTTP 200
 
 ### 9. Cadastrando conta de provedor sem credencial (para o cenario de recusa)
@@ -43,7 +43,7 @@ HTTP 200
 HTTP 403
 
 ### 10. Idempotencia - repeticao da chave do item 1 (mesmo payload)
-{"protocol_id":"01a08df1-5ca9-7d59-a74b-fb8f595d49fb","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08df1-5ca9-7d59-a74b-fb8f595d49fb","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000001","status":"SUCCEEDED"}}}
+{"protocol_id":"01a08e3e-be35-7308-9529-f4ecf42a4163","status":"SUCCEEDED","result_version":1,"mode":"SYNC","final_body":{"protocol_id":"01a08e3e-be35-7308-9529-f4ecf42a4163","status":"SUCCEEDED","result_version":1,"result":{"provider_request_id":"prov-req-000009","status":"SUCCEEDED"}}}
 HTTP 200
 
 Aguardando 6s para as operacoes assincronas (itens 3-6) resolverem...

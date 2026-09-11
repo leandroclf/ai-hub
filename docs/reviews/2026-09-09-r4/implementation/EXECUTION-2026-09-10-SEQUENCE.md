@@ -34,6 +34,10 @@ reprodutível.
 - Browser Harness: `BLOCKED-ENVIRONMENT`, pois o daemon não encontrou
   `DevToolsActivePort`/CDP no navegador local. Não é falha funcional do portal
   e não substitui o gate Playwright.
+- Reconciliação da fixture de capacidade: `reconcile-local-pending.sh` fechou
+  somente 12 concessões `r4-*` cujo oráculo sintético retornou `404`; nenhuma
+  obrigação com efeito presente foi fechada. A rotina exige a confirmação
+  `I_UNDERSTAND_LOCAL_FIXTURE` e é exclusiva do provider-sim.
 - Carga autorizada pós-rebuild (`r4-authorized-1789087778741`): PASS após a
   conexão dos pools HTTP; os oito cenários terminaram conforme esperado e a
   mesma chave produziu quatro observações do mesmo protocolo.
@@ -47,6 +51,11 @@ reprodutível.
   escopo `protocols:reconcile` está declarado nos clientes administrativos,
   mapeado somente para `hub_admin` e entregue aos usuários do console após
   MFA.
+- Requalificação posterior: `go test ./... -count=1`, `go test -race ./...
+  -count=1`, `npm run build`, Playwright, RLS runtime, carga autorizada e
+  restore com sufixo `r4_20260911qual2` passaram novamente. A suíte de admissão
+  usa uma célula sintética gerada por execução para não ser consumida pelo
+  worker Orbita do laboratório.
 
 ## Correção implementada
 

@@ -30,13 +30,14 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	store := NewStore(db)
 	ctx := context.Background()
 	tenant := "admission-test-" + idgen.New()
+	cell := "admission-test-cell-" + idgen.New()
 	defer func() {
 		db.Exec("DELETE FROM command_intents WHERE tenant_id=$1", tenant)
 		db.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
 	}()
 	makeAdmission := func(application, hash string) (Protocol, dispatch.Command) {
 		now := time.Now().UTC()
-		p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: application, CellID: "r2-cell-a", IdempotencyKey: "same-key", RequestHash: hash, RequestBody: json.RawMessage(`{"marker":"synthetic"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
+		p := Protocol{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: application, CellID: cell, IdempotencyKey: "same-key", RequestHash: hash, RequestBody: json.RawMessage(`{"marker":"synthetic"}`), Mode: "ASYNC", DispatchMode: "QUEUED", CommandID: idgen.New(), Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
 		cmd := dispatch.Command{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, CommandID: p.CommandID, DispatchMode: dispatch.DispatchQueued, ConfigSnapshot: json.RawMessage(`{"version":1}`), AcceptedAt: now, StepDeadline: p.ClientDeadlineAt}
 		return p, cmd
 	}
@@ -77,17 +78,17 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	}
 	// Competing publishers use a database lease. A previous epoch cannot
 	// acknowledge a message after takeover, even if its network call returns.
-	i, err := store.ClaimIntent(ctx, "r2-cell-a", "publisher-a")
+	i, err := store.ClaimIntent(ctx, cell, "publisher-a")
 	if err != nil || i.Command.ProtocolID != winner {
 		t.Fatalf("claim: %+v %v", i, err)
 	}
-	if _, err = store.ClaimIntent(ctx, "r2-cell-a", "publisher-b"); !errors.Is(err, sql.ErrNoRows) {
+	if _, err = store.ClaimIntent(ctx, cell, "publisher-b"); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("concurrent claim: %v", err)
 	}
 	if _, err = db.Exec("UPDATE command_intents SET lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1", i.Command.CommandID); err != nil {
 		t.Fatal(err)
 	}
-	j, err := store.ClaimIntent(ctx, "r2-cell-a", "publisher-b")
+	j, err := store.ClaimIntent(ctx, cell, "publisher-b")
 	if err != nil || j.Epoch <= i.Epoch {
 		t.Fatalf("takeover: %+v %v", j, err)
 	}

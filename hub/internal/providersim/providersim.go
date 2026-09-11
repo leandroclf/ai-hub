@@ -158,6 +158,7 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/v1/operations/", s.handleGet)
 	mux.HandleFunc("/oauth/token", s.handleToken)
 	mux.HandleFunc("/__qualification/effects", s.handleEffects)
+	mux.HandleFunc("/__qualification/protocols/", s.handleProtocolLookup)
 }
 
 func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
@@ -319,6 +320,29 @@ func (s *Server) handleEffects(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	writeJSON(w, http.StatusOK, map[string]any{"effects": s.effects, "protocols": len(s.protocols)})
+}
+
+// handleProtocolLookup expõe somente a correlação mínima do oráculo sintético
+// para reconciliação local. Não é uma API do provedor comercial: serve para
+// provar presença ou ausência de efeito antes de fechar uma obrigação local.
+func (s *Server) handleProtocolLookup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	protocolID := strings.TrimPrefix(r.URL.Path, "/__qualification/protocols/")
+	if protocolID == "" || strings.Contains(protocolID, "/") {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	providerRequestID := s.protocols[protocolID]
+	s.mu.Unlock()
+	if providerRequestID == "" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"protocol_id": protocolID, "provider_request_id": providerRequestID})
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
