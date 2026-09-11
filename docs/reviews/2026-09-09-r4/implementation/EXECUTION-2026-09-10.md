@@ -174,6 +174,12 @@ Consultas globais continuam exigindo finalidade e são registradas como
 `READ` na tabela de auditoria. O fixture não representa uma concessão de
 produção.
 
+O ensaio adicional `rest-adapter-executor-smoke.json` executou o `Executor` com
+PostgreSQL real, catálogo/credencial sintéticos e um servidor HTTP independente:
+o adapter `rest-json-v1` chamou `POST /analise`, recebeu
+`rest-external-42`/`SUCCEEDED` e a operação terminou custodiada como
+`SUCCEEDED`. O `provider-sim` não participou dessa prova.
+
 Os testes focados de Atlas e Órbita foram reexecutados com `-race` usando
 PostgreSQL real: publicação imutável, conflito de revisão, DAG/fan-out,
 projeção JSON estrita, importação em staging com diff, sanitização e paginação

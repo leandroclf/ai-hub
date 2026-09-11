@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "profile": "r2-int-01-s01-rest-executor",
+  "environment": "ai_hub_r3qual / PostgreSQL 16 + HTTP local independente",
+  "test": "TestPostgresExecutorUsesQualifiedRESTAdapter",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -count=1 -v ./internal/cometa -run ^TestPostgresExecutorUsesQualifiedRESTAdapter$",
+  "provider": {
+    "adapter_id": "rest-json-v1",
+    "endpoint": "POST /analise",
+    "status_endpoint_declared": "GET /consulta/{id}",
+    "simulator_used": false
+  },
+  "oracle": {
+    "method": "POST",
+    "path": "/analise",
+    "mode": "sync",
+    "provider_request_id": "rest-external-42",
+    "operation_state": "SUCCEEDED",
+    "durable_custody": true
+  },
+  "qualification": "O executor integrado consumiu a oferta REST publicada, respeitou método/path/corpo declarativos e persistiu o resultado externo em PostgreSQL sem converter o ID de catálogo em transporte do provider-sim."
+}

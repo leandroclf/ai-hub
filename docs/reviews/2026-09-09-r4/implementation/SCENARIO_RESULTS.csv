@@ -35,7 +35,7 @@ R2-FIN-06-S02;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenari
 R2-FIN-06-S03;PASS_INTEGRADO;finance-postgres.log — TestFinancePostgresScenarios/R2-FIN-06-S03_sla_dispute com PostgreSQL real
 R2-INT-01-S02;PASS_UNITARIO;r2-int-exe-qualification.log — TestAdapterRegistryDoesNotTurnCatalogIDIntoTransport
 R2-INT-01-S03;PASS_UNITARIO;r2-int-exe-qualification.log — TestAdapterRegistryFailsClosedForUnknownRuntimeAdapter e TestAdapterRegistryReadsExplicitRuntimeAllowlist
-R2-INT-01-S01;PARCIAL_INTEGRADO;r2-rest-adapter-latest.log — TestVersionedRESTAdapterUsesIndependentHTTPContract e TestVersionedRESTAdapterBuildsEscapedStatusRequest com endpoint HTTP local independente do simulador
+R2-INT-01-S01;PASS_INTEGRADO;rest-adapter-executor-smoke.json + r2-rest-adapter-latest.log — executor PostgreSQL chamou POST /analise pelo adapter rest-json-v1, persistiu SUCCEEDED e não usou provider-sim
 R3-EXE-01-S01;PARCIAL_INTEGRADO;r2-rest-adapter-latest.log — TestVersionedRESTAdapterUsesAPIKeyAndAsyncMarker com API Key por binding e fluxo 202/PENDING → 200/SUCCEEDED; executor integrado com oferta comercial permanece pendente
 R2-INT-02-S01;PASS_INTEGRADO_LOCAL;r2-int-exe-qualification.log — TestOAuthSameProviderAccountUsesEachDedicatedBindingCredential com duas credenciais simultâneas na mesma conta
 R2-INT-02-S02;PASS_UNITARIO;r2-int-exe-qualification.log — TestBasicUsesDecryptedVersionWithoutFallback recusa versão dedicada ausente

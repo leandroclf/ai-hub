@@ -85,7 +85,7 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 3. Provas por requisito
 
-- [ ] 3.1 Qualificar R2-INT-01 com oráculos independentes
+- [x] 3.1 Qualificar R2-INT-01 com oráculos independentes
   - Objective: Executar R2-INT-01-S01, R2-INT-01-S02, R2-INT-01-S03. Caso indispensável: Protocolo especializado; esperado: capacidade fica não disponível; suporte futuro exige adapter e ensaio específico, sem simulação silenciosa via REST.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa/executor.go`; `hub/internal/providersim/providersim.go`.
   - Depends on: 2.1; fixtures de r2-09; dependências de integração pertinentes.
