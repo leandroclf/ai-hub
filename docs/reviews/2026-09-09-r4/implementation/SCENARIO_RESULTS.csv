@@ -31,7 +31,7 @@ R4-QUA-01-S02;PENDENTE;matriz de resultados ainda não regenerada
 R4-QUA-01-S03;PENDENTE;hash final depende do working tree
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes
-R4-QUA-02-S03;PARCIAL_INTEGRADO;ausência de token persistido, Atlas/Libra/Pulsar sem MFA, workload administrativo, claims de papel incompatíveis e escrita financeira sem hub_admin recusados; matriz completa de negativas, revogação e mascaramento por jornada pendente
+R4-QUA-02-S03;PARCIAL_INTEGRADO;ausência de token persistido e HTTP 401 pós-logout no browser, Atlas/Libra/Pulsar sem MFA, workload administrativo, claims de papel incompatíveis e escrita financeira sem hub_admin recusados; matriz completa de negativas, revogação e mascaramento por jornada pendente
 R4-QUA-03-S01;PASS;go test ./... verde
 R4-QUA-03-S02;PASS_INTEGRADO;Compose, kind, readiness, métricas/HPA e recuperação de pod
 R4-QUA-03-S03;PARCIAL_INTEGRADO;restore, RLS, carga autenticada e HA local passaram, kind ainda usa dependências Compose e não representa produção

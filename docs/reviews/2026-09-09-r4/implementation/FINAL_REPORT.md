@@ -54,7 +54,8 @@ incidência `STATUS` por `attempt_id`, e o oráculo financeiro confirmou fatos d
 custo/receita, inbox e journal balanceado no workload autorizado.
 O polling passou a exigir o `provider_request_id` congelado no claim; uma
 resposta divergente fica como recibo de investigação e não produz estado ou
-outbox da operação protegida.
+outbox da operação protegida. O Browser Smoke também confirmou que, após o
+logout, uma chamada sem credencial à API administrativa retorna HTTP 401.
 
 ## Limite de conclusão
 

@@ -5,7 +5,7 @@
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
 | `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos, `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
-| `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, CRUD/readback, navegação, logout e 390 px: PASS | Não substitui matriz completa de autorização |
+| `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, CRUD/readback, navegação, logout, HTTP 401 pós-logout e 390 px: PASS | Não substitui matriz completa de autorização |
 | Browser Harness | Runner instalado; com `BU_CDP_URL=http://127.0.0.1:9222` percorreu 16 rotas e viewport 390×844: `PASS-EXPLORATORY` | Descoberta automática do daemon headless continua indisponível; Playwright é o gate determinístico |
 | cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | `product-http-latest.log` | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/product-runtime-proof.mjs`: PASS; produto com duas etapas independentes, duas operações/efeitos, GET final `SUCCEEDED` e duplicata sem novo efeito (`r4-product-http-1789104098588`) | Provider-sim local; não homologa provedor comercial ou matriz completa |
 | `capacity-budget-latest.log` | Testes de budget efetivo: PASS; snapshot, contexto, lease e margem limitam a janela de I/O | Não substitui carga prolongada nem expiração durante tráfego externo |
-| `browser-smoke.json` | PASS; portal também persiste e relê mapeamento de entrada entre etapas | Não substitui matriz completa de autorização e negativos |
+| `browser-smoke.json` | PASS; portal persiste e relê mapeamento de entrada entre etapas e a API retorna HTTP 401 após logout sem credencial | Não substitui matriz completa de autorização e negativos |
 | `hub/internal/orbita/admin.go` + `finalize.go` | UNKNOWN sem correlação externa é rejeitado/auditado; finalizador usa snapshot do protocolo quando intent histórico está ausente | Não fornece confirmação positiva quando o `provider_request_id` foi perdido |
 
 | `authorized-load-latest.log` | Reexecução após correção de CIDR: oito caminhos autorizados, idempotência e falha controlada: PASS (`r4-authorized-1789103863389`) | Dados sintéticos e provider-sim local |
@@ -35,7 +35,7 @@ Origem: HEAD `a39d394b0d87185ed4cc3861c12ec45f2c302d9e`, branch `r2-implementati
 | compose-bootstrap.log | `bash hub/deploy/r2/scripts/bootstrap.sh`: exit 0 | Subida local completa; não comprova recuperação/elasticidade |
 | http-auth-smoke.json | HTTP em portas18080–18084: probes200, sem token401; `/admin/v1/me` e serviços200 com token real da fixture | Não substitui matriz de autorização/isolamento |
 | browser-layout-investigation.log | Chromium153/Playwright1.63, OIDC senha+OTP e navegação: PASS; largura390px: FAIL | Causa: `.app-shell` herdava flex-direction row; alteração isolada para column confirmou hipótese |
-| browser-smoke.json | Execução mais recente do script `hub/deploy/r2/tests/browser-smoke.mjs` | Consultar resultado atual; logout é apenas observado, revogação não comprovada |
+| browser-smoke.json | Execução mais recente do script `hub/deploy/r2/tests/browser-smoke.mjs` | Consultar resultado atual; HTTP 401 pós-logout foi comprovado, revogação/reautorização completa por jornada ainda não |
 | go-suite-current.log / go-vet-current.log | `go test ./...` e `go vet ./...`: exit0 no estado da coleta | Testes condicionais de integração podem estar SKIP; logs específicos acima são a prova com serviços reais |
 
 As migrations0010–0013 foram executadas via runner com checksum;0014 administrativa ainda requer aplicação. T-R2-01 continua aberto: comparar clock_timestamp antes do commit rejeita resultado já atrasado, mas NÃO prova commit estritamente anterior ao limite.

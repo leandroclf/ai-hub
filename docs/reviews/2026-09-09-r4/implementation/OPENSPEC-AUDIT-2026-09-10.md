@@ -35,7 +35,7 @@ textual isolada.
 - `go test ./...`, `go test -race ./...`, `go vet ./...` e validações de migração: evidências registradas na rodada.
 - Compose oficial `ai_hub_r3qual`: bootstrap, probes e testes integrados locais executados.
 - Restore lógico: três bancos, contagens e digests consistentes; S3 restaurado sem divergência.
-- Browser smoke: evidência atual PASS com OIDC/OTP, readback, SLA, destinos versionados, logout e viewport 390px.
+- Browser smoke: evidência atual PASS com OIDC/OTP, readback, SLA, destinos versionados, logout, HTTP 401 pós-logout sem credencial e viewport 390px.
 - Browser Harness: `PASS-EXPLORATORY` com `BU_CDP_URL` explícito, 16 rotas e
   viewport 390×844; a descoberta automática de Chrome headless permanece
   indisponível.
