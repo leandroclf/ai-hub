@@ -196,6 +196,33 @@ func TestCatalogPublicationRejectsBindingFromAnotherProviderAccount(t *testing.T
 	}
 }
 
+func TestR2Seg05Scenarios(t *testing.T) {
+	t.Run("R2-SEG-05-S01_alteracao_atribuivel", func(t *testing.T) {
+		s := integrationStore(t)
+		ctx := context.Background()
+		draft, err := s.SaveResource(ctx, Resource{Kind: "providers", ID: "audited-provider", Version: 1, TenantID: "acme", Name: "Audited provider", Data: raw(map[string]string{"environment": "sandbox"})}, 0, "operator-a")
+		if err != nil {
+			t.Fatal(err)
+		}
+		validation := s.ValidatePublication(ctx, draft)
+		published, err := s.PublishResource(ctx, draft, draft.Revision, "operator-a", "homologação da conta", validation)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if published.State != "PUBLISHED" || published.Revision != draft.Revision+1 || published.Hash == "" {
+			t.Fatalf("publicação sem versão/hash atribuíveis: %+v", published)
+		}
+		var actor, reason, hash string
+		var revision int64
+		if err := s.db.QueryRowContext(ctx, `SELECT actor,reason,content_hash,revision FROM catalog_publications WHERE resource_id=$1 AND resource_version=$2`, published.ID, published.Version).Scan(&actor, &reason, &hash, &revision); err != nil {
+			t.Fatal(err)
+		}
+		if actor != "operator-a" || reason != "homologação da conta" || hash != published.Hash || revision != published.Revision {
+			t.Fatalf("trilha de publicação incompleta: actor=%q reason=%q hash=%q revision=%d", actor, reason, hash, revision)
+		}
+	})
+}
+
 func TestAdminScopeRequiresInteractiveMFA(t *testing.T) {
 	ctx := context.Background()
 	base := auth.Principal{Subject: "operator", TenantID: "acme", Scopes: []string{"catalog:read"}, Roles: []string{"tenant_reader"}, ExpiresAt: time.Now().Add(time.Hour)}

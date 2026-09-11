@@ -123,7 +123,7 @@ try {
  evidence.push({check:'Admin finance close refuses unresolved obligations with explicit error',status:'PASS'});
  const storage=await page.evaluate(()=>({local:Object.keys(localStorage),session:Object.keys(sessionStorage)}));
  if(storage.local.length||storage.session.includes('atlas.pkce'))throw new Error('Unexpected persisted session material');
- evidence.push({check:'No persistent token and PKCE transaction removed',status:'PASS',storageKeys:storage});
+ evidence.push({check:'R2-SEG-05-S02 session state has no persistent token and PKCE transaction removed',status:'PASS',storageKeys:storage});
  await page.screenshot({path:'hub/evidence/r2/execution/admin-providers.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});
  const overflowInfo=await page.evaluate(()=>({
@@ -139,8 +139,8 @@ try {
  await page.waitForTimeout(1000);
  const unauthenticatedStatus=await page.request.get('http://localhost:13000/api/atlas/admin/v1/clients?tenant_id=acme').then(response=>response.status());
  if(unauthenticatedStatus!==401)throw new Error(`API administrativa sem sessão retornou HTTP ${unauthenticatedStatus}`);
- evidence.push({check:'Logout revokes browser access to administrative API',status:'PASS',httpStatus:unauthenticatedStatus});
- evidence.push({check:'Logout navigation',status:'OBSERVED',origin:new URL(page.url()).origin});
+ evidence.push({check:'R2-SEG-05-S02 logout revokes browser access to administrative API',status:'PASS',httpStatus:unauthenticatedStatus});
+ evidence.push({check:'R2-SEG-05-S02 logout navigation',status:'OBSERVED',origin:new URL(page.url()).origin});
  console.log(JSON.stringify(evidence,null,2));
 } catch(error) {evidence.push({check:'browser flow',status:'FAIL',error:error.message.split('\n')[0]});console.log(JSON.stringify(evidence,null,2));process.exitCode=1}
 finally {await writeFile('hub/evidence/r2/execution/browser-smoke.json',JSON.stringify(evidence,null,2)+'\n');await browser.close()}

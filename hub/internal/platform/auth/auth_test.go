@@ -158,3 +158,17 @@ func TestPublicErrorsCarryCorrelationWithoutInternalDetails(t *testing.T) {
 		t.Fatal("correlação previamente estabelecida foi substituída")
 	}
 }
+
+func TestR2Seg05S03BackendErrorScenario(t *testing.T) {
+	recorder := httptest.NewRecorder()
+	ErrorWithMessage(recorder, http.StatusServiceUnavailable, "catalog_unavailable", "catálogo indisponível; tente novamente")
+	body := recorder.Body.String()
+	for _, forbidden := range []string{"postgres://", "Bearer ", "stack", "password", "secret"} {
+		if strings.Contains(strings.ToLower(body), strings.ToLower(forbidden)) {
+			t.Fatalf("detalhe interno vazou no erro público: %q", forbidden)
+		}
+	}
+	if recorder.Code != http.StatusServiceUnavailable || recorder.Header().Get("X-Trace-Id") == "" || !strings.Contains(body, `"correlation_id"`) {
+		t.Fatalf("envelope de erro sem correlação: status=%d headers=%v body=%s", recorder.Code, recorder.Header(), body)
+	}
+}
