@@ -23,9 +23,9 @@
   versionado, cobrindo oito caminhos e idempotência.
 - O Playwright determinístico passou com sessão OIDC/OTP, mutações de
   catálogo e destinos, SLA, logout e viewport 390×844. O Browser Harness foi
-  instalado externamente em versão `0.1.13`, mas o daemon não encontrou um
-  Chrome com `DevToolsActivePort` utilizável e permanece bloqueado pelo
-  ambiente.
+  instalado externamente em versão `0.1.13` e passou em CDP explícito,
+  percorrendo 16 rotas; a descoberta automática do daemon para Chrome
+  headless continua indisponível.
 - Kind/HA foi ensaiado com cinco deployments em duas réplicas; perda
   controlada de pods de Cometa e Pulsar foi recuperada sem perda de prontidão.
 - Restore comparou contagens/digests dos bancos e objetos sem replay externo.

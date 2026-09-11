@@ -24,4 +24,4 @@ O runtime deve ser iniciado pelo bootstrap oficial. Uma execução isolada de
 fazem a entrega webhook falhar fechado antes do POST. O bootstrap descobre as
 CIDRs atuais e recria a configuração sem remover volumes.
 
-Limites da evidência: o worker Orbita continua consumindo intenções da sua célula operacional por desenho; fixtures concorrentes devem usar célula isolada, como o teste faz. Browser Harness permanece bloqueado por CDP nesta máquina, e browser determinístico, carga, restore/HA e jornada comercial de ponta a ponta continuam limitados ao laboratório sintético, sem homologar produção.
+Limites da evidência: o worker Orbita continua consumindo intenções da sua célula operacional por desenho; fixtures concorrentes devem usar célula isolada, como o teste faz. Browser Harness passou como exploração com `BU_CDP_URL` explícito, enquanto browser determinístico, carga, restore/HA e jornada comercial de ponta a ponta continuam limitados ao laboratório sintético, sem homologar produção.

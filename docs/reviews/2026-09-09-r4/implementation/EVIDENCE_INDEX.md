@@ -11,7 +11,7 @@ limites arquiteturais.
 |---|---|---|
 | `hub/evidence/r2/execution/authorized-load-latest.log` | Carga autenticada com seed versionado | PASS; oito caminhos, falha controlada e idempotência |
 | `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, CRUD/readback, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout e viewport móvel |
-| Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP | BLOCKED-ENVIRONMENT; executável presente, daemon sem `DevToolsActivePort` utilizável |
+| Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP explícito `BU_CDP_URL=http://127.0.0.1:9222` | PASS-EXPLORATORY; descoberta automática do daemon headless ainda não funciona, evidência em `hub/evidence/r2/execution/browser-harness-latest.log` |
 | `hub/internal/cometa/custody.go` + migração `0041` | Inbox de callback | PASS de implementação/testes focados; identidade por capability, limites de bytes/itens e retenção periódica; qualificação externa ainda aberta |
 | `hub/internal/cometa/capacity.go` + executor/poller/reconciliation + `hub/internal/pulsar/worker.go` | Capacidade por domínio | PASS de integração local; concessões em `SUBMIT`/`STATUS`, reconciliação e `FETCH` de webhook; fencing validado antes da autenticação e do I/O externo; budget efetivo limitado por snapshot, contexto, lease e margem |
 | `hub/internal/orbita/admission.go` + `hub/internal/pulsar/custody.go` + `custody_test.go` | Snapshot de destino webhook e orçamento de entrega | PASS de teste PostgreSQL; versão aceita é congelada, entrega usa o snapshot persistido e o permit é encerrado com sinal/evidência |
@@ -29,6 +29,7 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/capacity-budget-latest.log` | Budget efetivo de I/O externo | PASS; snapshot de oferta, contexto, lease e margem limitam a janela; carga prolongada e provedor comercial continuam fora do gate local |
 | `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | `hub/evidence/r2/execution/kind-continuity-latest.log` | Kind independente, bootstrap offline, UI/gateway, dependências, perda controlada de Cometa/Pulsar | PASS; três nós, seis dependências cluster-owned, cinco workloads, Jobs de migração/OIDC, RTO observado de 4,453 ms/4,481 ms; volume efêmero de laboratório |
+| `hub/evidence/r2/execution/browser-harness-latest.log` | Browser Harness em CDP explícito | PASS-EXPLORATORY; 16 rotas e viewport 390×844, sem cloud auth ou gravação |
 | Kind `ai-hub-r2` compatibilidade Compose | Prontidão, métricas, HPA/KEDA e recuperação | PASS histórico do perfil Compose-linked; o perfil independente agora é o gate de continuidade principal |
 
 ## Evidências históricas
@@ -53,7 +54,7 @@ limites arquiteturais.
 | 10/09/2026: kind, readiness, métricas/HPA e recuperação de pod | laboratório `ai-hub-r2` | PASS local; dependências completas ainda não estão dentro do cluster |
 | 10/09/2026: smoke Chromium autenticado | `hub/evidence/r2/execution/browser-smoke.json` | PASS: OIDC PKCE, senha/OTP, CRUD, readback, logout e 390px |
 | 10/09/2026: carga autorizada | `hub/deploy/r2/tests/authorized-load.mjs` | PASS: oito caminhos autorizados, falha controlada, polling/callback/AUTO, saldo estrito, credencial dedicada e quatro observações idempotentes |
-| 10/09/2026: Browser Harness | `hub/deploy/r2/tests/browser-harness/run.sh` | BLOCKED-ENVIRONMENT: executável instalado, mas Chrome/daemon não expôs `DevToolsActivePort` utilizável |
+| 11/09/2026: Browser Harness | `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh` | PASS-EXPLORATORY: 16 rotas em viewport 390×844; descoberta automática headless requer CDP explícito |
 
 Nenhuma evidência histórica foi promovida como PASS de integração.
 

@@ -12,10 +12,10 @@ origem). O vínculo de capacidade passou a cobrir `SUBMIT`, `STATUS` e
 reconciliação.
 
 Continuam abertos por falta de prova integral: F-R4-02, F-R4-03, F-R4-04,
-F-R4-09, F-R4-10, F-R4-11 e F-R4-12. O Browser Harness permanece
-`BLOCKED-ENVIRONMENT` por CDP local; o Playwright determinístico, a carga
-autorizada, RLS, restore e HA local têm evidências atuais. A matriz integral
-dos 201 requisitos/732 cenários, provedores reais, kind independente de
-Compose, fencing geral, DAG conectado, budgets completos e projeção em escala
+F-R4-09, F-R4-10, F-R4-11 e F-R4-12. O Browser Harness passou como
+`PASS-EXPLORATORY` com CDP explícito; o Playwright determinístico, a carga
+autorizada, RLS, restore, HA local e produto HTTP local têm evidências atuais.
+A matriz integral dos 201 requisitos/732 cenários, provedores reais, fencing
+geral, budgets completos, financeiro/entrega produtivos e projeção em escala
 ainda não foram demonstrados. Nenhum P0 aberto foi reclassificado como
 concluído apenas por documentação.

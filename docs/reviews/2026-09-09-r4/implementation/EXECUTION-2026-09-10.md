@@ -14,7 +14,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, criação/leitura durável, SLA, destinos versionados, navegação, logout, storage sem sessão persistida e viewport móvel sem overflow |
 | Entrega webhook com capacidade | `bash hub/deploy/r2/tests/webhook-capacity-runtime.sh` | PASS; worker Pulsar real entregou no sink local e encerrou o permit `r4-webhook` sem concessão aberta ou obrigação pendente; fixture removida ao final |
 | Incidência financeira integrada | `bash hub/deploy/r2/tests/finance-runtime-proof.sh` após carga autorizada | PASS; `SUBMITTED`/`STATUS` com `attempt_id`, fatos de custo/receita, inbox persistida, journal balanceado por moeda e zero quarentena de incidência inválida; log em `hub/evidence/r2/execution/finance-runtime-latest.log` |
-| Browser Harness | `browser-harness < hub/deploy/r2/tests/browser-harness/scenarios/admin-console.py` | BLOCKED-ENVIRONMENT; executável instalado, mas o daemon local não encontrou `DevToolsActivePort`/CDP utilizável |
+| Browser Harness | `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh` | PASS-EXPLORATORY; 16 rotas em viewport 390×844; descoberta automática do daemon headless requer CDP explícito |
 | Cache de autenticação | `go test -race -count=1 ./internal/providerauth` | PASS; isolamento por binding, revogação, expiração, coordenação cancelável e máximo de 1024 locks rastreados |
 | Redis opcional | Compose profile `cache`, `redis-cli ping` e `INFO keyspace` | PASS; `PONG`, keyspace vazio; Cometa permanece sem dependência autoritativa de Redis e sem token persistido |
 | Ofertas | consulta `LIMIT 2` + `EXPLAIN (ANALYZE, BUFFERS)` | PASS de caminho; índice parcial `catalog_offer_eligibility_lookup` confirmado quando o planner usa índice; catálogo pequeno pode escolher seq scan por custo |
@@ -70,8 +70,9 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
   cada polling publica `economic_kind=STATUS` com `attempt_id`. O oráculo
   financeiro confirmou fatos de custo/receita e journal balanceado no mesmo
   workload.
-- O cenário exploratório do Browser Harness continua auxiliar e bloqueado por
-  CDP nesta máquina; o gate bloqueador do frontend é o Playwright determinístico.
+- O cenário exploratório do Browser Harness passou com CDP explícito e percorreu
+  16 rotas; a descoberta automática de Chrome headless continua indisponível.
+  Ele permanece auxiliar, e o gate determinístico do frontend é o Playwright.
 
 ## Atualização operacional de 11/09/2026
 

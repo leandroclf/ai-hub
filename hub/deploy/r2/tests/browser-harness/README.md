@@ -91,6 +91,18 @@ subida final sem `--build`. Isso mantém as regras CIDR de egress do Cometa
 alinhadas aos containers efetivamente em execução. Não altere manualmente
 essas regras em um ambiente com provedor real.
 
+Em ambientes headless, a descoberta automática pode não reconhecer uma
+instância Chrome mesmo quando ela expõe CDP. Nesse caso, inicie uma instância
+isolada com porta local e informe o endpoint explicitamente:
+
+```bash
+BU_CDP_URL=http://127.0.0.1:9222 \
+  hub/deploy/r2/tests/browser-harness/run.sh
+```
+
+O resultado de 11/09/2026 percorreu as 16 rotas com esse procedimento e está
+em `hub/evidence/r2/execution/browser-harness-latest.log`.
+
 Uma falha de transporte pode deixar uma concessão da fixture em
 `pending_external`. Antes de repetir a carga, a reconciliação local pode ser
 executada somente com confirmação explícita:

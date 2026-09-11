@@ -13,9 +13,10 @@ bancos e S3 com alvo novo e sem replay externo. O cluster kind tem três nós,
 readiness, métricas/HPA/KEDA e recuperação de pods em duas réplicas. O smoke
 Chromium autenticado passou também pelo editor de produto e seu mapeamento entre
 etapas. O probe HTTP do produto passou com dois efeitos independentes e
-idempotência; o teste de budget efetivo passou. O Browser Harness está
-`BLOCKED-ENVIRONMENT` porque o daemon não encontrou `DevToolsActivePort`/CDP
-utilizável e continua sendo exploratório.
+idempotência; o teste de budget efetivo passou. O Browser Harness percorreu as
+16 rotas com `BU_CDP_URL` explícito em viewport 390×844 e foi classificado
+`PASS-EXPLORATORY`; a descoberta automática do daemon headless continua
+indisponível.
 
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG e o editor administrativo de mapeamento. Permanecem explícitos os gaps

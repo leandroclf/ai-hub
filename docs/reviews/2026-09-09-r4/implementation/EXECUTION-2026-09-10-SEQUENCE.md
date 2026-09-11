@@ -20,6 +20,10 @@ reprodutível.
 - Playwright determinístico: PASS para OIDC Authorization Code + PKCE + OTP,
   persistência do admin, navegação autenticada, SLA bilateral, destinos
   versionados, ausência de tokens persistentes, viewport de 390px e logout.
+- Editor de produto: PASS; o portal persiste e relê o mapeamento de entrada
+  entre etapas dependentes.
+- Produto/DAG via HTTP: PASS; duas etapas independentes geraram duas operações
+  e dois efeitos no provider-sim, com consolidação `SUCCEEDED` e idempotência.
 - Carga autorizada: PASS em SYNC sucesso/falha, ASYNC polling A/B, callback,
   AUTO, saldo estrito e credencial dedicada; idempotência observada quatro
   vezes para o mesmo protocolo.
@@ -31,9 +35,9 @@ reprodutível.
 - Kind existente `ai-hub-r2`: workloads atlas, orbita, cometa, pulsar e libra
   em `Running`; escala manual para duas réplicas por workload: PASS; PDBs,
   HPA/KEDA e placement em dois workers observados.
-- Browser Harness: `BLOCKED-ENVIRONMENT`, pois o daemon não encontrou
-  `DevToolsActivePort`/CDP no navegador local. Não é falha funcional do portal
-  e não substitui o gate Playwright.
+- Browser Harness: `PASS-EXPLORATORY` com `BU_CDP_URL` explícito; percorreu 16
+  rotas em viewport 390×844. A descoberta automática do daemon headless ainda
+  requer CDP explícito e não substitui o gate Playwright.
 - Reconciliação da fixture de capacidade: `reconcile-local-pending.sh` fechou
   somente 12 concessões `r4-*` cujo oráculo sintético retornou `404`; nenhuma
   obrigação com efeito presente foi fechada. A rotina exige a confirmação
@@ -88,11 +92,11 @@ consultar uma versão posterior.
 ## Pendências que impedem declaração integral
 
 Ainda não há evidência suficiente para fechar a missão completa de 201
-requisitos/732 cenários. Permanecem no OpenSpec os itens de executor DAG,
-capacidade e budgets completos em todo I/O, operações administrativas e
-financeiras completas além da reconciliação de protocolos, FileRefs/resultados
-no adapter real, fencing geral de efeito incerto, projeções escaláveis,
-telemetria bilateral e matriz integral sem lacunas.
+requisitos/732 cenários. Permanecem no OpenSpec os itens de provedor comercial,
+carga e budgets completos em todo I/O, operações administrativas e financeiras
+completas além das jornadas locais, FileRefs/resultados no adapter real,
+fencing geral de efeito incerto, projeções escaláveis, telemetria bilateral e
+matriz integral sem lacunas.
 
 O resultado desta execução deve ser lido como `PASS` dos gates listados e
 `OPEN` dos requisitos não demonstrados, nunca como promoção automática para

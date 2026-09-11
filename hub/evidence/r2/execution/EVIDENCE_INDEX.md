@@ -6,7 +6,7 @@
 |---|---|---|
 | `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos, `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
 | `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, CRUD/readback, navegação, logout e 390 px: PASS | Não substitui matriz completa de autorização |
-| Browser Harness | Runner instalado, mas o daemon local não expôs `DevToolsActivePort`/CDP utilizável: `BLOCKED-ENVIRONMENT` | Exploratório; Playwright é o gate determinístico do frontend |
+| Browser Harness | Runner instalado; com `BU_CDP_URL=http://127.0.0.1:9222` percorreu 16 rotas e viewport 390×844: `PASS-EXPLORATORY` | Descoberta automática do daemon headless continua indisponível; Playwright é o gate determinístico |
 | cache/HA/restore | Limite de locks, Redis vazio, duas réplicas kind com recuperação, restore final por digest: PASS | Kind usa dependências Compose; Redis é dispensável; sem AWS/provedor real |
 
 ## Atualização da retomada de 11/09/2026

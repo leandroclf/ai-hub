@@ -1,13 +1,14 @@
 # Relatório da execução R4
 
-## Atualização de qualificação — 10/09/2026
+## Atualização de qualificação — 11/09/2026
 
 A sequência operacional local foi requalificada nesta rodada: catálogo
 versionado, carga autenticada, SYNC/ASYNC/AUTO, polling, callback, negativas
 de callback, portal administrativo, cache, ofertas, restore, Compose, RLS,
-kind/HA, backend, frontend e OpenSpec strict. O Browser Harness permanece
-disponível como ferramenta exploratória, mas está bloqueado neste host por
-ausência de um endpoint CDP/`DevToolsActivePort` utilizável.
+kind/HA, backend, frontend e OpenSpec strict. O Browser Harness passou como
+ferramenta exploratória via `BU_CDP_URL` explícito, percorrendo as 16 rotas
+administrativas em 390×844; a descoberta automática de Chrome headless ainda
+não funciona neste host.
 
 O relatório detalhado, com comandos, limites e proveniência, está em
 [`EXECUTION-2026-09-10.md`](EXECUTION-2026-09-10.md). Os artefatos dinâmicos
@@ -27,6 +28,12 @@ sintético comprovou ausência de efeito (`404`), com confirmação explícita e
 registro em `capacity-reconciliation-latest.log`. O teste concorrente de
 admissão usa uma célula exclusiva por execução para não ser consumido pelo
 worker Orbita do laboratório.
+
+O produto composto também passou pela fronteira HTTP pública: o plano persistiu
+duas etapas independentes, o provider-sim observou dois efeitos e a duplicata
+da mesma chave não criou novo efeito. O editor administrativo persiste e relê
+o mapeamento de entrada entre etapas. O budget efetivo passou nos limites de
+snapshot, contexto, lease e margem.
 
 ## Resultado
 
@@ -50,9 +57,9 @@ custo/receita, inbox e journal balanceado no workload autorizado.
 
 Este resultado não declara conclusão integral dos 201 requisitos/732 cenários
 nem homologação de produção. O backlog herdado do R4-04 ainda contém cortes
-arquiteturais abertos, incluindo DAG conectado, capacidade e budgets em todo
-I/O, fencing geral, financeiro/webhooks/FileRefs completos, telemetria bilateral,
-IaC/HA regional e matriz integral. O estado detalhado permanece em
+arquiteturais abertos, incluindo provedor comercial, carga e budgets completos
+em todo I/O, fencing geral, financeiro/webhooks/FileRefs produtivos, telemetria
+bilateral, IaC/HA regional e matriz integral. O estado detalhado permanece em
 `REQUIREMENTS_STATUS.csv`, `SCENARIO_RESULTS.csv`, `CHECKPOINT.md` e
 `OPENSPEC-AUDIT-2026-09-10.md`; nenhum desses itens foi fechado somente por
 documentação.

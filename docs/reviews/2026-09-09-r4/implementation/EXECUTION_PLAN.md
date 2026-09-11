@@ -21,10 +21,11 @@ ou validação de jornada autenticada já preparada pelo operador. Seu resultado
 cookies, gravações e Browser Use Cloud permanecem sujeitos às regras de
 segurança e consentimento descritas no README do harness.
 
-Na execução de 2026-09-10, os gates locais de código, OpenSpec, navegador,
-carga autorizada, RLS e restore passaram; kind passou após reinício dos
-workloads, incluindo ensaio de duas réplicas. O Browser Harness ficou
-`BLOCKED-ENVIRONMENT` por ausência de CDP/DevToolsActivePort. As etapas 5–7
+Na execução de 2026-09-11, os gates locais de código, OpenSpec, navegador,
+carga autorizada, produto HTTP, RLS, entrega, financeiro e restore passaram;
+kind passou após reinício dos workloads, incluindo ensaio de duas réplicas. O
+Browser Harness passou como exploratório com `BU_CDP_URL` explícito; a
+descoberta automática de CDP headless continua indisponível. As etapas 5–7
 seguem abertas nos pontos que exigem implementação ou cobertura integral;
 consulte `EXECUTION-2026-09-10-SEQUENCE.md` para a matriz de evidências e
 pendências sem promoção indevida.

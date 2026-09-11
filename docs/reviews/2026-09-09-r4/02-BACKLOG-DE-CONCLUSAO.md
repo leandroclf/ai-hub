@@ -48,7 +48,7 @@ exigir alteração de requisito; avançar nos demais.
 | B-R4-22 | R3-OPE-03 | Autoscaling/placement/drenagem não receberam fechamento neste delta; exigem ensaio. | Plataforma, Dados e SRE |
 | B-R4-23 | R3-OPE-04 | Migrações de callback adicionadas, mas alteração de migração histórica cria novo risco de upgrade. RLS/restore sem prova integrada atual. | Plataforma, Dados e SRE |
 | B-R4-24 | R3-OPE-05 | UI/API de SLA e telemetria têm leitura bilateral no smoke local; sinais completos de domínio, alertas e correlação produtiva permanecem. | Plataforma, Dados e SRE |
-| B-R4-25 | R3-QUA-01 | OpenSpec strict atual 21/21, build/race/vet e provas locais passam; Browser Harness segue bloqueado por CDP e a matriz integral de 416 cenários v4/201 requisitos ainda não foi encerrada. | Engenharia e Qualidade |
+| B-R4-25 | R3-QUA-01 | OpenSpec strict atual 21/21, build/race/vet e provas locais passam; Browser Harness passou como exploratório com CDP explícito, enquanto a matriz integral de 416 cenários v4/201 requisitos ainda não foi encerrada. | Engenharia e Qualidade |
 
 ## Aceite por fatia
 Contrato publicado → admissão autenticada → tentativa/concessão duráveis → provedor externo →

@@ -26,7 +26,7 @@ textual isolada.
 | r4-01 callbacks | Parcial | revalidação; worker, ingresso público, validação terminal, quota/retention e deduplicação por capability | autenticação por conta e cenário externo ponta a ponta |
 | r4-02 contratos JSON | Implementação e testes unitários concluídos | contrato, implementação e qualificação dos seis cenários R4 | rollout/upgrade específico e requalificação herdada |
 | r4-03 upgrade/cache | Parcial | upgrade/reconciliação histórica e migração aditiva | revogação/cancelamento/crescimento e prova de projeção/ofertas |
-| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore e HA local | inventário regenerado de todos os cenários, Browser Harness bloqueado por CDP, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
+| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local e Browser Harness exploratório | inventário regenerado de todos os cenários, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
 
 ## Evidências consideradas
 
@@ -36,7 +36,9 @@ textual isolada.
 - Compose oficial `ai_hub_r3qual`: bootstrap, probes e testes integrados locais executados.
 - Restore lógico: três bancos, contagens e digests consistentes; S3 restaurado sem divergência.
 - Browser smoke: evidência atual PASS com OIDC/OTP, readback, SLA, destinos versionados, logout e viewport 390px.
-- Browser Harness: executável instalado, mas execução atual é `BLOCKED-ENVIRONMENT` por ausência de `DevToolsActivePort`/CDP utilizável.
+- Browser Harness: `PASS-EXPLORATORY` com `BU_CDP_URL` explícito, 16 rotas e
+  viewport 390×844; a descoberta automática de Chrome headless permanece
+  indisponível.
 - Kind: três nós, réplicas, métricas/HPA/KEDA e recuperação local observados; dependências ainda apontam para Compose e não formam um cluster de produção independente.
 - Carga: execução autorizada atual passou nos oito caminhos, com idempotência e callback; execução sem token continua sendo apenas negativa de autorização.
 - Produto/DAG: admissão HTTP local passou com duas etapas independentes, duas operações/efeitos no provider-sim, finalização `SUCCEEDED` e duplicata idempotente sem novo efeito.
