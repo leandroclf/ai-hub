@@ -26,7 +26,7 @@ textual isolada.
 | r4-01 callbacks | Parcial | revalidação; worker, ingresso público, validação terminal, quota/retention e deduplicação por capability | autenticação por conta e cenário externo ponta a ponta |
 | r4-02 contratos JSON | Implementação e testes unitários concluídos | contrato, implementação e qualificação dos seis cenários R4 | rollout/upgrade específico e requalificação herdada |
 | r4-03 upgrade/cache | Parcial | upgrade/reconciliação histórica e migração aditiva | revogação/cancelamento/crescimento e prova de projeção/ofertas |
-| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local e Browser Harness exploratório | inventário regenerado de todos os cenários, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
+| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório e inventário de fonte 201/732 | matriz de resultados integral, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
 
 ## Evidências consideradas
 
@@ -44,6 +44,9 @@ textual isolada.
 - Produto/DAG: admissão HTTP local passou com duas etapas independentes, duas operações/efeitos no provider-sim, finalização `SUCCEEDED` e duplicata idempotente sem novo efeito.
 - Capacity: budget efetivo local passou com limite pelo snapshot da oferta, contexto, lease e margem; carga prolongada e expiração durante I/O continuam abertas.
 - RLS/restore: prova cross-tenant passou em control/core/finance e restore novo comparou contagens/digests e S3 sem replay.
+- Inventário de fonte: `generate-openspec-inventory.py` derivou 201 requisitos e
+  732 cenários das 29 specs, recusando duplicidades e registrando o digest
+  `sha256:363db7fd0613b909c75beaeb9eb7dfe1e3cb52c8f4ecbbbbb697241e381dde9b`.
 
 ## Regra de conclusão
 
@@ -62,5 +65,6 @@ Uma tarefa só deve receber `[x]` quando o comando, SHA, ambiente, resultado obs
    destinos ponta a ponta.
 4. Homologar adapter/provedor comercial e fechar fencing positivo de efeitos
    incertos com correlação externa; completar telemetria bilateral e alertas.
-5. Regenerar a matriz integral de requisitos/cenários e somente então avaliar
-   o encerramento de r4-04.
+5. Gerar a matriz de resultados a partir do inventário com comandos e evidências
+   no mesmo SHA, validar o digest após mudanças e somente então avaliar o
+   encerramento de r4-04.

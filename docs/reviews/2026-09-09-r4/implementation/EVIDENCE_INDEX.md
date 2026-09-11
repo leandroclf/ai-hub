@@ -48,6 +48,7 @@ limites arquiteturais.
 | `git diff --check` | higiene do diff |
 | `docker compose ls`, `docker ps -a` | proveniência do runtime local |
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
+| `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -59,6 +60,13 @@ limites arquiteturais.
 Nenhuma evidência histórica foi promovida como PASS de integração.
 
 ## Atualização da retomada de 11/09/2026
+
+O inventário de fonte foi regenerado pela ferramenta
+`hub/deploy/r2/tests/generate-openspec-inventory.py` após o seed versionado das
+specs: 201 requisitos, 732 cenários, sem chaves duplicadas e com digest
+`363db7fd0613b909c75beaeb9eb7dfe1e3cb52c8f4ecbbbbb697241e381dde9b`. A matriz
+de resultados dos cenários ainda é mantida separadamente e não é promovida por
+esse inventário.
 
 O produto composto foi exercitado pela API pública após seed versionado do
 catálogo: o probe `product-runtime-proof.mjs` observou duas operações e dois
