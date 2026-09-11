@@ -26,14 +26,14 @@ exigir alteração de requisito; avançar nos demais.
 |---|---|---|---|
 | B-R4-01 | R3-EXE-01 | API_KEY agora atravessa modelo/projeção/executor/poller; gate synthetic-provider persiste. Fechar adapter real e homologação. | Core e Integrações |
 | B-R4-02 | R3-EXE-02 | Capability e recibo antes de ACK foram adicionados. Nova inbox tem lacunas de autenticação/deduplicação e recuperador; rota segue sob JWT Hub. | Core e Integrações |
-| B-R4-03 | R3-EXE-03 | PrepareSubmission/UNKNOWN sem recuperador geral e sem fencing de egress continuam. Inbox não resolve incerteza de SUBMIT. | Core e Integrações |
+| B-R4-03 | R3-EXE-03 | Fencing de egress agora é validado antes de autenticação e transporte nos caminhos ligados; UNKNOWN sem `provider_request_id` ainda exige recuperação/adjudicação explícita. | Core e Integrações |
 | B-R4-04 | R3-EXE-04 | Relógios, exclusividade polling/callback e T-R2-01 permanecem; sem mudança no finalizador. | Core e Integrações |
 | B-R4-05 | R3-EXE-05 | Topologia/outboxes/consumidor financeiro não mudaram. Quarentena financeira continua só hash. | Core e Integrações |
 | B-R4-06 | R3-CAT-01 | Precisão grande/enum simples corrigidos e reproduzidos positivamente. Novas violações de tipos/EOF/schema ainda abertas. | Produto e Core |
 | B-R4-07 | R3-CAT-02 | Handler de admissão e finalizer não mudaram; política efetiva/versão e OutputMapping pendentes. | Produto e Core |
 | B-R4-08 | R3-CAT-03 | Executor de DAG não conectado; PlanDAG de catálogo não é execução de produto. | Produto e Core |
 | B-R4-09 | R3-CAT-04 | Teto de 100 removido por paginação; todas as ofertas ainda materializadas antes do filtro e Atlas consultado por pedido. | Produto e Core |
-| B-R4-10 | R3-INT-01 | Capacity continua sem ligação a Execute/requestPoll; código desse controlador e consumidores permanece igual. | Integrações e Plataforma |
+| B-R4-10 | R3-INT-01 | Capacity ligada a Execute/requestPoll/reconciliação e Pulsar; validação de lease ocorre antes de I/O. Budgets integrais e ensaio sob expiração continuam. | Integrações e Plataforma |
 | B-R4-11 | R3-INT-02 | Tokens removidos do Redis; lock por chave existe. L1 ainda depende do cofre; crescimento de locks não limitado. | Integrações e Plataforma |
 | B-R4-12 | R3-INT-03 | Transports por chamada permanecem; arquivo egress não mudou e chamadas NewClient continuam. | Integrações e Plataforma |
 | B-R4-13 | R3-ADM-01 | Papel hub_protocol_reader e MFA agora obrigatórios no admin; avanço de autorização constatado. Requalificar política de aplicação/mascaramento e browser sem afirmar bypass corrigido ainda existente. | Frontend e Segurança |
@@ -43,7 +43,7 @@ exigir alteração de requisito; avançar nos demais.
 | B-R4-17 | R3-FIN-01 | Financeiro não mudou; reserva versus efetivo e franquia pré-efeito precisam fechamento. | Financeiro e Core |
 | B-R4-18 | R3-FIN-02 | Financeiro/contratos econômicos não mudaram; incidência e fechamento integrados continuam pendentes. | Financeiro e Core |
 | B-R4-19 | R3-FIN-03 | Pulsar não mudou; seleção de destinos atuais em vez de snapshot continua. | Financeiro e Core |
-| B-R4-20 | R3-OPE-01 | Objetos/admissão não mudaram; integração de FileRefs/resultados no adapter permanece pendente. | Plataforma, Dados e SRE |
+| B-R4-20 | R3-OPE-01 | Resultado volumoso integrado ao finalizador: upload streaming, `ORPHAN` pré-commit, `FileRef` no GET/fato e vínculo pós-commit; adapter/provedor real e retenção produtiva continuam. | Plataforma, Dados e SRE |
 | B-R4-21 | R3-OPE-02 | Kind/overlays não mudaram; dependências ligadas a Compose não equivalem a cluster completo. | Plataforma, Dados e SRE |
 | B-R4-22 | R3-OPE-03 | Autoscaling/placement/drenagem não receberam fechamento neste delta; exigem ensaio. | Plataforma, Dados e SRE |
 | B-R4-23 | R3-OPE-04 | Migrações de callback adicionadas, mas alteração de migração histórica cria novo risco de upgrade. RLS/restore sem prova integrada atual. | Plataforma, Dados e SRE |

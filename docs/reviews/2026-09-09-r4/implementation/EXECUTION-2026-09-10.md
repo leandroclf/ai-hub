@@ -21,6 +21,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Restore | `R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual2 bash hub/deploy/r2/tests/restore-reconciliation.sh` | PASS; contagem/digest de control, core, finance e objetos S3 iguais; efeitos observados sem replay e re-admissão mantida desabilitada; alvos já existentes agora são recusados antes do restore |
 | Kind/HA | `hub/deploy/r2/kind/bootstrap-independent.sh` + `continuity-runtime-proof.sh` | PASS local independente; PostgreSQL, LocalStack, Keycloak, Alloy, provider-sim, webhook-sink, observabilidade, Kong e UI materializados no cluster; cinco workloads em duas réplicas; Cometa/Pulsar recuperados após exclusão controlada com RTO observado de 4,453 ms/4,481 ms |
 | Produto/DAG durável | `R2_CORE_TEST_DSN=... go test -race -count=1 ./internal/orbita -run 'TestProductPlan'` | PASS; etapas e dependências persistidas, limite de paralelismo, consolidação por fatos e compensação separada; evidência em `hub/evidence/r2/execution/product-dag-latest.log` |
+| Resultado volumoso/FileRef | `go test -count=1 ./internal/orbita -run TestFinalizeMaterializesLargeResultAndLinksAfterCommit` + `go test -tags=e2e ... ./internal/objectstore -run TestPostgresS3MultipartFileRef` | PASS; resultado acima de 1 MiB usa upload streaming, fica `ORPHAN` até o protocolo confirmar e é exposto como `FileRef`; LocalStack real comprovou multipart, verificação/download e retenção |
 | Backend | `go test -race -count=1 ./...` e `go vet ./...` | PASS; entrega Pulsar com domínio `r4-webhook` e lease seguro também coberta por teste PostgreSQL |
 | Frontend | `npm run build` em `hub/admin-ui` | PASS; TypeScript e Vite, 41 módulos |
 | Especificações | `openspec validate --all --strict --no-interactive --json` | PASS; 21/21 changes válidas, 0 falhas |
@@ -39,10 +40,18 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
   body_sha256, token_hash)`, limite de bytes/itens e limpeza limitada de itens
   processados.
 - A capacidade está ligada às concessões de `SUBMIT`, `STATUS` de polling,
-  reconciliação e `FETCH` de webhook. O Pulsar falha fechado quando o lease não
-  cobre o timeout mais a margem de segurança; falhas locais liberam o permit e
-  respostas/timeout fecham-no com sinal, latência e evidência. O runtime Compose
-  instala o domínio `r4-webhook` sem alterar os volumes existentes.
+  reconciliação e `FETCH` de webhook. Cada caminho valida o fencing antes da
+  autenticação e imediatamente antes do I/O externo; submissão conserva
+  `UNKNOWN` sem reenviar quando a lease cai, enquanto observadores e webhook
+  liberam o permit para retomada segura. O Pulsar falha fechado quando o lease
+  não cobre o timeout mais a margem de segurança; respostas/timeout fecham-no
+  com sinal, latência e evidência. O runtime Compose instala o domínio
+  `r4-webhook` sem alterar os volumes existentes.
+- Resultado acima de 1 MiB não é colocado no JSONB do protocolo: o finalizador
+  faz upload streaming pela autoridade de objetos, conserva a referência como
+  `ORPHAN` antes do commit e executa `LinkResult` depois da representação final.
+  Falha de vínculo permanece uma obrigação reconciliável, sem desfazer o
+  protocolo já confirmado.
 - O aceite congelou destinos de webhook por tenant/aplicação e o Pulsar
   consumiu somente o snapshot persistido no fato, sem consultar uma versão
   dinâmica posterior.
@@ -64,10 +73,10 @@ provedores reais, AWS regional, multi-célula ou produção.
 A execução durável do DAG agora está conectada à admissão de produtos e tem
 evidência própria; a jornada HTTP com catálogo/provedor real ainda precisa de
 qualificação dedicada. Permanecem fora do fechamento integral, entre outros,
-capacidade adaptativa e budgets em todo I/O, integração completa de
-FileRefs/financeiro/webhooks, fencing geral de efeito incerto, projeção de
-catálogo em escala e a matriz integral de requisitos/cenários. O perfil Kind
-independente fecha o gate local de dependências e endpoints; não substitui
-IaC/HA regional dos ambientes remotos.
+budgets integrais de I/O, qualificação de adapter/provedor real, vinculação
+produtiva de financeiro/webhooks, fencing de efeitos cujo provider_request_id
+já foi perdido, projeção de catálogo em escala e a matriz integral de
+requisitos/cenários. O perfil Kind independente fecha o gate local de
+dependências e endpoints; não substitui IaC/HA regional dos ambientes remotos.
 Esses itens continuam marcados como abertos no backlog R4 e não foram
 convertidos em PASS por inferência a partir desta execução local.

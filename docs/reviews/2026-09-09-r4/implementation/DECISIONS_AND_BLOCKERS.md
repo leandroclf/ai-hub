@@ -35,8 +35,14 @@
 - A capacidade foi conectada ao `SUBMIT`, ao `STATUS` de polling e à
   reconciliação. Nesta iteração, o Pulsar também passou a adquirir `FETCH` no
   domínio isolado `r4-webhook`; o lease precisa cobrir o timeout e uma margem
-  de segurança antes do POST. Destinos de webhook agora são congelados na
-  admissão e transportados no fato final.
+  de segurança antes do POST. Todos esses caminhos validam o fencing antes da
+  autenticação e do I/O externo; uma lease expirada não autoriza novo efeito.
+  Destinos de webhook agora são congelados na admissão e transportados no fato
+  final.
+- Resultados que excedem o limite inline agora atravessam a autoridade de
+  objetos: upload streaming como `ORPHAN`, `FileRef` na representação final e
+  vinculação de retenção após o commit. A falha pós-commit permanece
+  reconciliável e não reabre o protocolo.
 - A custódia financeira preserva a distinção entre estado operacional e
   incidência: `SUBMIT` aceito externamente continua `UNKNOWN` para a execução,
   mas chega ao Libra como `SUBMITTED`; todo `STATUS` conservado carrega seu
@@ -54,9 +60,9 @@
   tarefas funcionais nem os 25 itens herdados de R4-04.
 - Permanecem sem homologação provedores comerciais, AWS regional, decisões
   comerciais/SLO externas e a matriz integral de 201 requisitos/732 cenários.
-- O executor DAG ligado ao atendimento, fencing geral de efeitos UNKNOWN,
-  budgets integrais de I/O, resultados de FileRefs no adapter real, projeções
-  de catálogo em escala e telemetria bilateral continuam sem demonstração
-  integral.
+- A jornada HTTP do executor DAG com catálogo/provedor real, budgets integrais
+  de I/O, fencing de efeitos cujo `provider_request_id` já foi perdido,
+  políticas produtivas de retenção, projeções de catálogo em escala e
+  telemetria bilateral continuam sem demonstração integral.
 - Gaps arquiteturais remanescentes estão listados em `EXECUTION-2026-09-10.md`
   e não foram reclassificados como PASS por inferência.
