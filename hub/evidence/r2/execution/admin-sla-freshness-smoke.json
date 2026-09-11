@@ -2,6 +2,12 @@
   {
     "check": "Admin SLA panel shows generated time, watermark and observed lag",
     "status": "PASS",
-    "freshness": "Atualização da projeção: 2026-09-11T14:11:15.677653678Z · watermark: 2026-09-10T20:39:58.63041Z · atraso observado: 63077.047s. Dados atrasados continuam identificados; não significam ausência de violações."
+    "freshness": "Atualização da projeção: 2026-09-11T14:26:31.073471144Z · watermark: 2026-09-10T20:39:58.63041Z · atraso observado: 63992.443s. Dados atrasados continuam identificados; não significam ausência de violações."
+  },
+  {
+    "check": "Admin SLA export is limited to authorized filters and records an audit action",
+    "status": "PASS",
+    "filename": "sla-report.csv",
+    "exportStatus": "Exportação limitada a 100 registros e auditada pela autoridade."
   }
 ]

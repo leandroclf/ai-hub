@@ -54,6 +54,20 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
   catch(e){setError(String(e))}finally{setBusy(false)}
  }
 
+ async function exportSLA(){
+  if(kind!=='sla-reports'||id||busy)return;
+  setBusy(true);setError('');setMessage('');
+  try{
+   const params=new URLSearchParams(query);params.set('tenant_id',tenant);params.set('limit','100');
+   const report=await api<RecordData>(`/admin/v1/sla-reports/export?${params}`);
+   const content=String(report.csv||'');
+   const blob=new Blob([content],{type:'text/csv;charset=utf-8'});
+   const url=URL.createObjectURL(blob);const link=document.createElement('a');
+   link.href=url;link.download=String(report.filename||'sla-report.csv');link.click();URL.revokeObjectURL(url);
+   setMessage(`Exportação limitada a ${String(report.rows||0)} registros e auditada pela autoridade.`);
+  }catch(e){setError(String(e))}finally{setBusy(false)}
+ }
+
  return <section>
   <h2>{title}</h2>
   {error&&<p role="alert">{error}</p>}
@@ -65,7 +79,7 @@ export default function OperationsPage({kind,tenant,principal}:{kind:string;tena
    <label>De<input name="from" type="date" defaultValue={query.get('from')||''}/></label>
    <label>Até<input name="to" type="date" defaultValue={query.get('to')||''}/></label>
    {requiresReadReason&&<label>Finalidade da consulta<input name="read_reason" minLength={8} defaultValue={query.get('reason')||''}/></label>}
-   <button disabled={busy}>Consultar</button><button type="button" onClick={()=>setRefresh(value=>value+1)}>Atualizar</button>
+   <button disabled={busy}>Consultar</button><button type="button" onClick={()=>setRefresh(value=>value+1)}>Atualizar</button>{kind==='sla-reports'&&!id&&<button type="button" disabled={busy} onClick={()=>void exportSLA()}>Exportar CSV limitado</button>}
   </form>
   {kind==='sla-reports'&&freshness&&<p role="status">Atualização da projeção: {String(freshness.generated_at||'')} · watermark: {String(freshness.watermark_at||'')} · atraso observado: {Number(freshness.watermark_lag_seconds||0).toFixed(3)}s. Dados atrasados continuam identificados; não significam ausência de violações.</p>}
   {!id&&<div className="table-scroll" tabIndex={0}>

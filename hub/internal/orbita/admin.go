@@ -3,8 +3,10 @@ package orbita
 import (
 	"database/sql"
 	"encoding/base64"
+	"encoding/csv"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -279,7 +281,14 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		auth.Error(w, 422, "reason_required")
 		return
 	}
-	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa,reason) VALUES($1,$2,'sla-reports','READ',$3,$4)", p.Subject, tenant, p.MFA, reason); err != nil {
+	id := strings.Trim(strings.TrimPrefix(r.URL.Path, "/admin/v1/sla-reports"), "/")
+	queryID := id
+	auditAction := "READ"
+	if id == "export" {
+		auditAction = "EXPORT"
+		queryID = ""
+	}
+	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa,reason) VALUES($1,$2,'sla-reports',$3,$4,$5)", p.Subject, tenant, auditAction, p.MFA, reason); err != nil {
 		auth.Error(w, 503, "audit_unavailable")
 		return
 	}
@@ -315,16 +324,18 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		}
 		after = c.ID
 	}
-	id := strings.Trim(strings.TrimPrefix(r.URL.Path, "/admin/v1/sla-reports"), "/")
 	if id != "" {
 		after = ""
 		limit = 1
+		if id == "export" {
+			limit = 100
+		}
 	}
 	rows, err := h.store.db.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,accepted_at,client_deadline_at,finalized_at,final_event_id,config_snapshot
 		FROM protocols
 		WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND ($3='' OR protocol_id::text=$3) AND protocol_id::text>$4
 		  AND ($5='' OR accepted_at>=NULLIF($5,'')::date) AND ($6='' OR accepted_at<NULLIF($6,'')::date+interval '1 day')
-		ORDER BY protocol_id::text LIMIT $7`, tenant, status, id, after, from, to, limit+1)
+		ORDER BY protocol_id::text LIMIT $7`, tenant, status, queryID, after, from, to, limit+1)
 	if err != nil {
 		auth.Error(w, 503, "sla_reports_unavailable")
 		return
@@ -396,6 +407,51 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 	}
 	if err := rows.Err(); err != nil {
 		auth.Error(w, 503, "sla_reports_unavailable")
+		return
+	}
+	if id == "export" {
+		if len(items) > limit {
+			items = items[:limit]
+		}
+		var output strings.Builder
+		writer := csv.NewWriter(&output)
+		if err := writer.Write([]string{"protocol_id", "tenant_id", "application_id", "status", "accepted_at", "client_deadline_at", "provider_sla_seconds", "provider_sla_policy", "provider_sla_outcome", "provider_deadline_at", "observed_at", "client_sla_breached", "provider_sla_breached", "finalized_at", "final_event_id"}); err != nil {
+			auth.Error(w, 503, "sla_export_unavailable")
+			return
+		}
+		value := func(raw any) string {
+			switch typed := raw.(type) {
+			case sql.NullTime:
+				if !typed.Valid {
+					return ""
+				}
+				return typed.Time.UTC().Format(time.RFC3339Nano)
+			case sql.NullString:
+				if !typed.Valid {
+					return ""
+				}
+				return typed.String
+			default:
+				return fmt.Sprint(raw)
+			}
+		}
+		for _, item := range items {
+			row := make([]string, 0, 15)
+			for _, field := range []string{"protocol_id", "tenant_id", "application_id", "status", "accepted_at", "client_deadline_at", "provider_sla_seconds", "provider_sla_policy", "provider_sla_outcome", "provider_deadline_at", "observed_at", "client_sla_breached", "provider_sla_breached", "finalized_at", "final_event_id"} {
+				row = append(row, value(item[field]))
+			}
+			if err := writer.Write(row); err != nil {
+				auth.Error(w, 503, "sla_export_unavailable")
+				return
+			}
+		}
+		writer.Flush()
+		if err := writer.Error(); err != nil {
+			auth.Error(w, 503, "sla_export_unavailable")
+			return
+		}
+		w.Header().Set("Cache-Control", "no-store")
+		writeJSON(w, 200, map[string]any{"filename": "sla-report.csv", "content_type": "text/csv", "csv": output.String(), "rows": len(items), "limited": true, "max_rows": 100, "tenant_id": tenant})
 		return
 	}
 	if id != "" {

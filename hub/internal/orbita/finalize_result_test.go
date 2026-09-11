@@ -239,5 +239,27 @@ func TestFinalizeMonitorOnlyPreservesClientSuccessAndReportsProviderBreach(t *te
 	if report.Status != string(StatusSucceeded) || report.ProviderSLAPolicy != "MONITOR_ONLY" || report.ProviderSLAOutcome != "MONITOR_ONLY_BREACH" || !report.ProviderSLABreached || report.ClientSLABreached {
 		t.Fatalf("monitor-only report lost the bilateral distinction: %+v", report)
 	}
+	exportRequest := httptest.NewRequest(http.MethodGet, "/admin/v1/sla-reports/export?tenant_id="+tenant+"&status=SUCCEEDED&limit=100", nil).WithContext(auth.WithPrincipal(ctx, principal))
+	exportResponse := httptest.NewRecorder()
+	mux.ServeHTTP(exportResponse, exportRequest)
+	if exportResponse.Code != http.StatusOK {
+		t.Fatalf("SLA export status=%d body=%s", exportResponse.Code, exportResponse.Body.String())
+	}
+	var exported struct {
+		CSV     string `json:"csv"`
+		Rows    int    `json:"rows"`
+		Limited bool   `json:"limited"`
+		MaxRows int    `json:"max_rows"`
+	}
+	if err := json.Unmarshal(exportResponse.Body.Bytes(), &exported); err != nil {
+		t.Fatal(err)
+	}
+	if exported.Rows != 1 || !exported.Limited || exported.MaxRows != 100 || !strings.Contains(exported.CSV, p.ProtocolID) || !strings.Contains(exported.CSV, "provider_sla_outcome") {
+		t.Fatalf("SLA export perdeu recorte ou cabeçalho: %+v", exported)
+	}
+	var exportAudits int
+	if err := db.QueryRow("SELECT count(*) FROM protocol_access_audit WHERE subject=$1 AND requested_tenant=$2 AND resource='sla-reports' AND action='EXPORT'", principal.Subject, tenant).Scan(&exportAudits); err != nil || exportAudits != 1 {
+		t.Fatalf("SLA exportação não foi auditada: count=%d err=%v", exportAudits, err)
+	}
 	t.Log("atraso do provedor sob MONITOR_ONLY preservou SUCCEEDED do cliente e o painel separou MONITOR_ONLY_BREACH de client_sla_breached")
 }
