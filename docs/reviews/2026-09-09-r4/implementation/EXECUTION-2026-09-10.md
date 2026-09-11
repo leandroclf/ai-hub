@@ -11,7 +11,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Catálogo versionado | `node hub/deploy/r2/tests/catalog-seed.mjs` | PASS; seed idempotente via `admin/v1`, validação/publicação com `If-Match`, qualificação/célula sintéticas somente no fixture autorizado |
 | Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789123114890`) |
 | Callback | Carga acima + testes focados de inbox/validação terminal | PASS parcial; callback concluiu, ingress key/capability inválidos retornaram 401, deduplicação por capability, quota e retenção têm implementação e testes focados; cenários externos completos ainda abertos |
-| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, erro de JSON inválido sem falso sucesso, editor de contrato REST declarativo, filtro local de referências, criação/leitura durável, editor de produto com mapeamento, SLA, redelivery administrativo com recibo/auditoria durável, destinos versionados, preparação de ajuste financeiro com bloqueio de autoaprovação, navegação, logout, HTTP 401 pós-logout sem credencial, storage sem sessão persistida, viewport móvel sem overflow e `tenant_reader` sem formulário de escrita |
+| Portal Playwright | `node hub/deploy/r2/tests/browser-smoke.mjs` | PASS; OIDC PKCE, senha+OTP, erro de JSON inválido sem falso sucesso, editor de contrato REST declarativo, filtro local de referências, criação/leitura durável, editor de produto com mapeamento, SLA, redelivery administrativo com recibo/auditoria durável, reconciliação segura sem correlação externa, destinos versionados, preparação de ajuste financeiro com bloqueio de autoaprovação, navegação, logout, HTTP 401 pós-logout sem credencial, storage sem sessão persistida, viewport móvel sem overflow e `tenant_reader` sem formulário de escrita |
 | Entrega webhook com capacidade | `bash hub/deploy/r2/tests/webhook-capacity-runtime.sh` | PASS; worker Pulsar real entregou no sink local e encerrou o permit `r4-webhook` sem concessão aberta ou obrigação pendente; fixture removida ao final |
 | Incidência financeira integrada | `bash hub/deploy/r2/tests/finance-runtime-proof.sh` após carga autorizada | PASS; `SUBMITTED`/`STATUS` com `attempt_id`, 12 fatos (`cost=4`, `revenue=8`), inbox=26, journal balanceado por moeda e zero quarentena de incidência inválida; log em `hub/evidence/r2/execution/finance-runtime-latest.log` |
 | Browser Harness | `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh` | PASS-EXPLORATORY; 16 rotas em viewport 390×844; descoberta automática do daemon headless requer CDP explícito |
@@ -190,6 +190,14 @@ serializar `destination_id`/`destination_version` nulos como `null`, em vez de
 falhar com 503 ao ler entregas legadas sem destino versionado. O gate prova a
 transição administrativa e a auditoria, não uma entrega posterior em endpoint
 comercial.
+
+Na mesma jornada, a reconciliação selecionou um protocolo local cuja operação
+estava `UNKNOWN` sem `provider_request_id`. O portal enviou a justificativa,
+recebeu HTTP 409 com a mensagem pública de ausência de correlação e a consulta
+independente confirmou a solicitação `REJECTED` e o evento
+`RECONCILIATION_REJECTED` auditado. Nenhum replay de provedor foi executado;
+isso qualifica a disposição segura do caso incerto e não a recuperação positiva
+quando uma correlação externa perdida é posteriormente encontrada.
 
 O cliente HTTP administrativo também passou a rejeitar corpo vazio, JSON
 malformado ou tipo JSON incompatível, inclusive em respostas HTTP 200. O smoke
