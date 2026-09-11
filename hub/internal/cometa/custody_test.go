@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -356,6 +358,157 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 	if err = db.QueryRow("SELECT count(*) FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain).Scan(&permits); err != nil || permits != 1 {
 		t.Fatalf("capacity permit count=%d error=%v", permits, err)
 	}
+}
+
+func TestPostgresValidResponseCommitFailureLeavesRecoverableObligation(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	t.Setenv("CELL_ID", "r2-cell-a")
+	t.Setenv("ENVIRONMENT", "local")
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	db.SetMaxOpenConns(8)
+	ctx := context.Background()
+	store := NewStore(db)
+	operationID := idgen.New()
+	triggerName := "qualification_fail_commit_" + strings.ReplaceAll(operationID, "-", "")
+	functionName := triggerName + "_fn"
+	targetsTable := triggerName + "_targets"
+	_, err = db.Exec(fmt.Sprintf(`CREATE TABLE %s (operation_id uuid PRIMARY KEY);
+CREATE FUNCTION %s() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.state = 'SUCCEEDED' AND EXISTS (SELECT 1 FROM %s WHERE operation_id = NEW.operation_id) THEN
+        RAISE EXCEPTION 'qualification: terminal commit failure';
+    END IF;
+    RETURN NEW;
+END
+$$;
+CREATE CONSTRAINT TRIGGER %s AFTER UPDATE ON operations
+DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION %s();`, targetsTable, functionName, targetsTable, triggerName, functionName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = db.Exec("INSERT INTO "+targetsTable+" (operation_id) VALUES ($1)", operationID); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		_, _ = db.Exec("DROP TRIGGER IF EXISTS " + triggerName + " ON operations")
+		_, _ = db.Exec("DROP FUNCTION IF EXISTS " + functionName + "()")
+		_, _ = db.Exec("DROP TABLE IF EXISTS " + targetsTable)
+		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM provider_receipts WHERE operation_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM attempts WHERE operation_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM operations WHERE operation_id=$1", operationID)
+	})
+
+	provider := providersim.NewServer()
+	providerMux := http.NewServeMux()
+	provider.Routes(providerMux)
+	providerHTTP := httptest.NewServer(providerMux)
+	defer providerHTTP.Close()
+	providerURL, _ := url.Parse(providerHTTP.URL)
+	t.Setenv("EGRESS_HTTP_ORIGINS", providerHTTP.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", providerURL.Host+"=127.0.0.1/32")
+
+	tenant := "commit-recovery-" + idgen.New()
+	bindingID := "binding-" + idgen.New()
+	catalog := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/token" {
+			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "fixture-workload", "expires_in": 60, "token_type": "Bearer"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(atlasclient.CredentialBinding{BindingID: bindingID, TenantID: tenant, SecretRef: "vault://fixture", SecretVersion: "v1", CredentialMode: "SHARED_HUB"})
+	}))
+	defer catalog.Close()
+
+	account, _ := json.Marshal(map[string]any{"base_url": providerHTTP.URL, "provider_mode": "sync", "auth_type": "NONE"})
+	snapshot := atlas.OfferSnapshot{
+		Account: atlas.Resource{ID: "account", Data: account},
+		Binding: atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)},
+		Target:  atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)},
+	}
+	config, _ := json.Marshal(snapshot)
+	cmd := dispatch.Command{
+		CommandID: operationID, ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app-a", CellID: "r2-cell-a",
+		ProviderAccountID: "account", DispatchMode: dispatch.DispatchDirect, ConfigSnapshot: config,
+		RequestBody: map[string]any{"marker": "valid-external-response"}, StepDeadline: time.Now().Add(time.Minute),
+	}
+	secretPath := t.TempDir() + "/secret"
+	if err = os.WriteFile(secretPath, []byte("fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("OIDC_TOKEN_URL", catalog.URL+"/token")
+	t.Setenv("WORKLOAD_CLIENT_ID", "fixture")
+	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", secretPath)
+
+	executor := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: dropFixtureVault{}})
+	first := executor.Execute(ctx, cmd)
+	if first.Kind != dispatch.FactUnknown || !first.Durable || first.ProviderRequestID == "" || first.EvidenceID == "" {
+		t.Fatalf("falha de commit não virou obrigação UNKNOWN durável: %+v", first)
+	}
+	var state, providerRequestID, source string
+	var storedResult []byte
+	if err = db.QueryRow("SELECT state,COALESCE(provider_request_id,''),COALESCE(result,'null') FROM operations WHERE operation_id=$1", operationID).Scan(&state, &providerRequestID, &storedResult); err != nil {
+		t.Fatal(err)
+	}
+	if state != string(StateUnknown) || providerRequestID != first.ProviderRequestID {
+		t.Fatalf("obrigação não reteve correlação externa: state=%s provider_request_id=%s result=%s", state, providerRequestID, storedResult)
+	}
+	if err = db.QueryRow("SELECT source FROM operation_receipts WHERE evidence_id=$1", first.EvidenceID).Scan(&source); err != nil {
+		t.Fatal(err)
+	}
+	if source != "PROVIDER_RECOVERY" {
+		t.Fatalf("origem da obrigação inesperada: %s", source)
+	}
+	var receipts, outbox int
+	if err = db.QueryRow("SELECT count(*) FROM provider_receipts WHERE operation_id=$1", operationID).Scan(&receipts); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1", operationID).Scan(&outbox); err != nil {
+		t.Fatal(err)
+	}
+	if receipts != 1 || outbox != 0 {
+		t.Fatalf("custódia parcial indevida: provider_receipts=%d outbox=%d", receipts, outbox)
+	}
+
+	var effectsBefore struct {
+		Effects int `json:"effects"`
+	}
+	response, err := providerHTTP.Client().Get(providerHTTP.URL + "/__qualification/effects")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = json.NewDecoder(response.Body).Decode(&effectsBefore); err != nil {
+		response.Body.Close()
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	second := executor.Execute(ctx, cmd)
+	if second.Kind != dispatch.FactUnknown || !second.Durable || second.ProviderRequestID != first.ProviderRequestID || second.EvidenceID != first.EvidenceID {
+		t.Fatalf("reentrega alterou a obrigação ou sua evidência: first=%+v second=%+v", first, second)
+	}
+	var effectsAfter struct {
+		Effects int `json:"effects"`
+	}
+	response, err = providerHTTP.Client().Get(providerHTTP.URL + "/__qualification/effects")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = json.NewDecoder(response.Body).Decode(&effectsAfter); err != nil {
+		response.Body.Close()
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	if effectsBefore.Effects != 1 || effectsAfter.Effects != effectsBefore.Effects {
+		t.Fatalf("reentrega disparou novo submit: antes=%d depois=%d", effectsBefore.Effects, effectsAfter.Effects)
+	}
+	t.Logf("resposta externa válida + commit terminal falho: UNKNOWN reconciliável, correlação/recibo preservados, zero outbox e zero novo POST (provider_request_id=%s)", providerRequestID)
 }
 
 type dropFixtureVault struct{}

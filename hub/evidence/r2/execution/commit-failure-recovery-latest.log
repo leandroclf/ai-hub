@@ -1,0 +1,15 @@
+R2-EXE-04-S03 — resposta válida recebida e falha no commit terminal
+Data: 2026-09-11
+Ambiente: PostgreSQL local migrado + provedor HTTP provider-sim independente
+Teste: TestPostgresValidResponseCommitFailureLeavesRecoverableObligation
+
+Resultado observado:
+- o provider-sim recebeu exatamente 1 POST e respondeu SUCCEEDED com provider_request_id;
+- trigger PostgreSQL diferido forçou a falha do commit terminal;
+- Cometa preservou uma obrigação PROVIDER_RECOVERY em UNKNOWN, com provider_request_id e provider_receipt bruto;
+- não houve operation.observed/outbox para o fato terminal;
+- uma segunda execução da mesma command_id retornou a mesma evidência UNKNOWN;
+- o contador externo permaneceu em 1, sem novo submit automático.
+
+Oráculo: PASS_INTEGRADO_LOCAL
+Limitação: o ensaio usa PostgreSQL e provider-sim locais; reconciliação comercial/regional permanece fora desta qualificação.

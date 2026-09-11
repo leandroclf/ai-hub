@@ -73,6 +73,7 @@ R2-EXE-03-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresExecut
 R2-EXE-03-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestPostgresSubmissionLeaseFencesStaleOwner
 R2-EXE-04-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody conserva result_marker distinto do input e TestPostgresProviderReceiptIsSeparateFromNormalizedResult
 R2-EXE-04-S02;PASS_UNITARIO;invalid-provider-output-unit.json — normalização rejeitou resposta sem campo exigido pelo output schema; fluxo HTTP externo permanece fora desta prova unitária
+R2-EXE-04-S03;PASS_INTEGRADO_LOCAL;commit-failure-recovery-latest.log — resposta SUCCEEDED válida seguida de falha de commit deixou obrigação UNKNOWN reconciliável, preservou correlação/recibo, não publicou outbox e não repetiu o submit
 R2-EXE-05-S01;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody não confirma mensagem sem finalização durável
 R2-EXE-05-S02;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody deduplica inbox após reentrega
 R2-EXE-05-S03;PASS_INTEGRADO;r2-int-exe-qualification.log — TestOperationFactPostgresCustody quarentena tipo desconhecido e preserva identidade

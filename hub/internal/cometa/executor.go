@@ -399,6 +399,10 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	defer cancel()
 	durable, err := e.store.ConserveObservation(saveCtx, cmd, response, "PROVIDER", operationID)
 	if err != nil {
+		recovery, recoveryErr := e.store.ConserveRecoveryObligation(saveCtx, cmd, response, "PROVIDER_RECOVERY")
+		if recoveryErr == nil {
+			return recovery
+		}
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "custody_unavailable"}
 	}
 	return durable

@@ -48,7 +48,7 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.4 Resultado externo válido e durável
+- [x] 2.4 Resultado externo válido e durável
   - Objective: Entregar o comportamento R2-EXE-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-04, EXE-14, DAD-04, COM-06.
   - Likely files/components: `hub/internal/cometa/executor.go`; `hub/internal/cometa/store.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
@@ -113,7 +113,7 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.4 Qualificar R2-EXE-04 com oráculos independentes
+- [x] 3.4 Qualificar R2-EXE-04 com oráculos independentes
   - Objective: Executar R2-EXE-04-S01, R2-EXE-04-S02, R2-EXE-04-S03. Caso indispensável: Commit falha; esperado: Cometa não declara fato durável; mantém obrigação recuperável e sem novo submit automático.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/cometa/executor.go`; `hub/internal/cometa/store.go`.
   - Depends on: 2.4; fixtures de r2-09; dependências de integração pertinentes.

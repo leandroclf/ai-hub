@@ -382,6 +382,72 @@ func (s *Store) ConserveAcceptance(ctx context.Context, cmd dispatch.Command, pr
 	return s.conserveObservation(ctx, cmd, dispatch.Result{Kind: dispatch.FactUnknown, ProviderRequestID: providerRequestID}, "SUBMIT_ACCEPTED", true, poll, firstString(attemptID))
 }
 
+// ConserveRecoveryObligation preserva a correlação e o recibo bruto quando o
+// commit do fato terminal falha depois de o provedor já ter respondido. A
+// obrigação não publica operation.observed nem anuncia SUCCEEDED/FAILED: ela
+// deixa a operação em UNKNOWN para reconciliação posterior, sem permitir novo
+// submit automático.
+func (s *Store) ConserveRecoveryObligation(ctx context.Context, cmd dispatch.Command, observed dispatch.Result, source string) (dispatch.Result, error) {
+	if observed.ProviderRequestID == "" || len(observed.RawResponse) == 0 || !json.Valid(observed.RawResponse) {
+		return dispatch.Result{}, errors.New("recovery obligation requires provider receipt")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return dispatch.Result{}, err
+	}
+	defer tx.Rollback()
+	var state, tenant, cell string
+	var existingRaw []byte
+	err = tx.QueryRowContext(ctx, "SELECT state,tenant_id,cell_id,result FROM operations WHERE operation_id=$1 FOR UPDATE", cmd.CommandID).
+		Scan(&state, &tenant, &cell, &existingRaw)
+	if err != nil {
+		return dispatch.Result{}, err
+	}
+	if tenant != cmd.TenantID || cell != cmd.CellID {
+		return dispatch.Result{}, errors.New("recovery obligation outside scope")
+	}
+	if state == string(StateSucceeded) || state == string(StateFailed) || state == string(StateCancelled) {
+		var existing dispatch.Result
+		if len(existingRaw) == 0 || json.Unmarshal(existingRaw, &existing) != nil {
+			return dispatch.Result{}, errors.New("terminal recovery result unavailable")
+		}
+		if err = tx.Commit(); err != nil {
+			return dispatch.Result{}, err
+		}
+		return existing, nil
+	}
+	recovery := dispatch.Result{
+		CommandID:         cmd.CommandID,
+		OperationID:       cmd.CommandID,
+		ProviderRequestID: observed.ProviderRequestID,
+		Kind:              dispatch.FactUnknown,
+		Durable:           true,
+		ErrorCode:         "custody_unavailable",
+		ErrorMessage:      "resultado externo recebido; reconciliação necessária",
+		EvidenceID:        idgen.New(),
+		RawResponse:       observed.RawResponse,
+	}
+	raw, err := json.Marshal(recovery)
+	if err != nil {
+		return dispatch.Result{}, err
+	}
+	if _, err = tx.ExecContext(ctx, "INSERT INTO operation_receipts(evidence_id,operation_id,tenant_id,source,body) VALUES($1,$2,$3,$4,$5)", recovery.EvidenceID, cmd.CommandID, cmd.TenantID, source, raw); err != nil {
+		return dispatch.Result{}, err
+	}
+	if err = insertProviderReceiptTx(ctx, tx, cmd, recovery, source); err != nil {
+		return dispatch.Result{}, err
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE operations
+		SET state=$2,result=$3,evidence_id=$4,provider_request_id=$5,updated_at=clock_timestamp()
+		WHERE operation_id=$1`, cmd.CommandID, string(StateUnknown), raw, recovery.EvidenceID, recovery.ProviderRequestID); err != nil {
+		return dispatch.Result{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		return dispatch.Result{}, err
+	}
+	return recovery, nil
+}
+
 func firstString(values []string) string {
 	if len(values) == 0 {
 		return ""
