@@ -291,9 +291,14 @@ e a ausência de polling nessa consulta, mas não substitui homologação extern
 O ensaio complementar `webhook-retry-representation-smoke.json` provocou 500
 na primeira tentativa e 204 na segunda. O PostgreSQL manteve uma única entrega
 com duas tentativas, ambas com os mesmos bytes, hash, evento e delivery ID; o
-servidor independente verificou o HMAC de cada requisição. O cenário
-R2-EXE-08-S01 permanece parcial porque a composição da mesma jornada POST final,
-GET público e duas reentregas ainda precisa ser executada em um único oráculo.
+servidor independente verificou o HMAC de cada requisição. A nova prova
+`representation-runtime-latest.json` fechou a composição pública em um único
+oráculo: Chromium/OIDC publicou o destino versionado de `app-acme`, o POST SYNC
+retornou `SUCCEEDED`, o GET devolveu exatamente o mesmo corpo e o Pulsar enviou
+ao `webhook-sink` a representação com o mesmo hash (`096bd053676587e1b98b74683f91cff44432ebd37eb7bcafeaa3c03dd2517cd0`).
+O destino passou para v4 com timeout de 2 s para respeitar o lease qualificado
+do domínio `r4-webhook`; as versões anteriores permaneceram preservadas.
+R2-EXE-08-S01 passa a `PASS_INTEGRADO` nesta rodada local.
 
 O teste `result-reconciliation-smoke.json` também simulou a lacuna entre o
 upload concluído e o commit do protocolo deixando a referência em
