@@ -1,0 +1,4 @@
+=== RUN   TestPublicProtocolLookupSurvivesTenantCellRelocation
+--- PASS: TestPublicProtocolLookupSurvivesTenantCellRelocation (0.03s)
+PASS
+ok  	ai-hub/hub/internal/orbita	0.034s

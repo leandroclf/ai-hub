@@ -56,6 +56,10 @@ reprodutível.
   HPA/PDB/topology spread estão presentes e o overlay ppd fixa envelope 3→6.
   O ensaio de backlog real sob CPU baixa e o provisionamento cloud permanecem
   pendentes.
+- Realocação de tenant: PASS integrado local; a consulta pública resolveu por
+  tenant/UUID tanto o protocolo histórico da célula A quanto o novo da B após
+  a mudança de placement, ocultou protocolo de outro tenant e manteve o fence
+  da rota interna contra leitura pela célula errada.
 - RLS runtime: PASS nos domínios control/core/finance com prova negativa
   cross-tenant.
 - Restore/reconciliation com sufixo `r4_sequence_20260910c`: PASS para bancos
