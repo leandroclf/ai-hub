@@ -1,0 +1,14 @@
+{
+  "check": "Consulta pública serve estados pendente e expirado pela custódia local",
+  "status": "PASS",
+  "command": "R2_CORE_TEST_DSN=<fixture> go test -tags=e2e -count=1 ./internal/orbita -run '^TestPublicLookupUsesLocalPendingAndExpiredRepresentation$' -v",
+  "oracle": {
+    "pending_http_status": 200,
+    "pending_state": "WAITING_PROVIDER",
+    "pending_fictitious_success": false,
+    "expired_http_status": 200,
+    "expired_body": "bytes finais persistidos, sem regeneração",
+    "database": "PostgreSQL 16"
+  },
+  "limitation": "Fixture local; a ausência de polling foi observada no handler público, sem homologação de provedor comercial."
+}

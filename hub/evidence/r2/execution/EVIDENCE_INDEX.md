@@ -55,6 +55,7 @@
 | `file-upload-submit-smoke.json` | R2-DAD-01-S01; API Orbita + LocalStack: `PASS`; upload direto, hash/READY, admissão com `file_ref` e pin de retenção durável | Fixture OIDC, PostgreSQL e LocalStack locais; execução externa retornou 504 após aceite, preservado com protocolo consultável |
 | `late-success-expiry-smoke.json` | R2-EXE-06-S01; teste PostgreSQL: `PASS`; resultado tardio foi arbitrado como `EXPIRED/SLA_EXCEEDED` sem resultado de provedor | Fixture local; não substitui ensaio de relógio distribuído/regional |
 | `invalid-provider-output-unit.json` | R2-EXE-04-S02; teste unitário Cometa: `PASS_UNITARIO`; resposta sem campo exigido foi rejeitada sem sucesso fictício | Não substitui a execução HTTP do adapter/provedor |
+| `public-representation-state-smoke.json` | R2-EXE-08-S03; teste PostgreSQL/HTTP público: `PASS`; estados `WAITING_PROVIDER` e `EXPIRED` retornaram 200 pela custódia local, sem sucesso fictício e sem regenerar bytes finais | Fixture local; ausência de polling foi observada no handler, sem homologação de provedor comercial |
 | Browser Harness | `PASS-EXPLORATORY`: sessão OIDC/OTP qualificada, 16 rotas, viewport 390×844, sem overflow | Exploração; não bloqueia CI |
 
 ## Atualização operacional posterior — 11/09/2026

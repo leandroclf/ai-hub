@@ -268,3 +268,13 @@ requisitos/cenários. O perfil Kind independente fecha o gate local de
 dependências e endpoints; não substitui IaC/HA regional dos ambientes remotos.
 Esses itens continuam marcados como abertos no backlog R4 e não foram
 convertidos em PASS por inferência a partir desta execução local.
+
+### Representação pública pendente/expirada — 11/09/2026
+
+O teste `public-representation-state-smoke.json` exercitou o handler HTTP
+público contra PostgreSQL real com um protocolo `WAITING_PROVIDER` e outro
+`EXPIRED`. A consulta pendente retornou HTTP 200 com o estado contratado e sem
+`SUCCEEDED`; a consulta expirada retornou HTTP 200 com exatamente os bytes da
+representação final persistida, incluindo `SLA_EXCEEDED`. O ensaio não possui
+cliente de provedor no caminho do handler, portanto comprova a autoridade local
+e a ausência de polling nessa consulta, mas não substitui homologação externa.
