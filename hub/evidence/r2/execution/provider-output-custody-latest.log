@@ -1,0 +1,20 @@
+AI Hub R4 — custódia de saída do provedor
+SHA de execução: e9c0c35
+
+Migration aplicada pelo serviço migrador oficial:
+  core/0042_provider_receipts.sql
+  core/0043_provider_receipt_bytes.sql
+
+Comando:
+  R2_CORE_TEST_DSN=postgres://hub:***@127.0.0.1:15432/hub_core?sslmode=disable \
+    go test -count=1 ./internal/cometa -run ProviderReceipt -v
+
+Resultado:
+  TestPostgresProviderReceiptIsSeparateFromNormalizedResult — PASS
+  provider_receipts preserva bytes recebidos e body_sha256; operation_receipts
+  conserva somente a resposta normalizada e não contém o detalhe bruto.
+
+Cobertura de caminho:
+  submit síncrono, polling, callback autenticado e reconciliação atribuem a
+  resposta normalizada ao contrato; recibos brutos ficam fora do JSON de
+  transporte por RawResponse json:"-".
