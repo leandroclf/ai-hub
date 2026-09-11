@@ -1,0 +1,9 @@
+AI Hub R2 — fallback seletivo do cache Redis
+date=2026-09-11
+environment=local-compose-postgres-fixture-and-local-httptest
+secrets=omitted
+
+command=R2_CORE_TEST_DSN=<fixture> go test -race -count=1 ./internal/providerauth -run TestOAuthL1RemainsUsableWhenResolverBecomesUnavailable
+result=PASS
+observed=após a primeira emissão, a indisponibilidade do resolver Redis não bloqueou a reutilização limitada do token L1; o endpoint OAuth não recebeu uma segunda emissão e o material revogado permaneceu fora do caminho saudável
+scope=teste de domínio com PostgreSQL/HTTP de laboratório; não equivale a Redis gerenciado ou provedor comercial

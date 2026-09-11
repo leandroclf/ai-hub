@@ -107,6 +107,8 @@ R2-DAD-05-S02;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconci
 R2-OPE-01-S03;PASS_INTEGRADO_LOCAL;offline-startup.json — Orbita e Cometa iniciam prontos com broker e Redis fora do perfil opcional
 R2-OPE-09-S01;PASS_INTEGRADO_LOCAL;slo-load-latest.json — 30 admissões ASYNC e 30 GETs autenticados, payload 59989 bytes, concorrência 5, p95/p99 dentro das metas propostas
 R2-OPE-06-S01;PASS_INTEGRADO_LOCAL;broker-outage-runtime-latest.json — localstack indisponível, Órbita/Cometa recriados prontos, SYNC/GET SUCCEEDED e broker restaurado; reconciliação local fechou somente a fixture sem efeito
+R2-OPE-06-S02;PASS_UNITARIO;redis-l1-fallback-latest.log — TestOAuthL1RemainsUsableWhenResolverBecomesUnavailable reutilizou o token L1 sem nova emissão quando o resolver Redis ficou indisponível
+R2-OPE-06-S03;PASS_INTEGRADO_LOCAL;authoritative-outage-runtime-latest.json — PostgreSQL parado produziu 503 admission_unavailable sem protocolo; a mesma chave após recuperação produziu um único protocolo SUCCEEDED
 R2-OPE-07-S02;PARCIAL_INTEGRADO;observability-alert-latest.log + observability-alert-runtime-latest.log — três alertas Prometheus, runbooks e montagem Kind resolvidos; Alloy fora disparou HubTelemetryDropped e foi recuperado, mas exercício live de outbox/DLQ/SLA ainda não foi executado
 R2-OPE-02-S01;PASS_INTEGRADO_LOCAL;kind-continuity-latest.log — bootstrap independente aplica dependências cluster-owned, workloads, UI, gateway e Jobs de migração
 R2-OPE-02-S02;PARCIAL_ESTRUTURAL;environment-boundary-latest.log — overlays usam namespaces distintos e referências de segredos sem materialização; ensaio cross-environment com IdP/credencial real permanece pendente

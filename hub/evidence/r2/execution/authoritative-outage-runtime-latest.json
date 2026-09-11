@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "profile": "r2-ope-06-s03-authoritative-outage",
+  "key": "r2-ope-06-s03-authority-1789151304059",
+  "outage": {
+    "postgres_stopped": true,
+    "http_status": 503,
+    "code": "admission_unavailable",
+    "rejected_without_authority": true,
+    "response": {
+      "correlation_id": "01a091ba-5c35-79df-8836-c33aec5fcb34",
+      "error": "admission_unavailable",
+      "message": "nao foi possivel verificar o aceite; tente novamente com a mesma chave"
+    }
+  },
+  "recovery": {
+    "postgres_healthy": true,
+    "retry_http_status": 202,
+    "response": {
+      "mode": "ASYNC",
+      "protocol_id": "01a091ba-c109-7379-aa86-ac31da47476f",
+      "result_version": 0,
+      "status": "ACCEPTED"
+    },
+    "protocol_id": "01a091ba-c109-7379-aa86-ac31da47476f",
+    "final_status": "SUCCEEDED",
+    "durable_protocol_count": 1,
+    "durable_status": "SUCCEEDED",
+    "same_idempotency_key": true
+  },
+  "postgres_restored": true,
+  "finished_at": "2026-09-11T18:28:52.195Z"
+}
