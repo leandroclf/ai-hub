@@ -16,11 +16,16 @@ type AdapterRegistry struct {
 	allowed map[string]struct{}
 }
 
+var compiledAdapters = map[string]struct{}{
+	"provider-sim":       {},
+	"synthetic-provider": {},
+}
+
 func NewAdapterRegistry(ids ...string) *AdapterRegistry {
 	r := &AdapterRegistry{allowed: map[string]struct{}{}}
 	for _, id := range ids {
 		id = strings.TrimSpace(id)
-		if id != "" {
+		if _, compiled := compiledAdapters[id]; compiled {
 			r.allowed[id] = struct{}{}
 		}
 	}
@@ -29,12 +34,13 @@ func NewAdapterRegistry(ids ...string) *AdapterRegistry {
 
 // AdapterRegistryFromEnv mantém somente fixtures explicitamente instaladas
 // quando COMETA_ADAPTERS existe. Sem configuração, os adapters embutidos da
-// referência local permanecem disponíveis para o provider-sim e seus testes;
-// um adapter comercial deve ser habilitado nominalmente no ambiente.
+// referência local permanecem disponíveis para o provider-sim e seus testes.
+// Um adapter comercial só pode ser habilitado depois de ser registrado no
+// binário; adicionar um ID na variável de ambiente não cria transporte.
 func AdapterRegistryFromEnv() *AdapterRegistry {
 	raw := strings.TrimSpace(os.Getenv("COMETA_ADAPTERS"))
 	if raw == "" {
-		return NewAdapterRegistry("provider-sim", "synthetic-provider", "generic-json-v1")
+		return NewAdapterRegistry("provider-sim", "synthetic-provider")
 	}
 	return NewAdapterRegistry(strings.Split(raw, ",")...)
 }

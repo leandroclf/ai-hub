@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -63,6 +64,7 @@ type Server struct {
 	seq        int
 	effects    int
 	httpClient *http.Client
+	apiKey     string
 	tokens     map[string]time.Time
 	stateFile  string
 }
@@ -98,6 +100,7 @@ func newServer(stateFile string) *Server {
 		ops:        make(map[string]*operation),
 		protocols:  make(map[string]string),
 		httpClient: &http.Client{Timeout: 5 * time.Second},
+		apiKey:     os.Getenv("PROVIDER_API_KEY"),
 		tokens:     make(map[string]time.Time),
 		stateFile:  stateFile,
 	}
@@ -179,6 +182,13 @@ func (s *Server) handleToken(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) authenticated(r *http.Request) bool {
+	if s.apiKey != "" {
+		for _, candidate := range []string{r.Header.Get("X-API-Key"), r.Header.Get("Authorization")} {
+			if candidate != "" && subtle.ConstantTimeCompare([]byte(candidate), []byte(s.apiKey)) == 1 {
+				return true
+			}
+		}
+	}
 	auth := r.Header.Get("Authorization")
 	if strings.HasPrefix(auth, "Basic ") {
 		raw, err := base64.StdEncoding.DecodeString(strings.TrimPrefix(auth, "Basic "))
@@ -207,7 +217,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	// Contas autenticadas enviam Basic, Bearer ou Bearer+mTLS simulado.
 	// Contas NONE continuam permitidas para preservar os cenários legados.
-	if r.Header.Get("Authorization") != "" && !s.authenticated(r) {
+	if (r.Header.Get("Authorization") != "" || r.Header.Get("X-API-Key") != "") && !s.authenticated(r) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

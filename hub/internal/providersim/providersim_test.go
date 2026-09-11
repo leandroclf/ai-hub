@@ -8,6 +8,35 @@ import (
 	"testing"
 )
 
+func TestAPIKeyAuthenticationUsesConfiguredSecret(t *testing.T) {
+	t.Setenv("PROVIDER_API_KEY", "fixture-api-key")
+	s := NewServer()
+	mux := http.NewServeMux()
+	s.Routes(mux)
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	request := func(header, value string) int {
+		req, err := http.NewRequest(http.MethodPost, ts.URL+"/v1/operations", strings.NewReader(`{"protocol_id":"api-key-fixture","mode":"sync"}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		req.Header.Set(header, value)
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		return resp.StatusCode
+	}
+	if got := request("X-API-Key", "wrong"); got != http.StatusUnauthorized {
+		t.Fatalf("wrong API key status=%d", got)
+	}
+	if got := request("X-API-Key", "fixture-api-key"); got != http.StatusOK {
+		t.Fatalf("valid API key status=%d", got)
+	}
+}
+
 func TestSubmitIsIdempotentAndExternalEffectCountedOnce(t *testing.T) {
 	s := NewServer()
 	mux := http.NewServeMux()
