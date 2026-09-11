@@ -18,6 +18,10 @@ cleanup() {
   # Aguarde o broker e reinicie somente os workers que recriam a topologia
   # local; assim a prova nunca termina deixando o Compose oficial degradado.
   "${COMPOSE[@]}" up -d --wait --wait-timeout 60 localstack >/dev/null 2>&1
+  if ! docker exec "${PROJECT}-localstack-1" awslocal secretsmanager describe-secret --secret-id r2/provider/fixture >/dev/null 2>&1; then
+    docker exec "${PROJECT}-localstack-1" awslocal secretsmanager create-secret \
+      --name r2/provider/fixture --secret-string r2-synthetic-provider-password >/dev/null 2>&1
+  fi
   "${COMPOSE[@]}" restart orbita cometa pulsar libra >/dev/null 2>&1
 }
 trap cleanup EXIT

@@ -315,7 +315,8 @@ servidor independente verificou o HMAC de cada requisição. A nova prova
 `representation-runtime-latest.json` fechou a composição pública em um único
 oráculo: Chromium/OIDC publicou o destino versionado de `app-acme`, o POST SYNC
 retornou `SUCCEEDED`, o GET devolveu exatamente o mesmo corpo e o Pulsar enviou
-ao `webhook-sink` a representação com o mesmo hash (`096bd053676587e1b98b74683f91cff44432ebd37eb7bcafeaa3c03dd2517cd0`).
+ao `webhook-sink` a representação com o mesmo hash
+(`9c0c018d96c8dc007c5931efeb1d8174ef6daabc05ae0e6c3603eff2ccc39ba6`).
 O destino passou para v4 com timeout de 2 s para respeitar o lease qualificado
 do domínio `r4-webhook`; as versões anteriores permaneceram preservadas.
 R2-EXE-08-S01 passa a `PASS_INTEGRADO` nesta rodada local.

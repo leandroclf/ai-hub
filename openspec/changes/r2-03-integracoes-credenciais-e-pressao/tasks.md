@@ -1,29 +1,32 @@
 # Tasks: Adaptadores reais, credenciais, polling, callbacks e pressão
 
-Status: **comportamentos e provas concluídos; integração/migração e fechamento permanecem abertos**. Itens sem evidência integral não são promovidos. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **comportamentos, contratos e qualificação local concluídos; migração/rollback, homologação comercial e fechamento externo permanecem abertos**. Adapters, bindings, credenciais, polling/callback e pressão têm provas locais independentes; o ambiente de produção não é promovido por inferência. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `hub/internal/cometa`; `hub/internal/providerauth/client.go`; `hub/internal/pulsar`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
   - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
+  - Evidence: `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md` e `EXECUTION-2026-09-10.md`, com fronteiras explícitas entre adapter de laboratório, provider-sim, cofre local e provedor comercial.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `hub/internal/cometa`; `hub/internal/providerauth/client.go`; `hub/internal/pulsar`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
   - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
+  - Evidence: `hub/api/openapi.yaml`, `hub/api/openapi-internal.yaml`, `hub/api/asyncapi.yaml`, `r2-rest-adapter-latest.log` e `polling-fencing-postgres-v3.log`; métodos/paths, autenticação, estados, prazos e entrega versionada foram confrontados com o contrato v1.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 1.2.
   - Validation: Aplicação em ambiente limpo e existente, rollback compatível, validação de unicidade/proveniência; não editar migration aplicada.
   - Completion criteria: Estrutura suporta as regras sem perda de histórico; para UI/qualificação, registrar explicitamente ausência de mudança de esquema quando confirmada.
+  - Evidence: migrations de catálogo/credencial existentes (`hub/migrations/control/0001_init.sql`, `0002_provider_auth.sql`, `0020_catalog_versions.sql`, `0021_catalog_qualification_capacity.sql`) e fixtures isoladas em `hub/evidence/r2/execution/`; não houve edição de migration aplicada.
 
 ## 2. Comportamentos
 

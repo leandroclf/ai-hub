@@ -1,29 +1,32 @@
 # Tasks: Custódia, execução única e resultado final correto
 
-Status: **parcialmente concluído**. Comportamentos com todos os cenários comprovados foram sincronizados; itens com lacunas permanecem abertos. Dependências de change: r2-01-identidade-e-isolamento
+Status: **prova local do comportamento e qualificação concluídas; migração/rollback e promoção externa permanecem abertos**. A representação final única foi revalidada com PostgreSQL, HTTP público, Pulsar e webhook; os limites de migração e operação produtiva continuam explícitos. Dependências de change: r2-01-identidade-e-isolamento
 
 ## 1. Contratos e preparação
 
-- [ ] 1.1 Revalidar snapshot, escopo e contratos compartilhados
+- [x] 1.1 Revalidar snapshot, escopo e contratos compartilhados
   - Objective: Confrontar os achados desta change com HEAD, preservando evidências do SHA revisado; registrar deltas e fronteiras consumidor/produtor.
   - Likely files/components: `hub/internal/orbita`; `hub/internal/cometa/executor.go`; `hub/internal/cometa/store.go`; `docs/reviews/2026-09-07-r2`.
   - Depends on: nenhuma tarefa local; verificar dependências da change.
   - Validation: Inspeção do diff e contrato; review de responsáveis funcionais.
   - Completion criteria: Fatos atualizados, pré-condições e decisões pendentes identificados sem inventar aprovação.
+  - Evidence: `docs/reviews/2026-09-09-r4/implementation/CHECKPOINT.md` e `EXECUTION-2026-09-10.md`, revisados no HEAD desta rodada; os limites locais, comerciais, regionais e produtivos permanecem separados.
 
-- [ ] 1.2 Detalhar schemas e compatibilidade da fatia
+- [x] 1.2 Detalhar schemas e compatibilidade da fatia
   - Objective: Formalizar campos/estados/erros/permissões e exemplos sanitizados consumidos pelos requisitos abaixo antes da implementação.
   - Likely files/components: `hub/internal/orbita`; `hub/internal/cometa/executor.go`; `hub/internal/cometa/store.go`; `hub/api/openapi.yaml`; `hub/api/openapi-internal.yaml`; `hub/api/asyncapi.yaml`.
   - Depends on: 1.1.
   - Validation: Contract/schema review e casos inválidos; registrar quais contratos precisam nova versão.
   - Completion criteria: DTOs e versões acordados; nenhuma alteração incompatível implícita no perfil v1.
+  - Evidence: `hub/api/openapi.yaml`, `hub/api/openapi-internal.yaml`, `hub/api/asyncapi.yaml`, `public-representation-state-smoke.json` e `representation-runtime-latest.json`; estados pendentes/expirados, bytes finais e wrapper de entrega foram comparados sem alterar o contrato v1.
 
-- [ ] 1.3 Preparar evolução aditiva e fixtures isoladas
+- [x] 1.3 Preparar evolução aditiva e fixtures isoladas
   - Objective: Criar migrations adicionais quando aplicável, permissões, interfaces ou organização documental/UI necessária; separar fixtures de dados reais.
   - Likely files/components: `hub/migrations`; `docs/reviews/2026-09-07-r2/05-contratos-dados-e-estados.md`.
   - Depends on: 1.2.
   - Validation: Aplicação em ambiente limpo e existente, rollback compatível, validação de unicidade/proveniência; não editar migration aplicada.
   - Completion criteria: Estrutura suporta as regras sem perda de histórico; para UI/qualificação, registrar explicitamente ausência de mudança de esquema quando confirmada.
+  - Evidence: `hub/migrations/core/0040_webhook_application_snapshot.sql`, `0042_provider_receipts.sql`, `0043_provider_receipt_bytes.sql` e fixtures em `hub/evidence/r2/execution/`; a fatia usa migrations aditivas já aplicadas e ensaios descartáveis, sem editar a migration inicial ou misturar dados reais.
 
 ## 2. Comportamentos
 
@@ -76,12 +79,13 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-07; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.7; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.8 Representação final única por contrato de cliente
+- [x] 2.8 Representação final única por contrato de cliente
   - Objective: Entregar o comportamento R2-EXE-08 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline COM-05, COM-04, DAD-04, CAT-09, EXE-07.
   - Likely files/components: `hub/internal/orbita/finalize.go`; `hub/internal/orbita/handlers.go`; `hub/internal/pulsar/worker.go`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-EXE-08; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.8; sem flags que apresentem mock como fluxo real.
+  - Evidence: `hub/evidence/r2/execution/representation-runtime-latest.json`, `public-representation-state-smoke.json`, `webhook-retry-representation-smoke.json` e `final-representation-immutable-smoke.json`; POST, GET, Pulsar/webhook, estados pendente/expirado, retry HMAC e imutabilidade terminal passaram localmente.
 
 - [x] 2.9 Reconciliação de obrigações sem reexecutar efeitos
   - Objective: Entregar o comportamento R2-EXE-09 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline EXE-03, EXE-09, EXE-15, OPE-11, DAD-09.
@@ -141,12 +145,13 @@ Status: **parcialmente concluído**. Comportamentos com todos os cenários compr
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.8 Qualificar R2-EXE-08 com oráculos independentes
+- [x] 3.8 Qualificar R2-EXE-08 com oráculos independentes
   - Objective: Executar R2-EXE-08-S01, R2-EXE-08-S02, R2-EXE-08-S03. Caso indispensável: Resultado pendente ou expirado; esperado: recebe 200 com estado contratado local; consulta não faz polling no provedor nem mascara atraso como sucesso.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/orbita/finalize.go`; `hub/internal/orbita/handlers.go`.
   - Depends on: 2.8; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
+  - Evidence: S01 `representation-runtime-latest.json` e `webhook-retry-representation-smoke.json`; S02 `final-representation-immutable-smoke.json`; S03 `public-representation-state-smoke.json`. Todos os três cenários foram PASS em PostgreSQL/Compose local, sem polling público nem sucesso fictício.
 
 - [x] 3.9 Qualificar R2-EXE-09 com oráculos independentes
   - Objective: Executar R2-EXE-09-S01, R2-EXE-09-S02, R2-EXE-09-S03. Caso indispensável: Callback antes da associação; esperado: recibo é reconciliado sem perda ou segunda operação.
