@@ -37,7 +37,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Preview de importação administrativa | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-import-preview-smoke.mjs` | PASS; dois endpoints sanitizados ficaram em lote `STAGED`, diferenças foram exibidas, nenhum valor sensível foi retido e operações sem adapter ficaram `IMPORTED_NOT_EXECUTABLE` |
 | Falha de lote de importação | `ATLAS_TEST_DSN=... go test -race -count=1 -v ./internal/atlas -run 'TestCatalogImport(FailurePreservesPreviousBatchAndExecutableCatalog|DiffStates)'` | PASS integrado local; inventário anterior inconsistente retornou `503/catalog_unavailable` antes da gravação, o staging anterior permaneceu único e nenhum recurso executável foi criado (`R2-CAT-07-S02`) |
 | Publicação de serviço qualificado | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-service-publication-smoke.mjs` | PASS; validação usou qualificação vigente e fixture sem chamadas ao provedor, publicação apresentou v1 imutável, PATCH posterior retornou 409 com hash preservado e `leitor-a` recuperou a mesma revisão após logout/refresh (`R2-CAT-08-S02`) |
-| Snapshot no aceite | `R2_CORE_TEST_DSN=... go test -race -count=1 -v ./internal/orbita -run TestAdmissionFreezesConfigSnapshotAtAcceptance` | PARCIAL integrado; PostgreSQL preservou projeção v1 no protocolo e na intenção após alteração local para v2; mudança efetiva no Atlas durante execução ainda não foi simulada (`R2-CAT-06-S01`) |
+| Snapshot no aceite | `R2_CORE_TEST_DSN=... go test -race -count=1 -v ./internal/orbita -run TestAdmissionFreezesConfigSnapshotAtAcceptance` | Evidência complementar; PostgreSQL preservou projeção v1 no protocolo e na intenção após alteração local para v2 (`R2-CAT-06-S01`) |
 | Revogação de credencial com L1 expirado | `go test -race -count=1 ./internal/providerauth -run TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues` | PARCIAL integrado para `R2-CAT-06-S03`; material revogado não gerou `Authorization` e binding saudável renovou, mas a combinação com snapshot histórico permanece aberta |
 | Contrato legado e imutabilidade de perfil | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-legacy-contract-smoke.mjs` + `admin-service-publication-smoke.mjs` | PARCIAL integrado; um contrato legado confirmou equivalência GET/webhook e uma versão publicada preservou hash/revisão; segundo cliente e migração v2 permanecem abertos (`R2-CAT-05-S01/S03`) |
 | Simulação e ciclo de produto administrativo | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-product-simulation-smoke.mjs` | PASS; grafo/tabela exibiu A/B paralelos e C dependente, provider-sim permaneceu em `effects=0/protocols=0` e ciclo A↔C foi bloqueado |
@@ -361,3 +361,19 @@ a prova unitária de resolução seletiva. O limite é intencional: a projeção
 oferta é cacheada, mas a política atual não cacheia a resolução de credencial
 para preservar revogação emergencial; portanto o ensaio qualifica resolução e
 admissão durante a indisponibilidade, não execução posterior com o Atlas fora.
+
+### Snapshot histórico durante upgrade — 11/09/2026
+
+O ensaio `catalog-snapshot-upgrade-runtime-latest.json` aceitou uma admissão
+ASYNC pelo caminho HTTP usando o serviço v1, publicou a versão 2 com alteração
+de SLA enquanto o protocolo estava em processamento e confirmou, em
+PostgreSQL, que o target, os contratos e o perfil técnico permaneceram na
+versão 1. O protocolo terminou `SUCCEEDED` com representação materializada. O
+oráculo financeiro confirmou a receita `sale-r4` na versão 1 e dois
+lançamentos contábeis, ambos derivados do snapshot congelado; custos não são
+esperados neste caso porque dependem dos fatos de operação do Cometa.
+
+Esse resultado promove R2-CAT-06-S01 para `PASS_INTEGRADO_LOCAL`. A prova é de
+laboratório com `provider-sim`, PostgreSQL e LocalStack; revogação de segredo e
+execução histórica durante indisponibilidade do Atlas continuam sendo cobertas
+pelos cenários específicos R2-CAT-06-S02/S03.
