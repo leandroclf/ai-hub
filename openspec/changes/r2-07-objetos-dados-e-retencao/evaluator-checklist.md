@@ -14,6 +14,7 @@
 
 - [ ] Contratos concretos e decisões técnicas aplicáveis qualificados.
 - [ ] Cada tarefa 2.x implementada e sua 3.x comprovada.
+- [x] R2-DAD-03 (retenção por classe e replay antigo) qualificado com oráculos independentes em `hub/evidence/r2/execution/r2-dad-03-runtime-latest.log`.
 - [ ] Migração/rollback 4.1 ensaiados.
 - [ ] Integração, segurança, jornadas UI e operação pertinentes comprovadas.
 - [ ] P-01 a P-11 aplicáveis aprovados para ativação do perfil, sem extrapolar prova local.

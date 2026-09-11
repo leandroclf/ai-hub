@@ -1,6 +1,6 @@
 # Tasks: Arquivos, propriedade de dados, retenção e recuperação
 
-Status: **parcialmente concluído**. Upload direto e custódia de resultado têm prova integral; retenção, RLS e restore permanecem abertos onde faltam cenários completos. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **parcialmente concluído**. Upload, custódia de resultado e retenção/replay (R2-DAD-03) têm prova local atualizada; RLS/continuidade, restore completo e cenários regionais permanecem abertos onde faltam provas completas. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -41,12 +41,13 @@ Status: **parcialmente concluído**. Upload direto e custódia de resultado têm
   - Validation: Teste de domínio/contrato dos limites de R2-DAD-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
 
-- [ ] 2.3 Retenção por classe e obrigações abertas
+- [x] 2.3 Retenção por classe e obrigações abertas
   - Objective: Entregar o comportamento R2-DAD-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline DAD-06, DAD-08, OPE-11.
   - Likely files/components: `hub/internal/objectstore`; `hub/internal/orbita`; `hub/migrations`; `hub/deploy/postgres-init/01-init.sh`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-DAD-03; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
+  - Evidence: `hub/evidence/r2/execution/r2-dad-03-runtime-latest.log`; retenção por pin/tombstone, obrigação aberta, falha de storage e replay antigo foram exercitados com PostgreSQL/LocalStack.
 
 - [ ] 2.4 Propriedade, RLS e continuidade de leitura
   - Objective: Entregar o comportamento R2-DAD-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline DAD-01, DAD-07, DAD-10, SEG-03.
@@ -78,12 +79,13 @@ Status: **parcialmente concluído**. Upload direto e custódia de resultado têm
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-DAD-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-DAD-03 com oráculos independentes
   - Objective: Executar R2-DAD-03-S01, R2-DAD-03-S02, R2-DAD-03-S03. Caso indispensável: Mensagem antiga; esperado: tombstone/dedup impede novo efeito e produz diagnóstico.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/objectstore`; `hub/internal/orbita`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
+  - Evidence: `hub/evidence/r2/execution/r2-dad-03-runtime-latest.log`; S01, S02 e S03 = PASS, sem novo efeito no replay e com tombstone/quarentena observáveis.
 
 - [ ] 3.4 Qualificar R2-DAD-04 com oráculos independentes
   - Objective: Executar R2-DAD-04-S01, R2-DAD-04-S02, R2-DAD-04-S03. Caso indispensável: Isolamento de domínio; esperado: nega escrita fora da autoridade mesmo que aplicação tenha bug.

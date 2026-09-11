@@ -40,6 +40,12 @@ somente v2 e preservou v1, histórico de publicação e protocolo aceito com
 snapshot v1; o replay foi idempotente. Os bancos temporários foram removidos
 sem alterar o volume oficial.
 
+R2-07 também avançou com a qualificação integral local de R2-DAD-03:
+retenção por classe respeitou pin de obrigação, expurgo produziu tombstone e o
+replay antigo foi deduplicado sem nova finalização/outbox; falha de storage
+permaneceu reconciliável. R2-DAD-04/05 seguem limitados por continuidade de
+leitura, writer alternativo, fencing e HA regional não comprovados.
+
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A
