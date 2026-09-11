@@ -55,6 +55,14 @@ async function createDelivery(protocolID,representation){
  sql(`INSERT INTO deliveries(delivery_id,protocol_id,event_id,destination_url,state,next_attempt_at,tenant_id,cell_id,representation,body_sha256) VALUES('${deliveryID}','${protocolID}','${eventID}','http://legacy-contract-fixture.invalid/webhook','DELIVERED',clock_timestamp(),'acme','r2-cell-a',decode('${encoded}','hex'),'${hash}')`);
  return {deliveryID,eventID};
 }
+function canonical(value){
+ if(Array.isArray(value))return value.map(canonical);
+ if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>[key,canonical(item)]));
+ return value;
+}
+async function detailFields(){
+ return await page.locator('dl.definition-list > div').evaluateAll(rows=>Object.fromEntries(rows.map(row=>[row.querySelector('dt')?.textContent?.trim()||'',row.querySelector('pre')?.textContent||row.querySelector('dd')?.textContent?.trim()||''])));
+}
 try{
  await page.goto('http://localhost:13000/technical-profiles');
  await authenticate();
@@ -77,12 +85,18 @@ try{
   await page.evaluate(path=>{history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'))},`/protocols/${protocolID}`);
   await page.getByRole('heading',{name:'Detalhe persistido',exact:true}).waitFor();
   const protocolText=await page.locator('body').innerText();
+  const protocolFields=await detailFields();
   await page.evaluate(path=>{history.pushState({},'',path);window.dispatchEvent(new PopStateEvent('popstate'))},`/deliveries/${deliveryID}`);
   await page.getByRole('heading',{name:'Detalhe persistido',exact:true}).waitFor();
   const deliveryText=await page.locator('body').innerText();
+  const deliveryFields=await detailFields();
+  const finalRaw=String(protocolFields['final body']||protocolFields['final representation']||protocolFields.final_representation||'');
+  const webhookRaw=String(deliveryFields.representation||'');
+  let finalBody,webhookBody;
+  try{finalBody=JSON.parse(finalRaw);webhookBody=JSON.parse(webhookRaw)}catch(error){throw new Error(`representações não são JSON: final=${finalRaw.slice(0,160)} webhook=${webhookRaw.slice(0,160)} causa=${error.message}`)}
   const marker=representation.replace(/[{}\[\]",:]/g,' ').split(/\s+/).filter(Boolean).find(value=>value.length>=8);
-  if(!marker||!protocolText.includes(marker)||!deliveryText.includes(marker))throw new Error(`corpo final não foi reproduzido nos dois detalhes: marcador=${marker}`);
-  evidence.push({check:'GET do protocolo e detalhe do webhook expõem o mesmo corpo final',status:'PASS',protocol:protocolID,delivery:deliveryID,body_sha256:createHash('sha256').update(Buffer.from(representation)).digest('hex'),marker});
+  if(!marker||!protocolText.includes(marker)||!deliveryText.includes(marker)||JSON.stringify(canonical(finalBody))!==JSON.stringify(canonical(webhookBody)))throw new Error(`corpo final divergente entre GET/webhook: marcador=${marker}`);
+  evidence.push({check:'GET do protocolo e detalhe do webhook expõem o mesmo corpo final',status:'PASS',protocol:protocolID,delivery:deliveryID,body_sha256:createHash('sha256').update(Buffer.from(representation)).digest('hex'),body_equality:'canonical-json-equal',marker});
  }finally{
   sql(`DELETE FROM webhook_audit WHERE resource='${deliveryID}'`);
   sql(`DELETE FROM deliveries WHERE delivery_id='${deliveryID}'`);

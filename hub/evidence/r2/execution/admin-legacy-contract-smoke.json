@@ -23,8 +23,9 @@
     "check": "GET do protocolo e detalhe do webhook expõem o mesmo corpo final",
     "status": "PASS",
     "protocol": "01a09075-f9e2-7003-8717-f86a731af566",
-    "delivery": "00f2740f-a836-4e4b-bbc8-9a6dc2570e54",
+    "delivery": "ed36d98a-e7dd-44c0-9308-c470e5521c72",
     "body_sha256": "213b9e591da8860912889d3e04ac7ea219021de6fc10fa3cf7d1001edc98e885",
+    "body_equality": "canonical-json-equal",
     "marker": "protocol_id"
   }
 ]
