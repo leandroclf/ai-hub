@@ -18,12 +18,12 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789122966525"
+    "resource": "browser-client-1789123657648"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789123020923"
+    "resource": "browser-product-1789123710915"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -44,6 +44,11 @@
   {
     "check": "Admin finance accounts, facts and journal read persisted Libra data",
     "status": "PASS"
+  },
+  {
+    "check": "Admin finance adjustment enforces distinct approver in the portal",
+    "status": "PASS",
+    "reason": "browser-segregation-1789123771441"
   },
   {
     "check": "Admin finance close refuses unresolved obligations with explicit error",

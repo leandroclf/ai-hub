@@ -104,6 +104,11 @@ quando exigido pelo contrato, MFA e segregação de funções. Paginação, filt
 de tenant e `If-Match`/idempotência são tratados pelas APIs; o frontend não
 substitui essas verificações.
 
+Na jornada de ajustes, o `prepared_by` persistido é comparado ao sujeito da
+sessão. O próprio preparador não recebe o botão `Aprovar`; o portal informa
+`Aguardando aprovador distinto`. A API mantém a mesma regra como autoridade
+final e rejeita autoaprovação mesmo que uma chamada seja forjada.
+
 Para serviços com `adapter_id: rest-json-v1`, o editor exibe o campo JSON
 `adapter_contract`. Preencha somente `submit_path` e `status_path`, por
 exemplo `{"submit_path":"/analise","status_path":"/consulta/{id}"}`.
@@ -133,7 +138,8 @@ Use os gates nesta ordem quando a demanda envolver o portal:
    referências, criação e readback durável, navegação autenticada, SLA,
    publicação/readback de destino, distinção de formulário para
    `tenant_reader` somente leitura em destinos, protocolos e financeiro,
-   ausência de token persistido, logout e viewport de 390 px.
+   preparação financeira com segregação de aprovação, ausência de token
+   persistido, logout e viewport de 390 px.
    A execução cria apenas dados sintéticos no laboratório; não use contas ou
    endpoints reais.
 
