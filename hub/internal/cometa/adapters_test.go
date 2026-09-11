@@ -10,6 +10,7 @@ import (
 
 	"ai-hub/hub/internal/contracts/files"
 	"ai-hub/hub/internal/dispatch"
+	"ai-hub/hub/internal/providerauth"
 )
 
 func TestAdapterRegistryFailsClosedForUnknownRuntimeAdapter(t *testing.T) {
@@ -120,6 +121,91 @@ func TestVersionedRESTAdapterBuildsEscapedStatusRequest(t *testing.T) {
 	}
 	if request.Method != http.MethodGet || request.URL.String() != "https://provider.example/api/v1/operations/external%2Frequest%2042" {
 		t.Fatalf("requisição de status não escapou a identidade externa: %s %s", request.Method, request.URL.String())
+	}
+}
+
+type adapterTestSecretResolver struct{}
+
+func (adapterTestSecretResolver) Resolve(_ context.Context, ref, version string) (providerauth.Secret, error) {
+	if ref != "rest-secret" || version != "v7" {
+		return providerauth.Secret{}, io.ErrUnexpectedEOF
+	}
+	return providerauth.Secret{Value: "rest-api-key-value", Version: "v7"}, nil
+}
+
+func TestVersionedRESTAdapterUsesAPIKeyAndAsyncMarker(t *testing.T) {
+	t.Parallel()
+	var submitKey, statusKey, submitMode string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			submitKey = r.Header.Get("X-API-Key")
+			var payload restJSONSubmitRequest
+			if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+				t.Fatalf("payload REST assíncrono inválido: %v", err)
+			}
+			submitMode = payload.Mode
+			w.WriteHeader(http.StatusAccepted)
+			_, _ = io.WriteString(w, `{"provider_request_id":"external-async-42","status":"PENDING"}`)
+			return
+		}
+		statusKey = r.Header.Get("X-API-Key")
+		if r.Method != http.MethodGet || r.URL.Path != "/v1/operations/external-async-42" {
+			t.Fatalf("consulta REST assíncrona inesperada: %s %s", r.Method, r.URL.Path)
+		}
+		_, _ = io.WriteString(w, `{"provider_request_id":"external-async-42","status":"SUCCEEDED","detail":"real-rest-marker"}`)
+	}))
+	defer server.Close()
+
+	adapter, err := NewAdapterRegistry("rest-json-v1").Get("rest-json-v1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	command := dispatch.Command{CommandID: "command-async-42", ProtocolID: "protocol-async-42", RequestBody: map[string]string{"marker": "async"}}
+	restRequest, err := adapter.BuildSubmitRequest(context.Background(), server.URL, command, "async_poll", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cache := providerauth.NewTokenCache("127.0.0.1:1")
+	defer cache.Close()
+	cache.Resolver = adapterTestSecretResolver{}
+	if err := cache.Apply(context.Background(), http.DefaultClient, "account", providerauth.Config{AuthType: providerauth.APIKey, APIKeyHeader: "X-API-Key", SecretRef: "rest-secret", SecretVersion: "v7"}, restRequest); err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(restRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := io.ReadAll(response.Body)
+	_ = response.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	accepted, err := adapter.DecodeResult(response.StatusCode, body)
+	if err != nil || accepted.Status != "PENDING" {
+		t.Fatalf("aceite assíncrono REST inválido: %+v %v", accepted, err)
+	}
+	statusRequest, err := adapter.BuildStatusRequest(context.Background(), server.URL, accepted.ProviderRequestID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := cache.Apply(context.Background(), http.DefaultClient, "account", providerauth.Config{AuthType: providerauth.APIKey, APIKeyHeader: "X-API-Key", SecretRef: "rest-secret", SecretVersion: "v7"}, statusRequest); err != nil {
+		t.Fatal(err)
+	}
+	statusResponse, err := http.DefaultClient.Do(statusRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	statusBody, err := io.ReadAll(statusResponse.Body)
+	_ = statusResponse.Body.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	final, err := adapter.DecodeResult(statusResponse.StatusCode, statusBody)
+	if err != nil || final.Status != "SUCCEEDED" || final.Detail != "real-rest-marker" {
+		t.Fatalf("resultado assíncrono REST não preservou o marcador: %+v %v", final, err)
+	}
+	if submitKey != "rest-api-key-value" || statusKey != "rest-api-key-value" || submitMode != "async_poll" {
+		t.Fatalf("autenticação/modo REST inesperados: submit_key=%q status_key=%q mode=%q", submitKey, statusKey, submitMode)
 	}
 }
 
