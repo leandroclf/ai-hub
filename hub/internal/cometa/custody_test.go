@@ -195,6 +195,74 @@ func TestPostgresOrphanCapabilityHashDoesNotShadowValidCallback(t *testing.T) {
 	t.Log("same callback bytes with different capability hashes remain distinct; exact duplicate increments occurrences")
 }
 
+func TestPostgresCallbackInboxBatchClaimsBoundedAndDisposesInvalidCapability(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	ctx := context.Background()
+	body := []byte(`{"provider_request_id":"provider-correlation","status":"SUCCEEDED","detail":"orphan"}`)
+	claims := make([]Submission, 0, 2)
+	for _, tenant := range []string{"callback-batch-a", "callback-batch-b"} {
+		cmd := dispatch.Command{CommandID: idgen.New(), ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app", CellID: "cell-" + tenant, ProviderAccountID: "account", StepDeadline: time.Now().Add(time.Minute)}
+		claim, owned, err := store.PrepareSubmission(ctx, cmd, "binding", "v1")
+		if err != nil || !owned {
+			t.Fatalf("prepare callback batch claim: owned=%t err=%v", owned, err)
+		}
+		claims = append(claims, claim)
+	}
+	t.Cleanup(func() {
+		for _, claim := range claims {
+			db.Exec("DELETE FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID)
+			db.Exec("DELETE FROM attempts WHERE operation_id=$1", claim.Command.CommandID)
+			db.Exec("DELETE FROM operations WHERE operation_id=$1", claim.Command.CommandID)
+		}
+	})
+	if err := store.StoreOrphanCallback(ctx, claims[0].Command.CommandID, "wrong-capability", body); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.StoreOrphanCallback(ctx, claims[1].Command.CommandID, claims[1].CallbackToken, body); err != nil {
+		t.Fatal(err)
+	}
+
+	applied := 0
+	count, err := store.ReconcileCallbackInboxBatch(ctx, "batch-owner-a", 1, func(context.Context, string, dispatch.Result) error {
+		applied++
+		return nil
+	})
+	if err != nil || count != 0 || applied != 0 {
+		t.Fatalf("lote limitado processou capability inválida: count=%d applied=%d err=%v", count, applied, err)
+	}
+	var disposition string
+	if err := db.QueryRow("SELECT disposition FROM callback_inbox WHERE operation_id=$1", claims[0].Command.CommandID).Scan(&disposition); err != nil {
+		t.Fatal(err)
+	}
+	if disposition != "REJECTED" {
+		t.Fatalf("capability inválida não recebeu disposição terminal: %s", disposition)
+	}
+
+	count, err = store.ReconcileCallbackInboxBatch(ctx, "batch-owner-b", 1, func(context.Context, string, dispatch.Result) error {
+		applied++
+		return nil
+	})
+	if err != nil || count != 1 || applied != 1 {
+		t.Fatalf("callback válido não foi aplicado no lote seguinte: count=%d applied=%d err=%v", count, applied, err)
+	}
+	if err := db.QueryRow("SELECT disposition FROM callback_inbox WHERE operation_id=$1", claims[1].Command.CommandID).Scan(&disposition); err != nil {
+		t.Fatal(err)
+	}
+	if disposition != "APPLIED" {
+		t.Fatalf("callback válido não recebeu disposição aplicada: %s", disposition)
+	}
+	t.Log("callback inbox real: lote limitado a um item, capability inválida rejeitada sem callback de aplicação e callback válido aplicado no lote seguinte")
+}
+
 func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) {
 	dsn := os.Getenv("R2_CORE_TEST_DSN")
 	if dsn == "" {
