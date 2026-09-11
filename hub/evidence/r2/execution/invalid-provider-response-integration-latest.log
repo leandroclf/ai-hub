@@ -1,0 +1,14 @@
+R2-EXE-04-S02 — resposta externa inválida
+Data: 2026-09-11
+Ambiente: PostgreSQL local migrado + provedor HTTP independente
+Teste: TestPostgresInvalidProviderResponseDoesNotBecomeSuccess
+
+Resultado observado:
+- o provedor HTTP respondeu 200 com JSON sem provider_request_id/status;
+- Cometa rejeitou o contrato com invalid_provider_response e conservou UNKNOWN;
+- nenhuma operação SUCCEEDED e nenhum provider_receipt bruto foram criados;
+- a observação UNKNOWN foi publicada uma única vez na outbox;
+- a segunda execução da mesma command_id preservou a evidência e não repetiu o POST (calls=1).
+
+Oráculo: PASS_INTEGRADO_LOCAL
+Limitação: o ensaio usa provider HTTP sintético local; contratos comerciais externos permanecem fora.

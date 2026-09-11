@@ -511,6 +511,94 @@ DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION %s();`, targetsTable
 	t.Logf("resposta externa válida + commit terminal falho: UNKNOWN reconciliável, correlação/recibo preservados, zero outbox e zero novo POST (provider_request_id=%s)", providerRequestID)
 }
 
+func TestPostgresInvalidProviderResponseDoesNotBecomeSuccess(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	t.Setenv("CELL_ID", "r2-cell-a")
+	t.Setenv("ENVIRONMENT", "local")
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = db.Close() })
+	db.SetMaxOpenConns(8)
+	ctx := context.Background()
+	store := NewStore(db)
+	operationID := idgen.New()
+	tenant := "invalid-provider-" + idgen.New()
+	bindingID := "binding-" + idgen.New()
+	providerCalls := atomic.Int32{}
+	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		providerCalls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = io.WriteString(w, `{}`)
+	}))
+	defer provider.Close()
+	providerURL, _ := url.Parse(provider.URL)
+	t.Setenv("EGRESS_HTTP_ORIGINS", provider.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", providerURL.Host+"=127.0.0.1/32")
+	catalog := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/token" {
+			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "fixture-workload", "expires_in": 60, "token_type": "Bearer"})
+			return
+		}
+		_ = json.NewEncoder(w).Encode(atlasclient.CredentialBinding{BindingID: bindingID, TenantID: tenant, SecretRef: "vault://fixture", SecretVersion: "v1", CredentialMode: "SHARED_HUB"})
+	}))
+	defer catalog.Close()
+	account, _ := json.Marshal(map[string]any{"base_url": provider.URL, "provider_mode": "sync", "auth_type": "NONE"})
+	snapshot := atlas.OfferSnapshot{
+		Account: atlas.Resource{ID: "account", Data: account},
+		Binding: atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)},
+		Target:  atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)},
+	}
+	config, _ := json.Marshal(snapshot)
+	cmd := dispatch.Command{CommandID: operationID, ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app-a", CellID: "r2-cell-a", ProviderAccountID: "account", DispatchMode: dispatch.DispatchDirect, ConfigSnapshot: config, RequestBody: map[string]any{"marker": "invalid-response"}, StepDeadline: time.Now().Add(time.Minute)}
+	secretPath := t.TempDir() + "/secret"
+	if err = os.WriteFile(secretPath, []byte("fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("OIDC_TOKEN_URL", catalog.URL+"/token")
+	t.Setenv("WORKLOAD_CLIENT_ID", "fixture")
+	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", secretPath)
+	t.Cleanup(func() {
+		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM provider_receipts WHERE operation_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM attempts WHERE operation_id=$1", operationID)
+		_, _ = db.Exec("DELETE FROM operations WHERE operation_id=$1", operationID)
+	})
+
+	executor := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: dropFixtureVault{}})
+	first := executor.Execute(ctx, cmd)
+	if first.Kind != dispatch.FactUnknown || !first.Durable || first.ErrorCode != "invalid_provider_response" {
+		t.Fatalf("resposta inválida não virou UNKNOWN durável: %+v", first)
+	}
+	var state string
+	if err = db.QueryRow("SELECT state FROM operations WHERE operation_id=$1", operationID).Scan(&state); err != nil {
+		t.Fatal(err)
+	}
+	var succeeded, receipts, facts int
+	if err = db.QueryRow("SELECT count(*) FROM operations WHERE operation_id=$1 AND state='SUCCEEDED'", operationID).Scan(&succeeded); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.QueryRow("SELECT count(*) FROM provider_receipts WHERE operation_id=$1", operationID).Scan(&receipts); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND event_type='operation.observed'", operationID).Scan(&facts); err != nil {
+		t.Fatal(err)
+	}
+	if state != string(StateUnknown) || succeeded != 0 || receipts != 0 || facts != 1 {
+		t.Fatalf("custódia de resposta inválida incorreta: state=%s succeeded=%d receipts=%d facts=%d", state, succeeded, receipts, facts)
+	}
+	second := executor.Execute(ctx, cmd)
+	if second.EvidenceID != first.EvidenceID || second.Kind != dispatch.FactUnknown || providerCalls.Load() != 1 {
+		t.Fatalf("reentrega alterou a decisão ou repetiu efeito: first=%+v second=%+v provider_calls=%d", first, second, providerCalls.Load())
+	}
+	t.Logf("HTTP retornou JSON inválido: Cometa preservou UNKNOWN com erro de contrato, sem SUCCEEDED/recibo bruto e sem novo POST (calls=%d)", providerCalls.Load())
+}
+
 type dropFixtureVault struct{}
 
 func (dropFixtureVault) Resolve(context.Context, string, string) (providerauth.Secret, error) {
