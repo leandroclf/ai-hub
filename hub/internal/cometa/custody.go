@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/subtle"
+	"database/sql"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -268,7 +269,7 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 			_ = dispose("REJECTED", "invalid stored command")
 			continue
 		}
-		if err := apply(ctx, operationID, result.toDispatchResult()); err != nil {
+		if err := apply(ctx, operationID, result.toDispatchResult(body)); err != nil {
 			disposition := "RECEIVED"
 			if v.processingAttempts >= 3 {
 				disposition = "REJECTED"
@@ -292,7 +293,7 @@ type providersimOperationResult struct {
 	Detail            string `json:"detail,omitempty"`
 }
 
-func (r providersimOperationResult) toDispatchResult() dispatch.Result {
+func (r providersimOperationResult) toDispatchResult(raw []byte) dispatch.Result {
 	kind := dispatch.FactUnknown
 	if r.Status == "SUCCEEDED" {
 		kind = dispatch.FactSucceeded
@@ -300,7 +301,7 @@ func (r providersimOperationResult) toDispatchResult() dispatch.Result {
 	if r.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return dispatch.Result{Kind: kind, ProviderRequestID: r.ProviderRequestID, ResponseBody: map[string]any{"detail": r.Detail}}
+	return dispatch.Result{Kind: kind, ProviderRequestID: r.ProviderRequestID, ResponseBody: map[string]any{"detail": r.Detail}, RawResponse: append([]byte(nil), raw...)}
 }
 
 func (s *Store) DurableResult(ctx context.Context, cmd dispatch.Command) (dispatch.Result, error) {
@@ -389,6 +390,9 @@ func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r
 	if err != nil {
 		return dispatch.Result{}, err
 	}
+	if err = insertProviderReceiptTx(ctx, tx, cmd, r, source); err != nil {
+		return dispatch.Result{}, err
+	}
 	if state == string(StateSucceeded) || state == string(StateFailed) || state == string(StateCancelled) {
 		if json.Unmarshal(result, &r) != nil {
 			return dispatch.Result{}, errors.New("legacy result unavailable")
@@ -430,6 +434,18 @@ func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r
 		return dispatch.Result{}, err
 	}
 	return r, nil
+}
+
+func insertProviderReceiptTx(ctx context.Context, tx *sql.Tx, cmd dispatch.Command, r dispatch.Result, source string) error {
+	if len(r.RawResponse) == 0 {
+		return nil
+	}
+	if !json.Valid(r.RawResponse) || r.ProviderRequestID == "" || r.EvidenceID == "" {
+		return errors.New("invalid provider receipt")
+	}
+	sum := sha256.Sum256(r.RawResponse)
+	_, err := tx.ExecContext(ctx, `INSERT INTO provider_receipts(evidence_id,operation_id,tenant_id,source,provider_request_id,body,body_sha256) VALUES($1,$2,$3,$4,$5,$6,$7)`, r.EvidenceID, cmd.CommandID, cmd.TenantID, source, r.ProviderRequestID, r.RawResponse, hex.EncodeToString(sum[:]))
+	return err
 }
 
 func economicKindForSource(source string) string {

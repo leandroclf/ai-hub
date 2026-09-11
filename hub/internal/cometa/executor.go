@@ -331,6 +331,10 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	if json.Unmarshal(cmd.ConfigSnapshot, &snapshot) != nil {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "snapshot_unavailable"}
 	}
+	rawProvider, err := json.Marshal(result)
+	if err != nil {
+		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "provider_output_unavailable"}
+	}
 	normalized, err := normalizeProviderResult(snapshot, result)
 	if err != nil {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "provider_output_contract_failed"}
@@ -341,7 +345,7 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	} else if result.Status != "SUCCEEDED" {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown}
 	}
-	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: normalized}
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: normalized, RawResponse: rawProvider}
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer cancel()
 	durable, err := e.store.ConserveObservation(saveCtx, cmd, response, "PROVIDER", operationID)
@@ -447,6 +451,21 @@ func inputObject(body any) (map[string]any, bool) {
 // ou por polling ao consolidado da operacao (EXE-06): se ja concluida,
 // trata como evidencia duplicada.
 func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID string, result providersim.OperationResult) (dispatch.Result, error) {
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return dispatch.Result{}, errors.New("callback result unavailable")
+	}
+	return e.applyExternalObservation(ctx, operationID, result, raw)
+}
+
+// ApplyExternalObservationRaw mantém os bytes recebidos pelo ingresso de
+// callback para a tabela de recibos brutos. O método comum continua aceitando
+// chamadas internas que já materializaram o resultado tipado.
+func (e *Executor) ApplyExternalObservationRaw(ctx context.Context, operationID string, result providersim.OperationResult, rawResult []byte) (dispatch.Result, error) {
+	return e.applyExternalObservation(ctx, operationID, result, rawResult)
+}
+
+func (e *Executor) applyExternalObservation(ctx context.Context, operationID string, result providersim.OperationResult, resultRaw []byte) (dispatch.Result, error) {
 	_, err := e.store.Get(ctx, operationID)
 	if err != nil {
 		e.log.Warn("observacao para operacao desconhecida", "operation_id", operationID)
@@ -474,14 +493,14 @@ func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID str
 	if _, err := atlas.DecodeCatalogData(snapshot.Target); err != nil {
 		return dispatch.Result{}, errors.New("callback target unavailable")
 	}
-	if _, err := json.Marshal(result); err != nil {
+	if !json.Valid(resultRaw) {
 		return dispatch.Result{}, errors.New("callback result unavailable")
 	}
 	normalized, err := normalizeProviderResult(snapshot, result)
 	if err != nil {
 		return dispatch.Result{}, errors.New("callback output contract failed")
 	}
-	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: normalized}
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: normalized, RawResponse: resultRaw}
 	if result.Status == "SUCCEEDED" {
 		response.Kind = dispatch.FactSucceeded
 	} else if result.Status == "FAILED" {

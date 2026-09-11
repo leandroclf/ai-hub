@@ -170,7 +170,7 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// 2xx is an acknowledgement of durable custody, never merely of parsing.
-	if _, err := h.exec.ApplyExternalObservation(r.Context(), operationID, result); err != nil {
+	if _, err := h.exec.ApplyExternalObservationRaw(r.Context(), operationID, result, body); err != nil {
 		http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
 		return
 	}

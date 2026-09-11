@@ -48,7 +48,16 @@ func RunCallbackInboxWorker(ctx context.Context, store *Store, exec *Executor, i
 				if observed.Kind != dispatch.FactSucceeded && observed.Kind != dispatch.FactFailed {
 					return errors.New("invalid reconciled callback status")
 				}
-				_, err := exec.ApplyExternalObservation(ctx, id, providersim.OperationResult{ProviderRequestID: observed.ProviderRequestID, Status: status, Detail: observed.ErrorMessage})
+				providerResult := providersim.OperationResult{ProviderRequestID: observed.ProviderRequestID, Status: status, Detail: observed.ErrorMessage}
+				raw := observed.RawResponse
+				if len(raw) > 0 {
+					if err := json.Unmarshal(raw, &providerResult); err != nil {
+						return err
+					}
+				} else {
+					raw, _ = json.Marshal(providerResult)
+				}
+				_, err := exec.ApplyExternalObservationRaw(ctx, id, providerResult, raw)
 				return err
 			})
 			if err != nil {

@@ -160,6 +160,9 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 	if err != nil {
 		return err
 	}
+	if err = insertProviderReceiptTx(ctx, tx, c.Command, r, source); err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, `UPDATE attempts SET received_at=clock_timestamp(),error_code=NULLIF($2,'') WHERE attempt_id=$1 AND operation_id=$3 AND owner=$4 AND epoch=$5`, c.AttemptID, r.ErrorCode, c.Command.CommandID, c.Owner, c.Epoch)
 	if err != nil {
 		return err

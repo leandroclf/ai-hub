@@ -165,13 +165,18 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if resp.StatusCode != http.StatusOK {
 		return settleCapacity(unknown("reconciliation_status_unavailable")), errors.New("reconciliation status unavailable")
 	}
+	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 256*1024+1))
+	if readErr != nil || len(body) > 256*1024 {
+		return settleCapacity(unknown("reconciliation_response_invalid")), errors.New("reconciliation response invalid")
+	}
 	var result providersim.OperationResult
-	if json.NewDecoder(io.LimitReader(resp.Body, 256*1024)).Decode(&result) != nil || result.ProviderRequestID != claim.ProviderRequestID {
+	if json.Unmarshal(body, &result) != nil || result.ProviderRequestID != claim.ProviderRequestID {
 		return settleCapacity(unknown("reconciliation_response_invalid")), errors.New("reconciliation response invalid")
 	}
 	if result.Status == "PENDING" {
 		pending := unknown("reconciliation_provider_pending")
 		pending.ResponseBody = result
+		pending.RawResponse = append([]byte(nil), body...)
 		return settleCapacity(pending), nil
 	}
 	if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
@@ -185,7 +190,7 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if result.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return settleCapacity(dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: normalized}), nil
+	return settleCapacity(dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: normalized, RawResponse: append([]byte(nil), body...)}), nil
 }
 
 // RunReconciliationWorker executa somente consultas de status para solicitações

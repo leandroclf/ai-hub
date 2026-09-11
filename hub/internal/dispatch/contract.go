@@ -99,4 +99,7 @@ type Result struct {
 	ResponseBody      any      `json:"response_body,omitempty"`
 	ErrorCode         string   `json:"error_code,omitempty"`
 	ErrorMessage      string   `json:"error_message,omitempty"`
+	// RawResponse is custody-only metadata and never crosses the result JSON
+	// or the operation fact envelope exposed to downstream consumers.
+	RawResponse json.RawMessage `json:"-"`
 }

@@ -162,6 +162,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if result.Status == "PENDING" {
 		r, _ := unknown("poll_pending")
 		r.ResponseBody = result
+		r.RawResponse = append([]byte(nil), body...)
 		return settleCapacity(r), retryAfter
 	}
 	if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
@@ -177,7 +178,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if result.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return settleCapacity(dispatch.Result{Kind: kind, ProviderRequestID: c.ProviderRequestID, ResponseBody: normalized}), retryAfter
+	return settleCapacity(dispatch.Result{Kind: kind, ProviderRequestID: c.ProviderRequestID, ResponseBody: normalized, RawResponse: append([]byte(nil), body...)}), retryAfter
 }
 
 func pollRetryAfter(value string, now time.Time) time.Duration {
