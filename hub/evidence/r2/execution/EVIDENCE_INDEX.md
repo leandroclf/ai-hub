@@ -92,6 +92,14 @@ Origem: HEAD `a39d394b0d87185ed4cc3861c12ec45f2c302d9e`, branch `r2-implementati
 
 As migrations0010–0013 foram executadas via runner com checksum;0014 administrativa ainda requer aplicação. T-R2-01 continua aberto: comparar clock_timestamp antes do commit rejeita resultado já atrasado, mas NÃO prova commit estritamente anterior ao limite.
 
+Na reexecução de 11/09/2026 do broker gate, o runner restaurou o LocalStack e
+os workloads, mas o SYNC recebeu `504` porque quatro permits antigos de
+`r4-sync` permaneceram `pending_external` sem operação/protocolo identificável.
+Essas obrigações não foram encerradas por suposição; a execução foi registrada
+como `NAO_QUALIFICADO_NESTA_RODADA` para R2-EXE-07-S01. A rotina de smoke de
+upload foi corrigida para não apagar operações enquanto houver obrigação
+externa pendente.
+
 ## Evidências adicionadas na retomada de 08/09/2026
 
 | Artefato | Procedimento e resultado | Limite |
