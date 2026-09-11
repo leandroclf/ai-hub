@@ -24,7 +24,7 @@ exigir alteração de requisito; avançar nos demais.
 ## Fatias herdadas obrigatórias
 | Tarefa | Requisito | Estado atual e próximo passo | Responsável |
 |---|---|---|---|
-| B-R4-01 | R3-EXE-01 | API_KEY agora atravessa modelo/projeção/executor/poller; gate synthetic-provider persiste. Fechar adapter real e homologação. | Core e Integrações |
+| B-R4-01 | R3-EXE-01 | `ProviderAdapter` e `rest-json-v1` agora executam contrato REST local independente, com API_KEY, SYNC/ASYNC e resposta estrita; fechar adapter/provedor comercial e homologação de jornada completa. | Core e Integrações |
 | B-R4-02 | R3-EXE-02 | Capability e recibo antes de ACK foram adicionados. Nova inbox tem lacunas de autenticação/deduplicação e recuperador; rota segue sob JWT Hub. | Core e Integrações |
 | B-R4-03 | R3-EXE-03 | Fencing de egress agora é validado antes de autenticação e transporte nos caminhos ligados; reconciliação de UNKNOWN sem `provider_request_id` é explicitamente rejeitada e auditada, enquanto a confirmação positiva com correlação externa continua aberta. | Core e Integrações |
 | B-R4-04 | R3-EXE-04 | Relógios, exclusividade polling/callback e T-R2-01 permanecem; finalizador agora usa snapshot do protocolo quando o intent histórico está ausente. | Core e Integrações |

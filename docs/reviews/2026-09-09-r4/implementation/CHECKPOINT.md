@@ -3,7 +3,7 @@
 Data: 2026-09-11 (America/Sao_Paulo)
 
 HEAD do checkpoint: commit de consolidação desta rodada; o SHA final deve ser
-consultado no log após o commit.
+consultado no log após o commit. O código do adapter REST está em `cabc3b1`.
 
 Executado: OpenSpec strict `21/21` — PASS; `npm run build` no portal — PASS;
 `go test -race -count=1 ./...`, `go vet ./...` e `git diff --check` — PASS. O
@@ -26,10 +26,12 @@ duas etapas, dois efeitos e idempotência; o runner fechou quatro ausências
 comprovadas (`closed=4 protected=0`).
 
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
-do DAG, o editor administrativo de mapeamento e a qualificação complementar
-seletiva de R2-03/R2-02. A matriz agora possui 131 resultados associados e 601
-cenários explicitamente não qualificados. Permanecem explícitos os gaps
+do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
+com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A
+matriz agora possui 133 resultados associados e 599 cenários explicitamente não
+qualificados. Permanecem explícitos os gaps
 arquiteturais do backlog herdado, dependências Compose no renderer do kind,
 ausência de homologação de provedores/AWS reais, carga prolongada/expiração de
-I/O e matriz integral ainda não fechada. Ver `EXECUTION-2026-09-10.md` para os
-oráculos e limites.
+I/O e matriz integral ainda não fechada. O adapter REST foi qualificado somente
+com endpoint HTTP local independente e não representa provedor comercial. Ver
+`EXECUTION-2026-09-10.md` para os oráculos e limites.

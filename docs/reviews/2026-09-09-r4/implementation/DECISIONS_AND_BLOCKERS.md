@@ -65,6 +65,12 @@
   aplicação, célula, epoch, lease e hash do comando) antes da autenticação e
   novamente imediatamente antes do POST. Perda da posse conserva `UNKNOWN`
   sem disparar um segundo efeito.
+- O transporte externo passa pela interface `ProviderAdapter`. O
+  `rest-json-v1` é a implementação genérica versionada para homologação local:
+  aceita somente payload declarativo, resposta JSON estrita e paths de
+  submit/status conhecidos. Ele não habilita automaticamente uma conta
+  importada nem representa homologação comercial; adapters especializados
+  continuam exigindo implementação, qualificação e evidência próprias.
 
 ## Bloqueios e limites ainda reproduzíveis
 

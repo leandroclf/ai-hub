@@ -1,0 +1,30 @@
+AI Hub R4 — qualificação do adapter REST versionado
+date=2026-09-11
+source_commit=cabc3b1
+environment=local-compose-cometa-and-local-httptest
+secrets=omitted
+
+[adapter-contract]
+command=go test -count=1 -race -v ./internal/cometa -run 'TestAdapterRegistry|TestVersionedRESTAdapter'
+result=PASS
+observed=registry falha fechado para ID de catálogo sem implementação e permite somente adapters compilados ou explicitamente autorizados
+observed=rest-json-v1 enviou POST /v1/operations com idempotency_key, mode, input e file_refs sem reutilizar o DTO do provider-sim
+observed=consulta de status usa GET e escapa a identidade provider_request_id antes de construir o path
+observed=respostas com campo desconhecido, documentos JSON concatenados, HTTP inesperado ou status de negócio inválido foram recusadas
+
+[api-key-and-async]
+result=PASS
+observed=API Key foi resolvida por binding e aplicada ao header contratado de submit/status; a referência do segredo não foi enviada ao endpoint
+observed=POST assíncrono retornou HTTP 202/PENDING e GET posterior retornou HTTP 200/SUCCEEDED com marcador externo real-rest-marker
+scope=contrato HTTP local independente, autenticador API_KEY com resolvedor de fixture e testes com race; não é homologação de provedor comercial
+
+[cometa-integration]
+result=PASS
+observed=Executor, polling e reconciliação passaram a obter submit/status/decode pela fronteira ProviderAdapter; fencing, capacidade, autenticação e custódia continuam fora do adapter
+command=docker compose -p ai_hub_r3qual -f hub/deploy/r2/compose.yaml build cometa
+observed=image ai-hub-r2-cometa:r2 reconstruída a partir de cabc3b1
+command=docker compose -p ai_hub_r3qual -f hub/deploy/r2/compose.yaml up -d --no-deps cometa
+observed=container ai_hub_r3qual-cometa-1 recriado e iniciado; GET /metrics respondeu HTTP 200
+observed=na primeira repetição do produto, o recreate isolado restaurou loopback no EGRESS_PRIVATE_RULES e produziu transport_error; a CIDR real 172.19.0.3/32 foi reaplicada antes da qualificação final
+observed=após a correção de egress, product-runtime-proof e authorized-load passaram no Compose oficial; a configuração segura deve ser aplicada pelo bootstrap ou com as CIDRs internas descobertas
+limitation=nenhuma oferta comercial foi ativada; o ambiente Compose corrente usa provider-sim e o adapter REST é uma capacidade de contrato de laboratório

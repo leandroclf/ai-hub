@@ -50,6 +50,28 @@ importação em staging com diff, paginação por cursor, resultado volumoso em
 foi reconstruído e repetiu o smoke autenticado; os lookups de referência agora
 seguem cursores até 1.000 itens e transformam falhas em estado explícito.
 
+### Adapter REST versionado executável — 11/09/2026
+
+O Cometa deixou de construir o contrato HTTP diretamente para o `provider-sim`.
+Foi criada a fronteira `ProviderAdapter`, com `rest-json-v1` compilado e
+habilitado somente quando instalado pela registry. Submit, polling e
+reconciliação obtêm método, path, payload e decodificação dessa fronteira;
+autenticação, egress, capacidade, fencing e custódia permanecem nas camadas
+do Cometa.
+
+O teste de contrato usou um endpoint HTTP local independente do simulador:
+validou `POST /v1/operations`, `GET /v1/operations/{id}` com escaping,
+`idempotency_key`, `input`, `file_refs`, API Key por binding e o fluxo
+`202/PENDING` → `200/SUCCEEDED` com marcador real. Campos desconhecidos,
+documentos concatenados, status HTTP inesperado e estados de negócio inválidos
+foram recusados. A imagem oficial do Cometa foi reconstruída e iniciou no
+Compose `ai_hub_r3qual`; a evidência está em
+`hub/evidence/r2/execution/r2-rest-adapter-latest.log`.
+
+Esse avanço cobre a fronteira executável e o contrato de homologação local,
+mas não transforma o fixture em provedor comercial nem fecha sozinho a
+homologação de produção, os ensaios de crash/partição ou a matriz integral.
+
 ## Resultado
 
 Implementação e qualificação local integradas passaram nos gates declarados.
@@ -98,8 +120,8 @@ nem homologação de produção. O backlog herdado do R4-04 ainda contém cortes
 arquiteturais abertos, incluindo provedor comercial, carga e budgets completos
 em todo I/O, fencing geral, financeiro/webhooks/FileRefs produtivos, telemetria
 bilateral, IaC/HA regional e qualificação dos cenários sem evidência. A matriz
-integral de rastreabilidade está em `RESULT-MATRIX-732-CENARIOS.csv`: 131 linhas
-estão associadas a resultados existentes e 601 permanecem
+integral de rastreabilidade está em `RESULT-MATRIX-732-CENARIOS.csv`: 133 linhas
+estão associadas a resultados existentes e 599 permanecem
 `NAO_QUALIFICADO_NESTA_RODADA`. O estado detalhado permanece em
 `REQUIREMENTS_STATUS.csv`, `SCENARIO_RESULTS.csv`, `RESULT-MATRIX-732-CENARIOS.csv`, `CHECKPOINT.md` e
 `OPENSPEC-AUDIT-2026-09-10.md`; nenhum desses itens foi fechado somente por

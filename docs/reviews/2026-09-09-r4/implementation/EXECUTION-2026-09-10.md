@@ -146,6 +146,23 @@ percorrem cursores de catálogo até um limite seguro de 1.000 itens e sinalizam
 falha de lookup; não apresentam uma primeira página incompleta como catálogo
 vazio.
 
+### Adapter REST versionado executável — 11/09/2026
+
+O teste `r2-rest-adapter-latest.log` percorreu a fronteira `ProviderAdapter`
+com um endpoint HTTP local independente do `provider-sim`. O adapter
+`rest-json-v1` construiu `POST /v1/operations` e `GET /v1/operations/{id}`,
+preservou `idempotency_key`, `mode`, `input` e `file_refs`, aplicou API Key
+resolvida pelo binding e validou o fluxo `202/PENDING` → `200/SUCCEEDED` com
+marcador de resposta externo. O decoder recusou campos desconhecidos,
+documentos concatenados, estados inválidos e status HTTP fora do contrato.
+
+Executor, polling e reconciliação passaram a consumir essa fronteira para
+submit/status/decodificação. A imagem `ai-hub-r2-cometa:r2` foi reconstruída a
+partir do commit `cabc3b1`, o container oficial foi recriado com `--no-deps` e
+`/metrics` respondeu HTTP 200. A prova é seletiva de contrato e integração
+local; não cobre provedor comercial, autenticação regional, crash/partição ou
+produção.
+
 ## Limites e pendências explícitas
 
 Esta rodada fecha a sequência operacional local de seed, carga, callback,
