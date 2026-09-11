@@ -146,6 +146,7 @@ func main() {
 	} else {
 		fileCatalog := objectstore.NewCatalog(db, objects)
 		handlers.SetFileCatalog(fileCatalog)
+		finalizer.SetResultCatalog(fileCatalog)
 		objectstore.NewHandlers(fileCatalog).Register(mux)
 		// Expurgo é opt-in e exige tenants explícitos. Isso evita que um
 		// processo de runtime obtenha escopo global por configuração implícita.

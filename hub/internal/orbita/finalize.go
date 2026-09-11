@@ -1,13 +1,19 @@
 package orbita
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
+	"os"
 	"time"
 
 	"ai-hub/hub/internal/dispatch"
+	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
 )
@@ -46,14 +52,27 @@ type ProtocolFinalizedFact struct {
 // Finalizer aplica a transicao terminal unica do protocolo (EXE-11) e
 // publica o fato final na mesma transacao (COM-03).
 type Finalizer struct {
-	store *Store
-	log   *slog.Logger
+	store  *Store
+	log    *slog.Logger
+	result ResultCatalog
+}
+
+// ResultCatalog is the object custody boundary used only when a final result
+// exceeds the inline contract limit. The object is uploaded as ORPHAN before
+// the protocol commit and linked after the final representation is durable.
+type ResultCatalog interface {
+	StoreResult(context.Context, string, string, objectstore.UploadRequest, io.Reader) (objectstore.FileRef, error)
+	LinkResult(context.Context, string, string, string) (objectstore.FileRef, error)
 }
 
 // NewFinalizer cria um Finalizer.
 func NewFinalizer(store *Store, log *slog.Logger) *Finalizer {
 	return &Finalizer{store: store, log: log}
 }
+
+// SetResultCatalog connects the optional object custody authority after the
+// HTTP handlers have initialized the S3 client. Small results remain inline.
+func (f *Finalizer) SetResultCatalog(c ResultCatalog) { f.result = c }
 
 // Finalize tenta a transicao terminal; retorna false se o protocolo ja
 // havia sido finalizado por outro caminho (ex.: deadline concorrente),
@@ -63,6 +82,14 @@ func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID 
 	body.Status = string(status)
 	body.ProtocolID = protocolID
 	body.ResultVersion = 1
+	var resultRef *objectstore.FileRef
+	if status == StatusSucceeded || status == StatusPartiallySucceeded {
+		materialized, ref, materializeErr := f.materializeLargeResult(ctx, tenantID, protocolID, body)
+		if materializeErr != nil {
+			return false, materializeErr
+		}
+		body, resultRef = materialized, ref
+	}
 
 	applied, err := f.store.Finalize(ctx, FinalizeParams{
 		ProtocolID: protocolID, ExpectedVersion: expectedVersion, Status: status,
@@ -98,6 +125,48 @@ func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID 
 		f.log.Info("finalizacao ignorada: protocolo ja possuia transicao terminal", "trace_id", traceID, "protocol_id", protocolID)
 		return false, nil
 	}
+	if resultRef != nil {
+		if _, linkErr := f.result.LinkResult(ctx, tenantID, resultRef.ID, protocolID); linkErr != nil {
+			// O protocolo já tem sua representação e o objeto continua
+			// identificado como obrigação ORPHAN para reconciliação; não há
+			// retry de finalização que possa duplicar o evento.
+			f.log.Error("resultado volumoso aguardando vinculação de retenção", "trace_id", traceID, "protocol_id", protocolID, "file_id", resultRef.ID, "error", linkErr)
+		}
+	}
 	f.log.Info("protocolo finalizado", "trace_id", traceID, "protocol_id", protocolID, "status", status, "reason", reason)
 	return applied, nil
+}
+
+func (f *Finalizer) materializeLargeResult(ctx context.Context, tenant, protocol string, body FinalBody) (FinalBody, *objectstore.FileRef, error) {
+	if body.Result == nil {
+		return body, nil, nil
+	}
+	raw, err := json.Marshal(body.Result)
+	if err != nil {
+		return body, nil, err
+	}
+	if int64(len(raw)) <= objectstore.InlineLimit {
+		return body, nil, nil
+	}
+	if f.result == nil {
+		return body, nil, errors.New("large result custody unavailable")
+	}
+	sum := sha256.Sum256(raw)
+	q := objectstore.UploadRequest{
+		Size: int64(len(raw)), SHA256: hex.EncodeToString(sum[:]), ContentType: "application/json",
+		Purpose: envOr("RESULT_OBJECT_PURPOSE", "RESULT"), Class: envOr("RESULT_OBJECT_CLASS", "SYNTHETIC"), Region: envOr("RESULT_OBJECT_REGION", "local"),
+	}
+	ref, err := f.result.StoreResult(ctx, tenant, protocol, q, bytes.NewReader(raw))
+	if err != nil {
+		return body, nil, err
+	}
+	body.Result = ref
+	return body, &ref, nil
+}
+
+func envOr(name, fallback string) string {
+	if value := os.Getenv(name); value != "" {
+		return value
+	}
+	return fallback
 }
