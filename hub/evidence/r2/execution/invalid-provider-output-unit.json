@@ -1,0 +1,10 @@
+{
+  "check": "Resposta externa incompatível não vira sucesso",
+  "status": "PASS_UNITARIO",
+  "command": "go test -count=1 ./internal/cometa -run '^TestNormalizeProviderResultRejectsOutputContractWithoutMapping$' -v",
+  "oracle": {
+    "invalid_output_mapping": "rejected",
+    "succeeded_result_published": false,
+    "scope": "Cometa normalization rule"
+  }
+}
