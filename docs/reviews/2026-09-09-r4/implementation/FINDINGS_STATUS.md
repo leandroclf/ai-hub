@@ -16,6 +16,7 @@ F-R4-09, F-R4-10, F-R4-11 e F-R4-12. O Browser Harness passou como
 `PASS-EXPLORATORY` com CDP explícito; o Playwright determinístico, a carga
 autorizada, RLS, restore, HA local e produto HTTP local têm evidências atuais.
 A matriz integral dos 201 requisitos/732 cenários, provedores reais, fencing
-geral, budgets completos, financeiro/entrega produtivos e projeção em escala
-ainda não foram demonstrados. Nenhum P0 aberto foi reclassificado como
+geral (apesar do fencing positivo específico de correlation no polling),
+budgets completos, financeiro/entrega produtivos e projeção em escala ainda não
+foram demonstrados. Nenhum P0 aberto foi reclassificado como
 concluído apenas por documentação.

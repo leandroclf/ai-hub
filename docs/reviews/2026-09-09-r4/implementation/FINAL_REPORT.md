@@ -52,6 +52,9 @@ Na mesma rodada, a incidência econômica foi desacoplada do estado operacional:
 aceitação externa `UNKNOWN` gera incidência `SUBMITTED`, cada polling gera
 incidência `STATUS` por `attempt_id`, e o oráculo financeiro confirmou fatos de
 custo/receita, inbox e journal balanceado no workload autorizado.
+O polling passou a exigir o `provider_request_id` congelado no claim; uma
+resposta divergente fica como recibo de investigação e não produz estado ou
+outbox da operação protegida.
 
 ## Limite de conclusão
 

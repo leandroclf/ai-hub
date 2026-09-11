@@ -53,6 +53,10 @@ textual isolada.
   limita redelivery/publicação a `tenant_operator` ou `hub_admin`. Os testes
   passaram em RED→GREEN e a suíte Go completa, race dos módulos críticos e
   `go vet` permaneceram verdes.
+- Fencing positivo: o `CompletePoll` compara o `provider_request_id` recebido
+  com o correlation ID congelado no claim; divergência fica em recibo
+  `POLL_CORRELATION_MISMATCH`, sem mudança de estado ou outbox. O teste
+  PostgreSQL específico e a suíte Cometa passaram.
 - Rastreamento integral: `generate-openspec-results.py` gerou 732 linhas a
   partir do inventário; 36 foram associados às evidências existentes e 696
   receberam `NAO_QUALIFICADO_NESTA_RODADA`. O resultado não é aprovação dos
