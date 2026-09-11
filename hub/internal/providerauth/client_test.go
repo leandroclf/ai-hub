@@ -169,6 +169,65 @@ func TestOAuthCacheRevocationAndExpiry(t *testing.T) {
 	}
 }
 
+func TestOAuthL1RemainsUsableWhenResolverBecomesUnavailable(t *testing.T) {
+	var calls atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		fmt.Fprint(w, `{"access_token":"l1-token","expires_in":30}`)
+	}))
+	defer server.Close()
+	u, _ := url.Parse(server.URL)
+	t.Setenv("ENVIRONMENT", "local")
+	t.Setenv("EGRESS_HTTP_ORIGINS", server.URL)
+	t.Setenv("EGRESS_PRIVATE_RULES", u.Host+"=127.0.0.1/32")
+	c := NewTokenCache("127.0.0.1:1")
+	defer c.Close()
+	c.Resolver = testResolver{"oauth-secret": {Value: "actual-client-secret", Version: "v1"}}
+	cfg := Config{AuthType: OAuthClientCredentials, TokenURL: server.URL, ClientID: "fixture-client", ClientSecretRef: "oauth-secret", SecretVersion: "v1", BindingID: "binding-a", TenantID: "tenant-a", Environment: "local"}
+	request := func() *http.Request {
+		req, _ := http.NewRequest(http.MethodGet, "https://provider.example", nil)
+		if err := c.Apply(context.Background(), http.DefaultClient, "account", cfg, req); err != nil {
+			t.Fatal(err)
+		}
+		return req
+	}
+	first := request()
+	c.Resolver = testResolver{}
+	second := request()
+	if first.Header.Get("Authorization") != "Bearer l1-token" || second.Header.Get("Authorization") != first.Header.Get("Authorization") {
+		t.Fatalf("L1 não preservou token válido: first=%q second=%q", first.Header.Get("Authorization"), second.Header.Get("Authorization"))
+	}
+	if got := calls.Load(); got != 1 {
+		t.Fatalf("resolver/endpoint foi consultado %d vezes durante falha posterior do cofre; esperado 1", got)
+	}
+}
+
+func TestKeyedLockAcquireHonorsCancellationWhileBusy(t *testing.T) {
+	c := NewTokenCache("127.0.0.1:1")
+	defer c.Close()
+	lock := c.retainLock("busy-key")
+	if err := lock.acquire(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		lock.release()
+		c.releaseLock(lock)
+	}()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := make(chan error, 1)
+	go func() { result <- lock.acquire(ctx) }()
+	cancel()
+	select {
+	case err := <-result:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("espera cancelada retornou %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("espera no lock não respeitou cancelamento")
+	}
+}
+
 func TestOAuthLockTrackingIsBounded(t *testing.T) {
 	c := NewTokenCache("127.0.0.1:1")
 	defer c.Close()
