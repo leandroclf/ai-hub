@@ -1,0 +1,22 @@
+[
+  {
+    "check": "Admin service validation uses current qualification and no-provider-call fixture",
+    "status": "PASS",
+    "service": "browser-publication-1789134558335",
+    "validation": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls\n\nTTL efetivo: 10s · Hash: 5eea86e105398d2b453057e3285db1de181203332cf596d7ba1245817fba4be9"
+  },
+  {
+    "check": "Admin publishes qualified service version and presents immutable state",
+    "status": "PASS",
+    "service": "browser-publication-1789134558335",
+    "version": 1
+  },
+  {
+    "check": "Published service rejects mutation and preserves content hash",
+    "status": "PASS",
+    "service": "browser-publication-1789134558335",
+    "version": 1,
+    "mutation_status": 409,
+    "state": "PUBLISHED"
+  }
+]
