@@ -285,3 +285,10 @@ com duas tentativas, ambas com os mesmos bytes, hash, evento e delivery ID; o
 servidor independente verificou o HMAC de cada requisição. O cenário
 R2-EXE-08-S01 permanece parcial porque a composição da mesma jornada POST final,
 GET público e duas reentregas ainda precisa ser executada em um único oráculo.
+
+O teste `result-reconciliation-smoke.json` também simulou a lacuna entre o
+upload concluído e o commit do protocolo deixando a referência em
+`VALIDATING`, enquanto o objeto já estava no LocalStack. A reconciliação
+validou o conteúdo e promoveu a referência a `ORPHAN`; uma tentativa de ligá-la
+a outra obrigação foi recusada, e somente a obrigação original criou o pin e
+promoveu o estado para `READY`. Nenhum provedor foi chamado ou reexecutado.
