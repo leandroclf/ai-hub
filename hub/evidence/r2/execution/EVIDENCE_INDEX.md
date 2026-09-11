@@ -4,7 +4,7 @@
 
 | Artefato | Procedimento e resultado | Limite |
 |---|---|---|
-| `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos, `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
+| `authorized-load-latest.log` | `node hub/deploy/r2/tests/authorized-load.mjs` após `catalog-seed.mjs`: PASS; oito caminhos (`r4-authorized-1789123114890`), `SUCCEEDED`/`FAILED` esperados e mesma idempotência observada quatro vezes | Dados sintéticos, provider-sim e autoridade local |
 | `browser-smoke.json` | Chromium real com OIDC PKCE, senha+OTP, editor de contrato REST declarativo, CRUD/readback, navegação, logout, troca segura de usuário, leitor global cross-tenant com finalidade, `tenant_reader` sem mutações de destinos/protocolos/financeiro, HTTP 401 pós-logout e 390 px: PASS | Não substitui matriz completa de autorização |
 | Browser Harness | Runner instalado; com `BU_CDP_URL=http://127.0.0.1:9222` percorreu 16 rotas e viewport 390×844: `PASS-EXPLORATORY` | Descoberta automática do daemon headless continua indisponível; Playwright é o gate determinístico |
 | `r2-rest-adapter-latest.log` | `go test -count=1 -race -v ./internal/cometa -run 'TestAdapterRegistry\|TestVersionedRESTAdapter'`: PASS; `rest-json-v1` independente do simulador, paths declarativos `/analise` e `/consulta/{id}`, API Key por binding, SYNC/ASYNC, resposta estrita e Cometa reconstruído | Contrato local de homologação; não é provedor comercial nem qualificação produtiva |
