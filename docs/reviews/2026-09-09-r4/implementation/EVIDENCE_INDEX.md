@@ -11,6 +11,7 @@ limites arquiteturais.
 |---|---|---|
 | `hub/evidence/r2/execution/authorized-load-latest.log` | Carga autenticada com seed versionado | PASS; oito caminhos, falha controlada e idempotência |
 | `hub/evidence/r2/execution/browser-smoke.json` | Portal Playwright | PASS; OIDC, erro de JSON inválido sem falso sucesso, CRUD/readback, editor de contrato REST declarativo, filtro local de referências, editor de produto com mapeamento entre etapas, SLA, destinos versionados, logout, HTTP 401 pós-logout e viewport móvel |
+| `hub/evidence/r2/execution/browser-smoke.json` | R2-ADM-09-S01/S02 e R2-ADM-11-S01/S03 | PASS local para redelivery auditado, reconciliação segura de `UNKNOWN`, leitura financeira persistida e bloqueio de autoaprovação; aprovação compensatória completa do ajuste permanece pendente |
 | Browser Harness `scenarios/admin-console.py` | 16 rotas administrativas em CDP explícito `BU_CDP_URL=http://127.0.0.1:9222` | PASS-EXPLORATORY; descoberta automática do daemon headless ainda não funciona, evidência em `hub/evidence/r2/execution/browser-harness-latest.log` |
 | `hub/evidence/r2/execution/r2-rest-adapter-latest.log` | Fronteira `ProviderAdapter` e contrato `rest-json-v1` | PASS seletivo; endpoint REST local independente, API Key por binding, SYNC/ASYNC, resposta estrita, submit/poll/reconciliação ligados ao adapter e Cometa reconstruído; provedor comercial permanece fora |
 | `hub/internal/cometa/custody.go` + migração `0041` | Inbox de callback | PASS de implementação/testes focados; identidade por capability, limites de bytes/itens e retenção periódica; qualificação externa ainda aberta |
@@ -60,7 +61,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 134 com evidência existente e 598 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 138 com evidência existente e 594 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -104,8 +105,8 @@ foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race do
 módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
-fonte: 732 cenários, dos quais 134 possuem resultado/evidência já registrada e
-598 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
+fonte: 732 cenários, dos quais 138 possuem resultado/evidência já registrada e
+594 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
 e não substitui a execução dos cenários restantes.
 
 Na continuação de 11/09/2026, `r2-int-exe-qualification.log` registrou as
