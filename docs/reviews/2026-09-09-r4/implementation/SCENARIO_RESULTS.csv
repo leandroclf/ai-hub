@@ -124,7 +124,7 @@ R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação com
 R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
 R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;generate-openspec-inventory.py derivou 201 requisitos e 732 cenários das 29 specs, sem IDs duplicados e com digest de fonte
-R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 139 resultados associados e 593 explicitamente NAO_QUALIFICADO_NESTA_RODADA
+R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 142 resultados associados e 590 explicitamente NAO_QUALIFICADO_NESTA_RODADA
 R4-QUA-01-S03;PARCIAL;matriz e digest de fonte registrados; hash final do working tree permanece dependente do commit e do artefato de proveniência da rodada
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes
@@ -138,3 +138,6 @@ R2-ADM-09-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — reconciliação de UNK
 R2-ADM-09-S03;PASS_INTEGRADO_LOCAL;r2-security.log + browser-smoke.json — leitor administrativo sem escopo de escrita recebe 403 no endpoint de reconciliação e o portal não exibe ação de replay
 R2-ADM-11-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal consulta contas, fatos e journal persistidos pelo Libra, incluindo batch_id e origem financeira
 R2-ADM-11-S03;PARCIAL_INTEGRADO;browser-smoke.json — preparação de ajuste exige razão e aprovador distinto, sem autoaprovação; aprovação compensatória completa permanece pendente
+R2-CAT-03-S01;PARCIAL_INTEGRADO;product-dag-latest.log + product-http-latest.log — A/B independentes respeitam max_parallel=2 e dois efeitos reais são consolidados; medição de sobreposição de traces permanece pendente
+R2-DAD-01-S01;PARCIAL_INTEGRADO;admission-postgres.log + r2-cat-dad-qualification.log — admissão fixa versão/hash e cria pin na mesma transação, mas o encadeamento HTTP upload→submit ainda não foi exercitado
+R2-DAD-01-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — FileRef pronto de tenant-a não pode ser baixado por tenant-b e a admissão consulta tenant_id sem revelar referência alheia

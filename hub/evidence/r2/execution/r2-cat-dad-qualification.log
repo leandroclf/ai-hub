@@ -32,6 +32,9 @@ observed=portal compilou com TypeScript/Vite; smoke autenticado validou CRUD/rea
 scope=container admin-ui e backend reais do Compose local; Browser Harness permanece exploratório e não é usado como aprovação de acessibilidade WCAG completa
 
 [boundaries]
-not_qualified=R2-CAT-02-S01/S02/S03, R2-CAT-03-S01/S02, R2-CAT-05-S01/S03, R2-CAT-06, R2-CAT-08-S02/S03
-not_qualified=R2-DAD-01, R2-DAD-02-S02/S03, R2-DAD-03-S03, R2-DAD-04-S01/S02, R2-DAD-05-S03
+partial=R2-CAT-03-S01 — A/B independentes e max_parallel=2 foram comprovados, mas não houve medição de sobreposição de traces
+partial=R2-DAD-01-S01 — versão/hash e pin atômico foram comprovados com FileRef READY, mas upload HTTP seguido de submit ainda não foi exercitado
+qualified=R2-DAD-01-S02 — download cross-tenant e consulta de admissão por tenant foram recusados indistinguivelmente
+not_qualified=R2-CAT-02-S01/S02/S03, R2-CAT-03-S02, R2-CAT-05-S01/S03, R2-CAT-06, R2-CAT-08-S02/S03
+not_qualified=R2-DAD-01-S03, R2-DAD-02-S02/S03, R2-DAD-03-S03, R2-DAD-04-S01/S02, R2-DAD-05-S03
 limitation=provas locais não substituem provedor comercial, upload HTTP completo, falha de storage entre commit, réplica atrasada ou topologia regional

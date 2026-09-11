@@ -34,8 +34,10 @@ limites arquiteturais.
 | `hub/internal/cometa/polling_custody.go` + `polling_custody_test.go` | Fencing positivo de correlation no polling | PASS PostgreSQL real; `provider_request_id` divergente gera recibo auditável, não altera estado e não publica outbox |
 | `hub/evidence/r2/execution/provider-output-custody-latest.log` | Perfil técnico, `OutputMapping` e separação de recibo bruto/resultado normalizado | PASS com PostgreSQL real; submit/poll/callback/reconciliação projetam a saída pelo snapshot e o corpo recebido é preservado em `provider_receipts` com hash |
 | `hub/evidence/r2/execution/result-file-custody-latest.log` | Custódia de resultado volumoso | PASS com PostgreSQL real e LocalStack; upload streaming acima do limite inline, `ORPHAN` antes do commit, `FileRef` na representação e `LinkResult` pós-commit |
+| `hub/evidence/r2/execution/r2-cat-dad-qualification.log` + `admission-postgres.log` | R2-DAD-01-S01/S02 | S01 parcial: pin de versão/hash na admissão, sem upload HTTP ponta a ponta; S02 PASS local: download e resolução de FileRef entre tenants são recusados |
 | `hub/evidence/r2/execution/product-dag-latest.log` | Plano de produto, dependências, paralelismo, consolidação e compensação | PASS de integração durável em PostgreSQL e testes de concorrência; jornada HTTP local também comprovada, enquanto provedor comercial e matriz integral continuam abertos |
 | `hub/evidence/r2/execution/product-http-latest.log` | Admissão HTTP de produto composto no provider-sim | PASS; duas etapas independentes produziram dois efeitos, GET finalizou `SUCCEEDED` e repetição idempotente não criou novo efeito |
+| `hub/evidence/r2/execution/product-dag-latest.log` + `product-http-latest.log` | R2-CAT-03-S01 | Parcial integrado; A/B independentes respeitam `max_parallel=2` e consolidam dois efeitos reais, mas a sobreposição temporal de traces ainda não foi medida |
 | `hub/evidence/r2/execution/capacity-budget-latest.log` | Budget efetivo de I/O externo | PASS; snapshot de oferta, contexto, lease e margem limitam a janela; carga prolongada e provedor comercial continuam fora do gate local |
 | `hub/internal/orbita/admission_test.go` | Isolamento do teste concorrente de admissão | PASS 20 repetições e suíte completa com o worker Orbita ativo; célula sintética não compartilhada com a execução do laboratório |
 | `hub/evidence/r2/execution/kind-continuity-latest.log` | Kind independente, bootstrap offline, UI/gateway, dependências, perda controlada de Cometa/Pulsar | PASS; três nós, seis dependências cluster-owned, cinco workloads, Jobs de migração/OIDC, RTO observado de 4,398 ms/4,421 ms; volume efêmero de laboratório; recriação de nó/contêiner Kind permanece fora |
@@ -61,7 +63,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 139 com evidência existente e 593 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 142 com evidência existente e 590 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -105,8 +107,8 @@ foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race do
 módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
-fonte: 732 cenários, dos quais 139 possuem resultado/evidência já registrada e
-593 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
+fonte: 732 cenários, dos quais 142 possuem resultado/evidência já registrada e
+590 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
 e não substitui a execução dos cenários restantes.
 
 Na continuação de 11/09/2026, `r2-int-exe-qualification.log` registrou as
