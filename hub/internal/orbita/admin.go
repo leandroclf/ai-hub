@@ -349,11 +349,16 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		}
 		providerSLA := 0
 		var targetData struct {
-			ProviderSLASeconds int `json:"provider_sla_seconds"`
+			ProviderSLASeconds int    `json:"provider_sla_seconds"`
+			ProviderSLAPolicy  string `json:"provider_sla_policy"`
 		}
+		providerPolicy := "MONITOR_ONLY"
 		if json.Unmarshal(snapshotRaw, &snapshot) == nil {
 			_ = json.Unmarshal(snapshot.Target.Data, &targetData)
 			providerSLA = targetData.ProviderSLASeconds
+			if value := strings.ToUpper(strings.TrimSpace(targetData.ProviderSLAPolicy)); value != "" {
+				providerPolicy = value
+			}
 		}
 		providerDeadline := accepted
 		if providerSLA > 0 {
@@ -363,12 +368,21 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 		if finalized.Valid {
 			observedAt = finalized.Time
 		}
+		providerBreached := providerSLA > 0 && !observedAt.Before(providerDeadline)
+		providerOutcome := "NOT_CONFIGURED"
+		if providerSLA > 0 {
+			providerOutcome = "ON_TIME"
+			if providerBreached {
+				providerOutcome = providerPolicy + "_BREACH"
+			}
+		}
 		items = append(items, map[string]any{
 			"protocol_id": protocolID, "tenant_id": protocolTenant, "application_id": applicationID, "status": state,
 			"accepted_at": accepted, "client_deadline_at": clientDeadline, "provider_sla_seconds": providerSLA,
+			"provider_sla_policy": providerPolicy, "provider_sla_outcome": providerOutcome,
 			"provider_deadline_at": providerDeadline, "observed_at": observedAt,
 			"client_sla_breached":   !observedAt.Before(clientDeadline),
-			"provider_sla_breached": providerSLA > 0 && !observedAt.Before(providerDeadline),
+			"provider_sla_breached": providerBreached,
 			"finalized_at":          finalized, "final_event_id": finalEvent,
 		})
 		if len(items) == limit {

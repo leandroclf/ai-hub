@@ -76,7 +76,7 @@ ON CONFLICT (cell_id) DO UPDATE SET environment='local',state='READY',total_unit
 const schemaInput={type:'object',properties:{cpf:{type:'string'},delay_ms:{type:'integer'}},required:[],additionalProperties:false};
 const failureInput={type:'object',properties:{force_fail:{type:'boolean'}},required:['force_fail'],additionalProperties:false};
 const schemaOutput={type:'object',properties:{status:{type:'string'},provider_request_id:{type:'string'}},required:['status'],additionalProperties:false};
-const common={input_schema:schemaInput,output_schema:schemaOutput,data_class:'SYNTHETIC',qualification_id:'r4-fixture-qualification',client_sla_seconds:30,provider_sla_seconds:5,retry_ttl_seconds:10,finalization_reserve_seconds:5};
+const common={input_schema:schemaInput,output_schema:schemaOutput,data_class:'SYNTHETIC',qualification_id:'r4-fixture-qualification',client_sla_seconds:30,provider_sla_seconds:5,provider_sla_policy:'MONITOR_ONLY',retry_ttl_seconds:10,finalization_reserve_seconds:5};
 const resources=[
  {kind:'applications',id:'app-acme',tenant_id:'acme',name:'Aplicação fixture acme',data:{}},
  {kind:'provider-accounts',id:'prov-sync-1',tenant_id:'acme',name:'Provider sync fixture',data:{provider_account_id:'prov-sync-1',provider_id:'provider-sim',environment:'local',base_url:'http://provider-sim:8090',provider_mode:'sync',auth_type:'NONE',token_ttl_seconds:90}},

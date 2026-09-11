@@ -54,6 +54,7 @@ type CatalogData struct {
 	QualificationID            string            `json:"qualification_id"`
 	ClientSLASeconds           int               `json:"client_sla_seconds"`
 	ProviderSLASeconds         int               `json:"provider_sla_seconds"`
+	ProviderSLAPolicy          string            `json:"provider_sla_policy"`
 	RetryTTLSeconds            int               `json:"retry_ttl_seconds"`
 	FinalizationReserveSeconds int               `json:"finalization_reserve_seconds"`
 	SyncHTTPBudgetSeconds      int               `json:"sync_http_budget_seconds"`
@@ -171,6 +172,16 @@ func ValidateResource(r Resource) Validation {
 	}
 	if d.RetryTTLSeconds < 0 {
 		bad("retry_ttl_seconds", "TTL deve ser inteiro não negativo")
+	}
+	providerSLAPolicy := strings.ToUpper(strings.TrimSpace(d.ProviderSLAPolicy))
+	if providerSLAPolicy == "" {
+		providerSLAPolicy = "MONITOR_ONLY"
+	}
+	if d.ProviderSLASeconds < 0 || (d.ProviderSLASeconds == 0 && strings.TrimSpace(d.ProviderSLAPolicy) != "") {
+		bad("provider_sla_seconds", "SLA do provedor deve ser positivo quando uma política é informada")
+	}
+	if providerSLAPolicy != "MONITOR_ONLY" && providerSLAPolicy != "REJECT_LATE" {
+		bad("provider_sla_policy", "política deve ser MONITOR_ONLY ou REJECT_LATE")
 	}
 	v.EffectiveRetrySeconds = d.RetryTTLSeconds
 	if d.ClientSLASeconds > 0 && v.EffectiveRetrySeconds > d.ClientSLASeconds-d.FinalizationReserveSeconds {

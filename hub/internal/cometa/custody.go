@@ -10,6 +10,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"ai-hub/hub/internal/dispatch"
@@ -27,6 +28,11 @@ type Submission struct {
 }
 
 var ErrCallbackInboxQuota = errors.New("callback inbox quota exceeded")
+
+// ErrCallbackCapabilityInvalid representa apenas ausência ou divergência da
+// capability. Falhas de leitura da autoridade devem permanecer distinguíveis
+// para que o ingresso responda como indisponível e permita redelivery.
+var ErrCallbackCapabilityInvalid = errors.New("invalid callback capability")
 
 // ErrSubmissionFence indica que o owner da submissao perdeu a autoridade
 // duravel antes de atravessar a fronteira de I/O externo.
@@ -136,15 +142,15 @@ func callbackTokenHash(token string) string {
 // exposing it in storage or accepting a callback for a different operation.
 func (s *Store) AuthenticateCallback(ctx context.Context, operationID, token string) error {
 	if operationID == "" || token == "" {
-		return errors.New("missing callback capability")
+		return ErrCallbackCapabilityInvalid
 	}
 	var expected string
 	if err := s.db.QueryRowContext(ctx, `SELECT callback_token_hash FROM operations WHERE operation_id=$1`, operationID).Scan(&expected); err != nil {
-		return err
+		return fmt.Errorf("callback capability authority: %w", err)
 	}
 	actual := callbackTokenHash(token)
 	if expected == "" || subtle.ConstantTimeCompare([]byte(expected), []byte(actual)) != 1 {
-		return errors.New("invalid callback capability")
+		return ErrCallbackCapabilityInvalid
 	}
 	return nil
 }

@@ -166,7 +166,11 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusAccepted)
 			return
 		}
-		http.Error(w, "callback unauthorized", http.StatusUnauthorized)
+		if errors.Is(err, ErrCallbackCapabilityInvalid) {
+			http.Error(w, "callback unauthorized", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
 		return
 	}
 	// 2xx is an acknowledgement of durable custody, never merely of parsing.

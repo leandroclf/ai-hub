@@ -80,3 +80,44 @@ func TestCallbackRejectsNonTerminalObservationBeforeOrphanCustody(t *testing.T) 
 		t.Fatalf("non-terminal callback entered orphan path: status=%d body=%s", w.Code, w.Body.String())
 	}
 }
+
+func TestCallbackDoesNotAckWhenCustodyAuthorityUnavailable(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated PostgreSQL")
+	}
+	t.Setenv("CALLBACK_INGRESS_KEY", "fixture-ingress")
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := NewStore(db)
+	commandID := idgen.New()
+	cmd := dispatch.Command{CommandID: commandID, ProtocolID: idgen.New(), TenantID: "callback-db-failure", ApplicationID: "app", CellID: "cell", ProviderAccountID: "account", StepDeadline: time.Now().Add(time.Minute)}
+	claim, owned, err := s.PrepareSubmission(context.Background(), cmd, "binding", "v1")
+	if err != nil || !owned {
+		db.Close()
+		t.Fatalf("prepare owned=%v err=%v", owned, err)
+	}
+	h := NewHandlers(&Executor{store: s}, s)
+	db.Close()
+	r := httptest.NewRequest(http.MethodPost, "/callbacks/"+commandID+"?token="+claim.CallbackToken, strings.NewReader(`{"provider_request_id":"provider-correlation","status":"SUCCEEDED"}`))
+	r.Header.Set("X-Provider-Callback-Key", "fixture-ingress")
+	w := httptest.NewRecorder()
+	h.handleCallback(w, r)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("custody failure status=%d body=%s", w.Code, w.Body.String())
+	}
+	cleanup, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup.Close()
+	if _, err = cleanup.Exec("DELETE FROM attempts WHERE operation_id=$1", commandID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = cleanup.Exec("DELETE FROM operations WHERE operation_id=$1", commandID); err != nil {
+		t.Fatal(err)
+	}
+	t.Log("falha de custódia do PostgreSQL foi classificada como 503 sem emitir ACK 2xx; a entrega pode ser retransmitida")
+}

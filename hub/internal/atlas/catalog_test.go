@@ -162,6 +162,17 @@ func TestCatalogValidation(t *testing.T) {
 	if v := ValidateResource(invalidOffer); v.Valid || v.FieldErrors["routes"] == "" {
 		t.Fatalf("rota sem versão da conta aceita: %+v", v)
 	}
+	policySchema := raw(map[string]any{"type": "object", "properties": map[string]any{"marker": map[string]string{"type": "string"}}})
+	validPolicy := Resource{Kind: "services", ID: "sla-policy", Version: 1, Name: "SLA policy", Data: raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "REJECT_LATE", ProviderMode: "async_poll", AdapterID: "provider-sim", QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})}
+	if v := ValidateResource(validPolicy); !v.Valid {
+		t.Fatalf("política de SLA válida rejeitada: %+v", v)
+	}
+	invalidPolicy := validPolicy
+	invalidPolicy.ID = "invalid-sla-policy"
+	invalidPolicy.Data = raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "RETRY_FOREVER", ProviderMode: "async_poll", AdapterID: "provider-sim", QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})
+	if v := ValidateResource(invalidPolicy); v.Valid || v.FieldErrors["provider_sla_policy"] == "" {
+		t.Fatalf("política de SLA inválida aceita: %+v", v)
+	}
 }
 
 func TestCatalogPublicationRejectsBindingFromAnotherProviderAccount(t *testing.T) {

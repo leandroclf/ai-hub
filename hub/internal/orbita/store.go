@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -199,10 +200,6 @@ type FinalizeParams struct {
 // concorrente). Publica o fato "protocol.finalized" na mesma
 // transacao (COM-03).
 func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx *sqlTx) error) (bool, error) {
-	body, err := json.Marshal(p.FinalBody)
-	if err != nil {
-		return false, fmt.Errorf("orbita: serializar corpo final: %w", err)
-	}
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return false, err
@@ -210,12 +207,37 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 	defer tx.Rollback()
 
 	var mode string
-	var deadline, observed time.Time
-	if err = tx.QueryRowContext(ctx, "SELECT mode,client_deadline_at FROM protocols WHERE protocol_id=$1 FOR UPDATE", p.ProtocolID).Scan(&mode, &deadline); err != nil {
+	var deadline, accepted, observed time.Time
+	var snapshotRaw []byte
+	if err = tx.QueryRowContext(ctx, "SELECT mode,client_deadline_at,accepted_at,config_snapshot FROM protocols WHERE protocol_id=$1 FOR UPDATE", p.ProtocolID).Scan(&mode, &deadline, &accepted, &snapshotRaw); err != nil {
 		return false, err
 	}
 	if err = tx.QueryRowContext(ctx, "SELECT clock_timestamp()").Scan(&observed); err != nil {
 		return false, err
+	}
+	if p.Status == StatusSucceeded || p.Status == StatusPartiallySucceeded {
+		var snapshot struct {
+			Target struct {
+				Data json.RawMessage `json:"data"`
+			} `json:"target"`
+		}
+		var target struct {
+			ProviderSLASeconds int    `json:"provider_sla_seconds"`
+			ProviderSLAPolicy  string `json:"provider_sla_policy"`
+		}
+		if json.Unmarshal(snapshotRaw, &snapshot) == nil {
+			_ = json.Unmarshal(snapshot.Target.Data, &target)
+		}
+		policy := strings.ToUpper(strings.TrimSpace(target.ProviderSLAPolicy))
+		if policy == "REJECT_LATE" && target.ProviderSLASeconds > 0 && !observed.Before(accepted.Add(time.Duration(target.ProviderSLASeconds)*time.Second)) {
+			p.Status = StatusFailed
+			p.TerminalReason = "REJECTED_PROVIDER_SLA"
+			p.FinalBody = providerSLAFailureBody(p.ProtocolID)
+		}
+	}
+	body, err := json.Marshal(p.FinalBody)
+	if err != nil {
+		return false, fmt.Errorf("orbita: serializar corpo final: %w", err)
 	}
 	// This rejects already late results independently of the timer. It is NOT
 	// proof that a subsequent commit cannot cross the deadline (T-R2-01).
@@ -273,6 +295,15 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 		return false, err
 	}
 	return true, nil
+}
+
+func providerSLAFailureBody(protocolID string) FinalBody {
+	return FinalBody{
+		ProtocolID:   protocolID,
+		Status:       string(StatusFailed),
+		ErrorCode:    "PROVIDER_SLA_EXCEEDED",
+		ErrorMessage: "o prazo contratado do provedor foi excedido; o resultado não é elegível",
+	}
 }
 
 // sqlTx encapsula *sql.Tx para o chamador de Finalize sem expor o

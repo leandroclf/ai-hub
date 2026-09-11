@@ -8,6 +8,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -276,6 +277,7 @@ func (c *TokenCache) applyCertificate(ctx context.Context, client *http.Client, 
 	var pair struct {
 		Certificate string `json:"certificate"`
 		PrivateKey  string `json:"private_key"`
+		RootCA      string `json:"root_ca,omitempty"`
 	}
 	if json.Unmarshal([]byte(secret.Value), &pair) != nil {
 		return fmt.Errorf("invalid certificate secret")
@@ -284,7 +286,15 @@ func (c *TokenCache) applyCertificate(ctx context.Context, client *http.Client, 
 	if err != nil {
 		return fmt.Errorf("invalid certificate pair")
 	}
-	return egress.WithCertificate(client, certificate, nil)
+	var roots *tls.Config
+	if strings.TrimSpace(pair.RootCA) != "" {
+		pool := x509.NewCertPool()
+		if !pool.AppendCertsFromPEM([]byte(pair.RootCA)) {
+			return fmt.Errorf("invalid certificate root")
+		}
+		roots = &tls.Config{RootCAs: pool}
+	}
+	return egress.WithCertificate(client, certificate, roots)
 }
 
 func (c *TokenCache) Apply(ctx context.Context, httpClient *http.Client, providerAccountID string, cfg Config, req *http.Request) error {

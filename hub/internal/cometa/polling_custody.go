@@ -88,7 +88,7 @@ func (s *Store) ClaimPoll(ctx context.Context, cell, owner string) (PollClaim, e
  WHERE o.cell_id=$1 AND o.state IN ('ACCEPTED_EXTERNAL','WAITING_FINAL','UNKNOWN') AND o.provider_request_id IS NOT NULL
  AND p.next_run_at<=clock_timestamp() AND p.deadline_at>clock_timestamp()+make_interval(secs=>p.timeout_seconds)
  AND p.attempts_count<p.max_attempts AND (p.lease_expires_at IS NULL OR p.lease_expires_at<clock_timestamp())
- ORDER BY p.next_run_at FOR UPDATE OF o SKIP LOCKED LIMIT 1`, cell).Scan(&id)
+	ORDER BY p.next_run_at FOR UPDATE OF o, p SKIP LOCKED LIMIT 1`, cell).Scan(&id)
 	if err != nil {
 		return c, err
 	}
