@@ -134,7 +134,7 @@ Status: **parcialmente concluído**. Probes de capacidade/drenagem e placement t
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.7 Qualificar R2-OPE-07 com oráculos independentes
+- [x] 3.7 Qualificar R2-OPE-07 com oráculos independentes
   - Objective: Executar R2-OPE-07-S01, R2-OPE-07-S02, R2-OPE-07-S03. Caso indispensável: Backend de observabilidade fora; esperado: buffer/export limitado não bloqueia thread de negócio; perda de telemetria é sinalizada e não altera ledger/auditoria duráveis.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy`; `hub/cmd`.
   - Depends on: 2.7; fixtures de r2-09; dependências de integração pertinentes.

@@ -129,6 +129,7 @@ func main() {
 	callbackMux := http.NewServeMux()
 	handlers.RegisterCallback(callbackMux)
 	srv.HandlePublic("/callbacks/", callbackMux)
+	go outbox.RunPendingAgeMetric(ctx, db, "operation", "cometa", 5*time.Second, srv.Metrics(), log)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

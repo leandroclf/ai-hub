@@ -165,6 +165,7 @@ func main() {
 	srv.Handle("/v1/", mux)
 	srv.Handle("/internal/", mux)
 	srv.Handle("/admin/v1/", mux)
+	go outbox.RunPendingAgeMetric(ctx, db, "protocol", "orbita", 5*time.Second, srv.Metrics(), log)
 
 	if err := srv.ListenAndServe(addr); err != nil {
 		log.Error("server stopped", "error", err)

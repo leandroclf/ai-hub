@@ -52,6 +52,22 @@ func TestAuthDoesNotProtectProbesAndMetricsHaveBoundedRoutes(t *testing.T) {
 	}
 }
 
+func TestMetricsExposeCurrentGaugeWithoutBusinessIdentifiers(t *testing.T) {
+	r := NewRegistry()
+	r.SetGauge("hub_obligation_age_seconds", map[string]string{"kind": "outbox", "component": "orbita"}, 42.5)
+	recorder := httptest.NewRecorder()
+	r.ServeHTTP(recorder, httptest.NewRequest(http.MethodGet, "/metrics", nil))
+	body := recorder.Body.String()
+	if !strings.Contains(body, `hub_obligation_age_seconds{component="orbita",kind="outbox"} 42.5`) {
+		t.Fatalf("gauge ausente: %s", body)
+	}
+	for _, forbidden := range []string{"protocol_id", "tenant_id", "operation_id", "attempt_id"} {
+		if strings.Contains(body, forbidden) {
+			t.Fatalf("identificador de negócio exposto na métrica: %s", body)
+		}
+	}
+}
+
 func TestShutdownWaitsForAcceptedRequest(t *testing.T) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {

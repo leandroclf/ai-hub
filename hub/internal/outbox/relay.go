@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"log/slog"
 	"time"
+
+	"ai-hub/hub/internal/platform/httpserver"
 )
 
 // PublishFunc publica uma linha da outbox no broker (SNS). Retornar
@@ -38,6 +40,36 @@ func RunRelay(ctx context.Context, db *sql.DB, aggregateType string, publish Pub
 					log.Error("outbox: falha ao marcar publicado", "error", err, "id", row.ID)
 				}
 			}
+		}
+	}
+}
+
+// RunPendingAgeMetric publica a idade da obrigação não publicada mais antiga
+// consultando a mesma autoridade PostgreSQL que o relay protege. O valor é
+// um gauge de baixa cardinalidade, separado por tipo de agregado e serviço.
+func RunPendingAgeMetric(ctx context.Context, db *sql.DB, aggregateType, component string, interval time.Duration, registry *httpserver.Registry, log *slog.Logger) {
+	update := func() {
+		var age sql.NullFloat64
+		err := db.QueryRowContext(ctx, `SELECT COALESCE(EXTRACT(EPOCH FROM (clock_timestamp()-MIN(created_at))),0) FROM outbox WHERE published=FALSE AND aggregate_type=$1`, aggregateType).Scan(&age)
+		if err != nil {
+			log.Warn("outbox: falha ao medir idade da obrigação", "error", err, "aggregate_type", aggregateType)
+			return
+		}
+		value := 0.0
+		if age.Valid && age.Float64 > 0 {
+			value = age.Float64
+		}
+		registry.SetGauge("hub_obligation_age_seconds", map[string]string{"kind": "outbox", "component": component}, value)
+	}
+	update()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			update()
 		}
 	}
 }

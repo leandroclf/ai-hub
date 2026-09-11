@@ -17,6 +17,7 @@ import (
 type Registry struct {
 	mu       sync.Mutex
 	counters map[string]float64
+	gauges   map[string]float64
 }
 
 // Observe exports cumulative buckets and count/sum for bounded route dimensions.
@@ -45,7 +46,16 @@ func (r *Registry) Observe(name string, labels map[string]string, value float64)
 
 // NewRegistry cria um registry vazio.
 func NewRegistry() *Registry {
-	return &Registry{counters: make(map[string]float64)}
+	return &Registry{counters: make(map[string]float64), gauges: make(map[string]float64)}
+}
+
+// SetGauge publica um valor atual de baixa cardinalidade. Gauges são usados
+// para estado observado, como a idade da obrigação mais antiga; não recebem
+// identificadores de negócio nem acumulam amostras históricas.
+func (r *Registry) SetGauge(name string, labels map[string]string, value float64) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.gauges[key(name, labels)] = value
 }
 
 func key(name string, labels map[string]string) string {
@@ -87,9 +97,16 @@ func (r *Registry) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	for k := range r.counters {
 		keys = append(keys, k)
 	}
+	for k := range r.gauges {
+		keys = append(keys, k)
+	}
 	sort.Strings(keys)
 	w.Header().Set("Content-Type", "text/plain; version=0.0.4")
 	for _, k := range keys {
-		fmt.Fprintf(w, "%s %g\n", k, r.counters[k])
+		value, ok := r.counters[k]
+		if !ok {
+			value = r.gauges[k]
+		}
+		fmt.Fprintf(w, "%s %g\n", k, value)
 	}
 }

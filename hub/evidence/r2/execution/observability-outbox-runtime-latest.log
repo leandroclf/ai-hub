@@ -1,0 +1,12 @@
+OBSERVABILITY_OUTBOX_RUNTIME=START
+sample metric_age_seconds=0 alert_firing=false
+sample metric_age_seconds=63.107872 alert_firing=false
+sample metric_age_seconds=68.10879 alert_firing=false
+sample metric_age_seconds=73.10775 alert_firing=false
+sample metric_age_seconds=78.107534 alert_firing=false
+sample metric_age_seconds=83.107606 alert_firing=false
+sample metric_age_seconds=88.108459 alert_firing=false
+sample metric_age_seconds=93.108435 alert_firing=false
+sample metric_age_seconds=98.107561 alert_firing=false
+sample metric_age_seconds=103.107106 alert_firing=true
+OBSERVABILITY_OUTBOX_RUNTIME=PASS outbox_age_metric=true alert_firing=true broker=unavailable
