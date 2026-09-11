@@ -168,7 +168,8 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 		r, retryAfter := unknown("poll_status_invalid")
 		return settleCapacity(r), retryAfter
 	}
-	if _, err = atlas.TransformJSON(body, nil, target.OutputSchema); err != nil {
+	normalized, err := normalizeProviderResult(snap, result)
+	if err != nil {
 		r, retryAfter := unknown("poll_output_contract_failed")
 		return settleCapacity(r), retryAfter
 	}
@@ -176,7 +177,7 @@ func (e *Executor) requestPoll(ctx context.Context, c PollClaim) (dispatch.Resul
 	if result.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return settleCapacity(dispatch.Result{Kind: kind, ProviderRequestID: c.ProviderRequestID, ResponseBody: result}), retryAfter
+	return settleCapacity(dispatch.Result{Kind: kind, ProviderRequestID: c.ProviderRequestID, ResponseBody: normalized}), retryAfter
 }
 
 func pollRetryAfter(value string, now time.Time) time.Duration {

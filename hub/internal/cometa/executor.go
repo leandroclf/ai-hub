@@ -331,11 +331,7 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	if json.Unmarshal(cmd.ConfigSnapshot, &snapshot) != nil {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "snapshot_unavailable"}
 	}
-	target, err := atlas.DecodeCatalogData(snapshot.Target)
-	raw, _ := json.Marshal(result)
-	if err == nil {
-		_, err = atlas.TransformJSON(raw, nil, target.OutputSchema)
-	}
+	normalized, err := normalizeProviderResult(snapshot, result)
 	if err != nil {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "provider_output_contract_failed"}
 	}
@@ -345,7 +341,7 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 	} else if result.Status != "SUCCEEDED" {
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown}
 	}
-	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: result}
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: normalized}
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer cancel()
 	durable, err := e.store.ConserveObservation(saveCtx, cmd, response, "PROVIDER", operationID)
@@ -353,6 +349,34 @@ func (e *Executor) finalize(ctx context.Context, cmd dispatch.Command, operation
 		return dispatch.Result{CommandID: operationID, Kind: dispatch.FactUnknown, ErrorCode: "custody_unavailable"}
 	}
 	return durable
+}
+
+// normalizeProviderResult aplica o perfil técnico congelado antes de
+// conservar o resultado público. A correlação/status do provedor permanece
+// metadado operacional; somente a representação mapeada cruza o contrato do
+// cliente. RawMessage preserva números JSON grandes sem convertê-los para
+// float64 antes da igualdade entre GET e webhook.
+func normalizeProviderResult(snapshot atlas.OfferSnapshot, result providersim.OperationResult) (json.RawMessage, error) {
+	target, err := atlas.DecodeCatalogData(snapshot.Target)
+	if err != nil {
+		return nil, err
+	}
+	profile := atlas.CatalogData{}
+	if len(snapshot.TechnicalProfile.Data) > 0 {
+		profile, err = atlas.DecodeCatalogData(snapshot.TechnicalProfile)
+		if err != nil {
+			return nil, err
+		}
+	}
+	raw, err := json.Marshal(result)
+	if err != nil {
+		return nil, err
+	}
+	mapped, err := atlas.TransformJSON(raw, profile.OutputMapping, target.OutputSchema)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(mapped), nil
 }
 
 func (e *Executor) publishOperationFact(ctx context.Context, operationID string, fact OperationFact) error {
@@ -447,22 +471,17 @@ func (e *Executor) ApplyExternalObservation(ctx context.Context, operationID str
 	if json.Unmarshal(command.ConfigSnapshot, &snapshot) != nil {
 		return dispatch.Result{}, errors.New("callback snapshot unavailable")
 	}
-	target, err := atlas.DecodeCatalogData(snapshot.Target)
-	if err != nil {
+	if _, err := atlas.DecodeCatalogData(snapshot.Target); err != nil {
 		return dispatch.Result{}, errors.New("callback target unavailable")
 	}
-	resultRaw, err := json.Marshal(result)
-	if err != nil || len(target.OutputSchema) == 0 {
+	if _, err := json.Marshal(result); err != nil {
 		return dispatch.Result{}, errors.New("callback result unavailable")
 	}
-	if _, err := atlas.TransformJSON(resultRaw, nil, target.OutputSchema); err != nil {
+	normalized, err := normalizeProviderResult(snapshot, result)
+	if err != nil {
 		return dispatch.Result{}, errors.New("callback output contract failed")
 	}
-	var fullResult map[string]any
-	if json.Unmarshal(resultRaw, &fullResult) != nil {
-		return dispatch.Result{}, errors.New("callback result encoding failed")
-	}
-	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: fullResult}
+	response := dispatch.Result{CommandID: operationID, OperationID: operationID, ProviderRequestID: result.ProviderRequestID, ResponseBody: normalized}
 	if result.Status == "SUCCEEDED" {
 		response.Kind = dispatch.FactSucceeded
 	} else if result.Status == "FAILED" {

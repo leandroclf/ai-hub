@@ -177,19 +177,15 @@ func (e *Executor) ReconcileExternal(ctx context.Context, claim ReconciliationCl
 	if result.Status != "SUCCEEDED" && result.Status != "FAILED" {
 		return settleCapacity(unknown("reconciliation_status_invalid")), errors.New("reconciliation status invalid")
 	}
-	if _, err = atlas.TransformJSON(mustJSON(result), nil, target.OutputSchema); err != nil {
+	normalized, err := normalizeProviderResult(snap, result)
+	if err != nil {
 		return settleCapacity(unknown("reconciliation_output_contract_failed")), errors.New("reconciliation output contract failed")
 	}
 	kind := dispatch.FactSucceeded
 	if result.Status == "FAILED" {
 		kind = dispatch.FactFailed
 	}
-	return settleCapacity(dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: result}), nil
-}
-
-func mustJSON(value any) []byte {
-	raw, _ := json.Marshal(value)
-	return raw
+	return settleCapacity(dispatch.Result{CommandID: claim.OperationID, OperationID: claim.OperationID, ProviderRequestID: result.ProviderRequestID, Kind: kind, ResponseBody: normalized}), nil
 }
 
 // RunReconciliationWorker executa somente consultas de status para solicitações
