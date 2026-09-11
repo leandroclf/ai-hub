@@ -71,42 +71,42 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 3. Provas por requisito
 
-- [ ] 3.1 Qualificar R2-FIN-01 com oráculos independentes
+- [x] 3.1 Qualificar R2-FIN-01 com oráculos independentes
   - Objective: Executar R2-FIN-01-S01, R2-FIN-01-S02, R2-FIN-01-S03. Caso indispensável: Compra por submit; esperado: custo e ausência de receita seguem marcos distintos, sem preço constante de simulador.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/libra`; `hub/internal/libraclient/client.go`.
   - Depends on: 2.1; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.2 Qualificar R2-FIN-02 com oráculos independentes
+- [x] 3.2 Qualificar R2-FIN-02 com oráculos independentes
   - Objective: Executar R2-FIN-02-S01, R2-FIN-02-S02, R2-FIN-02-S03. Caso indispensável: Precisão; esperado: resultado decimal é exato e arredondamento é único no marco contratado.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/libra`; `hub/internal/libraclient/client.go`.
   - Depends on: 2.2; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-FIN-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-FIN-03 com oráculos independentes
   - Objective: Executar R2-FIN-03-S01, R2-FIN-03-S02, R2-FIN-03-S03, R2-FIN-03-S04. Caso indispensável: Timeout com efeito incerto; esperado: hold permanece até evidência de cancelamento/ausência/custo; duplicata não libera nem captura duas vezes.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/libra`; `hub/internal/libraclient/client.go`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 4 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.4 Qualificar R2-FIN-04 com oráculos independentes
+- [x] 3.4 Qualificar R2-FIN-04 com oráculos independentes
   - Objective: Executar R2-FIN-04-S01, R2-FIN-04-S02, R2-FIN-04-S03. Caso indispensável: Franquia final concorrente; esperado: uma usa franquia e a outra segue regra de excedente ou recusa explicitamente contratada.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/libra`; `hub/internal/libraclient/client.go`.
   - Depends on: 2.4; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.5 Qualificar R2-FIN-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-FIN-05 com oráculos independentes
   - Objective: Executar R2-FIN-05-S01, R2-FIN-05-S02, R2-FIN-05-S03. Caso indispensável: Estorno autorizado; esperado: partidas compensatórias preservam original, razão e correlação.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/libra`; `hub/internal/libraclient/client.go`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.6 Qualificar R2-FIN-06 com oráculos independentes
+- [x] 3.6 Qualificar R2-FIN-06 com oráculos independentes
   - Objective: Executar R2-FIN-06-S01, R2-FIN-06-S02, R2-FIN-06-S03. Caso indispensável: Contestação de SLA; esperado: valor, evidência, disputa e ajuste ficam separados da resposta final imutável do cliente.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/libra`; `hub/internal/libraclient/client.go`.
   - Depends on: 2.6; fixtures de r2-09; dependências de integração pertinentes.

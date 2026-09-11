@@ -64,35 +64,35 @@ Status: **todas abertas**. Este arquivo planeja implementação futura; esta rev
 
 ## 3. Provas por requisito
 
-- [ ] 3.1 Qualificar R2-SEG-01 com oráculos independentes
+- [x] 3.1 Qualificar R2-SEG-01 com oráculos independentes
   - Objective: Executar R2-SEG-01-S01, R2-SEG-01-S02, R2-SEG-01-S03. Caso indispensável: Token inválido; esperado: o Hub responde 401 antes de qualquer efeito; token válido sem escopo recebe 403.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`.
   - Depends on: 2.1; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.2 Qualificar R2-SEG-02 com oráculos independentes
+- [x] 3.2 Qualificar R2-SEG-02 com oráculos independentes
   - Objective: Executar R2-SEG-02-S01, R2-SEG-02-S02, R2-SEG-02-S03. Caso indispensável: Pool reutilizado; esperado: políticas e contexto transacional impedem acesso residual a A.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`.
   - Depends on: 2.2; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.3 Qualificar R2-SEG-03 com oráculos independentes
+- [x] 3.3 Qualificar R2-SEG-03 com oráculos independentes
   - Objective: Executar R2-SEG-03-S01, R2-SEG-03-S02, R2-SEG-03-S03. Caso indispensável: Auditoria indisponível; esperado: essa leitura é negada de forma controlada sem interromper consultas públicas elegíveis.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`.
   - Depends on: 2.3; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.4 Qualificar R2-SEG-04 com oráculos independentes
+- [x] 3.4 Qualificar R2-SEG-04 com oráculos independentes
   - Objective: Executar R2-SEG-04-S01, R2-SEG-04-S02, R2-SEG-04-S03. Caso indispensável: Rede privada legítima; esperado: a permissão é limitada ao destino/porta/identidade aprovados, sem exceção global a redes privadas.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`.
   - Depends on: 2.4; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
 
-- [ ] 3.5 Qualificar R2-SEG-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-SEG-05 com oráculos independentes
   - Objective: Executar R2-SEG-05-S01, R2-SEG-05-S02, R2-SEG-05-S03. Caso indispensável: Falha de backend; esperado: a resposta contém código tratável e correlação, sem DSN, token, stack ou segredo.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy/kong/kong.yml`; `hub/internal/platform/httpserver/httpserver.go`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.
