@@ -120,6 +120,24 @@ func TestTechnicalProjectionEnforcesPublishedDialectAndBounds(t *testing.T) {
 	}
 }
 
+func TestTechnicalProjectionUsesMathematicalNumberEquality(t *testing.T) {
+	schema := json.RawMessage(`{"type":"object","properties":{"amount":{"type":"number","enum":[1]},"count":{"type":"integer","enum":[1]}}}`)
+	input := json.RawMessage(`{"amount":1.0,"count":1e0}`)
+	if _, err := TransformJSON(input, nil, schema); err != nil {
+		t.Fatalf("números semanticamente equivalentes foram rejeitados: %v", err)
+	}
+}
+
+func TestPublishedSchemaRejectsExcessiveNesting(t *testing.T) {
+	var schema any = map[string]any{"type": "string"}
+	for i := 0; i < 40; i++ {
+		schema = map[string]any{"type": "object", "properties": map[string]any{"nested": schema}}
+	}
+	if validSchema(raw(schema)) {
+		t.Fatal("schema excessivamente profundo publicado")
+	}
+}
+
 func TestImportSecretSanitization(t *testing.T) {
 	input := json.RawMessage(`{"variable":[{"key":"secret","value":"never-retain-me"}],"item":[{"request":{"method":"POST","url":{"raw":"https://name:password@api.example.test/service?token=never-retain-me"},"header":[{"key":"Authorization","value":"Bearer never-retain-me"}],"body":{"raw":"never-retain-me"},"auth":{"type":"bearer","bearer":[{"value":"never-retain-me"}]}}}]}`)
 	items, err := SanitizeImport(input)
@@ -166,6 +184,8 @@ func TestCatalogValidation(t *testing.T) {
 	validPolicy := Resource{Kind: "services", ID: "sla-policy", Version: 1, Name: "SLA policy", Data: raw(CatalogData{Modes: []string{"ASYNC"}, ClientSLASeconds: 30, ProviderSLASeconds: 5, ProviderSLAPolicy: "REJECT_LATE", ProviderMode: "async_poll", AdapterID: "provider-sim", QualificationID: "fixture", DataClass: "SYNTHETIC", InputSchema: policySchema, OutputSchema: policySchema})}
 	if v := ValidateResource(validPolicy); !v.Valid {
 		t.Fatalf("política de SLA válida rejeitada: %+v", v)
+	} else if v.SchemaDialect != PublishedSchemaDialect {
+		t.Fatalf("dialeto de schema não foi declarado: %q", v.SchemaDialect)
 	}
 	validREST := validPolicy
 	validREST.ID = "rest-service"

@@ -19,6 +19,10 @@ import (
 var ErrConflict = errors.New("versão publicada ou identidade já existente; crie nova versão")
 var ErrRevision = errors.New("revisão alterada por outro operador; recarregue e compare")
 
+// PublishedSchemaDialect identifica o subconjunto de JSON Schema que o
+// catálogo compila na publicação e o runtime aplica na transformação.
+const PublishedSchemaDialect = "ai-hub-json-schema-subset/v1"
+
 type Resource struct {
 	Kind      string          `json:"kind"`
 	ID        string          `json:"id"`
@@ -116,6 +120,7 @@ type Validation struct {
 	FieldErrors           map[string]string `json:"field_errors"`
 	Layers                [][]string        `json:"layers"`
 	EffectiveRetrySeconds int               `json:"effective_retry_seconds"`
+	SchemaDialect         string            `json:"schema_dialect"`
 	Hash                  string            `json:"content_hash"`
 	Fixture               string            `json:"fixture"`
 }
@@ -148,7 +153,7 @@ func DecodeCatalogData(r Resource) (CatalogData, error) {
 
 // ValidateResource performs bounded structural validation without external effects.
 func ValidateResource(r Resource) Validation {
-	v := Validation{Valid: true, FieldErrors: map[string]string{}, Layers: [][]string{}, Hash: resourceHash(r), Fixture: "synthetic-validation-no-provider-calls"}
+	v := Validation{Valid: true, FieldErrors: map[string]string{}, Layers: [][]string{}, SchemaDialect: PublishedSchemaDialect, Hash: resourceHash(r), Fixture: "synthetic-validation-no-provider-calls"}
 	bad := func(k, msg string) { v.Valid = false; v.FieldErrors[k] = msg }
 	if !validKind(r.Kind) {
 		bad("kind", "recurso não suportado")
@@ -395,7 +400,7 @@ func validSchema(raw json.RawMessage) bool {
 	if s.Properties == nil {
 		return false
 	}
-	return validateSchemaDefinition(raw, "$", map[string]bool{}) == nil
+	return validateSchemaDefinition(raw, "$") == nil
 }
 func PlanDAG(steps []Step) ([][]string, error) {
 	if len(steps) > 20 {

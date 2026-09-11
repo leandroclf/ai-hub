@@ -233,7 +233,7 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 			out[dst] = value
 		}
 	}
-	if err := validateSchemaDefinition(schema, "$", map[string]bool{}); err != nil {
+	if err := validateSchemaDefinition(schema, "$"); err != nil {
 		return nil, errors.New("schema inválido")
 	}
 	var contract schemaRule
@@ -301,7 +301,7 @@ func TransformJSON(input json.RawMessage, mapping map[string]string, schema json
 // contrato o proíbe.
 func validateJSONSchema(value, schema json.RawMessage, path string) error {
 	var rule schemaRule
-	if err := validateSchemaDefinition(schema, path, map[string]bool{}); err != nil || json.Unmarshal(schema, &rule) != nil || rule.Type == "" {
+	if err := validateSchemaDefinition(schema, path); err != nil || json.Unmarshal(schema, &rule) != nil || rule.Type == "" {
 		return errors.New("schema inválido em " + path)
 	}
 	if len(rule.Enum) > 0 {
@@ -401,13 +401,35 @@ type schemaRule struct {
 	Maximum              json.RawMessage            `json:"maximum"`
 }
 
+const (
+	maxSchemaDepth = 32
+	maxSchemaNodes = 512
+	maxSchemaBytes = 64 * 1024
+)
+
+type schemaBudget struct{ nodes int }
+
 var supportedSchemaKeywords = map[string]bool{
 	"type": true, "required": true, "properties": true,
 	"additionalProperties": true, "items": true, "enum": true,
 	"minimum": true, "maximum": true,
 }
 
-func validateSchemaDefinition(raw json.RawMessage, path string, stack map[string]bool) error {
+func validateSchemaDefinition(raw json.RawMessage, path string) error {
+	return validateSchemaDefinitionWithBudget(raw, path, 0, &schemaBudget{})
+}
+
+func validateSchemaDefinitionWithBudget(raw json.RawMessage, path string, depth int, budget *schemaBudget) error {
+	if len(raw) > maxSchemaBytes {
+		return fmt.Errorf("schema excede %d bytes em %s", maxSchemaBytes, path)
+	}
+	if depth > maxSchemaDepth {
+		return fmt.Errorf("profundidade de schema excede %d em %s", maxSchemaDepth, path)
+	}
+	budget.nodes++
+	if budget.nodes > maxSchemaNodes {
+		return fmt.Errorf("schema excede %d nós em %s", maxSchemaNodes, path)
+	}
 	var obj map[string]json.RawMessage
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.UseNumber()
@@ -436,12 +458,12 @@ func validateSchemaDefinition(raw json.RawMessage, path string, stack map[string
 		if !safeField(key) {
 			return errors.New("propriedade inválida")
 		}
-		if err := validateSchemaDefinition(child, path+"."+key, stack); err != nil {
+		if err := validateSchemaDefinitionWithBudget(child, path+"."+key, depth+1, budget); err != nil {
 			return err
 		}
 	}
 	if len(rule.Items) > 0 {
-		if err := validateSchemaDefinition(rule.Items, path+"[]", stack); err != nil {
+		if err := validateSchemaDefinitionWithBudget(rule.Items, path+"[]", depth+1, budget); err != nil {
 			return err
 		}
 	}
@@ -486,5 +508,45 @@ func jsonEqual(a, b json.RawMessage) bool {
 	la, lb := json.NewDecoder(bytes.NewReader(a)), json.NewDecoder(bytes.NewReader(b))
 	la.UseNumber()
 	lb.UseNumber()
-	return la.Decode(&left) == nil && lb.Decode(&right) == nil && reflect.DeepEqual(left, right)
+	return la.Decode(&left) == nil && lb.Decode(&right) == nil && jsonValueEqual(left, right)
+}
+
+func jsonValueEqual(left, right any) bool {
+	if leftNumber, ok := left.(json.Number); ok {
+		rightNumber, ok := right.(json.Number)
+		if !ok {
+			return false
+		}
+		leftRat, leftOK := new(big.Rat).SetString(leftNumber.String())
+		rightRat, rightOK := new(big.Rat).SetString(rightNumber.String())
+		return leftOK && rightOK && leftRat.Cmp(rightRat) == 0
+	}
+	leftObject, leftOK := left.(map[string]any)
+	rightObject, rightOK := right.(map[string]any)
+	if leftOK || rightOK {
+		if !leftOK || !rightOK || len(leftObject) != len(rightObject) {
+			return false
+		}
+		for key, leftValue := range leftObject {
+			rightValue, exists := rightObject[key]
+			if !exists || !jsonValueEqual(leftValue, rightValue) {
+				return false
+			}
+		}
+		return true
+	}
+	leftArray, leftOK := left.([]any)
+	rightArray, rightOK := right.([]any)
+	if leftOK || rightOK {
+		if !leftOK || !rightOK || len(leftArray) != len(rightArray) {
+			return false
+		}
+		for index := range leftArray {
+			if !jsonValueEqual(leftArray[index], rightArray[index]) {
+				return false
+			}
+		}
+		return true
+	}
+	return reflect.DeepEqual(left, right)
 }
