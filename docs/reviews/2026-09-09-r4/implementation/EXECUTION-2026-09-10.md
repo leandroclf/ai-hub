@@ -8,6 +8,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 
 | Gate | Comando/artefato | Resultado |
 |---|---|---|
+| Primeira instalação local | `R2_COMPOSE_PROJECT=ai_hub_r3qual bash hub/deploy/r2/scripts/bootstrap.sh` | PASS integrado local; identidade reconciliada, migrations idempotentes, imagens atuais construídas, 16 unidades do Compose oficial ativas, probes HTTP 200 em aplicação/UI/IdP e regras de egress com CIDRs reais (`R2-OPE-01-S01`); volumes foram preservados |
 | Catálogo versionado | `node hub/deploy/r2/tests/catalog-seed.mjs` | PASS; seed idempotente via `admin/v1`, validação/publicação com `If-Match`, qualificação/célula sintéticas somente no fixture autorizado |
 | Carga autorizada | `R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/authorized-load.mjs` | PASS; oito caminhos, idempotência e log saneado em `hub/evidence/r2/execution/authorized-load-latest.log` (prefixo `r4-authorized-1789123114890`) |
 | SLO de referência | `R2_SLO_SAMPLES=30 R2_SLO_CONCURRENCY=5 node hub/deploy/r2/tests/slo-load-proof.mjs` | PASS local; 30 admissões ASYNC e 30 GETs, payload de 59989 bytes, admissão p95=55,07 ms/p99=57,06 ms e GET p95=5,16 ms/p99=5,23 ms; artefato saneado em `hub/evidence/r2/execution/slo-load-latest.json` |
