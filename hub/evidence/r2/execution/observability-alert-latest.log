@@ -1,0 +1,6 @@
+OBSERVABILITY_ALERT_PROOF=START
+runbook PASS path=hub/deploy/r2/RUNBOOKS.md anchor=capacidade-indisponivel
+runbook PASS path=hub/deploy/r2/RUNBOOKS.md anchor=outbox-e-quarentena
+runbook PASS path=hub/deploy/r2/RUNBOOKS.md anchor=telemetria
+OBSERVABILITY_ALERT_PROOF=PASS alerts=3 runbooks=resolved labels=bounded dashboard=present
+evidence=hub/evidence/r2/execution/observability-alert-latest.log

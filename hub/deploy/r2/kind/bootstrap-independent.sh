@@ -67,6 +67,7 @@ apply_configmap_file alloy-config config.alloy "$root/observability/config-indep
 apply_configmap_file loki-config config.yaml "$root/observability/loki.yaml"
 apply_configmap_file tempo-config tempo.yaml "$root/observability/tempo.yaml"
 apply_configmap_file prometheus-config prometheus.yml "$root/observability/prometheus.yml"
+apply_configmap_file prometheus-alerts alerts.yml "$root/observability/alerts.yml"
 apply_configmap_file kong-config kong.yml "$root/kong.yml"
 
 for image in \
