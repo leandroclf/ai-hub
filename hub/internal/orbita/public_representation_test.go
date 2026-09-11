@@ -100,6 +100,42 @@ func TestPublicLookupUsesLocalPendingAndExpiredRepresentation(t *testing.T) {
 	t.Log("PostgreSQL + HTTP público: estado pendente foi servido localmente como 200 sem sucesso fictício; estado EXPIRED retornou 200 com os mesmos bytes finais persistidos")
 }
 
+func TestPublicLookupReportsAuthorityUnavailableWithout404(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL R2_CORE_TEST_DSN")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.Close()
+
+	h := NewHandlers(NewStore(db), nil, nil, nil, nil, nil)
+	mux := http.NewServeMux()
+	h.Register(mux)
+	principal := auth.Principal{
+		Subject:       "representation-reader",
+		TenantID:      "authority-unavailable",
+		ApplicationID: "app-authority-unavailable",
+		Scopes:        []string{"protocols:read"},
+		ExpiresAt:     time.Now().Add(time.Minute),
+	}
+	req := httptest.NewRequest(http.MethodGet, "/v1/protocols/00000000-0000-4000-8000-000000000001", nil).WithContext(auth.WithPrincipal(context.Background(), principal))
+	res := httptest.NewRecorder()
+	mux.ServeHTTP(res, req)
+	if res.Code != http.StatusServiceUnavailable {
+		t.Fatalf("autoridade indisponível retornou HTTP %d, esperado 503: %s", res.Code, res.Body.String())
+	}
+	if !strings.Contains(res.Body.String(), `"error":"protocol_unavailable"`) {
+		t.Fatalf("erro de autoridade não foi explícito: %s", res.Body.String())
+	}
+	if strings.Contains(res.Body.String(), `"error":"not_found"`) {
+		t.Fatal("falha da autoridade foi convertida em 404 conclusivo")
+	}
+	t.Log("PostgreSQL indisponível: GET público retornou protocol_unavailable/503, sem falso inexistente")
+}
+
 func nullableJSON(value []byte) any {
 	if len(value) == 0 {
 		return nil

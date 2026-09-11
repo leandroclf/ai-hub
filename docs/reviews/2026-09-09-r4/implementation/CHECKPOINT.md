@@ -46,6 +46,12 @@ replay antigo foi deduplicado sem nova finalização/outbox; falha de storage
 permaneceu reconciliável. R2-DAD-04/05 seguem limitados por continuidade de
 leitura, writer alternativo, fencing e HA regional não comprovados.
 
+Em R2-DAD-04, a indisponibilidade da autoridade de leitura agora retorna
+`503/protocol_unavailable` em vez de `500/internal_error` ou `404`; a regressão
+foi coberta com PostgreSQL fechado, e o RLS cross-tenant foi revalidado nas três
+bases. A implementação local está corrigida, mas réplica atrasada e writer
+alternativo regional continuam fora do perfil de laboratório.
+
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A

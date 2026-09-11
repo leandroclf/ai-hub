@@ -85,7 +85,10 @@ func (h *Handlers) handleGetInternal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
+		// A ausência da autoridade de leitura não prova que o protocolo não
+		// existe. Retornar 503 mantém a semântica recuperável e evita que uma
+		// réplica atrasada ou um writer indisponível seja exposto como 404.
+		writeErr(w, http.StatusServiceUnavailable, "protocol_unavailable", "autoridade de protocolo indisponível; tente novamente")
 		return
 	}
 	if p.CellID != principal.CellID {
@@ -445,7 +448,10 @@ func (h *Handlers) handleGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeErr(w, http.StatusInternalServerError, "internal_error", "falha interna; tente novamente")
+		// Uma falha da autoridade de leitura não prova que o protocolo não
+		// existe. A resposta recuperável evita converter réplica atrasada ou
+		// writer indisponível em 404 conclusivo.
+		writeErr(w, http.StatusServiceUnavailable, "protocol_unavailable", "autoridade de protocolo indisponível; tente novamente")
 		return
 	}
 	status := http.StatusOK

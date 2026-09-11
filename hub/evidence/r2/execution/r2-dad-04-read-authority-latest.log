@@ -1,0 +1,17 @@
+AI Hub R2 — prova de leitura recuperável e isolamento da autoridade
+date=2026-09-11
+environment=Compose ai_hub_r3qual / PostgreSQL 16
+secrets=omitted
+
+[public-representation]
+command=R2_CORE_TEST_DSN=<fixture> go test -race -count=1 -v ./internal/orbita -run '^TestPublicLookup(UsesLocalPendingAndExpiredRepresentation|ReportsAuthorityUnavailableWithout404)$'
+result=PASS
+observed=representações pendente/expirada foram servidas pela custódia local sem sucesso fictício; conexão fechada retornou 503 protocol_unavailable, nunca 404 conclusivo
+
+[domain-isolation]
+command=R2_PG_CONTAINER=ai_hub_r3qual-postgres-1 bash hub/deploy/r2/tests/rls-runtime-proof.sh
+result=PASS
+observed=role hub_runtime sem superuser/createrole/bypassrls; escrita/leitura cross-tenant foi isolada em control, core e finance
+
+R2-DAD-04-behavior=PASS
+limitation=uma réplica atrasada e writer alternativo regional não existem no perfil local; a qualificação integral de continuidade permanece aberta

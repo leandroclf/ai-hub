@@ -49,12 +49,13 @@ Status: **parcialmente concluído**. Upload, custódia de resultado e retenção
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.3; sem flags que apresentem mock como fluxo real.
   - Evidence: `hub/evidence/r2/execution/r2-dad-03-runtime-latest.log`; retenção por pin/tombstone, obrigação aberta, falha de storage e replay antigo foram exercitados com PostgreSQL/LocalStack.
 
-- [ ] 2.4 Propriedade, RLS e continuidade de leitura
+- [x] 2.4 Propriedade, RLS e continuidade de leitura
   - Objective: Entregar o comportamento R2-DAD-04 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline DAD-01, DAD-07, DAD-10, SEG-03.
   - Likely files/components: `hub/internal/objectstore`; `hub/internal/orbita`; `hub/migrations`; `hub/deploy/postgres-init/01-init.sh`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-DAD-04; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.4; sem flags que apresentem mock como fluxo real.
+  - Evidence: `hub/evidence/r2/execution/r2-dad-04-read-authority-latest.log`; leitura pendente/expirada, indisponibilidade explícita e RLS nas três bases foram comprovados.
 
 - [ ] 2.5 Restauração reconciliada sem duplicar efeito
   - Objective: Entregar o comportamento R2-DAD-05 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline DAD-07, OPE-11, OPE-15.
