@@ -1,0 +1,23 @@
+R4-OPE-02 — instalação limpa, upgrade, checksum e reconciliação histórica
+source_commit=abeb861
+environment=Compose ai_hub_r3qual / PostgreSQL 16
+temporary_databases=hub_control_r4ope02_20260911,hub_core_r4ope02_20260911,hub_finance_r4ope02_20260911
+commands:
+  docker compose --project-name ai_hub_r3qual -f hub/deploy/r2/compose.yaml run --rm -e MIGRATION_DB_SUFFIX=_r4ope02_20260911 migrate
+  repetir o mesmo runner para replay idempotente
+  alterar apenas schema_migrations.control/0001_init.sql para checksum desconhecido e repetir
+  restaurar o checksum vigente, trocar control/0002_provider_auth.sql para a variante conhecida
+    f4174fbf3e0157b42c8d8fbed0d92405337a9a3bd00647af2f9a52f4c4390fbb e repetir
+result=PASS
+observations:
+  - instalação limpa aplicou control/core/finance sem apagar dados;
+  - replay retornou sucesso e manteve o ledger idempotente;
+  - checksum desconhecido foi rejeitado com exit=3 em control/0001_init.sql,
+    sem prosseguir para migrações posteriores;
+  - a variante conhecida de 0002 foi reconciliada somente após validar schema
+    API_KEY/header, registrando schema_migration_reconciliations;
+  - os bancos temporários foram removidos após a coleta; o volume oficial não
+    foi removido nem recriado.
+limitation=rollback de versão publicada e ensaio de recuperação de aplicação
+durante migração permanecem tarefas operacionais abertas; nenhuma conclusão
+remota ou produtiva é inferida deste laboratório.

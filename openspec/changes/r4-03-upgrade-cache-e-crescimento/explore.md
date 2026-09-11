@@ -8,7 +8,11 @@ Tokens deixaram Redis e lock passou a ser por chave. Contudo, Resolve é chamado
 [hub/internal/providerauth/client.go:74](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/providerauth/client.go#L74), [hub/internal/providerauth/client.go:144](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/providerauth/client.go#L144)
 
 ## F-R4-08
-0002_provider_auth.sql já existente na R2 foi alterada para API_KEY e header. O runner checksum-guardado para em 0002 de um banco previamente migrado, antes de executar a nova 0004. Comparação dos bytes/hashes comprova alteração; falha SQL integrada ainda não foi executada nesta auditoria.
+Estado atual (ensaio de 11/09/2026): o runner foi executado em instalação
+limpa e replay idempotente; checksum desconhecido falhou antes de prosseguir e
+a variante histórica conhecida de `0002_provider_auth.sql` foi reconciliada
+somente com schema API_KEY/header comprovado. Rollback de versão publicada ainda
+não foi ensaiado.
 
 [hub/migrations/control/0002_provider_auth.sql:3](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/migrations/control/0002_provider_auth.sql#L3), [hub/migrations/control/0004_provider_api_key.sql:2](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/migrations/control/0004_provider_api_key.sql#L2), [hub/deploy/r2/scripts/migrate.sh:22](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/deploy/r2/scripts/migrate.sh#L22)
 
