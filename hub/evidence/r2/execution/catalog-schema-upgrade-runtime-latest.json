@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "profile": "r2-cat-05-s03-catalog-schema-upgrade",
+  "key": "r2-cat-05-s03-1789149288093",
+  "protocol_id": "01a0919b-96f2-761d-8ea3-3f2f9daa319d",
+  "admission_status": 202,
+  "version_1": {
+    "state": "PUBLISHED",
+    "content_hash": "8a38774495a6d1715f17d3aa9185bf47d033a4cff288db476c79df7ad4abf766"
+  },
+  "upgrade": {
+    "version": 3,
+    "state": "PUBLISHED",
+    "content_hash": "88e6e205f167202ca96e5fb2d8471857c5038939460401cc5a9cbf5f4f480393",
+    "removed_fields": [
+      "input.delay_ms",
+      "output.provider_request_id"
+    ]
+  },
+  "snapshot": {
+    "target_version": "1",
+    "technical_profile_version": "1"
+  },
+  "final_status": "SUCCEEDED",
+  "provider_request_id": "prov-req-000012",
+  "representation_materialized": true,
+  "finished_at": "2026-09-11T17:54:57.903Z"
+}

@@ -39,7 +39,7 @@ bearers, cookies e chaves privadas não fazem parte desta evidência.
 | Publicação de serviço qualificado | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-service-publication-smoke.mjs` | PASS; validação usou qualificação vigente e fixture sem chamadas ao provedor, publicação apresentou v1 imutável, PATCH posterior retornou 409 com hash preservado e `leitor-a` recuperou a mesma revisão após logout/refresh (`R2-CAT-08-S02`) |
 | Snapshot no aceite | `R2_CORE_TEST_DSN=... go test -race -count=1 -v ./internal/orbita -run TestAdmissionFreezesConfigSnapshotAtAcceptance` | Evidência complementar; PostgreSQL preservou projeção v1 no protocolo e na intenção após alteração local para v2 (`R2-CAT-06-S01`) |
 | Revogação de credencial com L1 expirado | `R2_CORE_TEST_DSN=... go test -race -count=1 -v ./internal/cometa -run '^TestPostgresPollingAuthenticatedHTTP$'` + `go test -race -count=1 ./internal/providerauth -run TestOAuthExpiredL1RefusesRevokedSecretWhileHealthyBindingContinues` | PASS integrado local para `R2-CAT-06-S03`; polling HTTP real usou binding v1 do snapshot, revogação durante trabalho pendente bloqueou novo acesso sem novo efeito no provedor e encerrou recibo/capacidade; o teste de OAuth confirma que o L1 revogado não é reutilizado |
-| Contrato legado e imutabilidade de perfil | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-legacy-contract-smoke.mjs` + `admin-service-publication-smoke.mjs` | PARCIAL integrado; um contrato legado confirmou equivalência GET/webhook e uma versão publicada preservou hash/revisão; segundo cliente e migração v2 permanecem abertos (`R2-CAT-05-S01/S03`) |
+| Contrato legado e imutabilidade de perfil | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-legacy-contract-smoke.mjs` + `admin-service-publication-smoke.mjs` | PARCIAL integrado; um contrato legado confirmou equivalência GET/webhook e uma versão publicada preservou hash/revisão; segundo cliente permanece aberto (`R2-CAT-05-S01`) |
 | Simulação e ciclo de produto administrativo | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-product-simulation-smoke.mjs` | PASS; grafo/tabela exibiu A/B paralelos e C dependente, provider-sim permaneceu em `effects=0/protocols=0` e ciclo A↔C foi bloqueado |
 | Fan-out abusivo no produto | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-product-simulation-smoke.mjs` | PASS integrado local; rascunho com 21 etapas recebeu `valid=false`/`máximo de 20 passos`, não foi publicado e não alterou efeitos/protocolos do provider-sim (`R2-CAT-03-S03`) |
 | Binding, rotação e saúde de capacidade | `PLAYWRIGHT_MODULE=.../playwright-core/index.js R2_COMPOSE_PROJECT=ai_hub_r3qual node hub/deploy/r2/tests/admin-integration-health-smoke.mjs` | PASS; binding publicado exibiu somente referência de cofre, rotação v2 preservou v1 com vigência e `r4-sync` exibiu limite efetivo 5/teto 8, pressão `UNAVAILABLE` e evidência |
@@ -393,3 +393,16 @@ isolada de outro binding.
 Esse resultado promove R2-CAT-06-S03 para `PASS_INTEGRADO_LOCAL` e encerra a
 qualificação da fatia R2-CAT-06. O limite permanece local: cofre e provedor
 comercial não foram homologados.
+
+### Upgrade incompatível com protocolo v1 em voo — 11/09/2026
+
+O ensaio `catalog-schema-upgrade-runtime-latest.json` aceitou uma admissão
+ASYNC usando o serviço v1, publicou durante o processamento uma nova versão
+incompatível que removeu `input.delay_ms` e `output.provider_request_id`, e
+aguardou o resultado pelo caminho HTTP. PostgreSQL confirmou que o target e o
+perfil técnico permaneceram na versão 1, enquanto o protocolo terminou
+`SUCCEEDED` com `provider_request_id` e representação final materializados.
+
+Esse resultado promove R2-CAT-05-S03 para `PASS_INTEGRADO_LOCAL`. A evidência é
+de laboratório com provider-sim, PostgreSQL e portal administrativo; o cenário
+R2-CAT-05-S01 ainda exige o segundo contrato legado.
