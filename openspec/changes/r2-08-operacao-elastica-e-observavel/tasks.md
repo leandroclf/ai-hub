@@ -1,6 +1,6 @@
 # Tasks: Ambientes completos, disponibilidade, escala e observabilidade
 
-Status: **parcialmente concluído**. Probes de capacidade/drenagem, placement e telemetria local têm prova integral; ambientes, escala, continuidade, segurança de infraestrutura e promoção permanecem abertos onde a evidência é estrutural ou parcial. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
+Status: **plataforma local, ambientes coerentes, probes, placement e telemetria local concluídos; escala produtiva, HA regional, segurança remota e promoção permanecem abertas**. O perfil Kind independente foi aplicado e recuperado com dependências próprias; evidências estruturais não são promovidas a prova AWS/produção. Dependências de change: r2-01-identidade-e-isolamento, r2-02-execucao-duravel-e-resultados
 
 ## 1. Contratos e preparação
 
@@ -38,12 +38,13 @@ Status: **parcialmente concluído**. Probes de capacidade/drenagem, placement e 
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.1; sem flags que apresentem mock como fluxo real.
   - Evidence: `hub/evidence/r2/execution/compose-bootstrap-current.log`; bootstrap oficial com volumes preservados, migrations idempotentes, imagens atuais, 16 unidades e probes de aplicação/UI/IdP.
 
-- [ ] 2.2 Kubernetes e cinco ambientes coerentes
+- [x] 2.2 Kubernetes e cinco ambientes coerentes
   - Objective: Entregar o comportamento R2-OPE-02 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-04, OPE-05, ARQ-06, ARQ-01.
   - Likely files/components: `hub/deploy`; `hub/cmd`; `hub/internal/platform`; `hub/internal/atlasclient`.
   - Depends on: 1.3; contratos produtores listados no design disponíveis para integração.
   - Validation: Teste de domínio/contrato dos limites de R2-OPE-02; integração de transação/identidade onde relevante. Não usar apenas status HTTP como oráculo.
   - Completion criteria: Regra e erros observáveis implementados; prova completa será registrada na tarefa 3.2; sem flags que apresentem mock como fluxo real.
+  - Evidence: `hub/evidence/r2/execution/kustomize-overlay-latest.log`, `environment-boundary-latest.log`, `kind-continuity-latest.log` e `hub/deploy/r2/kind/bootstrap-independent.sh`; cinco overlays renderizaram com namespaces/imagens fixados, o local-kind foi aplicado com dependências cluster-owned e o gate de produção sem perfil bloqueou a promoção.
 
 - [x] 2.3 Probes por capacidade e drenagem
   - Objective: Entregar o comportamento R2-OPE-03 na autoridade correta, cobrindo os caminhos e falhas da spec; baseline OPE-05, OPE-13, OPE-14.
@@ -105,12 +106,13 @@ Status: **parcialmente concluído**. Probes de capacidade/drenagem, placement e 
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
   - Evidence: `hub/evidence/r2/execution/optional-dependency-runtime-latest.log` e `compose-bootstrap-current.log`; Alloy/Redis opcionais foram interrompidos sem indisponibilizar workloads de negócio e o bootstrap permaneceu reproduzível.
 
-- [ ] 3.2 Qualificar R2-OPE-02 com oráculos independentes
+- [x] 3.2 Qualificar R2-OPE-02 com oráculos independentes
   - Objective: Executar R2-OPE-02-S01, R2-OPE-02-S02, R2-OPE-02-S03. Caso indispensável: Produção sem perfil; esperado: gate bloqueia ativação e mostra pendências sem impedir desenvolvimento local.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/deploy`; `hub/cmd`.
   - Depends on: 2.2; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
+  - Evidence: S01 `kind-continuity-latest.log` e `bootstrap-independent.sh`; S02/S03 `environment-boundary-latest.log`. Os três cenários foram PASS no envelope local, com S03 bloqueado conforme esperado quando faltam perfil e aprovações; AWS/ambientes remotos permanecem limitação.
 
 - [x] 3.3 Qualificar R2-OPE-03 com oráculos independentes
   - Objective: Executar R2-OPE-03-S01, R2-OPE-03-S02, R2-OPE-03-S03. Caso indispensável: Provedor fora; esperado: não reinicia todos os pods; circuito/quotas contêm apenas a capacidade afetada.
