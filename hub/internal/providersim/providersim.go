@@ -18,6 +18,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"ai-hub/hub/internal/contracts/files"
 )
 
 // Mode escolhe o comportamento de entrega do provedor simulado.
@@ -31,12 +33,13 @@ const (
 
 // SubmitRequest e o corpo aceito por POST /v1/operations.
 type SubmitRequest struct {
-	ProtocolID      string `json:"protocol_id"`
-	Mode            Mode   `json:"mode"`
-	DelayMs         int    `json:"delay_ms"`
-	Fail            bool   `json:"fail"`
-	DropAfterEffect bool   `json:"drop_after_effect"`
-	CallbackURL     string `json:"callback_url,omitempty"`
+	ProtocolID      string            `json:"protocol_id"`
+	FileRefs        []files.Reference `json:"file_refs,omitempty"`
+	Mode            Mode              `json:"mode"`
+	DelayMs         int               `json:"delay_ms"`
+	Fail            bool              `json:"fail"`
+	DropAfterEffect bool              `json:"drop_after_effect"`
+	CallbackURL     string            `json:"callback_url,omitempty"`
 }
 
 // OperationResult e o formato de resultado devolvido pelo provedor,

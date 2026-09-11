@@ -5,19 +5,20 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"ai-hub/hub/internal/platform/idgen"
 )
 
 type ClaimedDelivery struct {
-	ID, ProtocolID, EventID, TenantID, CellID, URL, SecretRef, SecretVersion, Hash, Owner, AttemptID string
-	Body                                                                                             []byte
-	Epoch                                                                                            int64
-	Attempt, MaxAttempts, TimeoutSeconds                                                             int
+	ID, ProtocolID, EventID, TenantID, CellID, URL, DestinationID, SecretRef, SecretVersion, Hash, Owner, AttemptID string
+	Body                                                                                                            []byte
+	Epoch                                                                                                           int64
+	Attempt, DestinationVersion, MaxAttempts, TimeoutSeconds                                                        int
 }
 
 func (s *Store) ConserveFinal(ctx context.Context, envelopeID string, f protocolFact) error {
-	if len(f.Representation) == 0 || len(f.Representation) > 512*1024 || f.CellID == "" || f.TenantID == "" || f.EventID == "" {
+	if len(f.Representation) == 0 || len(f.Representation) > 512*1024 || f.CellID == "" || f.TenantID == "" || f.ApplicationID == "" || f.EventID == "" || len(f.WebhookDestinations) > 100 {
 		return errors.New("invalid final representation")
 	}
 	sum := sha256.Sum256(f.Representation)
@@ -38,30 +39,17 @@ func (s *Store) ConserveFinal(ctx context.Context, envelopeID string, f protocol
 	if n == 0 {
 		return tx.Commit()
 	}
-	rows, err := tx.QueryContext(ctx, `SELECT d.id,d.version,d.url FROM webhook_destination_versions d WHERE d.tenant_id=$1 AND d.cell_id=$2 AND d.state='ACTIVE' AND NOT EXISTS(SELECT 1 FROM webhook_destination_versions newer WHERE newer.id=d.id AND newer.version>d.version)`, f.TenantID, f.CellID)
-	if err != nil {
-		return err
-	}
-	type dest struct {
-		id, url string
-		version int
-	}
-	var destinations []dest
-	for rows.Next() {
-		var d dest
-		if err = rows.Scan(&d.id, &d.version, &d.url); err != nil {
-			rows.Close()
-			return err
+	seen := make(map[string]struct{}, len(f.WebhookDestinations))
+	for _, d := range f.WebhookDestinations {
+		if d.ID == "" || d.Version < 1 || d.URL == "" || d.SecretRef == "" || d.SecretVersion == "" || d.MaxAttempts < 1 || d.MaxAttempts > 20 || d.TimeoutSecond < 1 || d.TimeoutSecond > 15 || (d.ApplicationID != "" && d.ApplicationID != f.ApplicationID) {
+			return errors.New("invalid webhook destination snapshot")
 		}
-		destinations = append(destinations, d)
-	}
-	err = rows.Err()
-	rows.Close()
-	if err != nil {
-		return err
-	}
-	for _, d := range destinations {
-		_, err = tx.ExecContext(ctx, `INSERT INTO deliveries(delivery_id,protocol_id,event_id,destination_url,state,next_attempt_at,tenant_id,cell_id,destination_id,destination_version,representation,body_sha256) VALUES($1,$2,$3,$4,'PENDING',clock_timestamp(),$5,$6,$7,$8,$9,$10) ON CONFLICT(event_id,destination_id,destination_version) DO NOTHING`, idgen.New(), f.ProtocolID, f.EventID, d.url, f.TenantID, f.CellID, d.id, d.version, f.Representation, hash)
+		key := d.ID + ":" + fmt.Sprint(d.Version)
+		if _, ok := seen[key]; ok {
+			return errors.New("duplicate webhook destination snapshot")
+		}
+		seen[key] = struct{}{}
+		_, err = tx.ExecContext(ctx, `INSERT INTO deliveries(delivery_id,protocol_id,event_id,destination_url,state,next_attempt_at,tenant_id,cell_id,destination_id,destination_version,representation,body_sha256) VALUES($1,$2,$3,$4,'PENDING',clock_timestamp(),$5,$6,$7,$8,$9,$10) ON CONFLICT(event_id,destination_id,destination_version) DO NOTHING`, idgen.New(), f.ProtocolID, f.EventID, d.URL, f.TenantID, f.CellID, d.ID, d.Version, f.Representation, hash)
 		if err != nil {
 			return err
 		}
@@ -80,10 +68,10 @@ func (s *Store) ClaimDelivery(ctx context.Context, cell, owner string) (ClaimedD
 	var d ClaimedDelivery
 	d.Owner = owner
 	d.AttemptID = idgen.New()
-	err = tx.QueryRowContext(ctx, `SELECT d.delivery_id,d.protocol_id,d.event_id,d.tenant_id,d.cell_id,d.destination_url,d.representation,d.body_sha256,d.epoch,d.attempts_count,v.secret_ref,v.secret_version,v.max_attempts,v.timeout_seconds
+	err = tx.QueryRowContext(ctx, `SELECT d.delivery_id,d.protocol_id,d.event_id,d.tenant_id,d.cell_id,d.destination_url,d.destination_id,d.destination_version,d.representation,d.body_sha256,d.epoch,d.attempts_count,v.secret_ref,v.secret_version,v.max_attempts,v.timeout_seconds
  FROM deliveries d JOIN webhook_destination_versions v ON v.id=d.destination_id AND v.version=d.destination_version
  WHERE d.cell_id=$1 AND d.state IN ('PENDING','RETRY_SCHEDULED') AND d.next_attempt_at<=clock_timestamp() AND (d.lease_until IS NULL OR d.lease_until<=clock_timestamp())
- ORDER BY d.next_attempt_at,d.delivery_id FOR UPDATE OF d SKIP LOCKED LIMIT 1`, cell).Scan(&d.ID, &d.ProtocolID, &d.EventID, &d.TenantID, &d.CellID, &d.URL, &d.Body, &d.Hash, &d.Epoch, &d.Attempt, &d.SecretRef, &d.SecretVersion, &d.MaxAttempts, &d.TimeoutSeconds)
+	ORDER BY d.next_attempt_at,d.delivery_id FOR UPDATE OF d SKIP LOCKED LIMIT 1`, cell).Scan(&d.ID, &d.ProtocolID, &d.EventID, &d.TenantID, &d.CellID, &d.URL, &d.DestinationID, &d.DestinationVersion, &d.Body, &d.Hash, &d.Epoch, &d.Attempt, &d.SecretRef, &d.SecretVersion, &d.MaxAttempts, &d.TimeoutSeconds)
 	if err != nil {
 		return ClaimedDelivery{}, err
 	}

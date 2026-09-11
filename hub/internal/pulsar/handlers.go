@@ -65,7 +65,7 @@ func (h *Handlers) destinations(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		rows, err := h.store.db.QueryContext(r.Context(), "SELECT id,version,url,state,max_attempts,timeout_seconds FROM webhook_destination_versions WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100", tenant)
+		rows, err := h.store.db.QueryContext(r.Context(), "SELECT id,version,application_id,url,state,max_attempts,timeout_seconds FROM webhook_destination_versions WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100", tenant)
 		if err != nil {
 			auth.Error(w, 503, "destinations_unavailable")
 			return
@@ -73,13 +73,13 @@ func (h *Handlers) destinations(w http.ResponseWriter, r *http.Request) {
 		defer rows.Close()
 		items := []map[string]any{}
 		for rows.Next() {
-			var id, url, state string
+			var id, application, url, state string
 			var version, max, timeout int
-			if rows.Scan(&id, &version, &url, &state, &max, &timeout) != nil {
+			if rows.Scan(&id, &version, &application, &url, &state, &max, &timeout) != nil {
 				auth.Error(w, 503, "destinations_unavailable")
 				return
 			}
-			items = append(items, map[string]any{"id": id, "version": version, "url": url, "state": state, "max_attempts": max, "timeout_seconds": timeout})
+			items = append(items, map[string]any{"id": id, "version": version, "application_id": application, "url": url, "state": state, "max_attempts": max, "timeout_seconds": timeout})
 		}
 		if rows.Err() != nil {
 			auth.Error(w, 503, "destinations_unavailable")
@@ -90,6 +90,7 @@ func (h *Handlers) destinations(w http.ResponseWriter, r *http.Request) {
 		var q struct {
 			ID            string `json:"id"`
 			Version       int    `json:"version"`
+			ApplicationID string `json:"application_id"`
 			URL           string `json:"url"`
 			SecretRef     string `json:"secret_ref"`
 			SecretVersion string `json:"secret_version"`
@@ -119,16 +120,16 @@ func (h *Handlers) destinations(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		var latest int
-		var owner string
-		if err = tx.QueryRowContext(r.Context(), "SELECT COALESCE(max(version),0),COALESCE(max(tenant_id),'') FROM webhook_destination_versions WHERE id=$1", q.ID).Scan(&latest, &owner); err != nil {
+		var owner, ownerApplication string
+		if err = tx.QueryRowContext(r.Context(), "SELECT COALESCE(max(version),0),COALESCE(max(tenant_id),''),COALESCE(max(application_id),'') FROM webhook_destination_versions WHERE id=$1", q.ID).Scan(&latest, &owner, &ownerApplication); err != nil {
 			auth.Error(w, 422, "invalid_destination_id")
 			return
 		}
-		if (owner != "" && owner != tenant) || q.Version != latest+1 {
+		if (owner != "" && owner != tenant) || (owner != "" && ownerApplication != q.ApplicationID) || q.Version != latest+1 {
 			auth.Error(w, 409, "destination_version_conflict")
 			return
 		}
-		_, err = tx.ExecContext(r.Context(), `INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`, q.ID, q.Version, tenant, os.Getenv("CELL_ID"), q.URL, q.SecretRef, q.SecretVersion, q.MaxAttempts, q.Timeout, q.State, p.Subject)
+		_, err = tx.ExecContext(r.Context(), `INSERT INTO webhook_destination_versions(id,version,application_id,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`, q.ID, q.Version, q.ApplicationID, tenant, os.Getenv("CELL_ID"), q.URL, q.SecretRef, q.SecretVersion, q.MaxAttempts, q.Timeout, q.State, p.Subject)
 		if err != nil {
 			auth.Error(w, 503, "destination_custody_unavailable")
 			return

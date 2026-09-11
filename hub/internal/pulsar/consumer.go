@@ -8,18 +8,21 @@ import (
 	"log/slog"
 	"os"
 
+	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/queue"
 )
 
 type protocolFact struct {
-	Representation []byte          `json:"representation"`
-	CellID         string          `json:"cell_id"`
-	ProtocolID     string          `json:"protocol_id"`
-	TraceID        string          `json:"trace_id,omitempty"`
-	TenantID       string          `json:"tenant_id"`
-	Status         string          `json:"status"`
-	FinalBody      json.RawMessage `json:"final_body"`
-	EventID        string          `json:"event_id"`
+	Representation      []byte                         `json:"representation"`
+	CellID              string                         `json:"cell_id"`
+	ProtocolID          string                         `json:"protocol_id"`
+	TraceID             string                         `json:"trace_id,omitempty"`
+	TenantID            string                         `json:"tenant_id"`
+	ApplicationID       string                         `json:"application_id"`
+	WebhookDestinations []dispatch.DestinationSnapshot `json:"webhook_destinations"`
+	Status              string                         `json:"status"`
+	FinalBody           json.RawMessage                `json:"final_body"`
+	EventID             string                         `json:"event_id"`
 }
 
 // RunFactConsumer consome "protocol.finalized" (COM-01: "Orbita ->
@@ -41,7 +44,7 @@ func RunFactConsumer(ctx context.Context, q *queue.Client, queueURL string, stor
 		}
 		for _, m := range msgs {
 			var fact protocolFact
-			if json.Unmarshal(m.Envelope.Payload, &fact) != nil || m.Envelope.Type != "protocol.finalized" || m.Envelope.SchemaVersion != 1 || m.Envelope.Producer != "orbita" || fact.CellID != os.Getenv("CELL_ID") || fact.TenantID != m.Envelope.TenantID || len(fact.Representation) == 0 {
+			if json.Unmarshal(m.Envelope.Payload, &fact) != nil || m.Envelope.Type != "protocol.finalized" || m.Envelope.SchemaVersion != 1 || m.Envelope.Producer != "orbita" || fact.CellID != os.Getenv("CELL_ID") || fact.TenantID != m.Envelope.TenantID || fact.ApplicationID == "" || len(fact.WebhookDestinations) > 100 || len(fact.Representation) == 0 {
 				sum := sha256.Sum256(m.RawBody)
 				_, err := store.db.ExecContext(ctx, `INSERT INTO message_quarantine(consumer,body_sha256,body,reason) VALUES('pulsar',$1,$2,'invalid_final_envelope') ON CONFLICT(consumer,body_sha256) DO UPDATE SET occurrences=message_quarantine.occurrences+1,last_seen_at=clock_timestamp()`, hex.EncodeToString(sum[:]), m.RawBody)
 				if err == nil {

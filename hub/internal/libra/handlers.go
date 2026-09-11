@@ -178,6 +178,27 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 			last = v[len(v)-1].ID
 		}
 		page(v, last, len(v))
+	case path == "adjustments" && r.Method == "GET":
+		rows, e := h.store.db.QueryContext(r.Context(), `SELECT id,tenant_id,origin_batch_id,reason,prepared_by,COALESCE(approved_by,''),state FROM finance_adjustments WHERE tenant_id=$1 ORDER BY id LIMIT $2`, tenant, limit)
+		if e != nil {
+			h.fail(w, e)
+			return
+		}
+		defer rows.Close()
+		items := []map[string]any{}
+		for rows.Next() {
+			var id, owner, origin, reason, prepared, approved, state string
+			if e = rows.Scan(&id, &owner, &origin, &reason, &prepared, &approved, &state); e != nil {
+				h.fail(w, e)
+				return
+			}
+			items = append(items, map[string]any{"id": id, "tenant_id": owner, "origin_batch_id": origin, "reason": reason, "prepared_by": prepared, "approved_by": approved, "state": state})
+		}
+		if e = rows.Err(); e != nil {
+			h.fail(w, e)
+			return
+		}
+		respond(w, 200, map[string]any{"items": items})
 	case path == "adjustments" && r.Method == "POST":
 		var q struct {
 			Origin string `json:"origin_batch_id"`
@@ -206,10 +227,20 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		respond(w, 200, map[string]string{"status": "approved"})
 	case path == "periods" && r.Method == "POST":
 		var q struct {
-			Start time.Time `json:"period_start"`
-			End   time.Time `json:"period_end"`
+			Start string `json:"period_start"`
+			End   string `json:"period_end"`
 		}
 		if !decodeBody(w, r, &q) {
+			return
+		}
+		start, e := parsePeriodTime(q.Start)
+		if e != nil {
+			auth.Error(w, 422, "invalid_period_start")
+			return
+		}
+		end, e := parsePeriodTime(q.End)
+		if e != nil {
+			auth.Error(w, 422, "invalid_period_end")
 			return
 		}
 		id := r.Header.Get("Idempotency-Key")
@@ -217,7 +248,7 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 			auth.Error(w, 422, "idempotency_key_required")
 			return
 		}
-		v, e := h.store.ClosePeriod(r.Context(), id, tenant, p.Subject, q.Start, q.End)
+		v, e := h.store.ClosePeriod(r.Context(), id, tenant, p.Subject, start, end)
 		if e != nil {
 			h.fail(w, e)
 			return
@@ -307,4 +338,14 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 	default:
 		auth.Error(w, 404, "not_found")
 	}
+}
+
+func parsePeriodTime(value string) (time.Time, error) {
+	if t, err := time.Parse(time.RFC3339Nano, value); err == nil {
+		return t.UTC(), nil
+	}
+	if t, err := time.Parse("2006-01-02", value); err == nil {
+		return t.UTC(), nil
+	}
+	return time.Time{}, errors.New("invalid period time")
 }

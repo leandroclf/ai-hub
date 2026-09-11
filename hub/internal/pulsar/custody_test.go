@@ -14,6 +14,7 @@ import (
 	"sync"
 	"testing"
 
+	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
 	_ "github.com/lib/pq"
@@ -76,11 +77,17 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 	for index, event := range []string{eventA, eventB} {
 		tenant := cell + string(rune('a'+index))
 		ref := []string{"key-a", "key-b"}[index]
-		_, err = db.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,1,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, idgen.New(), tenant, cell, server.URL, ref)
+		destinationID := idgen.New()
+		_, err = db.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,1,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, destinationID, tenant, cell, server.URL, ref)
 		if err != nil {
 			t.Fatal(err)
 		}
-		facts = append(facts, protocolFact{ProtocolID: idgen.New(), TenantID: tenant, CellID: cell, EventID: event, Representation: body, Status: "SUCCEEDED"})
+		if index == 0 {
+			if _, err = db.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,2,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, destinationID, tenant, cell, server.URL+"/new", ref); err != nil {
+				t.Fatal(err)
+			}
+		}
+		facts = append(facts, protocolFact{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app-a", CellID: cell, EventID: event, Representation: body, Status: "SUCCEEDED", WebhookDestinations: []dispatch.DestinationSnapshot{{ID: destinationID, Version: 1, URL: server.URL, SecretRef: ref, SecretVersion: "v1", MaxAttempts: 3, TimeoutSecond: 2}}})
 		defer db.Exec("DELETE FROM inbox WHERE consumer='pulsar' AND event_id=$1", event)
 	}
 	for _, fact := range facts {
@@ -104,6 +111,9 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 	}
 	if first.ID == second.ID {
 		t.Fatal("same delivery claimed twice")
+	}
+	if first.DestinationVersion != 1 || second.DestinationVersion != 1 {
+		t.Fatalf("delivery ignored acceptance snapshot and selected versions %d/%d", first.DestinationVersion, second.DestinationVersion)
 	}
 	if _, err = s.ClaimDelivery(ctx, cell, "worker-c"); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("leased delivery reclaimed: %v", err)

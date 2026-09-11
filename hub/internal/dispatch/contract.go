@@ -28,22 +28,37 @@ const (
 	DispatchQueued DispatchMode = "QUEUED"
 )
 
+// DestinationSnapshot é a representação imutável do contrato de webhook
+// escolhido no aceite. O segredo nunca atravessa o comando; apenas sua
+// referência versionada, necessária para o worker assinar a entrega.
+type DestinationSnapshot struct {
+	ID            string `json:"id"`
+	Version       int    `json:"version"`
+	ApplicationID string `json:"application_id,omitempty"`
+	URL           string `json:"url"`
+	SecretRef     string `json:"secret_ref"`
+	SecretVersion string `json:"secret_version"`
+	MaxAttempts   int    `json:"max_attempts"`
+	TimeoutSecond int    `json:"timeout_seconds"`
+}
+
 // Command e o comando de despacho (COM-06). Nunca inclui segredo em
 // claro. Tem identidade estavel entre timeout, retry de transporte,
 // evento de recuperacao e consulta interna.
 type Command struct {
-	FileRefs         []files.Reference `json:"file_refs,omitempty"`
-	ApplicationID    string            `json:"application_id"`
-	CellID           string            `json:"cell_id"`
-	ConfigSnapshot   json.RawMessage   `json:"config_snapshot"`
-	EconomicSnapshot json.RawMessage   `json:"economic_snapshot,omitempty"`
-	AcceptedAt       time.Time         `json:"accepted_at"`
-	RetryDeadline    time.Time         `json:"retry_deadline"`
-	RetryTTLSeconds  int               `json:"retry_ttl_seconds,omitempty"`
-	TenantID         string            `json:"tenant_id"`
-	ProtocolID       string            `json:"protocol_id"`
-	StepID           string            `json:"step_id"`
-	CommandID        string            `json:"command_id"`
+	FileRefs            []files.Reference     `json:"file_refs,omitempty"`
+	WebhookDestinations []DestinationSnapshot `json:"webhook_destinations"`
+	ApplicationID       string                `json:"application_id"`
+	CellID              string                `json:"cell_id"`
+	ConfigSnapshot      json.RawMessage       `json:"config_snapshot"`
+	EconomicSnapshot    json.RawMessage       `json:"economic_snapshot,omitempty"`
+	AcceptedAt          time.Time             `json:"accepted_at"`
+	RetryDeadline       time.Time             `json:"retry_deadline"`
+	RetryTTLSeconds     int                   `json:"retry_ttl_seconds,omitempty"`
+	TenantID            string                `json:"tenant_id"`
+	ProtocolID          string                `json:"protocol_id"`
+	StepID              string                `json:"step_id"`
+	CommandID           string                `json:"command_id"`
 	// TraceID correlaciona esta chamada ponta a ponta nos logs de
 	// Orbita/Cometa/Libra/Pulsar (nao e um span de tracing distribuido
 	// real — ver internal/platform/logging).

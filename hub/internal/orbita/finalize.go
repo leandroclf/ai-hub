@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
 )
@@ -27,17 +28,19 @@ type FinalBody struct {
 // "protocol") quando um protocolo e finalizado — consumido por Pulsar
 // (webhook) e Libra (receita), conforme COM-01.
 type ProtocolFinalizedFact struct {
-	EconomicSnapshot json.RawMessage `json:"economic_snapshot"`
-	EvidenceID       string          `json:"evidence_id"`
-	OccurredAt       time.Time       `json:"occurred_at"`
-	Representation   []byte          `json:"representation"`
-	CellID           string          `json:"cell_id"`
-	ProtocolID       string          `json:"protocol_id"`
-	TraceID          string          `json:"trace_id,omitempty"`
-	TenantID         string          `json:"tenant_id"`
-	Status           string          `json:"status"`
-	FinalBody        FinalBody       `json:"final_body"`
-	EventID          string          `json:"event_id"`
+	EconomicSnapshot    json.RawMessage                `json:"economic_snapshot"`
+	EvidenceID          string                         `json:"evidence_id"`
+	OccurredAt          time.Time                      `json:"occurred_at"`
+	Representation      []byte                         `json:"representation"`
+	CellID              string                         `json:"cell_id"`
+	ProtocolID          string                         `json:"protocol_id"`
+	TraceID             string                         `json:"trace_id,omitempty"`
+	TenantID            string                         `json:"tenant_id"`
+	ApplicationID       string                         `json:"application_id"`
+	WebhookDestinations []dispatch.DestinationSnapshot `json:"webhook_destinations"`
+	Status              string                         `json:"status"`
+	FinalBody           FinalBody                      `json:"final_body"`
+	EventID             string                         `json:"event_id"`
 }
 
 // Finalizer aplica a transicao terminal unica do protocolo (EXE-11) e
@@ -74,9 +77,15 @@ func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID 
 		// is not a nullable database/sql destination.  Normalize the absence
 		// to an empty object so finalization remains durable and the outbox
 		// fact keeps a valid JSON contract.
-		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,COALESCE(i.command->'economic_snapshot','{}'::jsonb),clock_timestamp() FROM protocols p JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.EconomicSnapshot, &fact.OccurredAt); err != nil {
+		var commandRaw []byte
+		if err := tx.Tx().QueryRowContext(ctx, `SELECT p.cell_id,p.application_id,COALESCE(i.command->'economic_snapshot','{}'::jsonb),i.command,clock_timestamp() FROM protocols p JOIN command_intents i ON i.command_id=p.command_id WHERE p.protocol_id=$1 AND p.tenant_id=$2`, protocolID, tenantID).Scan(&fact.CellID, &fact.ApplicationID, &fact.EconomicSnapshot, &commandRaw, &fact.OccurredAt); err != nil {
 			return err
 		}
+		var command dispatch.Command
+		if err := json.Unmarshal(commandRaw, &command); err != nil {
+			return err
+		}
+		fact.WebhookDestinations = command.WebhookDestinations
 		return outbox.Enqueue(ctx, tx.Tx(), "protocol", protocolID, "protocol.finalized", fact)
 	})
 	if errors.Is(err, ErrResultLate) {

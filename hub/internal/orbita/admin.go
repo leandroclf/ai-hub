@@ -1,6 +1,7 @@
 package orbita
 
 import (
+	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -16,6 +17,8 @@ import (
 func (h *Handlers) RegisterAdmin(mux *http.ServeMux) {
 	mux.HandleFunc("/admin/v1/protocols", h.handleAdminProtocols)
 	mux.HandleFunc("/admin/v1/protocols/", h.handleAdminProtocols)
+	mux.HandleFunc("/admin/v1/sla-reports", h.handleAdminSLAReports)
+	mux.HandleFunc("/admin/v1/sla-reports/", h.handleAdminSLAReports)
 }
 
 type protocolCursor struct{ Tenant, Subject, ID, Status, From, To string }
@@ -29,7 +32,7 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 	// A consumer token with protocols:read is not an administrative identity.
 	// Administrative diagnostics require a nominal, MFA-authenticated role;
 	// cross-tenant access is checked separately below.
-	if p.Workload || !p.HasScope("protocols:read") || !p.MFA || !p.HasRole("hub_protocol_reader") {
+	if p.Workload || !p.HasScope("protocols:read") || !p.MFA || (!p.HasRole("hub_protocol_reader") && !p.HasRole("hub_admin")) {
 		auth.Error(w, 403, "forbidden")
 		return
 	}
@@ -54,7 +57,7 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 	}
 	id := parts[0]
 	if r.Method == http.MethodPost {
-		if id == "" || len(parts) != 2 || parts[1] != "reconcile" || !p.HasScope("protocols:reconcile") || !p.MFA || !p.HasRole("hub_protocol_reader") {
+		if id == "" || len(parts) != 2 || parts[1] != "reconcile" || !p.HasScope("protocols:reconcile") || !p.MFA || (!p.HasRole("hub_protocol_reader") && !p.HasRole("hub_admin")) {
 			auth.Error(w, 403, "forbidden")
 			return
 		}
@@ -202,5 +205,149 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		raw, _ := json.Marshal(protocolCursor{tenant, p.Subject, last, status, from, to})
 		next = base64.RawURLEncoding.EncodeToString(raw)
 	}
+	writeJSON(w, 200, map[string]any{"items": items, "next_cursor": next})
+}
+
+type slaReportCursor struct {
+	Tenant, Subject, Status, From, To, ID string
+}
+
+// handleAdminSLAReports expõe a mesma autoridade persistida usada pelo
+// protocolo, sem consultar o provedor. O prazo do provedor é extraído do
+// snapshot aceito; o prazo do cliente vem da coluna imutável da admissão.
+// Assim, editar o catálogo depois não reescreve uma apuração histórica.
+func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request) {
+	p, ok := auth.FromContext(r.Context())
+	if !ok {
+		auth.Error(w, 401, "unauthenticated")
+		return
+	}
+	if r.Method != http.MethodGet || p.Workload || !p.HasScope("protocols:read") || !p.MFA || (!p.HasRole("hub_protocol_reader") && !p.HasRole("hub_admin")) {
+		auth.Error(w, 403, "forbidden")
+		return
+	}
+	tenant := r.URL.Query().Get("tenant_id")
+	if tenant == "" {
+		tenant = p.TenantID
+	}
+	if tenant == "" || (tenant != p.TenantID && !p.HasScope("admin:cross_tenant")) {
+		auth.Error(w, 403, "global_reader_mfa_required")
+		return
+	}
+	if _, err := h.store.db.ExecContext(r.Context(), "INSERT INTO protocol_access_audit(subject,requested_tenant,resource,action,mfa) VALUES($1,$2,'sla-reports','READ',$3)", p.Subject, tenant, p.MFA); err != nil {
+		auth.Error(w, 503, "audit_unavailable")
+		return
+	}
+	status, from, to := r.URL.Query().Get("status"), r.URL.Query().Get("from"), r.URL.Query().Get("to")
+	for _, date := range []string{from, to} {
+		if date != "" {
+			if _, err := time.Parse("2006-01-02", date); err != nil {
+				auth.Error(w, 400, "invalid_date")
+				return
+			}
+		}
+	}
+	limit := 25
+	if value := r.URL.Query().Get("limit"); value != "" {
+		n, err := strconv.Atoi(value)
+		if err != nil || n < 1 || n > 100 {
+			auth.Error(w, 400, "invalid_limit")
+			return
+		}
+		limit = n
+	}
+	after := ""
+	if cursor := r.URL.Query().Get("cursor"); cursor != "" {
+		if len(cursor) > 2048 {
+			auth.Error(w, 400, "invalid_cursor")
+			return
+		}
+		raw, err := base64.RawURLEncoding.DecodeString(cursor)
+		var c slaReportCursor
+		if err != nil || json.Unmarshal(raw, &c) != nil || c.Tenant != tenant || c.Subject != p.Subject || c.Status != status || c.From != from || c.To != to {
+			auth.Error(w, 400, "cursor_outside_scope")
+			return
+		}
+		after = c.ID
+	}
+	id := strings.Trim(strings.TrimPrefix(r.URL.Path, "/admin/v1/sla-reports"), "/")
+	if id != "" {
+		after = ""
+		limit = 1
+	}
+	rows, err := h.store.db.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,accepted_at,client_deadline_at,finalized_at,final_event_id,config_snapshot
+		FROM protocols
+		WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND ($3='' OR protocol_id=$3) AND protocol_id::text>$4
+		  AND ($5='' OR accepted_at>=NULLIF($5,'')::date) AND ($6='' OR accepted_at<NULLIF($6,'')::date+interval '1 day')
+		ORDER BY protocol_id::text LIMIT $7`, tenant, status, id, after, from, to, limit+1)
+	if err != nil {
+		auth.Error(w, 503, "sla_reports_unavailable")
+		return
+	}
+	defer rows.Close()
+	items := []map[string]any{}
+	last := ""
+	for rows.Next() {
+		var protocolID, protocolTenant, applicationID, state string
+		var accepted, clientDeadline time.Time
+		var finalized sql.NullTime
+		var finalEvent sql.NullString
+		var snapshotRaw []byte
+		if err := rows.Scan(&protocolID, &protocolTenant, &applicationID, &state, &accepted, &clientDeadline, &finalized, &finalEvent, &snapshotRaw); err != nil {
+			auth.Error(w, 503, "sla_reports_unavailable")
+			return
+		}
+		var snapshot struct {
+			Target struct {
+				Data json.RawMessage `json:"data"`
+			} `json:"target"`
+		}
+		providerSLA := 0
+		var targetData struct {
+			ProviderSLASeconds int `json:"provider_sla_seconds"`
+		}
+		if json.Unmarshal(snapshotRaw, &snapshot) == nil {
+			_ = json.Unmarshal(snapshot.Target.Data, &targetData)
+			providerSLA = targetData.ProviderSLASeconds
+		}
+		providerDeadline := accepted
+		if providerSLA > 0 {
+			providerDeadline = accepted.Add(time.Duration(providerSLA) * time.Second)
+		}
+		observedAt := time.Now().UTC()
+		if finalized.Valid {
+			observedAt = finalized.Time
+		}
+		items = append(items, map[string]any{
+			"protocol_id": protocolID, "tenant_id": protocolTenant, "application_id": applicationID, "status": state,
+			"accepted_at": accepted, "client_deadline_at": clientDeadline, "provider_sla_seconds": providerSLA,
+			"provider_deadline_at": providerDeadline, "observed_at": observedAt,
+			"client_sla_breached":   !observedAt.Before(clientDeadline),
+			"provider_sla_breached": providerSLA > 0 && !observedAt.Before(providerDeadline),
+			"finalized_at":          finalized, "final_event_id": finalEvent,
+		})
+		if len(items) == limit {
+			last = protocolID
+		}
+	}
+	if err := rows.Err(); err != nil {
+		auth.Error(w, 503, "sla_reports_unavailable")
+		return
+	}
+	if id != "" {
+		if len(items) != 1 {
+			auth.Error(w, 404, "not_found")
+			return
+		}
+		writeJSON(w, 200, items[0])
+		return
+	}
+	next := ""
+	if len(items) > limit {
+		items = items[:limit]
+		raw, _ := json.Marshal(slaReportCursor{Tenant: tenant, Subject: p.Subject, Status: status, From: from, To: to, ID: last})
+		next = base64.RawURLEncoding.EncodeToString(raw)
+	}
+	w.Header().Set("Cache-Control", "no-store")
 	writeJSON(w, 200, map[string]any{"items": items, "next_cursor": next})
 }

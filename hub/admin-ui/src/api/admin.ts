@@ -6,7 +6,7 @@ export class APIError extends Error { constructor(public status:number,public bo
 let token='';
 export function setToken(value:string){token=value}
 export async function api<T>(path:string,init:RequestInit={}):Promise<T>{
- const domain=path.startsWith("/admin/v1/finance")?"libra":path.startsWith("/admin/v1/deliveries")?"pulsar":path.startsWith("/admin/v1/protocols")||path.startsWith("/admin/v1/sla-reports")?"orbita":path.startsWith("/admin/v1/capacity-domains")?"cometa":"atlas";
+ const domain=path.startsWith("/admin/v1/finance")?"libra":path.startsWith("/admin/v1/deliveries")||path.startsWith("/admin/v1/destinations")?"pulsar":path.startsWith("/admin/v1/protocols")||path.startsWith("/admin/v1/sla-reports")?"orbita":path.startsWith("/admin/v1/capacity-domains")?"cometa":"atlas";
  const response=await fetch(`/api/${domain}${path}`,{...init,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...init.headers},cache:'no-store'});
  const data=await response.json().catch(()=>({message:'Resposta indisponível. Tente novamente.'}));
  if(!response.ok){
