@@ -13,7 +13,9 @@ e crescimento sob tráfego produtivo ainda não foi realizada.
 O runner de migrações foi qualificado em bancos temporários: instalação limpa,
 replay idempotente, rejeição de checksum desconhecido e reconciliação restrita
 da variante histórica conhecida de `0002_provider_auth.sql` após validação do
-schema API_KEY/header. Rollback de versão publicada continua pendente.
+schema API_KEY/header. O ensaio local de rollback de versão publicada preserva
+v1, suspende v2, mantém protocolo em voo e não apaga histórico; rollback
+produtivo/regional continua pendente.
 O achado histórico de paginação que agregava todas as páginas antes de filtrar
 aplicação/serviço foi corrigido no HEAD atual: a resolução consulta o conjunto
 elegível diretamente no PostgreSQL, separa ofertas do tenant e globais para

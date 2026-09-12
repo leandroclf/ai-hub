@@ -69,9 +69,10 @@
   - Evidence: `hub/evidence/r2/execution/r4-ope-03-latest.log` e `EVIDENCE_INDEX.md`; PostgreSQL/race exercitou resolução indexada, limite de candidatos, ambiguidade, projeção válida durante indisponibilidade e recusa após vencimento. Carga produtiva prolongada e provedor comercial permanecem fora.
 
 ## 5. Rollout
-- [ ] 5.1 Ensaiar upgrade/rollback e revisar o diff.
+- [x] 5.1 Ensaiar upgrade/rollback e revisar o diff.
   - Objective: preservar dados, contratos e obrigações antigas.
   - Likely files/components: migrações, manifests e relatórios.
   - Depends on: qualificações anteriores.
   - Validation: ensaio compatível e checklist avaliador.
   - Completion criteria: riscos residuais explícitos; sem fechamento por inferência.
+  - Evidence: `catalog-migration-rollback-latest.log`, `catalog-schema-upgrade-runtime-latest.json` e `catalog-snapshot-upgrade-runtime-latest.json` passaram no Compose oficial; a migração aditiva preservou histórico, o recuo suspendeu v2 sem apagar v1, o protocolo em voo reteve snapshot v1 e o replay permaneceu idempotente. O resultado é local e não fecha rollback produtivo/regional.
