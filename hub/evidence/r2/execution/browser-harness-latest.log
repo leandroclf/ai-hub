@@ -1,19 +1,22 @@
 # Browser Harness — qualificação exploratória do portal
 
-Data: 2026-09-11
+Data: 2026-09-12
 Projeto: `ai_hub_r3qual`
-Comando: `BU_CDP_URL=http://127.0.0.1:9222 hub/deploy/r2/tests/browser-harness/run.sh`
+Comando: `BU_CDP_URL=http://127.0.0.1:9222 BH_TAB_MARKER=0 hub/deploy/r2/tests/browser-harness/run.sh`
 Ferramenta: `browser-harness 0.1.13`
-Navegador: Chrome nativo em perfil temporário, CDP local em `127.0.0.1:9222`
+Navegador: Chrome nativo em perfil temporário autenticado, CDP local em `127.0.0.1:9222`
 
 Resultado: `PASS-EXPLORATORY`
+Autenticação manual: usuário de fixture `operadora-a`, senha e OTP preenchidos
+somente na sessão local; Keycloak aceitou o OTP e o console retornou autenticado.
 Viewport: `390x844`
 Rotas observadas: `clients`, `applications`, `services`, `products`,
 `offers`, `imports`, `providers`, `provider-accounts`,
 `credential-bindings`, `technical-profiles`, `policies`, `contracts`,
 `protocols`, `deliveries`, `sla-reports`, `finance`.
 
-O daemon não descobriu automaticamente a instância headless, mas conectou
-normalmente quando `BU_CDP_URL` foi informado. A instância temporária foi
-encerrada após a execução; nenhuma autenticação de cloud ou gravação foi usada.
+O daemon não descobriu automaticamente a instância Chrome existente, mas conectou
+normalmente quando `BU_CDP_URL` foi informado. A sessão temporária autenticada
+permanece aberta para inspeção manual solicitada; nenhuma autenticação de cloud
+ou gravação foi usada. Senhas, OTPs, tokens e cookies não foram registrados.
 Este resultado é exploratório e não substitui o smoke Playwright.

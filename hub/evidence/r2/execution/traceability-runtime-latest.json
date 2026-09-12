@@ -1,17 +1,17 @@
 {
   "status": "PASS",
   "profile": "r2-ope-07-s01-traceability",
-  "key": "r2-ope-07-s01-trace-1789168380357",
+  "key": "r2-ope-07-s01-trace-1789173155029",
   "admission": {
     "status": 202,
     "http_trace_id_present": true,
-    "protocol_id": "01a092be-e9ff-7579-a1b6-fdef79603e32"
+    "protocol_id": "01a09307-c51f-74a4-8be6-90b93fa93357"
   },
   "final_status": "SUCCEEDED",
   "durable": {
     "status": "SUCCEEDED",
-    "trace_id": "01a092be-e9e5-743f-aa7d-fcff60de10e7",
-    "protocol_id": "01a092be-e9ff-7579-a1b6-fdef79603e32",
+    "trace_id": "01a09307-c4f3-7296-b333-1e07758d4b99",
+    "protocol_id": "01a09307-c51f-74a4-8be6-90b93fa93357",
     "tenant_id": "acme"
   },
   "timeline": {
@@ -26,6 +26,6 @@
     "trace_in_orbita": true,
     "trace_in_cometa": true
   },
-  "elapsed_ms": 2756,
-  "finished_at": "2026-09-11T23:13:03.113Z"
+  "elapsed_ms": 2265,
+  "finished_at": "2026-09-12T00:32:37.294Z"
 }

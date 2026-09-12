@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"ai-hub/hub/internal/callbackauth"
 	"ai-hub/hub/internal/contracts/files"
 )
 
@@ -34,13 +35,15 @@ const (
 
 // SubmitRequest e o corpo aceito por POST /v1/operations.
 type SubmitRequest struct {
-	ProtocolID      string            `json:"protocol_id"`
-	FileRefs        []files.Reference `json:"file_refs,omitempty"`
-	Mode            Mode              `json:"mode"`
-	DelayMs         int               `json:"delay_ms"`
-	Fail            bool              `json:"fail"`
-	DropAfterEffect bool              `json:"drop_after_effect"`
-	CallbackURL     string            `json:"callback_url,omitempty"`
+	ProtocolID          string            `json:"protocol_id"`
+	ProviderAccountID   string            `json:"provider_account_id,omitempty"`
+	CallbackOperationID string            `json:"callback_operation_id,omitempty"`
+	FileRefs            []files.Reference `json:"file_refs,omitempty"`
+	Mode                Mode              `json:"mode"`
+	DelayMs             int               `json:"delay_ms"`
+	Fail                bool              `json:"fail"`
+	DropAfterEffect     bool              `json:"drop_after_effect"`
+	CallbackURL         string            `json:"callback_url,omitempty"`
 }
 
 // OperationResult e o formato de resultado devolvido pelo provedor,
@@ -280,7 +283,7 @@ func (s *Server) handleSubmit(w http.ResponseWriter, r *http.Request) {
 		s.ops[id] = &operation{result: OperationResult{ProviderRequestID: id, Status: "PENDING"}}
 		s.saveStateLocked()
 		s.mu.Unlock()
-		go s.callbackAfter(id, req.DelayMs, result, req.CallbackURL)
+		go s.callbackAfter(id, req.ProviderAccountID, req.CallbackOperationID, req.DelayMs, result, req.CallbackURL)
 		w.WriteHeader(http.StatusAccepted)
 		_ = json.NewEncoder(w).Encode(OperationResult{ProviderRequestID: id, Status: "PENDING"})
 	default: // ModeSync
@@ -361,7 +364,7 @@ func (s *Server) resolveAfter(id string, delayMs int, result OperationResult) {
 	s.mu.Unlock()
 }
 
-func (s *Server) callbackAfter(id string, delayMs int, result OperationResult, callbackURL string) {
+func (s *Server) callbackAfter(id, accountID, operationID string, delayMs int, result OperationResult, callbackURL string) {
 	s.resolveAfter(id, delayMs, result)
 	if callbackURL == "" {
 		return
@@ -375,7 +378,10 @@ func (s *Server) callbackAfter(id string, delayMs int, result OperationResult, c
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if key := os.Getenv("CALLBACK_INGRESS_KEY"); key != "" {
-		req.Header.Set("X-Provider-Callback-Key", key)
+		at := time.Now().UTC().Truncate(time.Second)
+		req.Header.Set("X-Provider-Account-ID", accountID)
+		req.Header.Set("X-Provider-Callback-Timestamp", fmt.Sprintf("%d", at.Unix()))
+		req.Header.Set("X-Provider-Callback-Signature", callbackauth.Sign(key, accountID, operationID, at, body))
 	}
 	resp, err := s.httpClient.Do(req)
 	if err == nil {

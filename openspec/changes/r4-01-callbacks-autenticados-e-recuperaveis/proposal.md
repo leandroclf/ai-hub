@@ -2,19 +2,22 @@
 ## Change ID
 r4-01-callbacks-autenticados-e-recuperaveis
 ## Status
-Em execução — implementação parcial; qualificação integral pendente.
+Em execução — autenticação por conta implementada e qualificada no laboratório; qualificação integral e promoção externa pendentes.
 ## Why
-O handler ganhou capability por operação e custódia antes de 2xx. A rota pública
-aceita uma chave de ingress e a capability por operação, sem depender do JWT de
-workload interno; a capability fica fora do armazenamento em claro. A prova
-atual fecha custódia, deduplicação e recuperação local, mas ainda não fecha a
-homologação da credencial de callback por conta no gateway externo.
-Quando a operação não existe, a entrada somente é admitida após a chave de
-ingress e o formato terminal passarem; a capability é parte da identidade de
+O handler agora aceita, no caminho atual, uma assinatura HMAC-SHA256 versionada
+derivada da conta, operação, timestamp e hash do corpo, sem depender do JWT de
+workload interno nem transportar capability em query string. A capability por
+operação permanece somente como compatibilidade legada e fica fora do
+armazenamento em claro. A prova local fecha o caminho Cometa/provider-sim,
+custódia, repetição idempotente e MFA manual do laboratório; gateway público,
+rotação/mTLS e homologação de provedor comercial continuam pendentes.
+Quando a operação não existe, a entrada somente é admitida após autenticação
+HMAC por conta (ou, no caminho legado, chave de ingress mais capability) e o
+formato terminal passarem; a identidade de autenticação é parte da chave de
 deduplicação, portanto tentativa incorreta não ocupa o recibo legítimo. Quota,
 retenção, claim, lease e epoch estão implementados e cobertos localmente. A
-política de autenticação específica da conta e sua composição com gateway
-externo continuam como risco residual.
+A política de autenticação específica da conta em provedores comerciais e sua
+composição com gateway externo continuam como risco residual.
 ReconcileCallbackInboxBatch reivindica lote limitado antes da aplicação, com
 claim/lease/epoch e `SKIP LOCKED`; `RunCallbackInboxWorker` executa a recuperação
 periodicamente sem depender de novo tráfego HTTP. A prova cobre limite e

@@ -18,17 +18,17 @@
   {
     "check": "Admin resource save, reload and durable readback",
     "status": "PASS",
-    "resource": "browser-client-1789172504145"
+    "resource": "browser-client-1789173631283"
   },
   {
     "check": "Admin edit conflict preserves local input and shows server diff",
     "status": "PASS",
-    "resource": "browser-client-1789172504145"
+    "resource": "browser-client-1789173631283"
   },
   {
     "check": "Admin product editor persists dependent input mapping",
     "status": "PASS",
-    "resource": "browser-product-1789172520940"
+    "resource": "browser-product-1789173660627"
   },
   {
     "check": "URL navigation and real authenticated provider list",
@@ -41,7 +41,7 @@
   {
     "check": "Admin redelivery changes exhausted delivery and records durable audit",
     "status": "PASS",
-    "delivery": "22589f65-ab3c-463d-8c27-350dcb3e7afd"
+    "delivery": "16d56f79-4697-4db8-8830-0cdd81d2e2a7"
   },
   {
     "check": "Admin reconciliation refuses missing provider correlation with durable rejection",
@@ -63,7 +63,7 @@
   {
     "check": "Admin finance adjustment enforces distinct approver in the portal",
     "status": "PASS",
-    "reason": "browser-segregation-1789172551873"
+    "reason": "browser-segregation-1789173692111"
   },
   {
     "check": "Admin finance close refuses unresolved obligations with explicit error",

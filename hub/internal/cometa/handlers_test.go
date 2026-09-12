@@ -3,6 +3,7 @@ package cometa
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"ai-hub/hub/internal/callbackauth"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
@@ -120,4 +122,46 @@ func TestCallbackDoesNotAckWhenCustodyAuthorityUnavailable(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("falha de custódia do PostgreSQL foi classificada como 503 sem emitir ACK 2xx; a entrega pode ser retransmitida")
+}
+
+func TestAccountCallbackDoesNotNeedCapabilityInURL(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated PostgreSQL")
+	}
+	t.Setenv("CALLBACK_INGRESS_KEY", "fixture-ingress")
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := NewStore(db)
+	commandID := idgen.New()
+	cmd := dispatch.Command{CommandID: commandID, ProtocolID: idgen.New(), TenantID: "callback-account-auth", ApplicationID: "app", CellID: "cell", ProviderAccountID: "provider-account-a", StepDeadline: time.Now().Add(time.Minute)}
+	_, owned, err := s.PrepareSubmission(context.Background(), cmd, "binding", "v1")
+	if err != nil || !owned {
+		db.Close()
+		t.Fatalf("prepare owned=%v err=%v", owned, err)
+	}
+	body := []byte(`{"provider_request_id":"provider-correlation","status":"SUCCEEDED"}`)
+	at := time.Now().UTC().Truncate(time.Second)
+	signature := callbackauth.Sign("fixture-ingress", "provider-account-a", commandID, at, body)
+	h := NewHandlers(&Executor{store: s}, s)
+	db.Close()
+	r := httptest.NewRequest(http.MethodPost, "/callbacks/"+commandID, strings.NewReader(string(body)))
+	r.Header.Set("X-Provider-Account-ID", "provider-account-a")
+	r.Header.Set("X-Provider-Callback-Timestamp", fmt.Sprintf("%d", at.Unix()))
+	r.Header.Set("X-Provider-Callback-Signature", signature)
+	w := httptest.NewRecorder()
+	h.handleCallback(w, r)
+	if w.Code != http.StatusServiceUnavailable {
+		t.Fatalf("auth por conta não atravessou a autoridade de custódia: status=%d body=%s", w.Code, w.Body.String())
+	}
+	cleanup, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cleanup.Close()
+	_, _ = cleanup.Exec("DELETE FROM attempts WHERE operation_id=$1", commandID)
+	_, _ = cleanup.Exec("DELETE FROM operations WHERE operation_id=$1", commandID)
+	t.Log("callback account-auth usa assinatura por conta sem capability na URL e não confirma enquanto a autoridade está indisponível")
 }

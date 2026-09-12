@@ -58,13 +58,15 @@ type restJSONSubmitRequest struct {
 
 func (providerSimAdapter) BuildSubmitRequest(ctx context.Context, baseURL string, cmd dispatch.Command, _ atlas.AdapterContract, providerMode, callbackURL string) (*http.Request, error) {
 	req := providersim.SubmitRequest{
-		ProtocolID:      externalIdempotencyKey(cmd),
-		FileRefs:        cmd.FileRefs,
-		Mode:            providersim.Mode(providerMode),
-		DelayMs:         requestedDelayMs(cmd.RequestBody),
-		Fail:            shouldFail(cmd.RequestBody),
-		DropAfterEffect: shouldDropAfterEffect(cmd.RequestBody),
-		CallbackURL:     callbackURL,
+		ProtocolID:          externalIdempotencyKey(cmd),
+		ProviderAccountID:   cmd.ProviderAccountID,
+		CallbackOperationID: cmd.CommandID,
+		FileRefs:            cmd.FileRefs,
+		Mode:                providersim.Mode(providerMode),
+		DelayMs:             requestedDelayMs(cmd.RequestBody),
+		Fail:                shouldFail(cmd.RequestBody),
+		DropAfterEffect:     shouldDropAfterEffect(cmd.RequestBody),
+		CallbackURL:         callbackURL,
 	}
 	return newJSONRequest(ctx, http.MethodPost, strings.TrimRight(baseURL, "/")+"/v1/operations", req)
 }

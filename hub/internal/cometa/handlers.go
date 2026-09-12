@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -199,10 +200,9 @@ func (h *Handlers) handleGetOperation(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-// handleCallback recebe o retorno assíncrono do provedor. A capability por
-// operação protege o endpoint enquanto a política homologada por conta
-// (assinatura, mTLS ou token do provedor) não está disponível neste contrato.
-// A resposta 2xx só é emitida depois da custódia durável.
+// handleCallback recebe o retorno assíncrono do provedor. O fluxo atual usa
+// HMAC derivado da conta e do corpo; a capability em query é aceita apenas
+// no caminho legado para não quebrar callbacks já emitidos.
 func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -218,10 +218,6 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid callback operation", http.StatusBadRequest)
 		return
 	}
-	if !secureCallbackKey(r.Header.Get("X-Provider-Callback-Key")) {
-		http.Error(w, "callback unauthorized", http.StatusUnauthorized)
-		return
-	}
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 512*1024))
 	var result providersim.OperationResult
 	if err != nil || len(body) == 0 || json.Unmarshal(body, &result) != nil {
@@ -233,6 +229,46 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 	// recoverable inbox quota before operation correlation exists.
 	if result.ProviderRequestID == "" || (result.Status != "SUCCEEDED" && result.Status != "FAILED") {
 		http.Error(w, "invalid callback observation", http.StatusBadRequest)
+		return
+	}
+	accountID := strings.TrimSpace(r.Header.Get("X-Provider-Account-ID"))
+	signature := strings.TrimSpace(r.Header.Get("X-Provider-Callback-Signature"))
+	timestampRaw := strings.TrimSpace(r.Header.Get("X-Provider-Callback-Timestamp"))
+	if accountID != "" || signature != "" || timestampRaw != "" {
+		seconds, parseErr := strconv.ParseInt(timestampRaw, 10, 64)
+		at := time.Unix(seconds, 0).UTC()
+		if parseErr != nil || seconds <= 0 || time.Since(at) > 5*time.Minute || time.Since(at) < -5*time.Minute {
+			http.Error(w, "callback unauthorized", http.StatusUnauthorized)
+			return
+		}
+		err := h.store.AuthenticateAccountCallback(r.Context(), operationID, accountID, at, signature, body)
+		if err == nil {
+			if _, err := h.exec.ApplyExternalObservationRaw(r.Context(), operationID, result, body); err != nil {
+				http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			if err := h.store.StoreOrphanAccountCallback(r.Context(), operationID, accountID, at, signature, body); err != nil {
+				http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			w.WriteHeader(http.StatusAccepted)
+			return
+		}
+		if errors.Is(err, ErrCallbackCapabilityInvalid) {
+			http.Error(w, "callback unauthorized", http.StatusUnauthorized)
+			return
+		}
+		http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	// A chave global só pertence ao caminho legado. O fluxo versionado por
+	// conta autentica exclusivamente com a assinatura derivada da conta.
+	if !secureCallbackKey(r.Header.Get("X-Provider-Callback-Key")) {
+		http.Error(w, "callback unauthorized", http.StatusUnauthorized)
 		return
 	}
 	token := r.URL.Query().Get("token")

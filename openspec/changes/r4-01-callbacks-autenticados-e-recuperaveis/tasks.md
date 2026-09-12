@@ -1,6 +1,6 @@
 # Tasks: Callbacks autenticados e recuperáveis
 
-Status: **R4-CBK-02/03/04 implementados e qualificados no laboratório; R4-CBK-01 e promoção externa permanecem abertas**. A suíte atual confirma custódia, inbox, recuperação, correlação e validação comum; autenticação de origem por conta no gateway ainda exige homologação específica.
+Status: **R4-CBK-02/03/04 implementados e qualificados no laboratório; R4-CBK-01 possui implementação e prova local, mas gateway público, rotação/mTLS e promoção externa permanecem abertas**. A suíte atual confirma custódia, inbox, recuperação, correlação, validação comum e HMAC versionado por conta na fixture.
 ## 1. Revalidação
 - [x] 1.1 Confirmar HEAD/diff e fontes atuais.
   - Objective: preservar correções e verificar mudanças posteriores ao snapshot.
@@ -16,18 +16,21 @@ Status: **R4-CBK-02/03/04 implementados e qualificados no laboratório; R4-CBK-0
   - Depends on: 1.1.
   - Validation: R4-CBK-01-S01/S02/S03 e regressão herdada.
   - Completion criteria: falha atual ou correção existente demonstrada com oráculo.
+  - Evidence: `hub/evidence/r2/execution/callback-account-auth-runtime-latest.json` demonstra que o segredo não vai na URL e que a conta é parte da autenticação; a fronteira pública/gateway ainda não foi homologada.
 - [ ] 2.2 Implementar fluxo, dados e integração.
   - Objective: O Hub SHALL expor uma rota de callback com autenticação explicitamente homologada por conta e independente da credencial de workload interna. O caminho público/gateway/middleware/handler deve ser qualificado de ponta a ponta. Capability de operação pode complementar correlação, nunca substituir silenciosamente política da conta; segredos não devem aparecer em URLs registradas, logs ou traces.
   - Likely files/components: fontes acima, migrações/contratos/harness correlatos.
   - Depends on: 2.1 e dependências do backlog R4.
   - Validation: integração real e negativas de autorização/erro.
   - Completion criteria: mecanismo conectado e todas as disposições preservam invariantes.
+  - Evidence: `hub/internal/callbackauth`, migration `0044_callback_account_auth.sql`, Cometa e provider-sim implementam HMAC-SHA256 v1 por conta/operação/corpo com compatibilidade legada explícita.
 - [ ] 2.3 Qualificar e anexar evidência.
   - Objective: fechar cenários e requisitos herdados R3-EXE-02, R2-SEG-04, R2-INT-04.
   - Likely files/components: docs/reviews/2026-09-09-r4/implementation e hub/evidence/r4.
   - Depends on: 2.2.
   - Validation: cenários completos, sem skip obrigatório.
   - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
+  - Evidence: `hub/evidence/r2/execution/callback-account-auth-runtime-latest.json`; prova local PASS, sem afirmar homologação externa.
 
 ## 3. R4-CBK-02 — Admissão e deduplicação segura da inbox órfã
 - [x] 3.1 Fixar contrato e reproduzir contraexemplos.

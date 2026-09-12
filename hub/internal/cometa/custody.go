@@ -11,8 +11,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
+	"ai-hub/hub/internal/callbackauth"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
@@ -155,6 +157,23 @@ func (s *Store) AuthenticateCallback(ctx context.Context, operationID, token str
 	return nil
 }
 
+// AuthenticateAccountCallback valida a conta vinculada à operação e a
+// assinatura do corpo. O accountID recebido no header é apenas uma dica de
+// roteamento: a autoridade é o provider_account_id durável da operação.
+func (s *Store) AuthenticateAccountCallback(ctx context.Context, operationID, accountID string, at time.Time, signature string, body []byte) error {
+	if operationID == "" || accountID == "" || signature == "" || at.IsZero() {
+		return ErrCallbackCapabilityInvalid
+	}
+	var expectedAccount string
+	if err := s.db.QueryRowContext(ctx, "SELECT provider_account_id FROM operations WHERE operation_id=$1", operationID).Scan(&expectedAccount); err != nil {
+		return fmt.Errorf("callback account authority: %w", err)
+	}
+	if expectedAccount != accountID || !callbackauth.Verify(os.Getenv("CALLBACK_INGRESS_KEY"), expectedAccount, operationID, at, body, signature) {
+		return ErrCallbackCapabilityInvalid
+	}
+	return nil
+}
+
 // StoreOrphanCallback conserva um callback válido sintaticamente cuja
 // operação ainda não está disponível nesta autoridade. O token é guardado
 // somente como hash; a reconciliação posterior decide se ele pertence à
@@ -198,6 +217,57 @@ func (s *Store) StoreOrphanCallback(ctx context.Context, operationID, token stri
 		ON CONFLICT(operation_id,body_sha256,token_hash)
 		DO UPDATE SET occurrences=callback_inbox.occurrences+1
 	`, idgen.New(), operationID, tokenHash, hex.EncodeToString(sum[:]), body); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// StoreOrphanAccountCallback conserva um callback autenticado por conta antes
+// de a operação aparecer nesta autoridade. A associação definitiva de conta,
+// tenant e célula é refeita durante a reconciliação.
+func (s *Store) StoreOrphanAccountCallback(ctx context.Context, operationID, accountID string, at time.Time, signature string, body []byte) error {
+	if operationID == "" || accountID == "" || at.IsZero() || signature == "" || len(body) == 0 || len(body) > 512*1024 {
+		return errors.New("invalid account callback")
+	}
+	return s.storeOrphan(ctx, operationID, callbackSignatureHash(signature), body, accountID, callbackauth.Version, &at, signature)
+}
+
+func callbackSignatureHash(signature string) string {
+	sum := sha256.Sum256([]byte(signature))
+	return hex.EncodeToString(sum[:])
+}
+
+func (s *Store) storeOrphan(ctx context.Context, operationID, tokenHash string, body []byte, accountID, authVersion string, at *time.Time, signature string) error {
+	sum := sha256.Sum256(body)
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72820311)"); err != nil {
+		return err
+	}
+	var known bool
+	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(
+		SELECT 1 FROM callback_inbox WHERE operation_id=$1 AND body_sha256=$2 AND token_hash=$3
+	)`, operationID, hex.EncodeToString(sum[:]), tokenHash).Scan(&known); err != nil {
+		return err
+	}
+	if !known {
+		var received int
+		if err = tx.QueryRowContext(ctx, "SELECT count(*) FROM callback_inbox WHERE disposition='RECEIVED'").Scan(&received); err != nil {
+			return err
+		}
+		if received >= callbackInboxMaxReceived {
+			return ErrCallbackInboxQuota
+		}
+	}
+	if _, err = tx.ExecContext(ctx, `
+		INSERT INTO callback_inbox(inbox_id,operation_id,token_hash,body_sha256,body,provider_account_id,callback_auth_version,callback_timestamp,callback_signature)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		ON CONFLICT(operation_id,body_sha256,token_hash)
+		DO UPDATE SET occurrences=callback_inbox.occurrences+1
+	`, idgen.New(), operationID, tokenHash, hex.EncodeToString(sum[:]), body, accountID, authVersion, at, signature); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -247,7 +317,8 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	defer tx.Rollback()
 	rows, err := tx.QueryContext(ctx, `
 		SELECT i.inbox_id, i.operation_id, i.token_hash, i.body,
-		       o.callback_token_hash, o.command, i.claim_epoch + 1, i.processing_attempts + 1
+		       i.provider_account_id, i.callback_auth_version, i.callback_timestamp, i.callback_signature,
+		       o.callback_token_hash, o.provider_account_id, o.command, i.claim_epoch + 1, i.processing_attempts + 1
 		FROM callback_inbox i
 		JOIN operations o ON o.operation_id=i.operation_id
 		WHERE i.disposition='RECEIVED' AND (i.lease_until IS NULL OR i.lease_until < clock_timestamp())
@@ -258,13 +329,16 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	}
 	type item struct {
 		inboxID, operationID, receivedHash, expectedHash string
+		accountID, authVersion, signature                string
 		body, commandRaw                                 []byte
+		authTimestamp                                    sql.NullTime
 		epoch, processingAttempts                        int64
+		operationAccount                                 string
 	}
 	items := make([]item, 0, limit)
 	for rows.Next() {
 		var v item
-		if err := rows.Scan(&v.inboxID, &v.operationID, &v.receivedHash, &v.body, &v.expectedHash, &v.commandRaw, &v.epoch, &v.processingAttempts); err != nil {
+		if err := rows.Scan(&v.inboxID, &v.operationID, &v.receivedHash, &v.body, &v.accountID, &v.authVersion, &v.authTimestamp, &v.signature, &v.expectedHash, &v.operationAccount, &v.commandRaw, &v.epoch, &v.processingAttempts); err != nil {
 			rows.Close()
 			return 0, err
 		}
@@ -290,7 +364,11 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 			_, err := s.db.ExecContext(ctx, `UPDATE callback_inbox SET disposition=$1,processed_at=CASE WHEN $1<>'RECEIVED' THEN clock_timestamp() ELSE processed_at END,claim_owner=NULL,lease_until=NULL,last_error=$4 WHERE inbox_id=$2 AND disposition='RECEIVED' AND claim_owner=$3 AND claim_epoch=$5`, disposition, inboxID, owner, lastError, v.epoch)
 			return err
 		}
-		if subtle.ConstantTimeCompare([]byte(receivedHash), []byte(expectedHash)) != 1 {
+		authenticated := subtle.ConstantTimeCompare([]byte(receivedHash), []byte(expectedHash)) == 1
+		if v.authVersion == callbackauth.Version {
+			authenticated = v.authTimestamp.Valid && v.operationAccount == v.accountID && callbackauth.Verify(os.Getenv("CALLBACK_INGRESS_KEY"), v.operationAccount, operationID, v.authTimestamp.Time, body, v.signature)
+		}
+		if !authenticated {
 			if err := dispose("REJECTED", "callback capability mismatch"); err != nil {
 				return count, err
 			}

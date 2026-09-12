@@ -11,7 +11,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -245,7 +244,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 
 	callbackURL := ""
 	if pa.ProviderMode == string(providersim.ModeAsyncCallback) {
-		callbackURL = e.callbackURLFor(operationID, claim.CallbackToken)
+		callbackURL = e.callbackURLFor(operationID)
 	}
 
 	e.log.Debug("enviando chamada ao provedor", "trace_id", cmd.TraceID, "operation_id", operationID,
@@ -448,8 +447,8 @@ func (e *Executor) publishOperationFact(ctx context.Context, operationID string,
 	return tx.Commit()
 }
 
-func (e *Executor) callbackURLFor(operationID, token string) string {
-	return fmt.Sprintf("%s/callbacks/%s?token=%s", e.selfURL, operationID, url.QueryEscape(token))
+func (e *Executor) callbackURLFor(operationID string) string {
+	return fmt.Sprintf("%s/callbacks/%s", e.selfURL, operationID)
 }
 
 // shouldFail permite injetar falha deterministica a partir do proprio
