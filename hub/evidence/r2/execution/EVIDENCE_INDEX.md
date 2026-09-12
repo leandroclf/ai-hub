@@ -167,6 +167,6 @@ externa pendente.
 
 Mensageria foi endurecida para descoberta somente leitura fora de `ENVIRONMENT=local`: `EnsureQueue` usa `GetQueueUrl` e `EnsureTopic` descobre ARN declarado; criação implícita permanece restrita ao laboratório. `go test ./internal/queue ./cmd/...` passou. Não há ensaio AWS remoto.
 
-`product-build-current.log` registra a construção das imagens atuais de Atlas, Órbita, Cometa, Pulsar e Libra; `product-up-current.log` registra migrations e subida. `healthz/ready` retornou 200 em 18080–18084. `http-current-unauthenticated.log` comprova 401 nas rotas protegidas existentes; `http-current-auth-me.json` permanece 401 porque o volume Keycloak recusou a fixture até o diagnóstico de credencial persistente, portanto não é prova de login atual.
+`product-build-current.log` registra a construção das imagens atuais de Atlas, Órbita, Cometa, Pulsar e Libra; `product-up-current.log` registra migrations e subida. `healthz/ready` retornou 200 em 18080–18084. `http-current-unauthenticated.log` comprova 401 nas rotas protegidas existentes. O artefato histórico `http-current-auth-me.json` permaneceu 401 durante uma coleta anterior, quando o volume Keycloak ainda não havia sido reconciliado; ele não representa o estado atual e não deve ser usado para diagnosticar o login vigente.
 
 Os contratos OpenAPI/AsyncAPI foram alinhados ao principal OIDC e à identidade de aplicação/célula; headers arbitrários não são fonte de tenant.
