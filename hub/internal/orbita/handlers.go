@@ -254,6 +254,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 	protocolID := idgen.New()
 	commandID := idgen.New()
 	clientDeadline := now.Add(time.Duration(target.ClientSLASeconds) * time.Second)
+	effectiveRetrySeconds := atlas.EffectiveRetrySeconds(target)
 
 	dispatchMode := dispatch.DispatchQueued
 	if mode == "SYNC" {
@@ -270,7 +271,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		TenantID: tenantID, ApplicationID: principal.ApplicationID, CellID: p.CellID, ProtocolID: protocolID, StepID: protocolID, CommandID: commandID,
 		TraceID: traceID, DispatchMode: dispatchMode, Epoch: 1, ServiceCode: req.ServiceCode, ServiceVersion: snapshot.Target.Version,
 		ProviderAccountID: snapshot.SelectedRoute.ProviderAccountID, RequestBody: json.RawMessage(transformed), StepDeadline: clientDeadline,
-		AcceptedAt: now, RetryDeadline: now.Add(time.Duration(target.RetryTTLSeconds) * time.Second), RetryTTLSeconds: target.RetryTTLSeconds, ConfigSnapshot: snapshotBytes, EconomicSnapshot: economicBytes,
+		AcceptedAt: now, RetryDeadline: now.Add(time.Duration(effectiveRetrySeconds) * time.Second), RetryTTLSeconds: effectiveRetrySeconds, ConfigSnapshot: snapshotBytes, EconomicSnapshot: economicBytes,
 	}
 	var productPlan *ProductPlan
 	var commands []dispatch.Command

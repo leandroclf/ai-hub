@@ -116,11 +116,12 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-07 Concluir e requalificar R3-CAT-02 — Política efetiva e representação por cliente.
-  - Objective: Handler de admissão e finalizer não mudaram; política efetiva/versão e OutputMapping pendentes.
+  - Objective: Handler de admissão agora carrega o retry efetivo calculado pelo Atlas, preservando a reserva de finalização dentro do SLA; o finalizer e o OutputMapping já convergem para a representação única. Permanecem a matriz completa de cenários herdados e a homologação externa.
   - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/orbita/finalize.go, hub/internal/atlas/offers.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+  - Evidence: `hub/internal/atlas/catalog.go`, `hub/internal/orbita/handlers.go` e `hub/evidence/r2/execution/effective-retry-policy-latest.log`; o comando durável recebe o horizonte efetivo e a representação final é validada por `representation-runtime-latest.json`.
 - [ ] B-R4-08 Concluir e requalificar R3-CAT-03 — Agregação e composição com executor de DAG.
   - Objective: Executor de DAG não conectado; PlanDAG de catálogo não é execução de produto.
   - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/atlas/catalog.go, hub/internal/atlas/offers.go.

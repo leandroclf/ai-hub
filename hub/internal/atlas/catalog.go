@@ -151,6 +151,23 @@ func DecodeCatalogData(r Resource) (CatalogData, error) {
 	return d, err
 }
 
+// EffectiveRetrySeconds is the retry horizon that may be carried into a
+// durable command. The configured retry TTL cannot consume the reservation
+// kept for finalization inside the client SLA. Keeping this calculation in
+// Atlas avoids allowing an otherwise valid published offer to bypass the
+// same policy in Orbita's admission path.
+func EffectiveRetrySeconds(d CatalogData) int {
+	effective := d.RetryTTLSeconds
+	budget := d.ClientSLASeconds - d.FinalizationReserveSeconds
+	if d.ClientSLASeconds > 0 && effective > budget {
+		effective = budget
+	}
+	if effective < 0 {
+		return 0
+	}
+	return effective
+}
+
 // ValidateResource performs bounded structural validation without external effects.
 func ValidateResource(r Resource) Validation {
 	v := Validation{Valid: true, FieldErrors: map[string]string{}, Layers: [][]string{}, SchemaDialect: PublishedSchemaDialect, Hash: resourceHash(r), Fixture: "synthetic-validation-no-provider-calls"}
@@ -208,10 +225,7 @@ func ValidateResource(r Resource) Validation {
 	if providerSLAPolicy != "MONITOR_ONLY" && providerSLAPolicy != "REJECT_LATE" {
 		bad("provider_sla_policy", "política deve ser MONITOR_ONLY ou REJECT_LATE")
 	}
-	v.EffectiveRetrySeconds = d.RetryTTLSeconds
-	if d.ClientSLASeconds > 0 && v.EffectiveRetrySeconds > d.ClientSLASeconds-d.FinalizationReserveSeconds {
-		v.EffectiveRetrySeconds = d.ClientSLASeconds - d.FinalizationReserveSeconds
-	}
+	v.EffectiveRetrySeconds = EffectiveRetrySeconds(d)
 	if r.Kind == "services" || r.Kind == "technical-profiles" || r.Kind == "offers" || r.Kind == "policies" {
 		if d.ClientSLASeconds <= 0 {
 			bad("client_sla_seconds", "SLA deve ser positivo")

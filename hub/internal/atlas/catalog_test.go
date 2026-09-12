@@ -213,6 +213,16 @@ func TestCatalogValidation(t *testing.T) {
 	}
 }
 
+func TestEffectiveRetrySecondsReservesClientFinalizationWindow(t *testing.T) {
+	d := CatalogData{RetryTTLSeconds: 60, ClientSLASeconds: 30, FinalizationReserveSeconds: 5}
+	if got := EffectiveRetrySeconds(d); got != 25 {
+		t.Fatalf("retry efetivo deve preservar a reserva de finalização: got=%d want=25", got)
+	}
+	if got := EffectiveRetrySeconds(CatalogData{RetryTTLSeconds: 10, ClientSLASeconds: 30, FinalizationReserveSeconds: 5}); got != 10 {
+		t.Fatalf("retry abaixo do orçamento não deve ser alterado: got=%d want=10", got)
+	}
+}
+
 func TestCatalogPublicationRejectsBindingFromAnotherProviderAccount(t *testing.T) {
 	s := integrationStore(t)
 	ctx := context.Background()

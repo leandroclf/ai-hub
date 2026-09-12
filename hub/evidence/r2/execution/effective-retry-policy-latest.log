@@ -1,0 +1,7 @@
+AI Hub R4 — política efetiva de retry na admissão durável
+date=2026-09-12
+command=go test ./internal/atlas ./internal/orbita
+result=PASS
+observed=RetryTTLSeconds=60, ClientSLASeconds=30 e FinalizationReserveSeconds=5 produziram horizonte efetivo de 25 segundos; TTL=10 permaneceu 10
+scope=função compartilhada Atlas usada por ValidateResource e Orbita; nenhum segredo ou dado comercial foi registrado
+limitation=ensaio unitário; a matriz integral de carga e promoção externa permanece separada
