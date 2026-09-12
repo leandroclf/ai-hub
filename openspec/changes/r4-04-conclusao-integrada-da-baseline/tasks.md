@@ -86,7 +86,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-02 Concluir e requalificar R3-EXE-02 — Callback com confirmação de custódia.
-  - Objective: Capability, recibo antes de ACK, validação terminal e ingresso público por chave foram adicionados. A inbox agora isola a identidade da capability, impõe limite de bytes/itens e retenção de processados; ainda falta qualificar autenticação por conta e o cenário externo ponta a ponta.
+  - Objective: Capability, recibo antes de ACK, validação terminal, HMAC v1 por conta e ingresso local pelo Kong foram adicionados. A inbox agora isola a identidade da capability, impõe limite de bytes/itens e retenção de processados; ainda faltam rotação/mTLS e o cenário externo ponta a ponta.
   - Likely files/components: hub/internal/cometa/handlers.go, hub/internal/cometa/executor.go, hub/cmd/cometa/main.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -141,7 +141,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-11 Concluir e requalificar R3-INT-02 — Cache de autenticação isolado e sem tokens no Redis.
-  - Objective: Tokens removidos do Redis; lock por chave existe. L1 ainda depende do cofre; crescimento de locks não limitado.
+  - Objective: Tokens removidos do Redis; L1 é isolado por ambiente/tenant/conta/binding/versão, a invalidação é exata e o mapa de locks é limitado a 1024 entradas, com lock efêmero quando saturado. Permanecem a matriz completa de rotação e a qualificação comercial.
   - Likely files/components: hub/internal/providerauth/client.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -202,7 +202,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
   - Evidence: `hub/evidence/r2/execution/file-upload-submit-smoke.json`; upload direto, confirmação, admissão, resposta final e pin durável passaram no Compose oficial.
 - [ ] B-R4-21 Concluir e requalificar R3-OPE-02 — Kind completo e ambientes reprodutíveis.
-  - Objective: O perfil independente do Kind materializa dependências cluster-owned e foi qualificado localmente; permanecem fora deste gate a IaC dos ambientes remotos e a HA regional contratada.
+  - Objective: O perfil independente do Kind materializa dependências cluster-owned, duas réplicas por workload, observabilidade, gateway e UI, e foi qualificado localmente; permanecem fora deste gate a IaC dos ambientes remotos e a HA regional contratada.
   - Likely files/components: hub/deploy/r2/kind/bootstrap-independent.sh, hub/deploy/r2/kind/render-independent-dependencies.py, hub/deploy/r2/kind/render-runtime.py, hub/deploy/r2/k8s/base/workloads.yaml, hub/deploy/r2/k8s/overlays/prd/kustomization.yaml.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -215,7 +215,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
   - Evidence: `hub/evidence/r2/execution/scaling-policy-latest.log`; HPA/KEDA/PDB, backlog de entregas, topology spread e envelopes local/PPD foram verificados estruturalmente. Backlog real, autoscaling efetivo e provisionamento cloud continuam abertos.
 - [ ] B-R4-23 Concluir e requalificar R3-OPE-04 — Autoridade durável, isolamento e restore.
-  - Objective: Migrações aditivas de callback, RLS runtime e restore/reconciliation foram revalidados; o harness agora recusa alvos de restore já existentes. Permanecem a prova integral de upgrade/rollback e a cobertura de autoridade durável de todos os domínios.
+  - Objective: Migrações aditivas de callback, RLS runtime e restore/reconciliation foram revalidados; o harness agora recusa alvos de restore já existentes e a migration 0044 tem prova cercada de upgrade/reaplicação/rollback compatível. Permanece a cobertura integral de autoridade durável de todos os domínios.
   - Likely files/components: hub/migrations/core, hub/migrations/control, hub/internal/platform/pg, hub/internal/orbita/admission.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
