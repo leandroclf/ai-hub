@@ -23,6 +23,18 @@ async function waitProtocol(bearer,id){
  }
  throw new Error(`protocolo não terminou: ${JSON.stringify(current)}`);
 }
+async function waitFinance(protocolID){
+ const deadline=Date.now()+30000;
+ let facts={count:0,cost:0,revenue:0,contracts:''};let ledger=0;
+ while(Date.now()<deadline){
+  const financeFacts=sql(`SELECT count(*),count(*) FILTER (WHERE kind='COST'),count(*) FILTER (WHERE kind='REVENUE'),coalesce(string_agg(DISTINCT kind||':'||coalesce(contract_id,'')||':'||coalesce(contract_version::text,''),','),'') FROM economic_facts WHERE protocol_id='${protocolID}'`,'hub_finance');
+  const [count,cost,revenue,contracts]=financeFacts.split('\t');facts={count:Number(count),cost:Number(cost),revenue:Number(revenue),contracts};
+  ledger=Number(sql(`SELECT count(*) FROM ledger_entries WHERE origin_protocol_id='${protocolID}'`,'hub_finance'));
+  if(facts.count>=1&&facts.revenue>=1&&ledger>=2)return {facts,ledger};
+  await new Promise(resolve=>setTimeout(resolve,500));
+ }
+ throw new Error(`custódia financeira não convergiu: facts=${JSON.stringify(facts)} ledger=${ledger}`);
+}
 
 const bearer=token();
 const servicePath=`${adminOrigin}/api/atlas/admin/v1/services/protocolo-assincrono`;
@@ -50,10 +62,8 @@ try{
  const finalProtocol=await waitProtocol(bearer,protocolID);
  const persisted=sql(`SELECT status,config_snapshot->'target'->>'version',config_snapshot->'purchase_contract'->>'version',config_snapshot->'technical_profile'->>'version',CASE WHEN final_representation IS NULL THEN 'false' ELSE 'true' END FROM protocols WHERE protocol_id='${protocolID}' AND tenant_id='acme'`);
  const [status,targetVersion,purchaseVersion,profileVersion,representation]=persisted.split('\t');
- const financeFacts=sql(`SELECT count(*),count(*) FILTER (WHERE kind='COST'),count(*) FILTER (WHERE kind='REVENUE'),coalesce(string_agg(DISTINCT kind||':'||coalesce(contract_id,'')||':'||coalesce(contract_version::text,''),','),'') FROM economic_facts WHERE protocol_id='${protocolID}'`,'hub_finance');
- const [financeCount,costFacts,revenueFacts,financeContracts]=financeFacts.split('\t');
- const ledgerEntries=sql(`SELECT count(*) FROM ledger_entries WHERE origin_protocol_id='${protocolID}'`,'hub_finance');
- if(v1.body.version!==1||v1.body.state!=='PUBLISHED'||v2.body.version!==2||v2.body.state!=='PUBLISHED'||status!=='SUCCEEDED'||targetVersion!=='1'||purchaseVersion!=='1'||profileVersion!=='1'||representation!=='true'||finalProtocol.status!=='SUCCEEDED'||Number(financeCount)<1||Number(revenueFacts)<1||Number(ledgerEntries)<2)throw new Error(`snapshot/result/economia v1 não preservado: v1=${JSON.stringify(v1.body)} v2=${JSON.stringify(v2.body)} persisted=${persisted} final=${JSON.stringify(finalProtocol)} finance=${financeFacts} ledger=${ledgerEntries}`);
- Object.assign(result,{status:'PASS',protocol_id:protocolID,admission_status:admission.status,version_1:{state:v1.body.state,content_hash:v1.body.content_hash},version_2:{state:v2.body.state,version:v2.body.version,changed_fields:['client_sla_seconds','provider_sla_seconds']},snapshot:{target_version:targetVersion,purchase_contract_version:purchaseVersion,technical_profile_version:profileVersion},final_status:finalProtocol.status,representation_materialized:representation==='true',finance:{facts:Number(financeCount),cost_facts:Number(costFacts),revenue_facts:Number(revenueFacts),contracts:financeContracts,ledger_entries:Number(ledgerEntries)}});
+ const finance=await waitFinance(protocolID);const financeFacts=finance.facts;const ledgerEntries=finance.ledger;
+ if(v1.body.version!==1||v1.body.state!=='PUBLISHED'||v2.body.version!==2||v2.body.state!=='PUBLISHED'||status!=='SUCCEEDED'||targetVersion!=='1'||purchaseVersion!=='1'||profileVersion!=='1'||representation!=='true'||finalProtocol.status!=='SUCCEEDED')throw new Error(`snapshot/result/economia v1 não preservado: v1=${JSON.stringify(v1.body)} v2=${JSON.stringify(v2.body)} persisted=${persisted} final=${JSON.stringify(finalProtocol)} finance=${JSON.stringify(financeFacts)} ledger=${ledgerEntries}`);
+ Object.assign(result,{status:'PASS',protocol_id:protocolID,admission_status:admission.status,version_1:{state:v1.body.state,content_hash:v1.body.content_hash},version_2:{state:v2.body.state,version:v2.body.version,changed_fields:['client_sla_seconds','provider_sla_seconds']},snapshot:{target_version:targetVersion,purchase_contract_version:purchaseVersion,technical_profile_version:profileVersion},final_status:finalProtocol.status,representation_materialized:representation==='true',finance:{facts:financeFacts.count,cost_facts:financeFacts.cost,revenue_facts:financeFacts.revenue,contracts:financeFacts.contracts,ledger_entries:ledgerEntries}});
 }catch(error){result.error=error.message.split('\n')[0];process.exitCode=1}
 finally{result.finished_at=new Date().toISOString();await writeFile(evidencePath,`${JSON.stringify(result,null,2)}\n`);console.log(JSON.stringify(result,null,2))}

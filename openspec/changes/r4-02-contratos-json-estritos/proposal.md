@@ -2,7 +2,7 @@
 ## Change ID
 r4-02-contratos-json-estritos
 ## Status
-Implementada — cenários R4-CTR-01/02 unitários qualificados; rollout e herdados ainda pendentes.
+Implementada — cenários R4-CTR-01/02 e rollout/rollback local qualificados; a requalificação dos cenários herdados permanece pendente.
 ## Why
 Provas novas executadas: null foi aceito como string; "123" como integer; e dois documentos concatenados retornaram sem erro. Decoder lê apenas o primeiro documento e, sem mapping, devolve input original. A preservação do inteiro grande anterior foi corrigida e não deve regredir.
 Prova executada: minimum:0 é ignorado e -1 aceito. A validação de publicação verifica só type object/properties. O comentário de recusa a construções não qualificadas não corresponde a whitelist efetiva. integer rejeita representação com .eE e enum compara json.Number lexicalmente, divergindo da semântica usual de JSON Schema.

@@ -48,9 +48,10 @@
   - Completion criteria: comando, versão, hash/digest, resultado e logs saneados no índice.
 
 ## 4. Rollout
-- [ ] 4.1 Ensaiar upgrade/rollback e revisar o diff.
+- [x] 4.1 Ensaiar upgrade/rollback e revisar o diff.
   - Objective: preservar dados, contratos e obrigações antigas.
   - Likely files/components: migrações, manifests e relatórios.
   - Depends on: qualificações anteriores.
   - Validation: ensaio compatível e checklist avaliador.
   - Completion criteria: riscos residuais explícitos; sem fechamento por inferência.
+  - Evidence: `catalog-schema-upgrade-runtime-latest.json` e `catalog-snapshot-upgrade-runtime-latest.json` passaram no Compose oficial; protocolo v1 permaneceu com snapshot/representação v1 durante upgrades v2/v4, e o rollback aditivo em `catalog-migration-rollback-latest.log` preservou v1, suspendeu v2, manteve o protocolo em voo e passou no replay idempotente.

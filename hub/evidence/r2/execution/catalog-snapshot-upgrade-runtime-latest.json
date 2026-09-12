@@ -1,8 +1,8 @@
 {
   "status": "PASS",
   "profile": "r2-cat-06-s01-catalog-snapshot-upgrade",
-  "key": "r2-cat-06-s01-1789148970199",
-  "protocol_id": "01a09196-bd2d-706e-8896-81fafb15ef92",
+  "key": "r2-cat-06-s01-1789171882352",
+  "protocol_id": "01a092f4-59a4-7cc6-b8f3-ffa292a3f906",
   "admission_status": 202,
   "version_1": {
     "state": "PUBLISHED",
@@ -30,5 +30,5 @@
     "contracts": "REVENUE:sale-r4:1",
     "ledger_entries": 2
   },
-  "finished_at": "2026-09-11T17:49:40.210Z"
+  "finished_at": "2026-09-12T00:11:31.755Z"
 }

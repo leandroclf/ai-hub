@@ -1,5 +1,5 @@
 AI Hub R2 — prova de migração e recuo do catálogo
-date=2026-09-11T22:49:27Z
+date=2026-09-12T00:11:57Z
 environment=Compose ai_hub_r3qual / PostgreSQL 16 / bancos temporários cercados
 legacy_services=2 catalog_drafts=2 identities=legacy-migration-alpha:1,legacy-migration-beta:2
 rollback=v1:PUBLISHED v2:SUSPENDED publication_history=3
