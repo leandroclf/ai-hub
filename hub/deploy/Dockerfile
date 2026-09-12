@@ -2,7 +2,7 @@
 # selecionado pelo build arg SERVICE. Usado por todos os seis
 # servicos Go da referencia local (ARQ-04: Go em todas as
 # APIs/workers).
-FROM golang:1.24-bookworm@sha256:1a6d4452c65dea36aac2e2d606b01b4a029ec90cc1ae53890540ce6173ea77ac AS build
+FROM golang:1.26-bookworm@sha256:9fdc884aacc3bec89b20ffc69f4bb369c78210e3e4f600387b5128b12c199f81 AS build
 ARG SERVICE
 WORKDIR /src
 COPY go.mod go.sum ./
