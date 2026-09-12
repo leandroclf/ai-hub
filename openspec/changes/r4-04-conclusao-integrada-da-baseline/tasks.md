@@ -80,7 +80,7 @@
 Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica specs nem cancela suas tarefas.
 
 - [ ] B-R4-01 Concluir e requalificar R3-EXE-01 — Adapters executáveis e autenticação completa.
-  - Objective: API_KEY agora atravessa modelo/projeção/executor/poller; gate synthetic-provider persiste. Fechar adapter real e homologação.
+  - Objective: API_KEY agora atravessa modelo/projeção/executor/poller, o adapter REST declarativo é versionado e a carga autorizada cobre SYNC, polling, callback, AUTO e credencial dedicada. Permanecem adapter/provedor comercial homologado e a matriz completa herdada.
   - Likely files/components: hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/atlasclient/client.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -135,7 +135,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-10 Concluir e requalificar R3-INT-01 — Controle adaptativo conectado a todo I/O.
-  - Objective: Capacity agora está conectado ao Execute do Cometa, ao polling, à reconciliação e ao `FETCH` de webhook no Pulsar, com sinais de sucesso, timeout, throttling e indisponibilidade; permanece aberta a qualificação integral por domínio e de todos os I/O.
+  - Objective: Capacity agora está conectado ao Execute do Cometa, ao polling, à reconciliação e ao `FETCH` de webhook no Pulsar, com sinais de sucesso, timeout, throttling e indisponibilidade; a carga autorizada confirma os caminhos locais. Permanece aberta a qualificação integral por domínio e de todos os I/O.
   - Likely files/components: hub/internal/cometa/capacity.go, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/pulsar/worker.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
