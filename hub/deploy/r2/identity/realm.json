@@ -551,6 +551,41 @@
       ]
     },
     {
+      "username": "aprovador-a",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "aprovador-a",
+      "lastName": "Fixture R2",
+      "email": "aprovador-a@r2.invalid",
+      "attributes": {
+        "tenant_id": [
+          "acme"
+        ],
+        "application_id": [
+          "app-acme"
+        ],
+        "cell_id": [
+          "r2-cell-a"
+        ]
+      },
+      "realmRoles": [
+        "hub_admin"
+      ],
+      "credentials": [
+        {
+          "type": "password",
+          "value": "R2-fixture-password!",
+          "temporary": false
+        },
+        {
+          "type": "otp",
+          "userLabel": "R2 manual TOTP (Base32)",
+          "secretData": "{\"value\": \"AI-HUB-R2-MFA-KEY-01\"}",
+          "credentialData": "{\"subType\": \"totp\", \"digits\": 6, \"counter\": 0, \"period\": 30, \"algorithm\": \"HmacSHA1\"}"
+        }
+      ]
+    },
+    {
       "username": "leitor-a",
       "enabled": true,
       "emailVerified": true,

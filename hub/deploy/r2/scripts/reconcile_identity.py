@@ -36,6 +36,7 @@ def decode_fixture_secret(public_secret):
 OTP_KEY=decode_fixture_secret(OTP_SECRET)
 USERS=[
     ("operadora-a","acme","app-acme","r2-cell-a","hub_admin"),
+    ("aprovador-a","acme","app-acme","r2-cell-a","hub_admin"),
     ("leitor-a","acme","app-acme","r2-cell-a","tenant_reader"),
     ("operador-b","beta","app-beta","r2-cell-a","tenant_operator"),
     ("auditor-global","","app-","r2-cell-a","hub_protocol_reader"),

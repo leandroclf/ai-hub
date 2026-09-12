@@ -72,6 +72,11 @@ reprodutível é:
 python3 hub/deploy/r2/tests/identity-scope-proof.py
 ```
 
+O usuário sintético `aprovador-a` é um `hub_admin` separado no tenant `acme`,
+usado exclusivamente para validar aprovação financeira segregada. Ele não
+substitui `auditor-global`: o leitor global continua sem `finance:approve` por
+política e não deve ser usado para aprovar ajustes.
+
 O runner mantém o token apenas em memória, confirma `sub`, `pwd+otp`, papel e
 escopo, consulta Atlas/Órbita sem campos sensíveis, tenta uma escrita e valida
 que `leitor-a` não cruza para `beta`. A consulta administrativa global deve

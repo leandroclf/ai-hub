@@ -2,19 +2,19 @@
   {
     "check": "Admin service validation uses current qualification and no-provider-call fixture",
     "status": "PASS",
-    "service": "browser-publication-1789148018985",
-    "validation": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls\n\nTTL efetivo: 10s · Hash: 37d9687a9a6f47989a71a26f41c0c023fff06a0cbf563117e197b5cab258d12e"
+    "service": "browser-publication-1789170450130",
+    "validation": "Validação aprovada · Fixture: synthetic-validation-no-provider-calls\n\nTTL efetivo: 10s · Hash: ecc417fb0f359a85cef07cfd0ba2c8b6a64d4e7a7d60a148a8d4d73a24524d6b"
   },
   {
     "check": "Admin publishes qualified service version and presents immutable state",
     "status": "PASS",
-    "service": "browser-publication-1789148018985",
+    "service": "browser-publication-1789170450130",
     "version": 1
   },
   {
     "check": "Published service rejects mutation and preserves content hash",
     "status": "PASS",
-    "service": "browser-publication-1789148018985",
+    "service": "browser-publication-1789170450130",
     "version": 1,
     "mutation_status": 409,
     "state": "PUBLISHED"
@@ -22,10 +22,10 @@
   {
     "check": "Incompatible schema migration creates immutable v2 while preserving the published v1 contract",
     "status": "PASS",
-    "service": "browser-publication-1789148018985",
+    "service": "browser-publication-1789170450130",
     "version_1": {
       "state": "PUBLISHED",
-      "content_hash": "37d9687a9a6f47989a71a26f41c0c023fff06a0cbf563117e197b5cab258d12e"
+      "content_hash": "ecc417fb0f359a85cef07cfd0ba2c8b6a64d4e7a7d60a148a8d4d73a24524d6b"
     },
     "version_2": {
       "state": "PUBLISHED",
@@ -38,10 +38,10 @@
   {
     "check": "Second same-tenant operator refreshes the published URL and reads the persisted version",
     "status": "PASS",
-    "service": "browser-publication-1789148018985",
+    "service": "browser-publication-1789170450130",
     "version": 1,
     "reader": "leitor-a",
     "revision": 2,
-    "content_hash": "37d9687a9a6f47989a71a26f41c0c023fff06a0cbf563117e197b5cab258d12e"
+    "content_hash": "ecc417fb0f359a85cef07cfd0ba2c8b6a64d4e7a7d60a148a8d4d73a24524d6b"
   }
 ]

@@ -43,6 +43,19 @@ python3 hub/deploy/r2/scripts/token.py --otp
 Digite o campo `otp` imediatamente no formulário; `window_seconds` indica o
 tempo restante da janela atual.
 
+Se o realm tiver sido reiniciado com volume persistente ou uma tentativa manual
+tiver alterado a credencial, reconcilie a fixture antes de abrir o portal:
+
+```bash
+docker compose -p ai_hub_r3qual -f hub/deploy/r2/compose.yaml \
+  run --rm identity-reconcile
+```
+
+Depois abra uma janela anônima ou faça logout completo, acesse
+`http://localhost:13000/` e inicie uma transação nova. Não submeta o mesmo OTP
+novamente depois de uma rejeição: o código é válido por janela e não deve ser
+reutilizado.
+
 O valor Base32 é a representação de cadastro; o Keycloak armazena a chave ASCII
 equivalente para manter compatibilidade com a credencial importada do fixture.
 O gerador de token e a prova de compatibilidade derivam os mesmos bytes a partir

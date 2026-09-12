@@ -13,7 +13,7 @@ function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U
 async function authenticate(username,expectedURL){
  if(!await page.locator('#otp').count()){
   await page.getByRole('button',{name:'Entrar',exact:true}).click();
-  await page.locator('#username').fill(username);await page.locator('#password').fill('R2-fixture-password!');await page.locator('#kc-login').click();await page.locator('#otp').waitFor();
+  await page.locator('#username').fill(username);await page.locator('#password').fill('R2-fixture-password!');await page.locator('#kc-login').click();await page.locator('#otp').waitFor();await page.waitForTimeout((30-(Math.floor(Date.now()/1000)%30))*1000+250);
  }
  for(let attempt=0;attempt<3;attempt++)for(const skew of [0,-1,1]){
   if(!await page.locator('#otp').count())break;

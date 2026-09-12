@@ -2,12 +2,12 @@
   {
     "check": "Admin client activation exposes qualified-capacity pending state",
     "status": "PASS",
-    "resource": "browser-pending-1789145870264"
+    "resource": "browser-pending-1789170455097"
   },
   {
     "check": "Admin suspension confirms impact, preserves reason and keeps history readable",
     "status": "PASS",
-    "resource": "browser-active-1789145870521",
+    "resource": "browser-active-1789170455334",
     "inProgressProtocols": 1
   }
 ]

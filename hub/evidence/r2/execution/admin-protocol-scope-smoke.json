@@ -2,14 +2,14 @@
   {
     "check": "Admin reads materialized protocol result without provider call",
     "status": "PASS",
-    "protocol": "01a09075-f9e2-7003-8717-f86a731af566",
+    "protocol": "01a092cb-812b-72ae-9405-ddb26126a4aa",
     "provider_effects_before": {
-      "effects": 0,
-      "protocols": 0
+      "effects": 14,
+      "protocols": 14
     },
     "provider_effects_after": {
-      "effects": 0,
-      "protocols": 0
+      "effects": 14,
+      "protocols": 14
     }
   },
   {

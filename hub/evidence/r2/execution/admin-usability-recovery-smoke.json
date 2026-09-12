@@ -11,7 +11,7 @@
     "check": "Admin stale revision exposes recoverable conflict with local input and server diff",
     "status": "PASS",
     "status_code": 412,
-    "local_input": "Cliente browser-recovery-1789137079360-a4b36005 edição local preservada",
+    "local_input": "Cliente browser-recovery-1789170901408-0a615df6 edição local preservada",
     "local_diff_preserved": true,
     "server_diff_present": true
   }

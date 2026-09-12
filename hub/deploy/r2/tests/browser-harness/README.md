@@ -56,6 +56,12 @@ Não use para:
    devem ser fornecidos interativamente pelo operador; o cenário não os captura
    nem os escreve em arquivo.
 
+   Para evitar `Invalid authenticator code`, abra sempre
+   `http://localhost:13000/`, clique em **Entrar**, gere um OTP novo e submeta-o
+   dentro da janela indicada. Não reutilize URL antiga de `login-actions` nem o
+   código após uma rejeição; se necessário, execute novamente o
+   `identity-reconcile` documentado na configuração de segurança.
+
 ## Execução rápida
 
 Com uma sessão de teste já autenticada no console:

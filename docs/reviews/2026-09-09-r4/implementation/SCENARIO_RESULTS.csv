@@ -179,7 +179,7 @@ R2-ADM-09-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — redelivery de entrega 
 R2-ADM-09-S02;PASS_INTEGRADO_LOCAL;browser-smoke.json — reconciliação de UNKNOWN sem provider_request_id é rejeitada de forma durável e auditada, sem oferecer replay genérico
 R2-ADM-09-S03;PASS_INTEGRADO_LOCAL;r2-security.log + browser-smoke.json — leitor administrativo sem escopo de escrita recebe 403 no endpoint de reconciliação e o portal não exibe ação de replay
 R2-ADM-11-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — portal consulta contas, fatos e journal persistidos pelo Libra, incluindo batch_id e origem financeira
-R2-ADM-11-S03;PASS_INTEGRADO_LOCAL;admin-finance-adjustment-smoke.json — Chromium preparou ajuste compensatório com razão, exibiu bloqueio de autoaprovação e um auditor-global distinto aprovou com recibo persistido
+R2-ADM-11-S03;PASS_INTEGRADO_LOCAL;admin-finance-adjustment-smoke.json — Chromium preparou ajuste compensatório com razão, exibiu bloqueio de autoaprovação e o aprovador-a distinto, do mesmo tenant, aprovou com recibo persistido
 R2-ADM-01-S01;PASS_INTEGRADO_LOCAL;browser-smoke.json — Chromium completou Authorization Code + PKCE, senha e OTP e abriu a área administrativa real
 R2-ADM-01-S03;PASS_INTEGRADO_LOCAL;browser-smoke.json — logout removeu a sessão e a API administrativa respondeu 401 sem credencial
 R2-ADM-01-S02;PASS_INTEGRADO_LOCAL;admin-session-scope-smoke.json — leitor de acme recebeu 403 ao consultar beta na autoridade e a UI manteve tenant acme sem controle cross-tenant

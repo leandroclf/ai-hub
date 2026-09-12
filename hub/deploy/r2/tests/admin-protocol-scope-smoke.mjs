@@ -9,7 +9,7 @@ const page=await browser.newPage({viewport:{width:1365,height:900}});const reade
 const evidence=[];const postgres=`${process.env.R2_COMPOSE_PROJECT||'ai_hub_r3qual'}-postgres-1`;
 function sql(statement){return execFileSync('docker',['exec',postgres,'psql','-U','hub','-d','hub_core','-At','-v','ON_ERROR_STOP=1','-c',statement],{encoding:'utf8'}).trim()}
 async function authenticate(target,username,expectedURL){
- if(!await target.locator('#otp').count()){await target.getByRole('button',{name:'Entrar',exact:true}).click();await target.locator('#username').fill(username);await target.locator('#password').fill('R2-fixture-password!');await target.locator('#kc-login').click();await target.locator('#otp').waitFor()}
+ if(!await target.locator('#otp').count()){await target.getByRole('button',{name:'Entrar',exact:true}).click();await target.locator('#username').fill(username);await target.locator('#password').fill('R2-fixture-password!');await target.locator('#kc-login').click();await target.locator('#otp').waitFor();await target.waitForTimeout((30-(Math.floor(Date.now()/1000)%30))*1000+250)}
  for(let attempt=0;attempt<3;attempt++)for(const skew of [0,-1,1]){if(!await target.locator('#otp').count())break;const counter=Buffer.alloc(8);counter.writeBigUInt64BE(BigInt(Math.floor(Date.now()/30000)+skew));const digest=createHmac('sha1',Buffer.from('AI-HUB-R2-MFA-KEY-01')).update(counter).digest();const offset=digest[digest.length-1]&15;const otp=((digest.readUInt32BE(offset)&0x7fffffff)%1000000).toString().padStart(6,'0');await target.locator('#otp').fill(otp);await target.locator('#kc-login').click();try{await target.waitForURL(expectedURL,{timeout:1500});return}catch{}}
  throw new Error(`OIDC OTP não foi aceito para ${username}`);
 }
