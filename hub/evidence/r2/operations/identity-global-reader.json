@@ -1,5 +1,5 @@
 {
-  "date": "2026-09-11",
+  "date": "2026-09-12",
   "environment": "local",
   "fixture_user": "auditor-global",
   "role": "hub_protocol_reader",
@@ -22,5 +22,6 @@
     "mfa": true
   },
   "procedure": "python3 hub/deploy/r2/tests/identity-scope-proof.py",
+  "latest_result": "IDENTITY_SCOPE_PROOF=PASS global_read=200/200 global_write=403 tenant_cross_read=403",
   "limitation": "fixture local e dados sintéticos; não homologa identidade ou cluster produtivo"
 }

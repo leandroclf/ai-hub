@@ -6,3 +6,6 @@ Oracle: fixture tenants acme/acme-strict/acme-dedicated only; SUBMITTED/STATUS/F
 
 Reexecução 2026-09-11 após carga autorizada:
 FINANCE_RUNTIME_PROOF=PASS window_seconds=900 outbox=26 missing_attempt=0 invalid_incidence=0 facts=12 cost=4 revenue=8 inbox=26 unbalanced=0 invalid_quarantine=0
+
+Reexecução 2026-09-12 após reconciliação da identidade e smoke do portal:
+FINANCE_RUNTIME_PROOF=PASS window_seconds=900 outbox=24 missing_attempt=0 invalid_incidence=0 facts=14 cost=6 revenue=8 inbox=24 unbalanced=0 invalid_quarantine=0

@@ -10,3 +10,6 @@ diagnóstico anterior: Pulsar com CIDRs de loopback recusou a entrega antes do P
 
 Reexecução 2026-09-11 após normalização da fila local:
 PASS delivery=478b45c4-d79c-4d45-ad48-7acac3c33f2f capacity=1|open=0|pending=0
+
+Reexecução 2026-09-12 após reconciliação da identidade:
+PASS delivery=985e35d4-bacd-485b-8cba-b92929558ca2 capacity=1|open=0|pending=0
