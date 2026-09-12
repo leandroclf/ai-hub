@@ -123,7 +123,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
   - Evidence: `hub/internal/atlas/catalog.go`, `hub/internal/orbita/handlers.go` e `hub/evidence/r2/execution/effective-retry-policy-latest.log`; o comando durável recebe o horizonte efetivo e a representação final é validada por `representation-runtime-latest.json`.
 - [ ] B-R4-08 Concluir e requalificar R3-CAT-03 — Agregação e composição com executor de DAG.
-  - Objective: Executor de DAG não conectado; PlanDAG de catálogo não é execução de produto.
+  - Objective: Executor de produto foi conectado a planos duráveis com etapas independentes/dependentes, limite de paralelismo, consolidação e replay idempotente; permanecem a matriz completa de falhas/compensação e a homologação externa.
   - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/atlas/catalog.go, hub/internal/atlas/offers.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
@@ -195,11 +195,12 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
 - [ ] B-R4-20 Concluir e requalificar R3-OPE-01 — Objetos conectados ao fluxo e retenção.
-  - Objective: FileRefs agora são fixados na admissão e encaminhados ao provider-sim; integração de resultados, adapter real, retenção e qualificação de isolamento entre tenants permanecem pendentes.
+  - Objective: FileRefs agora são fixados na admissão, confirmados por hash/READY, pinados na retenção e encaminhados ao provider-sim; permanecem adapter real, retenção fora da fixture e a qualificação completa de isolamento entre tenants.
   - Likely files/components: hub/internal/objectstore/catalog.go, hub/internal/objectstore/retention.go, hub/internal/cometa/executor.go, hub/internal/orbita/admission.go.
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+  - Evidence: `hub/evidence/r2/execution/file-upload-submit-smoke.json`; upload direto, confirmação, admissão, resposta final e pin durável passaram no Compose oficial.
 - [ ] B-R4-21 Concluir e requalificar R3-OPE-02 — Kind completo e ambientes reprodutíveis.
   - Objective: O perfil independente do Kind materializa dependências cluster-owned e foi qualificado localmente; permanecem fora deste gate a IaC dos ambientes remotos e a HA regional contratada.
   - Likely files/components: hub/deploy/r2/kind/bootstrap-independent.sh, hub/deploy/r2/kind/render-independent-dependencies.py, hub/deploy/r2/kind/render-runtime.py, hub/deploy/r2/k8s/base/workloads.yaml, hub/deploy/r2/k8s/overlays/prd/kustomization.yaml.
@@ -212,6 +213,7 @@ Concluir também as 25 fatias B-R4 do documento 02; esta seção não duplica sp
   - Depends on: contrato/custódia e ordem do documento 02.
   - Validation: todos os cenários originais do requisito e herdados vinculados.
   - Completion criteria: prova de fluxo real; correção pontual não equivale a conformidade integral.
+  - Evidence: `hub/evidence/r2/execution/scaling-policy-latest.log`; HPA/KEDA/PDB, backlog de entregas, topology spread e envelopes local/PPD foram verificados estruturalmente. Backlog real, autoscaling efetivo e provisionamento cloud continuam abertos.
 - [ ] B-R4-23 Concluir e requalificar R3-OPE-04 — Autoridade durável, isolamento e restore.
   - Objective: Migrações aditivas de callback, RLS runtime e restore/reconciliation foram revalidados; o harness agora recusa alvos de restore já existentes. Permanecem a prova integral de upgrade/rollback e a cobertura de autoridade durável de todos os domínios.
   - Likely files/components: hub/migrations/core, hub/migrations/control, hub/internal/platform/pg, hub/internal/orbita/admission.go.

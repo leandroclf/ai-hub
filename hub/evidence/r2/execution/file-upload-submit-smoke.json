@@ -2,15 +2,15 @@
   {
     "check": "upload HTTP direto e confirmação de FileRef",
     "status": "PASS",
-    "file_ref": "cf5408f2-0fcd-4e66-9ce7-3a7931a0d9a4",
+    "file_ref": "9d871bf5-319a-4931-8782-9c6875400fd6",
     "state": "READY",
-    "sha256": "7b85597a77290f77f1c348a5c46a43630525b4ebbbf340ef0aae5434ffa1254c"
+    "sha256": "51d6702145849f3a1157146febb8027095831b11656b7a1e970e2378431ca154"
   },
   {
     "check": "admissão real referencia FileRef confirmado",
     "status": "PASS",
-    "protocol_id": "01a090f6-53ea-7766-b9cc-c53037513e84",
-    "http_status": 504,
+    "protocol_id": "01a09322-72ec-725d-84ef-37655c83c07f",
+    "http_status": 200,
     "acceptance_preserved": true,
     "retention_pin": "1"
   }
