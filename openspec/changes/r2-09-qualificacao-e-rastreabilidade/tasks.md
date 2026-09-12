@@ -1,6 +1,6 @@
 # Tasks: Qualificação por requisito e evidência reproduzível
 
-Status: **preparação e evidências parciais concluídas**. A revisão atualiza o snapshot, contratos compartilhados e fixtures isoladas; os comportamentos e a qualificação integral permanecem abertos. A matriz atual contém 732 cenários, com 230 associados a resultados/evidências e 502 `NAO_QUALIFICADO_NESTA_RODADA`. Dependências de change: Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.
+Status: **preparação e evidências parciais concluídas**. A revisão atualiza o snapshot, contratos compartilhados e fixtures isoladas; os comportamentos e a qualificação integral permanecem abertos. A matriz atual contém 732 cenários, com 231 associados a resultados/evidências e 501 `NAO_QUALIFICADO_NESTA_RODADA`. Dependências de change: Sem pré-requisito de implementação para iniciar; integrações específicas descritas abaixo.
 
 ## 1. Contratos e preparação
 

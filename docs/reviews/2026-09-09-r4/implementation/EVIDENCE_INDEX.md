@@ -20,7 +20,7 @@ limites arquiteturais.
 | `hub/evidence/r2/execution/traceability-runtime-latest.json` | R2-OPE-07-S01 — fluxo rastreável | PASS integrado local; trace durável foi encontrado na intenção, nos logs de Órbita/Cometa e na timeline administrativa; histograma de latência presente e labels de métricas sem IDs de negócio | Não substitui observabilidade gerenciada ou investigação multi-região |
 | `hub/evidence/r2/execution/message-replay-tombstone-latest.log` | R2-DAD-03-S03 — mensagem antiga | PASS integrado local; replay após terminal encontrou inbox `APPLIED`/tombstone lógico, não criou novo fato/outbox e conflito de identidade foi quarentenado | Não substitui retenção regional ou arquivamento produtivo |
 | `hub/evidence/r2/execution/async-broker-outage-runtime-latest.json` | R2-EXE-01-S02 — aceite assíncrono com broker fora | PASS integrado local; `202/ACCEPTED` permaneceu durável durante a indisponibilidade, e a restauração/recriação dos consumidores levou a uma única operação, finalização e efeito externo |
-| `hub/evidence/r2/execution/environment-boundary-latest.log` | R2-OPE-02-S02/S03 — fronteira ambiental e gate de promoção | PASS estrutural para namespaces e referências sem segredos materializados; gate de `prd` bloqueia sem perfil/aprovações e dev permanece permitido; cross-environment integrado ainda parcial |
+| `hub/evidence/r2/execution/environment-boundary-latest.log` | R2-OPE-02-S02/S03 e R2-DAD-05-S03 — fronteira ambiental e gate de promoção | PASS estrutural para namespaces e referências sem segredos materializados; gate de `prd` bloqueia sem perfil/aprovações, bloqueia perfil RPO_ZERO com mera confirmação regional e exige custódia/fencing explícitos; dev permanece permitido; cross-environment integrado ainda parcial |
 | `hub/evidence/r2/execution/optional-dependency-runtime-latest.log` | R2-OPE-03-S01 — dependência opcional fora | PASS local; Alloy indisponível, readiness/liveness de Órbita/Cometa mantidas e workloads não relacionados sem alteração de container ou reinício |
 | `hub/evidence/r2/execution/provider-outage-runtime-latest.json` + `provider-outage-reconciliation-latest.log` | R2-OPE-03-S03 — provedor fora | PASS local; provider-sim indisponível produz 504/UNKNOWN sem falso sucesso, GET preserva estado, capacidade fecha transporte e workloads não afetados não reiniciam; provider restaurado e fixture reconciliada por 404 |
 | `hub/evidence/r2/execution/capacity-quota-latest.log` | R2-OPE-04-S03 — quota esgotada e isolamento de capacidade | PASS unitário PostgreSQL; 60 contendores, limites por tenant, reserva de B, fencing de owner stale e rate limit sem roubo entre tenants; autoscaling cloud não qualificado |
@@ -119,7 +119,7 @@ limites arquiteturais.
 | `../evidence/openspec-strict-20260910.json` | OpenSpec strict reexecutado: 21 changes, 0 falhas; a revisão deve considerar o SHA registrado no artefato após o commit |
 | `hub/deploy/r2/tests/generate-openspec-inventory.py` + `INVENTORY-732-CENARIOS.csv` | Inventário derivado diretamente das 29 specs: 201 requisitos, 732 cenários, IDs sem duplicidade e digest SHA-256 das fontes |
 | `hub/evidence/r2/execution/r2-security.log` + `r2-seg04-egress.log` + `r2-seg05-admin.log` | quinze cenários R2-SEG-01/02/03/04/05 nomeados; PostgreSQL, HTTPS/TLS e Chromium local nas provas correspondentes |
-| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 230 com evidência existente e 502 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
+| `hub/deploy/r2/tests/generate-openspec-results.py` + `RESULT-MATRIX-732-CENARIOS.csv` | Matriz derivada do inventário: 732 linhas, 231 com evidência existente e 501 explicitamente `NAO_QUALIFICADO_NESTA_RODADA`; nenhum cenário sem prova é promovido |
 | `OPENSPEC-AUDIT-2026-09-10.md` | auditoria sequencial das quatro changes R4 e critérios para não encerrar por inferência |
 | `hub/deploy/r2/tests/browser-harness/README.md` | procedimento permanente para validação exploratória do console com browser real |
 | `hub/deploy/r2/tests/browser-harness/run.sh` e `scenarios/admin-console.py` | runner e cenário somente leitura do Browser Harness; resultado é exploratório, não substitui Playwright |
@@ -174,8 +174,8 @@ foi reproduzido por testes RED→GREEN e validado na suíte Go completa, race do
 módulos críticos e `go vet`.
 
 A matriz integral foi regenerada a partir do inventário no mesmo conteúdo de
-fonte: 732 cenários, dos quais 230 possuem resultado/evidência já registrada e
-502 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
+fonte: 732 cenários, dos quais 231 possuem resultado/evidência já registrada e
+501 permanecem explicitamente não qualificados. O artefato é de rastreabilidade
 e não substitui a execução dos cenários restantes.
 
 Na continuação de 11/09/2026, `r2-int-exe-qualification.log` registrou as

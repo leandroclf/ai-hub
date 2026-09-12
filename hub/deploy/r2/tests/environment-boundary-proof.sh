@@ -63,5 +63,15 @@ echo "promotion_dev PASS ${dev_gate}"
 
 qualified_gate="$(R2_PROMOTION_ENV=prd R2_QUALIFICATION_PROFILE=synthetic-qualification-fixture R2_PROMOTION_APPROVALS='P-01,P-08,P-10' R2_ENVIRONMENT_ISOLATION_PROOF=PASS "$GATE")"
 echo "promotion_prd_qualified_fixture PASS ${qualified_gate}"
+
+if R2_PROMOTION_ENV=prd R2_QUALIFICATION_PROFILE=regional-rpo-zero R2_PROMOTION_APPROVALS='P-01,P-08,P-10' R2_ENVIRONMENT_ISOLATION_PROOF=PASS R2_REGIONAL_PROFILE=RPO_ZERO R2_REGIONAL_CUSTODY_CONFIRMATION=PASS "$GATE"; then
+  echo "promotion_prd_regional_confirmation_only FAIL gate_did_not_block"
+  exit 1
+else
+  echo "promotion_prd_regional_confirmation_only PASS blocked_as_expected"
+fi
+
+regional_gate="$(R2_PROMOTION_ENV=prd R2_QUALIFICATION_PROFILE=regional-rpo-zero R2_PROMOTION_APPROVALS='P-01,P-08,P-10' R2_ENVIRONMENT_ISOLATION_PROOF=PASS R2_REGIONAL_PROFILE=RPO_ZERO R2_REGIONAL_CUSTODY_CONFIRMATION=PASS R2_REGIONAL_CUSTODY_PROOF=PASS R2_REGIONAL_FENCING_PROOF=PASS "$GATE")"
+echo "promotion_prd_regional_proofs PASS ${regional_gate}"
 echo "ENVIRONMENT_BOUNDARY_PROOF=PASS overlays=${#overlays[@]} unique_namespaces=${#namespaces[@]} production_gate=blocked_without_profile"
 echo "evidence=${EVIDENCE_FILE#${ROOT_DIR}/}"

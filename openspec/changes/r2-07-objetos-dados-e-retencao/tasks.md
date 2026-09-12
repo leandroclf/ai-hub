@@ -100,12 +100,13 @@ Status: **contratos, comportamentos locais e parte da qualificação concluídos
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
   - Evidence: `hub/evidence/r2/execution/r2-dad-04-read-authority-latest.log`; S01/S02/S03 passaram com custódia pendente/expirada, `503/protocol_unavailable` sem falso `404` e RLS cross-tenant nas três bases. Réplica atrasada e writer alternativo regional permanecem limitação explícita.
 
-- [ ] 3.5 Qualificar R2-DAD-05 com oráculos independentes
+- [x] 3.5 Qualificar R2-DAD-05 com oráculos independentes
   - Objective: Executar R2-DAD-05-S01, R2-DAD-05-S02, R2-DAD-05-S03. Caso indispensável: Falha regional; esperado: perfil não é qualificado nem ativado até prova de custódia e fencing compatíveis.
   - Likely files/components: `hub/test/e2e/e2e_test.go`; `hub/evidence`; `hub/internal/objectstore`; `hub/internal/orbita`.
   - Depends on: 2.5; fixtures de r2-09; dependências de integração pertinentes.
   - Validation: Unitário/integrado/contrato/E2E conforme regra; falhas e concorrência reais quando normativas. Registrar ambiente, SHA, fixture, esperado/obtido e saída sanitizada.
   - Completion criteria: Todos os 3 cenários têm pass/fail/blocked explícito. Somente pass com evidência conclui esta tarefa; corrigir regressão em vez de reduzir assert.
+  - Evidence: `restore-reconciliation-latest.log` passou os cenários locais de restore controlado e operação após backup sem replay; `environment-boundary-latest.log` passou o cenário de falha regional como bloqueio preventivo: confirmação regional isolada foi recusada e a promoção só foi aceita com provas explícitas de custódia e fencing. A prova não declara HA/RPO-zero regional.
 
 ## 4. Integração, migração e fechamento
 

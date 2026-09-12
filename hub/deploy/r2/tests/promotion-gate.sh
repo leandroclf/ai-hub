@@ -10,6 +10,10 @@ approvals=" ${R2_PROMOTION_APPROVALS:-} "
 isolation=${R2_ENVIRONMENT_ISOLATION_PROOF:-}
 criticality=${R2_CRITICALITY_PROFILE:-standard}
 critical_approved=${R2_CRITICAL_PROFILE_APPROVED:-}
+regional_profile=${R2_REGIONAL_PROFILE:-}
+regional_custody_confirmation=${R2_REGIONAL_CUSTODY_CONFIRMATION:-}
+regional_custody_proof=${R2_REGIONAL_CUSTODY_PROOF:-}
+regional_fencing_proof=${R2_REGIONAL_FENCING_PROOF:-}
 evidence_manifest=${R2_QUALIFICATION_EVIDENCE_MANIFEST:-}
 evidence_validator="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/validate-qualification-evidence.py"
 
@@ -37,11 +41,16 @@ case "$environment" in
     if [[ "$criticality" == critical && "$critical_approved" != PASS ]]; then
       missing+=(critical_profile_approval)
     fi
+    if [[ "$regional_profile" == RPO_ZERO ]]; then
+      [[ "$regional_custody_confirmation" == PASS ]] || missing+=(regional_custody_confirmation)
+      [[ "$regional_custody_proof" == PASS ]] || missing+=(regional_custody_proof)
+      [[ "$regional_fencing_proof" == PASS ]] || missing+=(regional_fencing_proof)
+    fi
     if ((${#missing[@]} > 0)); then
       echo "PROMOTION_GATE=BLOCK environment=prd missing=$(IFS=,; echo "${missing[*]}")"
       exit 1
     fi
-    echo "PROMOTION_GATE=ALLOW environment=prd profile=$profile approvals=P-01,P-08,P-10"
+    echo "PROMOTION_GATE=ALLOW environment=prd profile=$profile approvals=P-01,P-08,P-10 regional_profile=${regional_profile:-none}"
     ;;
   *)
     echo "PROMOTION_GATE=BLOCK environment=$environment missing=unsupported_environment"

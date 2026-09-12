@@ -26,7 +26,7 @@ textual isolada.
 | r4-01 callbacks | Parcial | revalidação; worker, ingresso público, validação terminal, quota/retention e deduplicação por capability | autenticação por conta e cenário externo ponta a ponta |
 | r4-02 contratos JSON | Implementação e rollout/rollback local comprovados | contrato, implementação e qualificação dos seis cenários R4, com protocolo v1 preservado durante upgrade | requalificação herdada e homologação externa |
 | r4-03 upgrade/cache | Parcial; rollout/rollback local comprovado | upgrade/reconciliação histórica, migração aditiva, recuo aditivo com snapshot v1 preservado e L1 limitado com coordenação cancelável | revogação/cancelamento/crescimento, rollback produtivo/regional e prova de projeção/ofertas |
-| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório, adapter REST versionado local, inventário de fonte 201/732 e matriz explícita de 732 resultados | 502 cenários ainda não qualificados, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
+| r4-04 conclusão integrada | Parcial | revalidação, console Playwright com editor de produto, carga, produto HTTP local, RLS, restore, HA local, Browser Harness exploratório, adapter REST versionado local, inventário de fonte 201/732 e matriz explícita de 732 resultados | 501 cenários ainda não qualificados, provedor comercial, ausência de skips obrigatórios e gaps arquiteturais |
 
 ## Evidências consideradas
 
@@ -62,7 +62,7 @@ textual isolada.
   submit assíncrono, consulta de status, resposta estrita e reconstrução do
   Cometa. A prova não equivale à homologação de provedor comercial.
 - Rastreamento integral: `generate-openspec-results.py` gerou 732 linhas a
-  partir do inventário; 230 foram associados às evidências existentes e 502
+  partir do inventário; 231 foram associados às evidências existentes e 501
   receberam `NAO_QUALIFICADO_NESTA_RODADA`. O resultado não é aprovação dos
   cenários sem execução.
 

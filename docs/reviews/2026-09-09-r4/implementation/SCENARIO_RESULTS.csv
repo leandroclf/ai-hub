@@ -105,8 +105,9 @@ R2-DAD-03-S01;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestPostgres
 R2-DAD-03-S02;PASS_INTEGRADO_LOCAL;r2-cat-dad-qualification.log — TestPostgresS3MultipartFileRef mantém objeto protegido enquanto o pin de obrigação está aberto
 R2-DAD-03-S03;PASS_INTEGRADO_LOCAL;message-replay-tombstone-latest.log — TestOperationFactPostgresCustody repetiu evento após finalização, preservou inbox APPLIED/tombstone lógico, não criou novo outbox e quarentenou identidade divergente
 R2-DAD-04-S03;PASS_INTEGRADO_LOCAL;rls-runtime-latest.log — rls-runtime-proof.sh rejeita acesso cross-tenant nas bases control/core/finance com hub_runtime
-R2-DAD-05-S01;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh confronta digests/contagens e bloqueia readmissão antes da reconciliação; objetos produtivos não fizeram parte desta fixture
-R2-DAD-05-S02;PARCIAL_INTEGRADO;r2-cat-dad-qualification.log — restore-reconciliation.sh consulta o oráculo externo sem replay e preserva a readmissão desabilitada; parceiro comercial não foi usado
+R2-DAD-05-S01;PASS_INTEGRADO_LOCAL;restore-reconciliation-latest.log — restore-reconciliation.sh confronta digests/contagens e bloqueia readmissão antes da reconciliação; objetos produtivos/região permanecem fora do envelope
+R2-DAD-05-S02;PASS_INTEGRADO_LOCAL;restore-reconciliation-latest.log — restore-reconciliation.sh consulta o oráculo externo sem replay e preserva a readmissão desabilitada; parceiro comercial/região permanecem fora do envelope
+R2-DAD-05-S03;PASS_INTEGRADO_LOCAL;environment-boundary-latest.log — promotion-gate bloqueia perfil RPO_ZERO com confirmação regional isolada e só permite avanço com provas explícitas de custódia e fencing; não qualifica HA/RPO-zero regional
 R2-OPE-01-S03;PASS_INTEGRADO_LOCAL;offline-startup.json — Orbita e Cometa iniciam prontos com broker e Redis fora do perfil opcional
 R2-OPE-09-S01;PASS_INTEGRADO_LOCAL;slo-load-latest.json — 30 admissões ASYNC e 30 GETs autenticados, payload 59989 bytes, concorrência 5, p95/p99 dentro das metas propostas
 R2-OPE-06-S01;PASS_INTEGRADO_LOCAL;broker-outage-runtime-latest.json — localstack indisponível, Órbita/Cometa recriados prontos, SYNC/GET SUCCEEDED e broker restaurado; reconciliação local fechou somente a fixture sem efeito
@@ -165,7 +166,7 @@ R4-CBK-04-S01;PASS_INTEGRADO_LOCAL;callback válido concluiu com validação com
 R4-CBK-04-S02;PASS_INTEGRADO_LOCAL;chave de ingresso e capability inválidas retornaram 401 sem alterar a operação
 R4-CBK-04-S03;PASS_INTEGRADO_LOCAL;resultado estrito do provider-sim foi preservado no protocolo final
 R4-QUA-01-S01;PASS_ESTRUTURAL;generate-openspec-inventory.py derivou 201 requisitos e 732 cenários das 29 specs, sem IDs duplicados e com digest de fonte
-R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 230 resultados associados e 502 explicitamente NAO_QUALIFICADO_NESTA_RODADA
+R4-QUA-01-S02;PASS_ESTRUTURAL;generate-openspec-results.py regenerou 732 linhas a partir do inventário, com 231 resultados associados e 501 explicitamente NAO_QUALIFICADO_NESTA_RODADA
 R4-QUA-01-S03;PARCIAL;matriz e digest de fonte registrados; hash final do working tree permanece dependente do commit e do artefato de proveniência da rodada
 R4-QUA-02-S01;PASS_INTEGRADO;smoke Chromium autenticado, navegação, SLA, destinos versionados, logout e viewport 390px
 R4-QUA-02-S02;PARCIAL_INTEGRADO;criação/leitura persistente, publicação de destino e consulta SLA passaram no Playwright; mutações de cada jornada ainda não são equivalentes

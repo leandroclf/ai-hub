@@ -8,6 +8,9 @@ overlay=prd PASS namespace=ai-hub-prd digest=607ef642e9b6a9ca93c23662e0daeb19c64
 PROMOTION_GATE=BLOCK environment=prd missing=qualification_profile,environment_isolation_proof,P-01,P-08,P-10
 promotion_prd_missing_profile PASS blocked_as_expected
 promotion_dev PASS PROMOTION_GATE=ALLOW environment=dev reason=non-production-profile
-promotion_prd_qualified_fixture PASS PROMOTION_GATE=ALLOW environment=prd profile=synthetic-qualification-fixture approvals=P-01,P-08,P-10
+promotion_prd_qualified_fixture PASS PROMOTION_GATE=ALLOW environment=prd profile=synthetic-qualification-fixture approvals=P-01,P-08,P-10 regional_profile=none
+PROMOTION_GATE=BLOCK environment=prd missing=regional_custody_proof,regional_fencing_proof
+promotion_prd_regional_confirmation_only PASS blocked_as_expected
+promotion_prd_regional_proofs PASS PROMOTION_GATE=ALLOW environment=prd profile=regional-rpo-zero approvals=P-01,P-08,P-10 regional_profile=RPO_ZERO
 ENVIRONMENT_BOUNDARY_PROOF=PASS overlays=5 unique_namespaces=5 production_gate=blocked_without_profile
 evidence=hub/evidence/r2/execution/environment-boundary-latest.log

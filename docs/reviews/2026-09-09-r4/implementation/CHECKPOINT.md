@@ -74,7 +74,7 @@ regional/fencing de R2-DAD-05-S03 permanece aberta.
 Estado atual: sequência operacional local concluída, incluindo a conexão HTTP
 do DAG, o editor administrativo de mapeamento, a fronteira `ProviderAdapter`
 com `rest-json-v1` e a qualificação complementar seletiva de R2-03/R2-02. A
-matriz agora possui 230 resultados associados e 502 cenários explicitamente não
+matriz agora possui 231 resultados associados e 501 cenários explicitamente não
 qualificados. A prova estrutural de R3-OPE-02-S03 renderizou os cinco overlays
 Kustomize e confirmou imagens fixadas, namespaces determinísticos e ausência de
 modo local no `prd`; ela não promove os cenários de máquina limpa ou recriação
