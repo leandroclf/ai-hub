@@ -1,7 +1,7 @@
 AI Hub R2 — prova runtime de continuidade Kind
-date=2026-09-11T22:21:36Z
-source_commit=3f344b3e7e05f78ea64f7bb4f4e02cfbd6c05922
-pod_recovery workload=cometa rto_ms=4486 available=2/2
-pod_recovery workload=pulsar rto_ms=4494 available=2/2
+date=2026-09-12T01:27:00Z
+source_commit=5f37814238b190284297bef4db5b6a5dc2c1bb7d
+pod_recovery workload=cometa rto_ms=4713 available=2/2
+pod_recovery workload=pulsar rto_ms=4463 available=2/2
 CONTINUITY_RUNTIME_PROOF=PASS nodes_ready=3 workloads=5 dependency_mode=cluster-owned rpo=restore-digest-gate
 recovery_note=first_attempt_detected_stale_kind_migration_job_with_missing_capacity_domains; bootstrap-independent-rerun_recreated_migration_job_and_restarted_failed_replicas; no_compose_volume_changed

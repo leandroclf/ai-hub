@@ -23,3 +23,23 @@ Reexecução 2026-09-11:
 Comando: R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=r4_20260911qual3 bash hub/deploy/r2/tests/restore-reconciliation.sh
 RESTORE_RECONCILIATION=PASS databases=control,core,finance suffix=r4_20260911qual3 bucket=r2-custody-restore-r4-20260911qual3
 Oráculo externo antes da reconciliação: {"effects":10,"protocols":10}; nenhum replay foi executado e a readmissão permaneceu desabilitada.
+
+Reexecução 2026-09-12:
+Comando: R2_COMPOSE_PROJECT=ai_hub_r3qual R2_RESTORE_SUFFIX=20260912qual bash hub/deploy/r2/tests/restore-reconciliation.sh
+control.catalog_resources count=301 digest=1ca03db27fe2816c8b983729d3190f11
+control.catalog_publications count=135 digest=89ac967316219ac82497e9c692cbcdf
+core.protocols count=757 digest=a8d5c0feb1f2fbacc005c4a2456acb77
+core.operations count=536 digest=8f609ae238cf95fb37ea226659d6d38f
+core.attempts count=668 digest=fd3e97b6c2a81a71d9475e5590525fae
+core.callback_inbox count=136 digest=187e66bd6d1e0bc7cc33b44db3060f6a
+core.deliveries count=58 digest=862595e7eb70598bbb26547f897670c5
+core.outbox count=1183 digest=f2f5b8914ee383bb5de81e99b95c5720
+finance.economic_facts count=1297 digest=12c81c2422aef766bf9e8cf42bde337f
+finance.reservations count=147 digest=3698c60895dd8cc6031c700127a9e0d3
+finance.ledger_entries count=2600 digest=7ec1a002010c0f0b23dd816395adddd9
+finance.finance_inbox count=2109 digest=c93482ff2d81d89fe55dd98ea878360c
+finance.finance_snapshots count=1134 digest=c547aaa61ac85829e4fb3ca42a7987e9
+restore objects: 0
+external effect oracle before reconciliation: {"effects":14,"protocols":14}
+RESTORE_RECONCILIATION=PASS databases=control,core,finance suffix=20260912qual bucket=r2-custody-restore-20260912qual
+The provider oracle was observed without replay; re-admission remains disabled during restore.
