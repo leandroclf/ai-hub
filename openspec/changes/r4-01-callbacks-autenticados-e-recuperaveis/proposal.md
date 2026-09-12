@@ -9,7 +9,7 @@ derivada da conta, operação, timestamp e hash do corpo, sem depender do JWT de
 workload interno nem transportar capability em query string. A capability por
 operação permanece somente como compatibilidade legada e fica fora do
 armazenamento em claro. A prova local fecha o caminho Cometa/provider-sim,
-custódia, repetição idempotente e MFA manual do laboratório; o caminho pelo
+custódia, repetição idempotente, upgrade/rollback aditivo e MFA manual do laboratório; o caminho pelo
 gateway Kong local também foi exercitado. Endpoint público TLS, rotação/mTLS e
 homologação de provedor comercial continuam pendentes.
 Quando a operação não existe, a entrada somente é admitida após autenticação

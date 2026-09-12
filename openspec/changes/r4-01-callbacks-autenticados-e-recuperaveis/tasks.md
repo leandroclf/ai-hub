@@ -100,9 +100,10 @@ Status: **R4-CBK-01/02/03/04 implementados e qualificados no laboratório; endpo
   - Evidence: `hub/evidence/r2/execution/r4-cbk-regression-latest.log`, `representation-runtime-latest.json` e `webhook-retry-representation-smoke.json`; resultado válido, inválido, divergente e tardio mantiveram a custódia/finalização segura localmente.
 
 ## 6. Rollout
-- [ ] 6.1 Ensaiar upgrade/rollback e revisar o diff.
+- [x] 6.1 Ensaiar upgrade/rollback e revisar o diff.
   - Objective: preservar dados, contratos e obrigações antigas.
   - Likely files/components: migrações, manifests e relatórios.
   - Depends on: qualificações anteriores.
   - Validation: ensaio compatível e checklist avaliador.
   - Completion criteria: riscos residuais explícitos; sem fechamento por inferência.
+  - Evidence: `hub/deploy/r2/tests/callback-migration-rollback-proof.sh` e `hub/evidence/r2/execution/callback-migration-rollback-latest.log`; upgrade aditivo, reaplicação idempotente e restauração do snapshot pré-0044 passaram em bancos temporários, preservando o volume oficial.

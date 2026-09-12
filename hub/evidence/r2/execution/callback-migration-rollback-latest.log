@@ -1,0 +1,10 @@
+AI Hub R2 — prova de upgrade/rollback da autenticação de callback por conta
+date=2026-09-12T00:54:28Z
+environment=Compose ai_hub_r3qual / PostgreSQL 16 / bancos temporários cercados
+migration=0044_callback_account_auth.sql
+pre_upgrade_new_columns=0
+post_upgrade_new_columns=4 legacy_row_preserved=1
+reapply=idempotent
+rollback_new_columns=0 legacy_row_restored=1
+CALLBACK_MIGRATION_ROLLBACK_PROOF=PASS
+cleanup=temporary databases removed; official Compose volume preserved
