@@ -6,3 +6,9 @@ services:
       - name: protocols
         paths: [/v1/protocols]
         strip_path: false
+  - name: cometa-callbacks
+    url: http://cometa:8082
+    routes:
+      - name: callbacks
+        paths: [/callbacks]
+        strip_path: false

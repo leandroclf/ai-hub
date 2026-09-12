@@ -41,21 +41,26 @@ type OperationFact struct {
 // callback conforme provider_mode homologado da conta — CAT-11) e
 // persiste evidencia (EXE-04).
 type Executor struct {
-	store      *Store
-	atlas      *atlasclient.Client
-	log        *slog.Logger
-	clients    *egress.Pool
-	capacity   *CapacityController
-	selfURL    string
-	tokenCache *providerauth.TokenCache
-	adapters   *AdapterRegistry
+	store           *Store
+	atlas           *atlasclient.Client
+	log             *slog.Logger
+	clients         *egress.Pool
+	capacity        *CapacityController
+	selfURL         string
+	callbackBaseURL string
+	tokenCache      *providerauth.TokenCache
+	adapters        *AdapterRegistry
 }
 
 // NewExecutor cria um Executor. selfURL e a base URL publica deste
 // Cometa, usada para montar o endereco de callback informado ao
 // provedor simulado em modo async_callback.
 func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, selfURL string, tokenCache *providerauth.TokenCache) *Executor {
-	return &Executor{store: store, atlas: atlas, log: log, clients: egress.NewPool(egress.FromEnv()), selfURL: selfURL, tokenCache: tokenCache, adapters: AdapterRegistryFromEnv()}
+	callbackBaseURL := strings.TrimRight(os.Getenv("CALLBACK_PUBLIC_URL"), "/")
+	if callbackBaseURL == "" {
+		callbackBaseURL = strings.TrimRight(selfURL, "/")
+	}
+	return &Executor{store: store, atlas: atlas, log: log, clients: egress.NewPool(egress.FromEnv()), selfURL: selfURL, callbackBaseURL: callbackBaseURL, tokenCache: tokenCache, adapters: AdapterRegistryFromEnv()}
 }
 
 // SetCapacityController conecta a autoridade global de capacidade ao caminho
@@ -448,7 +453,7 @@ func (e *Executor) publishOperationFact(ctx context.Context, operationID string,
 }
 
 func (e *Executor) callbackURLFor(operationID string) string {
-	return fmt.Sprintf("%s/callbacks/%s", e.selfURL, operationID)
+	return fmt.Sprintf("%s/callbacks/%s", e.callbackBaseURL, operationID)
 }
 
 // shouldFail permite injetar falha deterministica a partir do proprio

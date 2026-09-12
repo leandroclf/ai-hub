@@ -7,9 +7,10 @@ O handler passou a aceitar uma assinatura HMAC-SHA256 v1 derivada da conta,
 operação, timestamp e hash do corpo antes da custódia; o callback do
 provider-sim não depende de JWT de workload, chave global ou `?token` na URL.
 O teste local confirmou callback conhecido e repetição idempotente. A rota
-pública/gateway e a política comercial de assinatura, mTLS ou rotação por
-provedor ainda não foram homologadas. A limitação é de composição externa, não
-prova de endpoint publicamente desprotegido.
+pública pelo Kong local foi exercitada ponta a ponta, e a política comercial de
+assinatura, endpoint TLS/mTLS ou rotação por provedor ainda não foi homologada.
+A limitação é de composição externa, não prova de endpoint publicamente
+desprotegido.
 
 [hub/cmd/cometa/main.go:104](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/cmd/cometa/main.go#L104), [hub/internal/cometa/handlers.go:116](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/cometa/handlers.go#L116), [hub/internal/cometa/executor.go:273](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/cometa/executor.go#L273), [hub/internal/platform/httpserver/httpserver.go:94](https://github.com/leandroclf/ai-hub/blob/b9d0f90ce02aa0c27cad546745153d160ff5867f/hub/internal/platform/httpserver/httpserver.go#L94)
 

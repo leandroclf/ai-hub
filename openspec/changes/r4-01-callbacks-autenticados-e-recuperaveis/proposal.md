@@ -9,20 +9,21 @@ derivada da conta, operação, timestamp e hash do corpo, sem depender do JWT de
 workload interno nem transportar capability em query string. A capability por
 operação permanece somente como compatibilidade legada e fica fora do
 armazenamento em claro. A prova local fecha o caminho Cometa/provider-sim,
-custódia, repetição idempotente e MFA manual do laboratório; gateway público,
-rotação/mTLS e homologação de provedor comercial continuam pendentes.
+custódia, repetição idempotente e MFA manual do laboratório; o caminho pelo
+gateway Kong local também foi exercitado. Endpoint público TLS, rotação/mTLS e
+homologação de provedor comercial continuam pendentes.
 Quando a operação não existe, a entrada somente é admitida após autenticação
 HMAC por conta (ou, no caminho legado, chave de ingress mais capability) e o
 formato terminal passarem; a identidade de autenticação é parte da chave de
 deduplicação, portanto tentativa incorreta não ocupa o recibo legítimo. Quota,
 retenção, claim, lease e epoch estão implementados e cobertos localmente. A
 A política de autenticação específica da conta em provedores comerciais e sua
-composição com gateway externo continuam como risco residual.
+composição com endpoint externo TLS/mTLS continuam como risco residual.
 ReconcileCallbackInboxBatch reivindica lote limitado antes da aplicação, com
 claim/lease/epoch e `SKIP LOCKED`; `RunCallbackInboxWorker` executa a recuperação
 periodicamente sem depender de novo tráfego HTTP. A prova cobre limite e
 disposição de capability inválida; reinício em múltiplas réplicas e gateway
-externo permanecem fora desta rodada.
+externo TLS/mTLS permanecem fora desta rodada.
 SUBMIT, polling e callback convergem em `ApplyExternalObservation`; a rotina
 confere correlação, snapshot, schema e projeção, conserva o recibo bruto e
 classifica conflito sem reabrir o terminal. A suíte local cobre correlação

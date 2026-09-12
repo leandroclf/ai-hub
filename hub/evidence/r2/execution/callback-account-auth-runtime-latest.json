@@ -14,11 +14,20 @@
     "repeated_callback_http_status": 200,
     "authenticated_orphan_http_status": 202,
     "authenticated_orphan_metadata": "provider_account_id + callback_auth_version=v1",
+    "gateway": {
+      "public_base_url_in_compose": "http://kong:8000",
+      "local_ingress_url": "http://127.0.0.1:18000",
+      "route": "/callbacks/<operation_id>",
+      "method_probe_http_status": 405,
+      "provider_callback_forwarded_http_status": 200,
+      "provider_callback_forwarded_by_kong": true,
+      "handler_trace_status": 200
+    },
     "traceability_proof": "traceability-runtime-latest.json"
   },
   "mfa_manual_compatibility": "PASS",
   "limits": [
     "fixture local; não equivale à homologação de provedor comercial",
-    "gateway público, mTLS e rotação de chaves por provedor ainda exigem ensaio específico"
+    "o gateway Kong local foi exercitado; endpoint público TLS, mTLS e rotação de chaves por provedor ainda exigem ensaio específico"
   ]
 }

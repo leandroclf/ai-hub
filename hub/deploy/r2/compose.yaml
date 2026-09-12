@@ -244,6 +244,9 @@ services:
       LIBRA_URL: http://libra:8084
       COMETA_URL: http://cometa:8082
       SELF_URL: http://cometa:8082
+      # No laboratório, o provedor entrega pelo Kong; em ambientes externos
+      # este valor deve ser o endpoint público TLS homologado por conta.
+      CALLBACK_PUBLIC_URL: ${R2_CALLBACK_PUBLIC_URL:-http://kong:8000}
       # Chave sintética exclusiva da fixture local; em produção deve vir de
       # secret manager e ser compartilhada apenas com o provedor homologado.
       CAPACITY_DOMAINS: r4-sync,r4-sync-failure,r4-poll-1,r4-poll-2,r4-callback,r4-webhook
@@ -481,6 +484,7 @@ services:
     - 127.0.0.1:18000:8000
     depends_on:
     - orbita
+    - cometa
     mem_limit: 256m
   prometheus:
     image: prom/prometheus:v3.1.0
