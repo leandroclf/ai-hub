@@ -12,8 +12,10 @@ export class APIError extends Error {
 let token='';
 export function setToken(value:string){token=value}
 function isRecord(value:unknown):value is Record<string,unknown>{return typeof value==='object'&&value!==null&&!Array.isArray(value)}
+export function isResource(value:unknown):value is Resource{return isRecord(value)&&typeof value.kind==='string'&&typeof value.id==='string'&&Number.isInteger(value.version)&&typeof value.tenant_id==='string'&&typeof value.name==='string'&&typeof value.state==='string'&&Number.isInteger(value.revision)&&isRecord(value.data)&&typeof value.content_hash==='string'&&typeof value.updated_at==='string'}
+export function isPageOf<T>(itemGuard:(value:unknown)=>value is T){return (value:unknown):value is Page<T>=>isRecord(value)&&Array.isArray(value.items)&&value.items.every(itemGuard)&&typeof value.next_cursor==='string'}
 function expireSessionIfNeeded(status:number){if(status===401){token='';window.dispatchEvent(new Event('session-expired'))}}
-export async function api<T>(path:string,init:RequestInit={}):Promise<T>{
+export async function api<T>(path:string,init:RequestInit={},validate?:(value:unknown)=>value is T):Promise<T>{
  const domain=path.startsWith("/admin/v1/finance")?"libra":path.startsWith("/admin/v1/deliveries")||path.startsWith("/admin/v1/destinations")?"pulsar":path.startsWith("/admin/v1/protocols")||path.startsWith("/admin/v1/sla-reports")?"orbita":path.startsWith("/admin/v1/capacity-domains")?"cometa":"atlas";
  const response=await fetch(`/api/${domain}${path}`,{...init,headers:{'Content-Type':'application/json',...(token?{Authorization:`Bearer ${token}`} : {}),...init.headers},cache:'no-store'});
  let data:unknown;
@@ -23,6 +25,7 @@ export async function api<T>(path:string,init:RequestInit={}):Promise<T>{
   expireSessionIfNeeded(response.status);
   throw new APIError(response.status,data);
  }
+ if(validate&&!validate(data))throw new APIError(502,{code:'invalid_contract',message:'Resposta fora do contrato da autoridade.'});
  return data as T;
 }
 export const resourceURL=(r:Pick<Resource,'kind'|'id'|'version'>)=>`/admin/v1/${r.kind}/${encodeURIComponent(r.id)}/${r.version}`;
