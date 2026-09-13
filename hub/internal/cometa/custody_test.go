@@ -20,6 +20,7 @@ import (
 
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/atlasclient"
+	"ai-hub/hub/internal/callbackauth"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
 	"ai-hub/hub/internal/providerauth"
@@ -195,6 +196,54 @@ func TestPostgresOrphanCapabilityHashDoesNotShadowValidCallback(t *testing.T) {
 		t.Fatalf("orphan identity was collapsed incorrectly: rows=%d occurrences=%d", rows, occurrences)
 	}
 	t.Log("same callback bytes with different capability hashes remain distinct; exact duplicate increments occurrences")
+}
+
+// R5-SEG-01: um callback de conta órfã autenticado (com provider_account_id)
+// deve ser aceito, deduplicado por identidade estável (não pela contagem de
+// linhas) e reenviado sem falha de SQL. Este é o caminho concreto que tinha
+// um ON CONFLICT malformado antes da correção.
+func TestPostgresOrphanAccountCallbackRequiresSignatureAndDeduplicates(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	store := NewStore(db)
+	operationID := idgen.New()
+	accountID := "orphan-account-" + operationID
+	body := []byte(`{"provider_request_id":"orphan-correlation","status":"SUCCEEDED"}`)
+	at := time.Now()
+	t.Cleanup(func() { _, _ = db.Exec("DELETE FROM callback_inbox WHERE operation_id=$1", operationID) })
+
+	t.Setenv("CALLBACK_INGRESS_KEY", "orphan-root-fixture")
+	signature := callbackauth.Sign("orphan-root-fixture", accountID, operationID, at, body)
+	if signature == "" {
+		t.Fatal("fixture signature generation failed")
+	}
+
+	if err = store.StoreOrphanAccountCallback(context.Background(), operationID, accountID, at, signature, body); err != nil {
+		t.Fatalf("authenticated orphan callback rejected: %v", err)
+	}
+	// A repeated delivery of the same event must not fail on the insert's
+	// conflict target and must be counted as a single obligation.
+	if err = store.StoreOrphanAccountCallback(context.Background(), operationID, accountID, at, signature, body); err != nil {
+		t.Fatalf("duplicate authenticated orphan callback failed (regression: malformed ON CONFLICT): %v", err)
+	}
+	var rows, occurrences int
+	if err = db.QueryRow("SELECT count(*),coalesce(sum(occurrences),0) FROM callback_inbox WHERE operation_id=$1 AND provider_account_id=$2", operationID, accountID).Scan(&rows, &occurrences); err != nil {
+		t.Fatal(err)
+	}
+	if rows != 1 || occurrences != 2 {
+		t.Fatalf("orphan account identity was not deduplicated correctly: rows=%d occurrences=%d", rows, occurrences)
+	}
+
+	if err = store.StoreOrphanAccountCallback(context.Background(), operationID, accountID, at, "v1=invalid", body); !errors.Is(err, ErrCallbackCapabilityInvalid) {
+		t.Fatalf("forged signature was not rejected: %v", err)
+	}
 }
 
 func TestPostgresCallbackInboxBatchClaimsBoundedAndDisposesInvalidCapability(t *testing.T) {

@@ -229,11 +229,17 @@ func (s *Store) StoreOrphanAccountCallback(ctx context.Context, operationID, acc
 	if operationID == "" || accountID == "" || at.IsZero() || signature == "" || len(body) == 0 || len(body) > 512*1024 {
 		return errors.New("invalid account callback")
 	}
-	return s.storeOrphan(ctx, operationID, callbackSignatureHash(signature), body, accountID, callbackauth.Version, &at, signature)
+	// A callback for an unknown operation has no database row from which to
+	// derive an expected account. Verify the ingress HMAC before durable
+	// custody; otherwise arbitrary bodies could fill the orphan inbox.
+	if !callbackauth.Verify(os.Getenv("CALLBACK_INGRESS_KEY"), accountID, operationID, at, body, signature) {
+		return ErrCallbackCapabilityInvalid
+	}
+	return s.storeOrphan(ctx, operationID, callbackAccountIdentity(accountID, operationID, body), body, accountID, callbackauth.Version, &at, signature)
 }
 
-func callbackSignatureHash(signature string) string {
-	sum := sha256.Sum256([]byte(signature))
+func callbackAccountIdentity(accountID, operationID string, body []byte) string {
+	sum := sha256.Sum256(append([]byte(accountID+":"+operationID+":"), body...))
 	return hex.EncodeToString(sum[:])
 }
 
@@ -248,14 +254,24 @@ func (s *Store) storeOrphan(ctx context.Context, operationID, tokenHash string, 
 		return err
 	}
 	var known bool
-	if err = tx.QueryRowContext(ctx, `SELECT EXISTS(
-		SELECT 1 FROM callback_inbox WHERE operation_id=$1 AND body_sha256=$2 AND token_hash=$3
-	)`, operationID, hex.EncodeToString(sum[:]), tokenHash).Scan(&known); err != nil {
+	identityQuery := `SELECT EXISTS(SELECT 1 FROM callback_inbox WHERE operation_id=$1 AND body_sha256=$2 AND token_hash=$3)`
+	identityArgs := []any{operationID, hex.EncodeToString(sum[:]), tokenHash}
+	if accountID != "" {
+		identityQuery = `SELECT EXISTS(SELECT 1 FROM callback_inbox WHERE operation_id=$1 AND body_sha256=$2 AND provider_account_id=$3)`
+		identityArgs = []any{operationID, hex.EncodeToString(sum[:]), accountID}
+	}
+	if err = tx.QueryRowContext(ctx, identityQuery, identityArgs...).Scan(&known); err != nil {
 		return err
 	}
 	if !known {
 		var received int
-		if err = tx.QueryRowContext(ctx, "SELECT count(*) FROM callback_inbox WHERE disposition='RECEIVED'").Scan(&received); err != nil {
+		quotaQuery := "SELECT count(*) FROM callback_inbox WHERE disposition='RECEIVED'"
+		var quotaArgs []any
+		if accountID != "" {
+			quotaQuery += " AND provider_account_id=$1"
+			quotaArgs = append(quotaArgs, accountID)
+		}
+		if err = tx.QueryRowContext(ctx, quotaQuery, quotaArgs...).Scan(&received); err != nil {
 			return err
 		}
 		if received >= callbackInboxMaxReceived {
@@ -265,7 +281,7 @@ func (s *Store) storeOrphan(ctx context.Context, operationID, tokenHash string, 
 	if _, err = tx.ExecContext(ctx, `
 		INSERT INTO callback_inbox(inbox_id,operation_id,token_hash,body_sha256,body,provider_account_id,callback_auth_version,callback_timestamp,callback_signature)
 		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
-		ON CONFLICT(operation_id,body_sha256,token_hash)
+		ON CONFLICT (operation_id, body_sha256, token_hash)
 		DO UPDATE SET occurrences=callback_inbox.occurrences+1
 	`, idgen.New(), operationID, tokenHash, hex.EncodeToString(sum[:]), body, accountID, authVersion, at, signature); err != nil {
 		return err
@@ -317,7 +333,7 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	defer tx.Rollback()
 	rows, err := tx.QueryContext(ctx, `
 		SELECT i.inbox_id, i.operation_id, i.token_hash, i.body,
-		       i.provider_account_id, i.callback_auth_version, i.callback_timestamp, i.callback_signature,
+		       COALESCE(i.provider_account_id,''), i.callback_auth_version, i.callback_timestamp, COALESCE(i.callback_signature,''),
 		       o.callback_token_hash, o.provider_account_id, o.command, i.claim_epoch + 1, i.processing_attempts + 1
 		FROM callback_inbox i
 		JOIN operations o ON o.operation_id=i.operation_id
