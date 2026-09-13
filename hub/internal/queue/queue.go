@@ -187,6 +187,25 @@ func (c *Client) EnsureTopic(ctx context.Context, name string) (string, error) {
 // Subscribe assina uma fila SQS a um topico SNS (fan-out), retornando
 // o ARN da subscricao.
 func (c *Client) Subscribe(ctx context.Context, topicARN, queueARN string) error {
+	// Restart-safe bootstrap: SNS permits duplicate subscriptions, which would
+	// duplicate financial and webhook obligations. Discover the exact existing
+	// endpoint before creating a new one.
+	var token *string
+	for {
+		out, err := c.SNS.ListSubscriptionsByTopic(ctx, &sns.ListSubscriptionsByTopicInput{TopicArn: aws.String(topicARN), NextToken: token})
+		if err != nil {
+			return fmt.Errorf("queue: listar assinaturas do topico: %w", err)
+		}
+		for _, subscription := range out.Subscriptions {
+			if aws.ToString(subscription.Protocol) == "sqs" && aws.ToString(subscription.Endpoint) == queueARN && aws.ToString(subscription.SubscriptionArn) != "PendingConfirmation" {
+				return nil
+			}
+		}
+		if out.NextToken == nil || aws.ToString(out.NextToken) == "" {
+			break
+		}
+		token = out.NextToken
+	}
 	_, err := c.SNS.Subscribe(ctx, &sns.SubscribeInput{
 		TopicArn: aws.String(topicARN),
 		Protocol: aws.String("sqs"),
@@ -196,6 +215,59 @@ func (c *Client) Subscribe(ctx context.Context, topicARN, queueARN string) error
 		return fmt.Errorf("queue: assinar fila no topico: %w", err)
 	}
 	return nil
+}
+
+// Topology é a topologia completa de obrigações do Hub. Cada processo valida
+// todos os tópicos, filas, políticas e assinaturas antes de liberar seu relay
+// ou consumidor; assim o início parcial de um componente não perde fatos.
+type Topology struct {
+	CommandsQueueURL, OperationFactsTopicARN, OperationFactsQueueURL     string
+	ProtocolFactsTopicARN, RevenueQueueURL, CostQueueURL, PulsarQueueURL string
+}
+
+func (c *Client) EnsureTopology(ctx context.Context) (Topology, error) {
+	var topology Topology
+	var err error
+	if topology.CommandsQueueURL, err = c.EnsureQueue(ctx, "cometa-commands"); err != nil {
+		return Topology{}, err
+	}
+	if topology.OperationFactsTopicARN, err = c.EnsureTopic(ctx, "hub-operation-facts"); err != nil {
+		return Topology{}, err
+	}
+	if topology.ProtocolFactsTopicARN, err = c.EnsureTopic(ctx, "hub-protocol-facts"); err != nil {
+		return Topology{}, err
+	}
+	if topology.OperationFactsQueueURL, err = c.EnsureQueue(ctx, "orbita-operation-facts"); err != nil {
+		return Topology{}, err
+	}
+	if topology.RevenueQueueURL, err = c.EnsureQueue(ctx, "libra-revenue-facts"); err != nil {
+		return Topology{}, err
+	}
+	if topology.CostQueueURL, err = c.EnsureQueue(ctx, "libra-cost-facts"); err != nil {
+		return Topology{}, err
+	}
+	if topology.PulsarQueueURL, err = c.EnsureQueue(ctx, "pulsar-protocol-facts"); err != nil {
+		return Topology{}, err
+	}
+	bindings := []struct{ topic, queue string }{
+		{topology.OperationFactsTopicARN, topology.OperationFactsQueueURL},
+		{topology.OperationFactsTopicARN, topology.CostQueueURL},
+		{topology.ProtocolFactsTopicARN, topology.RevenueQueueURL},
+		{topology.ProtocolFactsTopicARN, topology.PulsarQueueURL},
+	}
+	for _, binding := range bindings {
+		arn, e := c.QueueARN(ctx, binding.queue)
+		if e != nil {
+			return Topology{}, e
+		}
+		if e = c.AllowSNSDelivery(ctx, binding.queue, arn, binding.topic); e != nil {
+			return Topology{}, e
+		}
+		if e = c.Subscribe(ctx, binding.topic, arn); e != nil {
+			return Topology{}, e
+		}
+	}
+	return topology, nil
 }
 
 // AllowSNSDelivery binds this queue to the exact domain topic and AWS service.

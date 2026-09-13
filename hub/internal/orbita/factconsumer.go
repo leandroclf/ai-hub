@@ -1,6 +1,7 @@
 package orbita
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
@@ -24,6 +25,39 @@ type operationFact struct {
 	Kind          string `json:"kind"`
 	ResponseBody  any    `json:"response_body,omitempty"`
 	ErrorMessage  string `json:"error_message,omitempty"`
+}
+
+func (f *operationFact) UnmarshalJSON(data []byte) error {
+	type wire struct {
+		ProtocolID    string          `json:"protocol_id"`
+		TenantID      string          `json:"tenant_id"`
+		ApplicationID string          `json:"application_id"`
+		CellID        string          `json:"cell_id"`
+		OperationID   string          `json:"operation_id"`
+		StepID        string          `json:"step_id,omitempty"`
+		EvidenceID    string          `json:"evidence_id"`
+		TraceID       string          `json:"trace_id,omitempty"`
+		Kind          string          `json:"kind"`
+		ResponseBody  json.RawMessage `json:"response_body,omitempty"`
+		ErrorMessage  string          `json:"error_message,omitempty"`
+	}
+	var value wire
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*f = operationFact{
+		ProtocolID: value.ProtocolID, TenantID: value.TenantID,
+		ApplicationID: value.ApplicationID, CellID: value.CellID,
+		OperationID: value.OperationID, StepID: value.StepID,
+		EvidenceID: value.EvidenceID, TraceID: value.TraceID,
+		Kind: value.Kind, ErrorMessage: value.ErrorMessage,
+	}
+	if len(value.ResponseBody) == 0 || bytes.Equal(value.ResponseBody, []byte("null")) {
+		return nil
+	}
+	decoder := json.NewDecoder(bytes.NewReader(value.ResponseBody))
+	decoder.UseNumber()
+	return decoder.Decode(&f.ResponseBody)
 }
 
 // ConsumeOperationFact acknowledges only durable quarantine, a conserved

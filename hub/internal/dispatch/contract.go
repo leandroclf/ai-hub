@@ -6,6 +6,7 @@ package dispatch
 
 import (
 	"ai-hub/hub/internal/contracts/files"
+	"bytes"
 	"encoding/json"
 	"time"
 )
@@ -102,4 +103,42 @@ type Result struct {
 	// RawResponse is custody-only metadata and never crosses the result JSON
 	// or the operation fact envelope exposed to downstream consumers.
 	RawResponse json.RawMessage `json:"-"`
+}
+
+// UnmarshalJSON preserva inteiros JSON fora do intervalo seguro do JavaScript
+// como json.Number. Result atravessa filas, webhooks e consultas de produto;
+// converter a resposta para float64 neste ponto perderia a identidade de
+// valores como 9007199254740993.
+func (r *Result) UnmarshalJSON(data []byte) error {
+	type wire struct {
+		Durable           bool            `json:"durable"`
+		EvidenceID        string          `json:"evidence_id,omitempty"`
+		CommandID         string          `json:"command_id"`
+		OperationID       string          `json:"operation_id"`
+		ProviderRequestID string          `json:"provider_request_id,omitempty"`
+		Kind              FactKind        `json:"kind"`
+		ResponseBody      json.RawMessage `json:"response_body,omitempty"`
+		ErrorCode         string          `json:"error_code,omitempty"`
+		ErrorMessage      string          `json:"error_message,omitempty"`
+	}
+	var value wire
+	if err := json.Unmarshal(data, &value); err != nil {
+		return err
+	}
+	*r = Result{
+		Durable:           value.Durable,
+		EvidenceID:        value.EvidenceID,
+		CommandID:         value.CommandID,
+		OperationID:       value.OperationID,
+		ProviderRequestID: value.ProviderRequestID,
+		Kind:              value.Kind,
+		ErrorCode:         value.ErrorCode,
+		ErrorMessage:      value.ErrorMessage,
+	}
+	if len(value.ResponseBody) == 0 || bytes.Equal(value.ResponseBody, []byte("null")) {
+		return nil
+	}
+	decoder := json.NewDecoder(bytes.NewReader(value.ResponseBody))
+	decoder.UseNumber()
+	return decoder.Decode(&r.ResponseBody)
 }

@@ -56,49 +56,12 @@ func main() {
 	}
 
 	go queue.RunBootstrap(ctx, func() error {
-		protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
+		topology, err := q.EnsureTopology(ctx)
 		if err != nil {
-			log.Error("falha ao localizar topico de fatos de protocolo", "error", err)
 			return err
 		}
-		revenueQueueURL, err := q.EnsureQueue(ctx, "libra-revenue-facts")
-		if err != nil {
-			log.Error("falha ao criar fila de receita", "error", err)
-			return err
-		}
-		revenueQueueARN, err := q.QueueARN(ctx, revenueQueueURL)
-		if err != nil {
-			log.Error("falha ao obter ARN da fila de receita", "error", err)
-			return err
-		}
-		if err := q.AllowSNSDelivery(ctx, revenueQueueURL, revenueQueueARN, protocolFactsTopicARN); err != nil {
-			return err
-		}
-		if err := q.Subscribe(ctx, protocolFactsTopicARN, revenueQueueARN); err != nil {
-			return err
-		}
-
-		operationFactsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
-		if err != nil {
-			log.Error("falha ao localizar topico de fatos de operacao", "error", err)
-			return err
-		}
-		costQueueURL, err := q.EnsureQueue(ctx, "libra-cost-facts")
-		if err != nil {
-			log.Error("falha ao criar fila de custo", "error", err)
-			return err
-		}
-		costQueueARN, err := q.QueueARN(ctx, costQueueURL)
-		if err != nil {
-			log.Error("falha ao obter ARN da fila de custo", "error", err)
-			return err
-		}
-		if err := q.AllowSNSDelivery(ctx, costQueueURL, costQueueARN, operationFactsTopicARN); err != nil {
-			return err
-		}
-		if err := q.Subscribe(ctx, operationFactsTopicARN, costQueueARN); err != nil {
-			return err
-		}
+		revenueQueueURL := topology.RevenueQueueURL
+		costQueueURL := topology.CostQueueURL
 
 		go libra.RunRevenueConsumer(ctx, q, revenueQueueURL, store, atlas, log)
 		go libra.RunCostConsumer(ctx, q, costQueueURL, store, log)

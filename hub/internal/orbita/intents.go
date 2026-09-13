@@ -19,6 +19,7 @@ type Intent struct {
 	Command dispatch.Command
 	Owner   string
 	Epoch   int64
+	Expired bool
 }
 
 // RecoverOrphanedIntent torna novamente elegível uma intenção READY que ficou
@@ -45,7 +46,7 @@ func (s *Store) RecoverOrphanedIntent(ctx context.Context, cell string, minAge t
 		  AND i.next_attempt_at<=clock_timestamp()
 		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
 		  AND i.created_at<=clock_timestamp()-($2 * interval '1 millisecond')
-		  AND p.client_deadline_at>clock_timestamp()
+		  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
 		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
 		ORDER BY i.next_attempt_at,i.command_id
 		FOR UPDATE OF i SKIP LOCKED LIMIT 1`, cell, minAge.Milliseconds()).Scan(&raw, &result.Epoch, &protocolID, &tenantID)
@@ -120,9 +121,9 @@ func (s *Store) ClaimDirectIntent(ctx context.Context, commandID, owner string) 
 		  AND i.dispatch_mode=$3 AND i.state='READY'
 		  AND i.next_attempt_at<=clock_timestamp()
 		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
-		  AND p.client_deadline_at>clock_timestamp()
+		  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
 		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
-		RETURNING i.command,i.epoch`, commandID, owner, string(dispatch.DispatchDirect)).Scan(&raw, &result.Epoch)
+		RETURNING i.command,i.epoch,(i.retry_until IS NOT NULL AND i.retry_until<=clock_timestamp())`, commandID, owner, string(dispatch.DispatchDirect)).Scan(&raw, &result.Epoch, &result.Expired)
 	if err != nil {
 		return Intent{}, err
 	}
@@ -133,32 +134,71 @@ func (s *Store) ClaimDirectIntent(ctx context.Context, commandID, owner string) 
 }
 
 func (s *Store) claimIntentMode(ctx context.Context, cell, owner string, mode dispatch.DispatchMode) (Intent, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Intent{}, err
+	}
+	defer tx.Rollback()
 	var raw []byte
+	var protocolID string
 	var result Intent
 	result.Owner = owner
-	err := s.db.QueryRowContext(ctx, `WITH candidate AS (
- SELECT i.command_id FROM command_intents i JOIN protocols p USING(protocol_id)
- WHERE i.cell_id=$1 AND i.dispatch_mode=$3 AND i.state='READY'
- AND i.next_attempt_at<=clock_timestamp() AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
- AND p.client_deadline_at>clock_timestamp() AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
- AND (NOT EXISTS (SELECT 1 FROM operation_plans op WHERE op.protocol_id=i.protocol_id)
-      OR (SELECT count(*) FROM operation_steps os WHERE os.protocol_id=i.protocol_id AND os.state IN ('RUNNING','WAITING_PROVIDER'))
-         < (SELECT max_parallel FROM operation_plans op WHERE op.protocol_id=i.protocol_id))
- ORDER BY i.next_attempt_at,i.command_id FOR UPDATE OF i SKIP LOCKED LIMIT 1)
- UPDATE command_intents i SET lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',epoch=i.epoch+1,attempts=i.attempts+1
- FROM candidate c WHERE i.command_id=c.command_id RETURNING i.command,i.epoch`, cell, owner, string(mode)).Scan(&raw, &result.Epoch)
+	// The intent row is serialized first. The plan row is locked and its
+	// running_count is rechecked below before either the intent or the step is
+	// published. This closes the read-count/update race between publishers.
+	err = tx.QueryRowContext(ctx, `
+		SELECT i.command,i.epoch,i.protocol_id,(i.retry_until IS NOT NULL AND i.retry_until<=clock_timestamp())
+		FROM command_intents i
+		JOIN protocols p ON p.protocol_id=i.protocol_id AND p.tenant_id=i.tenant_id
+		WHERE i.cell_id=$1 AND i.dispatch_mode=$2 AND i.state='READY'
+		  AND i.next_attempt_at<=clock_timestamp()
+		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
+		  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
+		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		  AND (NOT EXISTS (SELECT 1 FROM operation_plans op WHERE op.protocol_id=i.protocol_id)
+		       OR EXISTS (SELECT 1 FROM operation_steps os
+		                  JOIN operation_plans op ON op.protocol_id=os.protocol_id
+		                  WHERE os.protocol_id=i.protocol_id AND os.command_id=i.command_id
+		                    AND ((os.state='READY' AND op.running_count<op.max_parallel)
+		                         OR (os.state='RUNNING' AND os.lease_until<=clock_timestamp()))))
+		ORDER BY (i.retry_until IS NOT NULL AND i.retry_until<=clock_timestamp()),i.next_attempt_at,i.command_id
+		FOR UPDATE OF i SKIP LOCKED LIMIT 1`, cell, string(mode)).Scan(&raw, &result.Epoch, &protocolID, &result.Expired)
 	if err != nil {
 		return Intent{}, err
 	}
 	if err = json.Unmarshal(raw, &result.Command); err != nil {
 		return Intent{}, err
 	}
-	if _, product, productErr := s.ProductStepByCommand(ctx, result.Command.CommandID); productErr != nil {
-		return Intent{}, productErr
-	} else if product {
-		if productErr = s.ClaimProductStep(ctx, result.Command.CommandID); productErr != nil {
-			return Intent{}, productErr
+	var stepID, stepState string
+	stepErr := tx.QueryRowContext(ctx, `SELECT step_id,state FROM operation_steps WHERE protocol_id=$1 AND command_id=$2 FOR UPDATE`, protocolID, result.Command.CommandID).Scan(&stepID, &stepState)
+	product := stepErr == nil
+	if stepErr != nil && !errors.Is(stepErr, sql.ErrNoRows) {
+		return Intent{}, stepErr
+	}
+	if product && !result.Expired {
+		var running, maxParallel int
+		if err = tx.QueryRowContext(ctx, `SELECT running_count,max_parallel FROM operation_plans WHERE protocol_id=$1 FOR UPDATE`, protocolID).Scan(&running, &maxParallel); err != nil {
+			return Intent{}, err
 		}
+		if stepState == "READY" {
+			if running >= maxParallel {
+				return Intent{}, sql.ErrNoRows
+			}
+			if _, err = tx.ExecContext(ctx, `UPDATE operation_plans SET running_count=running_count+1,updated_at=clock_timestamp() WHERE protocol_id=$1`, protocolID); err != nil {
+				return Intent{}, err
+			}
+		} else if stepState != "RUNNING" {
+			return Intent{}, sql.ErrNoRows
+		}
+		if _, err = tx.ExecContext(ctx, `UPDATE operation_steps SET state='RUNNING',lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',lease_epoch=lease_epoch+1,dispatch_started_at=COALESCE(dispatch_started_at,clock_timestamp()),version=version+1,updated_at=clock_timestamp() WHERE protocol_id=$1 AND command_id=$3 AND (state='READY' OR (state='RUNNING' AND lease_until<=clock_timestamp()))`, protocolID, owner, result.Command.CommandID); err != nil {
+			return Intent{}, err
+		}
+	}
+	if err = tx.QueryRowContext(ctx, `UPDATE command_intents SET lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',epoch=epoch+1,attempts=attempts+1 WHERE command_id=$1 RETURNING epoch`, result.Command.CommandID, owner).Scan(&result.Epoch); err != nil {
+		return Intent{}, err
+	}
+	if err = tx.Commit(); err != nil {
+		return Intent{}, err
 	}
 	return result, nil
 }
@@ -265,8 +305,8 @@ func (s *Store) CompleteIntent(ctx context.Context, i Intent, delivered bool) (b
 	res, err := s.db.ExecContext(ctx, `
 		UPDATE command_intents
 		SET state = CASE
-			WHEN $4 = 'DELIVERED' THEN 'DELIVERED'
 			WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN 'EXPIRED'
+			WHEN $4 = 'DELIVERED' THEN 'DELIVERED'
 			WHEN $6 <= 0 THEN 'EXPIRED'
 			ELSE 'READY'
 		END,
@@ -276,13 +316,13 @@ func (s *Store) CompleteIntent(ctx context.Context, i Intent, delivered bool) (b
 				ELSE retry_started_at
 			END,
 			retry_until = CASE
-				WHEN $4 = 'DELIVERED' THEN retry_until
+			WHEN $4 = 'DELIVERED' THEN retry_until
 				WHEN retry_until IS NULL AND $6 > 0 THEN clock_timestamp() + make_interval(secs=>$6)
 				ELSE retry_until
 			END,
 			last_error=NULLIF($5,''), lease_owner=NULL, lease_until=NULL,
 			next_attempt_at = CASE
-				WHEN $4 = 'DELIVERED' THEN clock_timestamp()
+				WHEN $4 = 'DELIVERED' AND (retry_until IS NULL OR retry_until>clock_timestamp()) THEN clock_timestamp()
 				WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN clock_timestamp()
 				WHEN $6 <= 0 THEN clock_timestamp()
 				ELSE clock_timestamp()+make_interval(secs=>LEAST(2,$6))
@@ -293,7 +333,11 @@ func (s *Store) CompleteIntent(ctx context.Context, i Intent, delivered bool) (b
 	}
 	n, err := res.RowsAffected()
 	if err == nil && n == 1 && !delivered {
-		_, err = s.db.ExecContext(ctx, `UPDATE operation_steps SET state='READY',version=version+1,updated_at=clock_timestamp() WHERE command_id=$1 AND state='RUNNING'`, i.Command.CommandID)
+		_, err = s.db.ExecContext(ctx, `WITH released AS (
+			UPDATE operation_steps SET state='READY',lease_owner=NULL,lease_until=NULL,version=version+1,updated_at=clock_timestamp()
+			WHERE command_id=$1 AND state='RUNNING' RETURNING protocol_id
+		) UPDATE operation_plans p SET running_count=GREATEST(0,p.running_count-1),updated_at=clock_timestamp()
+		FROM released r WHERE p.protocol_id=r.protocol_id`, i.Command.CommandID)
 	}
 	return n == 1, err
 }
@@ -315,6 +359,12 @@ func RunIntentPublisher(ctx context.Context, s *Store, d *Dispatcher, cell strin
 				if err != nil {
 					log.Error("intent claim unavailable")
 					break
+				}
+				if i.Expired {
+					if _, err = s.CompleteIntent(ctx, i, false); err != nil {
+						log.Error("expired intent finalization unavailable")
+					}
+					continue
 				}
 				callCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 				err = d.DispatchQueued(callCtx, i.Command)

@@ -60,27 +60,11 @@ func main() {
 		panic(err)
 	}
 	go queue.RunBootstrap(ctx, func() error {
-		protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
+		topology, err := q.EnsureTopology(ctx)
 		if err != nil {
-			log.Error("falha ao localizar topico de fatos de protocolo", "error", err)
 			return err
 		}
-		factsQueueURL, err := q.EnsureQueue(ctx, "pulsar-protocol-facts")
-		if err != nil {
-			log.Error("falha ao criar fila de fatos de protocolo", "error", err)
-			return err
-		}
-		factsQueueARN, err := q.QueueARN(ctx, factsQueueURL)
-		if err != nil {
-			log.Error("falha ao obter ARN da fila", "error", err)
-			return err
-		}
-		if err := q.AllowSNSDelivery(ctx, factsQueueURL, factsQueueARN, protocolFactsTopicARN); err != nil {
-			return err
-		}
-		if err := q.Subscribe(ctx, protocolFactsTopicARN, factsQueueARN); err != nil {
-			return err
-		}
+		factsQueueURL := topology.PulsarQueueURL
 
 		go pulsar.RunFactConsumer(ctx, q, factsQueueURL, store, log)
 		return nil

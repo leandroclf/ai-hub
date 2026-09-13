@@ -74,10 +74,7 @@ func BuildProductPlan(snapshot atlas.OfferSnapshot, base dispatch.Command, produ
 				return ProductPlan{}, nil, fmt.Errorf("entrada da etapa %s inválida: %w", step.ID, err)
 			}
 		}
-		childSnapshot := snapshot
-		childSnapshot.Target = service
-		childSnapshot.Services = nil
-		childSnapshot.Hash = ""
+		childSnapshot := stepSnapshot(snapshot, service, serviceData)
 		config, err := json.Marshal(childSnapshot)
 		if err != nil {
 			return ProductPlan{}, nil, err
@@ -105,10 +102,7 @@ func BuildProductPlan(snapshot atlas.OfferSnapshot, base dispatch.Command, produ
 			if compErr != nil || compensationData.AdapterID == "" {
 				return ProductPlan{}, nil, fmt.Errorf("serviço de compensação da etapa %s sem adapter qualificado", step.ID)
 			}
-			compensationSnapshot := snapshot
-			compensationSnapshot.Target = compensationService
-			compensationSnapshot.Services = nil
-			compensationSnapshot.Hash = ""
+			compensationSnapshot := stepSnapshot(snapshot, compensationService, compensationData)
 			compensationConfig, compErr := json.Marshal(compensationSnapshot)
 			if compErr != nil {
 				return ProductPlan{}, nil, compErr
@@ -128,6 +122,25 @@ func BuildProductPlan(snapshot atlas.OfferSnapshot, base dispatch.Command, produ
 }
 
 func targetID(resource atlas.Resource) string { return resource.ID }
+
+func stepSnapshot(base atlas.OfferSnapshot, service atlas.Resource, data atlas.CatalogData) atlas.OfferSnapshot {
+	derived := base
+	derived.Target = service
+	derived.Services = []atlas.Resource{service}
+	// A service may publish its own route/contract scope. If it does not, the
+	// accepted offer route remains the explicit fallback; it is still frozen
+	// per command and never resolved again during execution.
+	if len(data.Routes) > 0 {
+		for _, route := range data.Routes {
+			if route.ProviderAccountID != "" && route.BindingID != "" {
+				derived.SelectedRoute = route
+				break
+			}
+		}
+	}
+	derived.Hash = atlas.SnapshotHash(derived)
+	return derived
+}
 
 func cloneStringMap(in map[string]string) map[string]string {
 	if len(in) == 0 {

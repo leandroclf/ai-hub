@@ -1,12 +1,14 @@
 package orbita
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/dispatch"
@@ -117,6 +119,11 @@ func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kin
 		if _, err = tx.ExecContext(ctx, `UPDATE operation_steps SET state=$3,result=$4,error_message=NULLIF($5,''),version=version+1,updated_at=clock_timestamp() WHERE protocol_id=$1 AND command_id=$2`, protocolID, commandID, next, resultRaw, errorMessage); err != nil {
 			return ProductFactOutcome{}, err
 		}
+		if step.State == "RUNNING" || step.State == "WAITING_PROVIDER" {
+			if _, err = tx.ExecContext(ctx, `UPDATE operation_plans SET running_count=GREATEST(0,running_count-1),updated_at=clock_timestamp() WHERE protocol_id=$1 AND running_count>0`, protocolID); err != nil {
+				return ProductFactOutcome{}, err
+			}
+		}
 		step.State, step.Result = next, resultRaw
 		step.ErrorMessage = errorMessage
 		if compensation {
@@ -173,7 +180,7 @@ func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kin
 		if current.State != "PENDING" && current.State != "READY" {
 			continue
 		}
-		if failed && (failurePolicy == "STOP" || failurePolicy == "COMPENSATE") {
+		if failed && (failurePolicy == "STOP" || failurePolicy == "COMPENSATE") && !current.CompensatesStepID.Valid {
 			if _, err = tx.ExecContext(ctx, `UPDATE operation_steps SET state='SKIPPED',version=version+1,updated_at=clock_timestamp() WHERE protocol_id=$1 AND step_id=$2`, protocolID, current.StepID); err != nil {
 				return ProductFactOutcome{}, err
 			}
@@ -219,7 +226,13 @@ func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kin
 		byID[current.StepID].State = "READY"
 	}
 	if failed && failurePolicy == "COMPENSATE" {
-		compensationRecords := make([]productStep, 0)
+		type compensationCandidate struct {
+			original productStep
+			command  dispatch.Command
+			stepID   string
+			raw      []byte
+		}
+		candidates := make([]compensationCandidate, 0)
 		for _, current := range append([]productStep(nil), steps...) {
 			if current.State != "SUCCEEDED" || current.CompensationServiceID.String == "" {
 				continue
@@ -245,6 +258,18 @@ func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kin
 			if len(current.Result) > 0 && string(current.Result) != "null" {
 				compensation.RequestBody = json.RawMessage(current.Result)
 			}
+			// Compensation has an independent execution clock. It is a
+			// platform obligation and must not inherit an already expired
+			// client/step deadline from the productive command.
+			compensationTTL := compensation.RetryTTLSeconds
+			if compensationTTL < 30 {
+				compensationTTL = 30
+			}
+			now := time.Now().UTC()
+			compensation.AcceptedAt = now
+			compensation.RetryTTLSeconds = compensationTTL
+			compensation.RetryDeadline = now.Add(time.Duration(compensationTTL) * time.Second)
+			compensation.StepDeadline = compensation.RetryDeadline
 			compensationRaw, marshalErr := json.Marshal(compensation)
 			if marshalErr != nil {
 				return ProductFactOutcome{}, marshalErr
@@ -253,15 +278,26 @@ func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kin
 			if _, err = tx.ExecContext(ctx, `UPDATE operation_steps SET state='COMPENSATING',version=version+1,updated_at=clock_timestamp() WHERE protocol_id=$1 AND step_id=$2 AND state='SUCCEEDED'`, protocolID, current.StepID); err != nil {
 				return ProductFactOutcome{}, err
 			}
-			if _, err = tx.ExecContext(ctx, `INSERT INTO operation_steps(protocol_id,tenant_id,cell_id,step_id,command_id,service_id,service_version,required,depends_on,input_mapping,state,command,compensates_step_id) SELECT $1,p.tenant_id,p.cell_id,$2,$3,$4,$5,FALSE,'[]'::jsonb,'{}'::jsonb,'READY',$6,$7 FROM operation_plans p WHERE p.protocol_id=$1`, protocolID, compensationStepID, compensation.CommandID, compensation.ServiceCode, compensation.ServiceVersion, compensationRaw, current.StepID); err != nil {
-				return ProductFactOutcome{}, err
-			}
-			if _, err = tx.ExecContext(ctx, `INSERT INTO command_intents(command_id,protocol_id,tenant_id,application_id,cell_id,dispatch_mode,command,state) SELECT $1,p.protocol_id,p.tenant_id,p.application_id,p.cell_id,$2,$3,'READY' FROM protocols p WHERE p.protocol_id=$4`, compensation.CommandID, compensation.DispatchMode, compensationRaw, protocolID); err != nil {
-				return ProductFactOutcome{}, err
-			}
-			compensationRecord := productStep{StepID: compensationStepID, CommandID: compensation.CommandID, ServiceID: compensation.ServiceCode, ServiceVersion: compensation.ServiceVersion, State: "READY", Command: compensationRaw, CompensatesStepID: sql.NullString{String: current.StepID, Valid: true}}
-			compensationRecords = append(compensationRecords, compensationRecord)
+			candidates = append(candidates, compensationCandidate{original: current, command: compensation, stepID: compensationStepID, raw: compensationRaw})
 			byID[current.StepID].State = "COMPENSATING"
+		}
+		compensationRecords := make([]productStep, 0, len(candidates))
+		for _, candidate := range candidates {
+			// If B depends on A, A's compensation depends on B's
+			// compensation: reverse causal order is durable in the DAG.
+			depends := make([]string, 0)
+			for _, other := range candidates {
+				if containsStep(other.original.DependsOn, candidate.original.StepID) {
+					depends = append(depends, other.stepID)
+				}
+			}
+			if _, err = tx.ExecContext(ctx, `INSERT INTO operation_steps(protocol_id,tenant_id,cell_id,step_id,command_id,service_id,service_version,required,depends_on,input_mapping,state,command,compensates_step_id) SELECT $1,p.tenant_id,p.cell_id,$2,$3,$4,$5,FALSE,$6::jsonb,'{}'::jsonb,CASE WHEN jsonb_array_length($6::jsonb)=0 THEN 'READY' ELSE 'PENDING' END,$7,$8 FROM operation_plans p WHERE p.protocol_id=$1`, protocolID, candidate.stepID, candidate.command.CommandID, candidate.command.ServiceCode, candidate.command.ServiceVersion, jsonArray(depends), candidate.raw, candidate.original.StepID); err != nil {
+				return ProductFactOutcome{}, err
+			}
+			if _, err = tx.ExecContext(ctx, `INSERT INTO command_intents(command_id,protocol_id,tenant_id,application_id,cell_id,dispatch_mode,command,state,continue_after_client_deadline) SELECT $1,p.protocol_id,p.tenant_id,p.application_id,p.cell_id,$2,$3,CASE WHEN $4::jsonb='[]'::jsonb THEN 'READY' ELSE 'PENDING' END,TRUE FROM protocols p WHERE p.protocol_id=$5`, candidate.command.CommandID, candidate.command.DispatchMode, candidate.raw, jsonArray(depends), protocolID); err != nil {
+				return ProductFactOutcome{}, err
+			}
+			compensationRecords = append(compensationRecords, productStep{StepID: candidate.stepID, CommandID: candidate.command.CommandID, ServiceID: candidate.command.ServiceCode, ServiceVersion: candidate.command.ServiceVersion, DependsOn: depends, State: "READY", Command: candidate.raw, CompensatesStepID: sql.NullString{String: candidate.original.StepID, Valid: true}})
 		}
 		steps = append(steps, compensationRecords...)
 		byID = make(map[string]*productStep, len(steps))
@@ -287,7 +323,9 @@ func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kin
 			anySuccess = true
 			if !latest.CompensatesStepID.Valid {
 				var value any
-				if json.Unmarshal(latest.Result, &value) == nil {
+				decoder := json.NewDecoder(bytes.NewReader(latest.Result))
+				decoder.UseNumber()
+				if decoder.Decode(&value) == nil {
 					resultSteps[latest.StepID] = value
 				}
 			}
@@ -386,4 +424,13 @@ func productStepCommand(step productStep, byID map[string]*productStep) (dispatc
 		return dispatch.Command{}, nil, fmt.Errorf("entrada da etapa %s inválida: %w", step.StepID, err)
 	}
 	return command, validated, nil
+}
+
+func containsStep(values []string, wanted string) bool {
+	for _, value := range values {
+		if value == wanted {
+			return true
+		}
+	}
+	return false
 }

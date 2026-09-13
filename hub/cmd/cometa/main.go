@@ -70,16 +70,12 @@ func main() {
 		panic(err)
 	}
 	go queue.RunBootstrap(ctx, func() error {
-		commandsQueueURL, err := q.EnsureQueue(ctx, "cometa-commands")
+		topology, err := q.EnsureTopology(ctx)
 		if err != nil {
-			log.Error("falha ao criar fila de comandos", "error", err)
 			return err
 		}
-		factsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
-		if err != nil {
-			log.Error("falha ao criar topico de fatos", "error", err)
-			return err
-		}
+		commandsQueueURL := topology.CommandsQueueURL
+		factsTopicARN := topology.OperationFactsTopicARN
 		log.Info("broker de comandos pronto", "queue_url", commandsQueueURL, "facts_topic_arn", factsTopicARN)
 
 		// Relay da outbox (COM-03): publica fatos de operacao no SNS

@@ -65,38 +65,13 @@ func main() {
 	dispatcher := orbita.NewDispatcher(cometaURL, q, "")
 	handlers := orbita.NewHandlers(store, atlas, libra, dispatcher, finalizer, log)
 	go queue.RunBootstrap(ctx, func() error {
-		commandsQueueURL, err := q.EnsureQueue(ctx, "cometa-commands")
+		topology, err := q.EnsureTopology(ctx)
 		if err != nil {
-			log.Error("falha ao localizar fila de comandos do Cometa", "error", err)
 			return err
 		}
-		operationFactsTopicARN, err := q.EnsureTopic(ctx, "hub-operation-facts")
-		if err != nil {
-			log.Error("falha ao localizar topico de fatos de operacao", "error", err)
-			return err
-		}
-		operationFactsQueueURL, err := q.EnsureQueue(ctx, "orbita-operation-facts")
-		if err != nil {
-			log.Error("falha ao criar fila de fatos de operacao", "error", err)
-			return err
-		}
-		operationFactsQueueARN, err := q.QueueARN(ctx, operationFactsQueueURL)
-		if err != nil {
-			log.Error("falha ao obter ARN da fila de fatos de operacao", "error", err)
-			return err
-		}
-		if err := q.AllowSNSDelivery(ctx, operationFactsQueueURL, operationFactsQueueARN, operationFactsTopicARN); err != nil {
-			return err
-		}
-		if err := q.Subscribe(ctx, operationFactsTopicARN, operationFactsQueueARN); err != nil {
-			return err
-		}
-
-		protocolFactsTopicARN, err := q.EnsureTopic(ctx, "hub-protocol-facts")
-		if err != nil {
-			log.Error("falha ao criar topico de fatos de protocolo", "error", err)
-			return err
-		}
+		commandsQueueURL := topology.CommandsQueueURL
+		operationFactsQueueURL := topology.OperationFactsQueueURL
+		protocolFactsTopicARN := topology.ProtocolFactsTopicARN
 
 		dispatcher.SetQueueURL(commandsQueueURL)
 
