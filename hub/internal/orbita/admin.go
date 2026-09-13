@@ -15,6 +15,7 @@ import (
 
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 func (h *Handlers) RegisterAdmin(mux *http.ServeMux) {
@@ -69,7 +70,11 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 			auth.Error(w, 403, "forbidden")
 			return
 		}
-		protocol, err := h.store.GetByID(r.Context(), id)
+		readReason := reason
+		if readReason == "" {
+			readReason = "reconcile_lookup:" + p.Subject
+		}
+		protocol, err := h.store.GetByID(r.Context(), readReason, id)
 		if err != nil || (tenant != "*" && protocol.TenantID != tenant) {
 			auth.Error(w, 404, "not_found")
 			return
@@ -94,6 +99,10 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 		defer tx.Rollback()
+		if err = pg.SetTenantScope(r.Context(), tx, protocol.TenantID); err != nil {
+			auth.Error(w, 503, "reconciliation_unavailable")
+			return
+		}
 		requestID := idgen.New()
 		var storedRequestID string
 		var missingCorrelation bool
@@ -144,7 +153,11 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	if id != "" {
-		protocol, err := h.store.GetByID(r.Context(), id)
+		readReason := reason
+		if readReason == "" {
+			readReason = "admin_view:" + p.Subject
+		}
+		protocol, err := h.store.GetByID(r.Context(), readReason, id)
 		if err != nil || (tenant != "*" && protocol.TenantID != tenant) {
 			auth.Error(w, 404, "not_found")
 			return
@@ -155,23 +168,24 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 				return
 			}
 			timeline := []map[string]any{{"event": "ACCEPTED", "recorded_at": protocol.AcceptedAt, "protocol_id": id}}
-			rows, err := h.store.db.QueryContext(r.Context(), "SELECT action,recorded_at,details FROM protocol_audit WHERE protocol_id=$1 AND tenant_id=$2 ORDER BY id LIMIT 200", id, protocol.TenantID)
-			if err != nil {
-				auth.Error(w, 503, "timeline_unavailable")
-				return
-			}
-			defer rows.Close()
-			for rows.Next() {
-				var action string
-				var recorded time.Time
-				var details json.RawMessage
-				if rows.Scan(&action, &recorded, &details) != nil {
-					auth.Error(w, 503, "timeline_unavailable")
-					return
+			err = pg.WithAuditedScopeTx(r.Context(), h.store.db, readReason, func(tx *sql.Tx) error {
+				rows, queryErr := tx.QueryContext(r.Context(), "SELECT action,recorded_at,details FROM protocol_audit WHERE protocol_id=$1 AND tenant_id=$2 ORDER BY id LIMIT 200", id, protocol.TenantID)
+				if queryErr != nil {
+					return queryErr
 				}
-				timeline = append(timeline, map[string]any{"event": action, "recorded_at": recorded, "details": details})
-			}
-			if rows.Err() != nil {
+				defer rows.Close()
+				for rows.Next() {
+					var action string
+					var recorded time.Time
+					var details json.RawMessage
+					if scanErr := rows.Scan(&action, &recorded, &details); scanErr != nil {
+						return scanErr
+					}
+					timeline = append(timeline, map[string]any{"event": action, "recorded_at": recorded, "details": details})
+				}
+				return rows.Err()
+			})
+			if err != nil {
 				auth.Error(w, 503, "timeline_unavailable")
 				return
 			}
@@ -216,27 +230,32 @@ func (h *Handlers) handleAdminProtocols(w http.ResponseWriter, r *http.Request) 
 		}
 		after = c.ID
 	}
-	rows, err := h.store.db.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,mode,accepted_at,client_deadline_at FROM protocols WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND protocol_id::text>$3 AND ($4='' OR accepted_at>=NULLIF($4,'')::date) AND ($5='' OR accepted_at<NULLIF($5,'')::date+interval '1 day') ORDER BY protocol_id::text LIMIT $6`, tenant, status, after, from, to, limit+1)
-	if err != nil {
-		auth.Error(w, 503, "protocols_unavailable")
-		return
+	readReason := reason
+	if readReason == "" {
+		readReason = "admin_list:" + p.Subject
 	}
-	defer rows.Close()
 	items := []map[string]any{}
 	last := ""
-	for rows.Next() {
-		var id, t, app, state, mode string
-		var accepted, deadline time.Time
-		if rows.Scan(&id, &t, &app, &state, &mode, &accepted, &deadline) != nil {
-			auth.Error(w, 503, "protocols_unavailable")
-			return
+	err := pg.WithAuditedScopeTx(r.Context(), h.store.db, readReason, func(tx *sql.Tx) error {
+		rows, queryErr := tx.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,mode,accepted_at,client_deadline_at FROM protocols WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND protocol_id::text>$3 AND ($4='' OR accepted_at>=NULLIF($4,'')::date) AND ($5='' OR accepted_at<NULLIF($5,'')::date+interval '1 day') ORDER BY protocol_id::text LIMIT $6`, tenant, status, after, from, to, limit+1)
+		if queryErr != nil {
+			return queryErr
 		}
-		items = append(items, map[string]any{"protocol_id": id, "tenant_id": t, "application_id": app, "status": state, "mode": mode, "accepted_at": accepted, "client_deadline_at": deadline})
-		if len(items) == limit {
-			last = id
+		defer rows.Close()
+		for rows.Next() {
+			var id, t, app, state, mode string
+			var accepted, deadline time.Time
+			if scanErr := rows.Scan(&id, &t, &app, &state, &mode, &accepted, &deadline); scanErr != nil {
+				return scanErr
+			}
+			items = append(items, map[string]any{"protocol_id": id, "tenant_id": t, "application_id": app, "status": state, "mode": mode, "accepted_at": accepted, "client_deadline_at": deadline})
+			if len(items) == limit {
+				last = id
+			}
 		}
-	}
-	if rows.Err() != nil {
+		return rows.Err()
+	})
+	if err != nil {
 		auth.Error(w, 503, "protocols_unavailable")
 		return
 	}
@@ -331,95 +350,99 @@ func (h *Handlers) handleAdminSLAReports(w http.ResponseWriter, r *http.Request)
 			limit = 100
 		}
 	}
-	rows, err := h.store.db.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,accepted_at,client_deadline_at,finalized_at,final_event_id,config_snapshot
-		FROM protocols
-		WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND ($3='' OR protocol_id::text=$3) AND protocol_id::text>$4
-		  AND ($5='' OR accepted_at>=NULLIF($5,'')::date) AND ($6='' OR accepted_at<NULLIF($6,'')::date+interval '1 day')
-		ORDER BY protocol_id::text LIMIT $7`, tenant, status, queryID, after, from, to, limit+1)
-	if err != nil {
-		auth.Error(w, 503, "sla_reports_unavailable")
-		return
-	}
-	var eligible, open, fulfilled, expired, excluded int
-	if err := h.store.db.QueryRowContext(r.Context(), `SELECT count(*),
-		count(*) FILTER (WHERE status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')),
-		count(*) FILTER (WHERE status IN ('SUCCEEDED','PARTIALLY_SUCCEEDED')),
-		count(*) FILTER (WHERE status='EXPIRED'),
-		count(*) FILTER (WHERE status IN ('FAILED','CANCELLED'))
-		FROM protocols
-		WHERE ($1='*' OR tenant_id=$1)
-		  AND ($2='' OR accepted_at>=NULLIF($2,'')::date)
-		  AND ($3='' OR accepted_at<NULLIF($3,'')::date+interval '1 day')`, tenant, from, to).
-		Scan(&eligible, &open, &fulfilled, &expired, &excluded); err != nil {
-		auth.Error(w, 503, "sla_reports_unavailable")
-		return
-	}
-	defer rows.Close()
 	items := []map[string]any{}
 	last := ""
 	generatedAt := time.Now().UTC()
 	watermarkAt := time.Time{}
-	for rows.Next() {
-		var protocolID, protocolTenant, applicationID, state string
-		var accepted, clientDeadline time.Time
-		var finalized sql.NullTime
-		var finalEvent sql.NullString
-		var snapshotRaw []byte
-		if err := rows.Scan(&protocolID, &protocolTenant, &applicationID, &state, &accepted, &clientDeadline, &finalized, &finalEvent, &snapshotRaw); err != nil {
-			auth.Error(w, 503, "sla_reports_unavailable")
-			return
-		}
-		var snapshot struct {
-			Target struct {
-				Data json.RawMessage `json:"data"`
-			} `json:"target"`
-		}
-		providerSLA := 0
-		var targetData struct {
-			ProviderSLASeconds int    `json:"provider_sla_seconds"`
-			ProviderSLAPolicy  string `json:"provider_sla_policy"`
-		}
-		providerPolicy := "MONITOR_ONLY"
-		if json.Unmarshal(snapshotRaw, &snapshot) == nil {
-			_ = json.Unmarshal(snapshot.Target.Data, &targetData)
-			providerSLA = targetData.ProviderSLASeconds
-			if value := strings.ToUpper(strings.TrimSpace(targetData.ProviderSLAPolicy)); value != "" {
-				providerPolicy = value
-			}
-		}
-		providerDeadline := accepted
-		if providerSLA > 0 {
-			providerDeadline = accepted.Add(time.Duration(providerSLA) * time.Second)
-		}
-		observedAt := time.Now().UTC()
-		if finalized.Valid {
-			observedAt = finalized.Time
-		}
-		if observedAt.After(watermarkAt) {
-			watermarkAt = observedAt
-		}
-		providerBreached := providerSLA > 0 && !observedAt.Before(providerDeadline)
-		providerOutcome := "NOT_CONFIGURED"
-		if providerSLA > 0 {
-			providerOutcome = "ON_TIME"
-			if providerBreached {
-				providerOutcome = providerPolicy + "_BREACH"
-			}
-		}
-		items = append(items, map[string]any{
-			"protocol_id": protocolID, "tenant_id": protocolTenant, "application_id": applicationID, "status": state,
-			"accepted_at": accepted, "client_deadline_at": clientDeadline, "provider_sla_seconds": providerSLA,
-			"provider_sla_policy": providerPolicy, "provider_sla_outcome": providerOutcome,
-			"provider_deadline_at": providerDeadline, "observed_at": observedAt,
-			"client_sla_breached":   !observedAt.Before(clientDeadline),
-			"provider_sla_breached": providerBreached,
-			"finalized_at":          finalized, "final_event_id": finalEvent,
-		})
-		if len(items) == limit {
-			last = protocolID
-		}
+	var eligible, open, fulfilled, expired, excluded int
+	readReason := reason
+	if readReason == "" {
+		readReason = "sla_report:" + p.Subject
 	}
-	if err := rows.Err(); err != nil {
+	err := pg.WithAuditedScopeTx(r.Context(), h.store.db, readReason, func(tx *sql.Tx) error {
+		if scanErr := tx.QueryRowContext(r.Context(), `SELECT count(*),
+			count(*) FILTER (WHERE status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')),
+			count(*) FILTER (WHERE status IN ('SUCCEEDED','PARTIALLY_SUCCEEDED')),
+			count(*) FILTER (WHERE status='EXPIRED'),
+			count(*) FILTER (WHERE status IN ('FAILED','CANCELLED'))
+			FROM protocols
+			WHERE ($1='*' OR tenant_id=$1)
+			  AND ($2='' OR accepted_at>=NULLIF($2,'')::date)
+			  AND ($3='' OR accepted_at<NULLIF($3,'')::date+interval '1 day')`, tenant, from, to).
+			Scan(&eligible, &open, &fulfilled, &expired, &excluded); scanErr != nil {
+			return scanErr
+		}
+		rows, queryErr := tx.QueryContext(r.Context(), `SELECT protocol_id,tenant_id,application_id,status,accepted_at,client_deadline_at,finalized_at,final_event_id,config_snapshot
+			FROM protocols
+			WHERE ($1='*' OR tenant_id=$1) AND ($2='' OR status=$2) AND ($3='' OR protocol_id::text=$3) AND protocol_id::text>$4
+			  AND ($5='' OR accepted_at>=NULLIF($5,'')::date) AND ($6='' OR accepted_at<NULLIF($6,'')::date+interval '1 day')
+			ORDER BY protocol_id::text LIMIT $7`, tenant, status, queryID, after, from, to, limit+1)
+		if queryErr != nil {
+			return queryErr
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var protocolID, protocolTenant, applicationID, state string
+			var accepted, clientDeadline time.Time
+			var finalized sql.NullTime
+			var finalEvent sql.NullString
+			var snapshotRaw []byte
+			if scanErr := rows.Scan(&protocolID, &protocolTenant, &applicationID, &state, &accepted, &clientDeadline, &finalized, &finalEvent, &snapshotRaw); scanErr != nil {
+				return scanErr
+			}
+			var snapshot struct {
+				Target struct {
+					Data json.RawMessage `json:"data"`
+				} `json:"target"`
+			}
+			providerSLA := 0
+			var targetData struct {
+				ProviderSLASeconds int    `json:"provider_sla_seconds"`
+				ProviderSLAPolicy  string `json:"provider_sla_policy"`
+			}
+			providerPolicy := "MONITOR_ONLY"
+			if json.Unmarshal(snapshotRaw, &snapshot) == nil {
+				_ = json.Unmarshal(snapshot.Target.Data, &targetData)
+				providerSLA = targetData.ProviderSLASeconds
+				if value := strings.ToUpper(strings.TrimSpace(targetData.ProviderSLAPolicy)); value != "" {
+					providerPolicy = value
+				}
+			}
+			providerDeadline := accepted
+			if providerSLA > 0 {
+				providerDeadline = accepted.Add(time.Duration(providerSLA) * time.Second)
+			}
+			observedAt := time.Now().UTC()
+			if finalized.Valid {
+				observedAt = finalized.Time
+			}
+			if observedAt.After(watermarkAt) {
+				watermarkAt = observedAt
+			}
+			providerBreached := providerSLA > 0 && !observedAt.Before(providerDeadline)
+			providerOutcome := "NOT_CONFIGURED"
+			if providerSLA > 0 {
+				providerOutcome = "ON_TIME"
+				if providerBreached {
+					providerOutcome = providerPolicy + "_BREACH"
+				}
+			}
+			items = append(items, map[string]any{
+				"protocol_id": protocolID, "tenant_id": protocolTenant, "application_id": applicationID, "status": state,
+				"accepted_at": accepted, "client_deadline_at": clientDeadline, "provider_sla_seconds": providerSLA,
+				"provider_sla_policy": providerPolicy, "provider_sla_outcome": providerOutcome,
+				"provider_deadline_at": providerDeadline, "observed_at": observedAt,
+				"client_sla_breached":   !observedAt.Before(clientDeadline),
+				"provider_sla_breached": providerBreached,
+				"finalized_at":          finalized, "final_event_id": finalEvent,
+			})
+			if len(items) == limit {
+				last = protocolID
+			}
+		}
+		return rows.Err()
+	})
+	if err != nil {
 		auth.Error(w, 503, "sla_reports_unavailable")
 		return
 	}

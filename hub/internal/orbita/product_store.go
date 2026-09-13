@@ -12,6 +12,7 @@ import (
 
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/dispatch"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type productStep struct {
@@ -39,9 +40,11 @@ type ProductFactOutcome struct {
 	Body            FinalBody
 }
 
-func (s *Store) ProductStepByCommand(ctx context.Context, commandID string) (string, bool, error) {
+func (s *Store) ProductStepByCommand(ctx context.Context, tenantID, commandID string) (string, bool, error) {
 	var stepID string
-	err := s.db.QueryRowContext(ctx, `SELECT step_id FROM operation_steps WHERE command_id=$1`, commandID).Scan(&stepID)
+	err := pg.WithTenantTx(ctx, s.db, tenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT step_id FROM operation_steps WHERE command_id=$1`, commandID).Scan(&stepID)
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", false, nil
 	}
@@ -62,12 +65,15 @@ func (s *Store) ClaimProductStep(ctx context.Context, commandID string) error {
 // ApplyProductFact records one external observation and unlocks only the
 // dependent stages whose inputs are now durable. It never calls a provider or
 // finalizes the protocol inside the transaction.
-func (s *Store) ApplyProductFact(ctx context.Context, protocolID, commandID, kind string, response any, errorMessage string) (ProductFactOutcome, error) {
+func (s *Store) ApplyProductFact(ctx context.Context, tenantID, protocolID, commandID, kind string, response any, errorMessage string) (ProductFactOutcome, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return ProductFactOutcome{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, tenantID); err != nil {
+		return ProductFactOutcome{}, err
+	}
 	var step productStep
 	var allowPartial bool
 	var failurePolicy string

@@ -10,6 +10,7 @@ import (
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -30,8 +31,11 @@ func TestPostgresRetryHorizonStartsOnceAndExpires(t *testing.T) {
 	ctx := context.Background()
 	tenant, protocolID, commandID := "retry-horizon-"+idgen.New(), idgen.New(), idgen.New()
 	defer func() {
-		_, _ = db.ExecContext(ctx, "DELETE FROM command_intents WHERE tenant_id=$1", tenant)
-		_, _ = db.ExecContext(ctx, "DELETE FROM protocols WHERE tenant_id=$1", tenant)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.ExecContext(ctx, "DELETE FROM command_intents WHERE tenant_id=$1", tenant)
+			tx.ExecContext(ctx, "DELETE FROM protocols WHERE tenant_id=$1", tenant)
+			return nil
+		})
 	}()
 
 	now := time.Now().UTC()
@@ -60,14 +64,19 @@ func TestPostgresRetryHorizonStartsOnceAndExpires(t *testing.T) {
 		t.Fatalf("first failure ok=%v err=%v", ok, err)
 	}
 	var started, until time.Time
-	if err := db.QueryRowContext(ctx, "SELECT retry_started_at,retry_until FROM command_intents WHERE command_id=$1", commandID).Scan(&started, &until); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT retry_started_at,retry_until FROM command_intents WHERE command_id=$1", commandID).Scan(&started, &until)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if started.IsZero() || until.IsZero() || until.Sub(started) < 900*time.Millisecond || until.Sub(started) > 2*time.Second {
 		t.Fatalf("invalid retry horizon started=%s until=%s", started, until)
 	}
 
-	if _, err := db.ExecContext(ctx, "UPDATE command_intents SET lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1", commandID); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, "UPDATE command_intents SET lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1", commandID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(1100 * time.Millisecond)
@@ -79,7 +88,9 @@ func TestPostgresRetryHorizonStartsOnceAndExpires(t *testing.T) {
 		t.Fatalf("expired failure ok=%v err=%v", ok, err)
 	}
 	var state string
-	if err := db.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commandID).Scan(&state); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commandID).Scan(&state)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "EXPIRED" {
@@ -100,8 +111,11 @@ func TestPostgresRetryHorizonTTLZeroDoesNotRequeue(t *testing.T) {
 	ctx := context.Background()
 	tenant, protocolID, commandID := "retry-zero-"+idgen.New(), idgen.New(), idgen.New()
 	t.Cleanup(func() {
-		_, _ = db.ExecContext(ctx, "DELETE FROM command_intents WHERE tenant_id=$1", tenant)
-		_, _ = db.ExecContext(ctx, "DELETE FROM protocols WHERE tenant_id=$1", tenant)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.ExecContext(ctx, "DELETE FROM command_intents WHERE tenant_id=$1", tenant)
+			tx.ExecContext(ctx, "DELETE FROM protocols WHERE tenant_id=$1", tenant)
+			return nil
+		})
 	})
 	now := time.Now().UTC()
 	p := Protocol{ProtocolID: protocolID, TenantID: tenant, ApplicationID: "app-retry", CellID: "cell-retry", IdempotencyKey: "intent-" + idgen.New(), RequestHash: "hash-zero", RequestBody: []byte(`{"mode":"ASYNC"}`), Mode: "ASYNC", DispatchMode: string(dispatch.DispatchQueued), CommandID: commandID, Status: StatusAccepted, AcceptedAt: now, ClientDeadlineAt: now.Add(time.Minute)}
@@ -119,7 +133,9 @@ func TestPostgresRetryHorizonTTLZeroDoesNotRequeue(t *testing.T) {
 		t.Fatalf("complete zero ttl ok=%v err=%v", ok, err)
 	}
 	var state string
-	if err := db.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commandID).Scan(&state); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commandID).Scan(&state)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "EXPIRED" {

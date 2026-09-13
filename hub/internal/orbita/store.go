@@ -14,6 +14,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"ai-hub/hub/internal/platform/pg"
 )
 
 // ErrIdempotencyConflict e retornado quando a mesma Idempotency-Key e
@@ -102,13 +104,19 @@ func (s *Store) FindByIdempotencyKey(ctx context.Context, tenantID, key, request
 }
 
 func (s *Store) getByIdempotencyKey(ctx context.Context, tenantID, key string) (Protocol, error) {
-	row := s.db.QueryRowContext(ctx, `
-		SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
-		       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
-		       accepted_at, client_deadline_at, finalized_at, version
-		FROM protocols WHERE tenant_id = $1 AND idempotency_key = $2 AND application_id = $3
-	`, tenantID, key, applicationFromContext(ctx))
-	return scanProtocol(row)
+	var p Protocol
+	err := pg.WithTenantTx(ctx, s.db, tenantID, func(tx *sql.Tx) error {
+		row := tx.QueryRowContext(ctx, `
+			SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
+			       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
+			       accepted_at, client_deadline_at, finalized_at, version
+			FROM protocols WHERE tenant_id = $1 AND idempotency_key = $2 AND application_id = $3
+		`, tenantID, key, applicationFromContext(ctx))
+		scanned, scanErr := scanProtocol(row)
+		p = scanned
+		return scanErr
+	})
+	return p, err
 }
 
 // Create persiste um novo protocolo atomicamente (EXE-01, DAD-03):
@@ -119,12 +127,15 @@ func (s *Store) Create(ctx context.Context, p Protocol) error {
 	if err != nil {
 		return fmt.Errorf("orbita: serializar pedido: %w", err)
 	}
-	_, err = s.db.ExecContext(ctx, `
-		INSERT INTO protocols (protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode,
-		                        dispatch_mode, command_id, status, accepted_at, client_deadline_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-	`, p.ProtocolID, p.TenantID, p.IdempotencyKey, p.RequestHash, body, p.Mode, p.DispatchMode,
-		p.CommandID, string(p.Status), p.AcceptedAt, p.ClientDeadlineAt)
+	err = pg.WithTenantTx(ctx, s.db, p.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `
+			INSERT INTO protocols (protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode,
+			                        dispatch_mode, command_id, status, accepted_at, client_deadline_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		`, p.ProtocolID, p.TenantID, p.IdempotencyKey, p.RequestHash, body, p.Mode, p.DispatchMode,
+			p.CommandID, string(p.Status), p.AcceptedAt, p.ClientDeadlineAt)
+		return execErr
+	})
 	if err != nil {
 		return fmt.Errorf("orbita: criar protocolo: %w", err)
 	}
@@ -134,13 +145,18 @@ func (s *Store) Create(ctx context.Context, p Protocol) error {
 // Get le um protocolo validando o tenant (EXE-16: "nenhuma credencial
 // de cliente consulta outro tenant por conhecer o UUID").
 func (s *Store) Get(ctx context.Context, tenantID, protocolID string) (Protocol, error) {
-	row := s.db.QueryRowContext(ctx, `
-		SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
-		       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
-		       accepted_at, client_deadline_at, finalized_at, version
-		FROM protocols WHERE protocol_id = $1 AND tenant_id = $2
-	`, protocolID, tenantID)
-	p, err := scanProtocol(row)
+	var p Protocol
+	err := pg.WithTenantTx(ctx, s.db, tenantID, func(tx *sql.Tx) error {
+		row := tx.QueryRowContext(ctx, `
+			SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
+			       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
+			       accepted_at, client_deadline_at, finalized_at, version
+			FROM protocols WHERE protocol_id = $1 AND tenant_id = $2
+		`, protocolID, tenantID)
+		scanned, scanErr := scanProtocol(row)
+		p = scanned
+		return scanErr
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Protocol{}, ErrProtocolNotFound
 	}
@@ -148,16 +164,23 @@ func (s *Store) Get(ctx context.Context, tenantID, protocolID string) (Protocol,
 }
 
 // GetByID le um protocolo por ID, sem verificar tenant — usado apenas
-// internamente pelo consumidor de fatos (que ja confia na origem
-// interna do evento) e pelo perfil administrativo auditado.
-func (s *Store) GetByID(ctx context.Context, protocolID string) (Protocol, error) {
-	row := s.db.QueryRowContext(ctx, `
-		SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
-		       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
-		       accepted_at, client_deadline_at, finalized_at, version
-		FROM protocols WHERE protocol_id = $1
-	`, protocolID)
-	p, err := scanProtocol(row)
+// internamente pelo consumidor de fatos (que ja confia na origem interna do
+// evento) e pelo perfil administrativo auditado. reason e obrigatorio e
+// persistido pela policy audited_scope como app.access_reason (R6-SEG-01):
+// sem motivo nao vazio, nenhuma linha de nenhum tenant fica visivel.
+func (s *Store) GetByID(ctx context.Context, reason, protocolID string) (Protocol, error) {
+	var p Protocol
+	err := pg.WithAuditedScopeTx(ctx, s.db, reason, func(tx *sql.Tx) error {
+		row := tx.QueryRowContext(ctx, `
+			SELECT protocol_id, tenant_id, idempotency_key, request_hash, request_body, mode, dispatch_mode,
+			       command_id, status, result_version, final_body, final_event_id, terminal_reason, application_id, cell_id, final_representation,
+			       accepted_at, client_deadline_at, finalized_at, version
+			FROM protocols WHERE protocol_id = $1
+		`, protocolID)
+		scanned, scanErr := scanProtocol(row)
+		p = scanned
+		return scanErr
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Protocol{}, ErrProtocolNotFound
 	}
@@ -187,6 +210,7 @@ func scanProtocol(row *sql.Row) (Protocol, error) {
 // de prazo, historico e evento final").
 type FinalizeParams struct {
 	ProtocolID      string
+	TenantID        string
 	ExpectedVersion int
 	Status          Status
 	FinalBody       any
@@ -205,6 +229,9 @@ func (s *Store) Finalize(ctx context.Context, p FinalizeParams, publish func(tx 
 		return false, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, p.TenantID); err != nil {
+		return false, err
+	}
 
 	var mode string
 	var deadline, accepted, observed time.Time
@@ -325,26 +352,33 @@ type OpenProtocol struct {
 	Version    int
 }
 
+// DueDeadlines varre protocolos vencidos de todos os tenants da própria
+// célula (worker global, R6-SEG-01): escopado por app.worker_cell_id, nunca
+// por um tenant arbitrário, e nunca alcança outra célula.
 func (s *Store) DueDeadlines(ctx context.Context, now time.Time, limit int) ([]OpenProtocol, error) {
-	rows, err := s.db.QueryContext(ctx, `
-		SELECT protocol_id, tenant_id, version FROM protocols
-		WHERE cell_id=$3 AND client_deadline_at <= $1 AND status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
-		ORDER BY client_deadline_at
-		LIMIT $2
-	`, now, limit, os.Getenv("CELL_ID"))
-	if err != nil {
-		return nil, fmt.Errorf("orbita: buscar deadlines vencidos: %w", err)
-	}
-	defer rows.Close()
+	cell := os.Getenv("CELL_ID")
 	var out []OpenProtocol
-	for rows.Next() {
-		var o OpenProtocol
-		if err := rows.Scan(&o.ProtocolID, &o.TenantID, &o.Version); err != nil {
-			return nil, err
+	err := pg.WithWorkerCellTx(ctx, s.db, cell, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, `
+			SELECT protocol_id, tenant_id, version FROM protocols
+			WHERE cell_id=$3 AND client_deadline_at <= $1 AND status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+			ORDER BY client_deadline_at
+			LIMIT $2
+		`, now, limit, cell)
+		if err != nil {
+			return fmt.Errorf("orbita: buscar deadlines vencidos: %w", err)
 		}
-		out = append(out, o)
-	}
-	return out, rows.Err()
+		defer rows.Close()
+		for rows.Next() {
+			var o OpenProtocol
+			if err := rows.Scan(&o.ProtocolID, &o.TenantID, &o.Version); err != nil {
+				return err
+			}
+			out = append(out, o)
+		}
+		return rows.Err()
+	})
+	return out, err
 }
 
 // Ping verifica a conectividade com hub_core (readiness).

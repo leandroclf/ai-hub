@@ -10,6 +10,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 // Admit serializes a semantic idempotency key and commits the identity,
@@ -49,6 +50,9 @@ func (s *Store) admit(ctx context.Context, p Protocol, commands []dispatch.Comma
 		return Protocol{}, false, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, p.TenantID); err != nil {
+		return Protocol{}, false, err
+	}
 	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", p.TenantID+"\x1f"+p.ApplicationID+"\x1f"+p.IdempotencyKey); err != nil {
 		return Protocol{}, false, err
 	}

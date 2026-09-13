@@ -14,6 +14,7 @@ import (
 	"ai-hub/hub/internal/contracts/files"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -33,8 +34,11 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	tenant := "admission-test-" + idgen.New()
 	cell := "admission-test-cell-" + idgen.New()
 	defer func() {
-		db.Exec("DELETE FROM command_intents WHERE tenant_id=$1", tenant)
-		db.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM command_intents WHERE tenant_id=$1", tenant)
+			tx.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+			return nil
+		})
 	}()
 	makeAdmission := func(application, hash string) (Protocol, dispatch.Command) {
 		now := time.Now().UTC()
@@ -74,7 +78,9 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 		}
 	}
 	var count int
-	if err = db.QueryRow("SELECT count(*) FROM command_intents WHERE tenant_id=$1", tenant).Scan(&count); err != nil || count != 1 {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM command_intents WHERE tenant_id=$1", tenant).Scan(&count)
+	}); err != nil || count != 1 {
 		t.Fatalf("intent count=%d error=%v", count, err)
 	}
 	// Competing publishers use a database lease. A previous epoch cannot
@@ -86,7 +92,10 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	if _, err = store.ClaimIntent(ctx, cell, "publisher-b"); !errors.Is(err, sql.ErrNoRows) {
 		t.Fatalf("concurrent claim: %v", err)
 	}
-	if _, err = db.Exec("UPDATE command_intents SET lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1", i.Command.CommandID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec("UPDATE command_intents SET lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1", i.Command.CommandID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	j, err := store.ClaimIntent(ctx, cell, "publisher-b")
@@ -109,7 +118,9 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 		t.Fatalf("application isolation failed: %v", e)
 	}
 	var state string
-	if e = db.QueryRow("SELECT state FROM command_intents WHERE command_id=$1", c.CommandID).Scan(&state); e != nil || state != "WAITING_RESERVATION" {
+	if e = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state FROM command_intents WHERE command_id=$1", c.CommandID).Scan(&state)
+	}); e != nil || state != "WAITING_RESERVATION" {
 		t.Fatalf("reservation guard: %s %v", state, e)
 	}
 	// Force the second insert to fail after protocol insertion; no partial acceptance survives.
@@ -120,16 +131,24 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	if _, _, e = store.Admit(ctx, p, c, "synthetic-subject", false); e == nil {
 		t.Fatal("duplicate command accepted")
 	}
-	if e = db.QueryRow("SELECT count(*) FROM protocols WHERE protocol_id=$1", p.ProtocolID).Scan(&count); e != nil || count != 0 {
+	if e = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM protocols WHERE protocol_id=$1", p.ProtocolID).Scan(&count)
+	}); e != nil || count != 0 {
 		t.Fatalf("failed admission survived: %d %v", count, e)
 	}
 	fileID := idgen.New()
-	if _, e = db.Exec(`INSERT INTO file_refs(id,tenant_id,object_key,object_version,sha256,size_bytes,content_type,purpose,class,region,state,expires_at,retention_until) VALUES($1,$2,$3,'fixture-v1','fixture-sha',16,'application/octet-stream','TEST','SYNTHETIC','fixture','READY',clock_timestamp()+interval '1 hour',clock_timestamp()+interval '1 hour')`, fileID, tenant, "admission-metadata-fixture/"+fileID); e != nil {
+	if e = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`INSERT INTO file_refs(id,tenant_id,object_key,object_version,sha256,size_bytes,content_type,purpose,class,region,state,expires_at,retention_until) VALUES($1,$2,$3,'fixture-v1','fixture-sha',16,'application/octet-stream','TEST','SYNTHETIC','fixture','READY',clock_timestamp()+interval '1 hour',clock_timestamp()+interval '1 hour')`, fileID, tenant, "admission-metadata-fixture/"+fileID)
+		return execErr
+	}); e != nil {
 		t.Fatal(e)
 	}
 	defer func() {
-		db.Exec("DELETE FROM object_retention_pins WHERE file_id=$1", fileID)
-		db.Exec("DELETE FROM file_refs WHERE id=$1", fileID)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM object_retention_pins WHERE file_id=$1", fileID)
+			tx.Exec("DELETE FROM file_refs WHERE id=$1", fileID)
+			return nil
+		})
 	}()
 	p, c = makeAdmission("app-file-failed", "same-hash")
 	p.CommandID = existingCommand
@@ -138,7 +157,9 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	if _, _, e = store.Admit(ctx, p, c, "fixture-subject", false); e == nil {
 		t.Fatal("duplicate command with pin accepted")
 	}
-	if e = db.QueryRow("SELECT count(*) FROM object_retention_pins WHERE file_id=$1", fileID).Scan(&count); e != nil || count != 0 {
+	if e = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM object_retention_pins WHERE file_id=$1", fileID).Scan(&count)
+	}); e != nil || count != 0 {
 		t.Fatalf("pin leaked after rollback: %d %v", count, e)
 	}
 	p, c = makeAdmission("app-file-success", "same-hash")
@@ -146,7 +167,9 @@ func TestAdmissionPostgresAtomicIdempotency(t *testing.T) {
 	if _, _, e = store.Admit(ctx, p, c, "fixture-subject", false); e != nil {
 		t.Fatal(e)
 	}
-	if e = db.QueryRow("SELECT count(*) FROM object_retention_pins WHERE file_id=$1 AND obligation_id=$2", fileID, p.ProtocolID).Scan(&count); e != nil || count != 1 {
+	if e = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM object_retention_pins WHERE file_id=$1 AND obligation_id=$2", fileID, p.ProtocolID).Scan(&count)
+	}); e != nil || count != 1 {
 		t.Fatalf("pin missing from acceptance: %d %v", count, e)
 	}
 	t.Log("24 simultaneous requests: one protocol+intent; conflicting payload refused; application keys independent; reservation not released; failed intent insertion rolls back protocol")
@@ -174,15 +197,20 @@ func TestAdmissionFreezesConfigSnapshotAtAcceptance(t *testing.T) {
 		t.Fatalf("admit snapshot: created=%v err=%v", created, err)
 	}
 	t.Cleanup(func() {
-		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
-		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+			return nil
+		})
 	})
 	command.ConfigSnapshot = json.RawMessage(`{"profile_version":2,"output_field":"new_status"}`)
 	var protocolSnapshot, intentRaw []byte
-	if err := db.QueryRowContext(ctx, `SELECT config_snapshot FROM protocols WHERE protocol_id=$1`, protocolID).Scan(&protocolSnapshot); err != nil {
-		t.Fatal(err)
-	}
-	if err := db.QueryRowContext(ctx, `SELECT command FROM command_intents WHERE protocol_id=$1`, protocolID).Scan(&intentRaw); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		if scanErr := tx.QueryRowContext(ctx, `SELECT config_snapshot FROM protocols WHERE protocol_id=$1`, protocolID).Scan(&protocolSnapshot); scanErr != nil {
+			return scanErr
+		}
+		return tx.QueryRowContext(ctx, `SELECT command FROM command_intents WHERE protocol_id=$1`, protocolID).Scan(&intentRaw)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	var protocolValue, expectedValue map[string]any
@@ -225,11 +253,17 @@ func TestRecoverOrphanedIntentRequeuesSameDurableObligation(t *testing.T) {
 		t.Fatalf("admit: created=%v err=%v", created, err)
 	}
 	t.Cleanup(func() {
-		_, _ = db.Exec("DELETE FROM protocol_audit WHERE protocol_id=$1", p.ProtocolID)
-		_, _ = db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
-		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM protocol_audit WHERE protocol_id=$1", p.ProtocolID)
+			tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+			return nil
+		})
 	})
-	if _, err = db.ExecContext(ctx, `UPDATE command_intents SET created_at=clock_timestamp()-interval '5 seconds',next_attempt_at=clock_timestamp()-interval '1 second',lease_owner='dead-executor',lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1`, p.CommandID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `UPDATE command_intents SET created_at=clock_timestamp()-interval '5 seconds',next_attempt_at=clock_timestamp()-interval '1 second',lease_owner='dead-executor',lease_until=clock_timestamp()-interval '1 second' WHERE command_id=$1`, p.CommandID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -238,14 +272,18 @@ func TestRecoverOrphanedIntentRequeuesSameDurableObligation(t *testing.T) {
 		t.Fatalf("orphan recovery did not preserve identity: ok=%v intent=%+v err=%v", ok, recovered, err)
 	}
 	var state, lastError string
-	if err = db.QueryRowContext(ctx, "SELECT state,last_error FROM command_intents WHERE command_id=$1", p.CommandID).Scan(&state, &lastError); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state,last_error FROM command_intents WHERE command_id=$1", p.CommandID).Scan(&state, &lastError)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "READY" || lastError != "orphan_recovered" {
 		t.Fatalf("orphan intent was not requeued diagnostically: state=%s error=%s", state, lastError)
 	}
 	var audits int
-	if err = db.QueryRowContext(ctx, "SELECT count(*) FROM protocol_audit WHERE protocol_id=$1 AND action='ORPHAN_DISPATCH_RECOVERED'", p.ProtocolID).Scan(&audits); err != nil || audits != 1 {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT count(*) FROM protocol_audit WHERE protocol_id=$1 AND action='ORPHAN_DISPATCH_RECOVERED'", p.ProtocolID).Scan(&audits)
+	}); err != nil || audits != 1 {
 		t.Fatalf("orphan recovery audit count=%d err=%v", audits, err)
 	}
 	claimed, err := store.ClaimIntent(ctx, cell, "publisher-after-orphan")

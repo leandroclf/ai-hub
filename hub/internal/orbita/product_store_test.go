@@ -14,6 +14,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/libra"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/queue"
 	_ "github.com/lib/pq"
 )
@@ -51,10 +52,13 @@ func TestProductPlanPersistsDependenciesAndConsolidatesAfterAllSteps(t *testing.
 	}
 	defer func() {
 		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", protocolID)
-		db.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+			return nil
+		})
 	}()
 	first, err := store.ClaimIntent(ctx, cell, "publisher-a")
 	if err != nil {
@@ -76,18 +80,22 @@ func TestProductPlanPersistsDependenciesAndConsolidatesAfterAllSteps(t *testing.
 	if _, err = store.CompleteIntent(ctx, second, true); err != nil {
 		t.Fatal(err)
 	}
-	if outcome, err := store.ApplyProductFact(ctx, protocolID, commands[0].CommandID, "SUCCEEDED", map[string]any{"marker": "a"}, ""); err != nil || outcome.Finalize {
+	if outcome, err := store.ApplyProductFact(ctx, tenant, protocolID, commands[0].CommandID, "SUCCEEDED", map[string]any{"marker": "a"}, ""); err != nil || outcome.Finalize {
 		t.Fatalf("first step outcome=%+v err=%v", outcome, err)
 	}
 	var state string
-	if err = db.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commands[2].CommandID).Scan(&state); err != nil || state != "PENDING" {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", commands[2].CommandID).Scan(&state)
+	}); err != nil || state != "PENDING" {
 		t.Fatalf("dependent step released too early: state=%s err=%v", state, err)
 	}
-	if outcome, err := store.ApplyProductFact(ctx, protocolID, commands[1].CommandID, "SUCCEEDED", map[string]any{"marker": "b"}, ""); err != nil || outcome.Finalize {
+	if outcome, err := store.ApplyProductFact(ctx, tenant, protocolID, commands[1].CommandID, "SUCCEEDED", map[string]any{"marker": "b"}, ""); err != nil || outcome.Finalize {
 		t.Fatalf("second step outcome=%+v err=%v", outcome, err)
 	}
 	var rawCommand []byte
-	if err = db.QueryRowContext(ctx, "SELECT state,command FROM command_intents WHERE command_id=$1", commands[2].CommandID).Scan(&state, &rawCommand); err != nil || state != "READY" {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state,command FROM command_intents WHERE command_id=$1", commands[2].CommandID).Scan(&state, &rawCommand)
+	}); err != nil || state != "READY" {
 		t.Fatalf("dependent step was not released: state=%s err=%v", state, err)
 	}
 	var dependent dispatch.Command
@@ -144,10 +152,13 @@ func TestProductPlanCompensationIsASeparateTrackedOperation(t *testing.T) {
 		t.Fatalf("admit product: created=%v err=%v", created, err)
 	}
 	defer func() {
-		db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+			return nil
+		})
 	}()
 	for _, command := range commands {
 		intent, claimErr := store.ClaimIntent(ctx, cell, "publisher-"+command.StepID)
@@ -158,21 +169,25 @@ func TestProductPlanCompensationIsASeparateTrackedOperation(t *testing.T) {
 			t.Fatal(completeErr)
 		}
 	}
-	if outcome, err := store.ApplyProductFact(ctx, protocolID, commands[0].CommandID, "SUCCEEDED", map[string]any{"marker": "a"}, ""); err != nil || outcome.Finalize {
+	if outcome, err := store.ApplyProductFact(ctx, tenant, protocolID, commands[0].CommandID, "SUCCEEDED", map[string]any{"marker": "a"}, ""); err != nil || outcome.Finalize {
 		t.Fatalf("success before failure outcome=%+v err=%v", outcome, err)
 	}
-	if outcome, err := store.ApplyProductFact(ctx, protocolID, commands[1].CommandID, "FAILED", map[string]any{"detail": "broke"}, "provider failure"); err != nil || outcome.Finalize {
+	if outcome, err := store.ApplyProductFact(ctx, tenant, protocolID, commands[1].CommandID, "FAILED", map[string]any{"detail": "broke"}, "provider failure"); err != nil || outcome.Finalize {
 		t.Fatalf("compensation should remain pending: outcome=%+v err=%v", outcome, err)
 	}
 	var state string
-	if err = db.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", compensation.CommandID).Scan(&state); err != nil || state != "READY" {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state FROM command_intents WHERE command_id=$1", compensation.CommandID).Scan(&state)
+	}); err != nil || state != "READY" {
 		t.Fatalf("compensation intent state=%s err=%v", state, err)
 	}
-	outcome, err := store.ApplyProductFact(ctx, protocolID, compensation.CommandID, "SUCCEEDED", map[string]any{"compensated": true}, "")
+	outcome, err := store.ApplyProductFact(ctx, tenant, protocolID, compensation.CommandID, "SUCCEEDED", map[string]any{"compensated": true}, "")
 	if err != nil || !outcome.Finalize || outcome.Status != StatusFailed {
 		t.Fatalf("compensation outcome=%+v err=%v", outcome, err)
 	}
-	if err = db.QueryRowContext(ctx, "SELECT state FROM operation_steps WHERE protocol_id=$1 AND step_id='A'", protocolID).Scan(&state); err != nil || state != "COMPENSATED" {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state FROM operation_steps WHERE protocol_id=$1 AND step_id='A'", protocolID).Scan(&state)
+	}); err != nil || state != "COMPENSATED" {
 		t.Fatalf("original step state=%s err=%v", state, err)
 	}
 }
@@ -208,11 +223,14 @@ func TestProductOptionalFailureFinalizesPartialWithDurableStepStates(t *testing.
 	}
 	defer func() {
 		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", protocolID)
-		db.Exec("DELETE FROM orbita_fact_inbox WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
-		db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+		pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM orbita_fact_inbox WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+			return nil
+		})
 	}()
 	for _, command := range commands {
 		intent, claimErr := store.ClaimIntent(ctx, cell, "publisher-"+command.StepID)
@@ -267,7 +285,9 @@ func TestProductOptionalFailureFinalizesPartialWithDurableStepStates(t *testing.
 		t.Fatalf("optional failure not represented exactly once: %+v", result["failed_steps"])
 	}
 	var states string
-	if err := db.QueryRowContext(ctx, "SELECT string_agg(step_id || ':' || state, ',' ORDER BY step_id) FROM operation_steps WHERE protocol_id=$1", protocolID).Scan(&states); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT string_agg(step_id || ':' || state, ',' ORDER BY step_id) FROM operation_steps WHERE protocol_id=$1", protocolID).Scan(&states)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if states != "A:SUCCEEDED,B:FAILED" {
@@ -324,11 +344,14 @@ func TestProductOptionalFailurePublishesEligibleFinanceFacts(t *testing.T) {
 	}
 	defer func() {
 		coreDB.Exec("DELETE FROM outbox WHERE aggregate_id=$1", protocolID)
-		coreDB.Exec("DELETE FROM orbita_fact_inbox WHERE protocol_id=$1", protocolID)
-		coreDB.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
-		coreDB.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
-		coreDB.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
-		coreDB.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+		pg.WithTenantTx(ctx, coreDB, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM orbita_fact_inbox WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_steps WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM operation_plans WHERE protocol_id=$1", protocolID)
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+			return nil
+		})
 	}()
 	for _, command := range commands {
 		intent, claimErr := core.ClaimIntent(ctx, cell, "publisher-"+command.StepID)
@@ -360,7 +383,10 @@ func TestProductOptionalFailurePublishesEligibleFinanceFacts(t *testing.T) {
 		t.Fatalf("consume optional failure: %v", err)
 	}
 
-	if _, err := financeDB.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,'2','BRL')`, tenant); err != nil {
+	if err := pg.WithTenantTx(ctx, financeDB, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,'2','BRL')`, tenant)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err := finance.ReserveExact(ctx, tenant, protocolID, "1", "BRL"); err != nil {
@@ -376,7 +402,8 @@ func TestProductOptionalFailurePublishesEligibleFinanceFacts(t *testing.T) {
 			return marshalErr
 		}
 		envelope := queue.Envelope{EventID: idgen.New(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: payload}
-		return finance.ProcessEnvelope(ctx, "cost", envelope)
+		_, e := finance.ProcessEnvelope(ctx, "cost", envelope)
+		return e
 	}
 	if err := applyCost(commands[0], "SUCCEEDED", "SUCCEEDED"); err != nil {
 		t.Fatalf("apply eligible cost: %v", err)
@@ -390,25 +417,27 @@ func TestProductOptionalFailurePublishesEligibleFinanceFacts(t *testing.T) {
 		t.Fatal(err)
 	}
 	finalEnvelope := queue.Envelope{EventID: idgen.New(), Type: "protocol.finalized", SchemaVersion: 1, Producer: "orbita", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: finalPayload}
-	if err := finance.ProcessEnvelope(ctx, "revenue", finalEnvelope); err != nil {
+	if _, err := finance.ProcessEnvelope(ctx, "revenue", finalEnvelope); err != nil {
 		t.Fatalf("apply finalized revenue: %v", err)
 	}
 	var costFacts, revenueFacts, ledgerEntries int
-	if err := financeDB.QueryRowContext(ctx, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND kind='COST'`, tenant).Scan(&costFacts); err != nil {
-		t.Fatal(err)
-	}
-	if err := financeDB.QueryRowContext(ctx, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND kind='REVENUE'`, tenant).Scan(&revenueFacts); err != nil {
-		t.Fatal(err)
-	}
-	if err := financeDB.QueryRowContext(ctx, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, tenant).Scan(&ledgerEntries); err != nil {
+	var reservationState string
+	if err := pg.WithTenantTx(ctx, financeDB, tenant, func(tx *sql.Tx) error {
+		if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND kind='COST'`, tenant).Scan(&costFacts); err != nil {
+			return err
+		}
+		if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND kind='REVENUE'`, tenant).Scan(&revenueFacts); err != nil {
+			return err
+		}
+		if err := tx.QueryRowContext(ctx, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, tenant).Scan(&ledgerEntries); err != nil {
+			return err
+		}
+		return tx.QueryRowContext(ctx, `SELECT state FROM reservations WHERE tenant_id=$1 AND protocol_id=$2`, tenant, protocolID).Scan(&reservationState)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if costFacts != 1 || revenueFacts != 1 || ledgerEntries != 4 {
 		t.Fatalf("financial incidence cost=%d revenue=%d ledger=%d, want 1/1/4", costFacts, revenueFacts, ledgerEntries)
-	}
-	var reservationState string
-	if err := financeDB.QueryRowContext(ctx, `SELECT state FROM reservations WHERE tenant_id=$1 AND protocol_id=$2`, tenant, protocolID).Scan(&reservationState); err != nil {
-		t.Fatal(err)
 	}
 	if reservationState != "CAPTURED" {
 		t.Fatalf("reservation state=%s, want CAPTURED", reservationState)

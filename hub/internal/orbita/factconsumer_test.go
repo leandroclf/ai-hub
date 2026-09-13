@@ -13,6 +13,7 @@ import (
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/queue"
 )
 
@@ -40,10 +41,13 @@ func TestOperationFactPostgresCustody(t *testing.T) {
 	}
 	defer func() {
 		db.Exec(`DELETE FROM message_quarantine WHERE consumer='orbita' AND convert_from(body,'UTF8') LIKE $1`, "%"+p.ProtocolID+"%")
-		db.Exec(`DELETE FROM orbita_fact_inbox WHERE protocol_id=$1`, p.ProtocolID)
 		db.Exec(`DELETE FROM outbox WHERE aggregate_id=$1`, p.ProtocolID)
-		db.Exec(`DELETE FROM command_intents WHERE protocol_id=$1`, p.ProtocolID)
-		db.Exec(`DELETE FROM protocols WHERE protocol_id=$1`, p.ProtocolID)
+		pg.WithTenantTx(ctx, db, p.TenantID, func(tx *sql.Tx) error {
+			tx.Exec(`DELETE FROM orbita_fact_inbox WHERE protocol_id=$1`, p.ProtocolID)
+			tx.Exec(`DELETE FROM command_intents WHERE protocol_id=$1`, p.ProtocolID)
+			tx.Exec(`DELETE FROM protocols WHERE protocol_id=$1`, p.ProtocolID)
+			return nil
+		})
 	}()
 	fact := operationFact{ProtocolID: p.ProtocolID, TenantID: p.TenantID, ApplicationID: p.ApplicationID, CellID: p.CellID, OperationID: p.CommandID, EvidenceID: idgen.New(), Kind: "SUCCEEDED", ResponseBody: map[string]any{"result_marker": "real-result"}}
 	message := func(fact operationFact, id string) queue.ReceivedMessage {
@@ -61,7 +65,9 @@ func TestOperationFactPostgresCustody(t *testing.T) {
 		t.Fatal("ack permitted after failed final persistence")
 	}
 	var disposition string
-	if err = db.QueryRow(`SELECT disposition FROM orbita_fact_inbox WHERE event_id=$1`, m.Envelope.EventID).Scan(&disposition); err != nil || disposition != "RECEIVED" {
+	if err = pg.WithTenantTx(ctx, db, p.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT disposition FROM orbita_fact_inbox WHERE event_id=$1`, m.Envelope.EventID).Scan(&disposition)
+	}); err != nil || disposition != "RECEIVED" {
 		t.Fatalf("missing recoverable receipt: %s %v", disposition, err)
 	}
 	got, err := s.Get(ctx, p.TenantID, p.ProtocolID)
@@ -119,7 +125,9 @@ func TestOperationFactPostgresCustody(t *testing.T) {
 	if err = s.ConsumeOperationFact(ctx, m, f); err != nil {
 		t.Fatalf("replay antigo não foi absorvido pelo tombstone lógico: %v", err)
 	}
-	if err = db.QueryRow(`SELECT disposition FROM orbita_fact_inbox WHERE event_id=$1`, m.Envelope.EventID).Scan(&disposition); err != nil || disposition != "APPLIED" {
+	if err = pg.WithTenantTx(ctx, db, p.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT disposition FROM orbita_fact_inbox WHERE event_id=$1`, m.Envelope.EventID).Scan(&disposition)
+	}); err != nil || disposition != "APPLIED" {
 		t.Fatalf("tombstone lógico do replay antigo: disposition=%s err=%v", disposition, err)
 	}
 	if err = db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, p.ProtocolID).Scan(&count); err != nil || count != 1 {

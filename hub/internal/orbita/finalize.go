@@ -92,7 +92,7 @@ func (f *Finalizer) Finalize(ctx context.Context, traceID, tenantID, protocolID 
 	}
 
 	applied, err := f.store.Finalize(ctx, FinalizeParams{
-		ProtocolID: protocolID, ExpectedVersion: expectedVersion, Status: status,
+		ProtocolID: protocolID, TenantID: tenantID, ExpectedVersion: expectedVersion, Status: status,
 		FinalBody: body, TerminalReason: reason, FinalEventID: eventID,
 	}, func(tx *sqlTx) error {
 		fact := ProtocolFinalizedFact{ProtocolID: protocolID, TraceID: traceID, TenantID: tenantID, Status: string(status), FinalBody: body, EventID: eventID}

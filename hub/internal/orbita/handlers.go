@@ -23,6 +23,7 @@ import (
 	"ai-hub/hub/internal/libraclient"
 	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 // CreateRequest e o corpo de admissao (EXE-01/EXE-02).
@@ -79,7 +80,7 @@ func (h *Handlers) handleGetInternal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	protocolID := strings.TrimPrefix(r.URL.Path, "/internal/protocols/")
-	p, err := h.store.GetByID(r.Context(), protocolID)
+	p, err := h.store.GetByID(r.Context(), "internal_workload:"+principal.Subject, protocolID)
 	if errors.Is(err, ErrProtocolNotFound) {
 		writeErr(w, http.StatusNotFound, "not_found", "protocolo nao encontrado")
 		return
@@ -318,7 +319,10 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 			h.respondWithProtocol(w, p, http.StatusServiceUnavailable)
 			return
 		}
-		if _, err = h.store.db.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE protocol_id=$1 AND state='WAITING_RESERVATION'", protocolID); err != nil {
+		if err = pg.WithTenantTx(ctx, h.store.db, tenantID, func(tx *sql.Tx) error {
+			_, execErr := tx.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE protocol_id=$1 AND state='WAITING_RESERVATION'", protocolID)
+			return execErr
+		}); err != nil {
 			h.respondWithProtocol(w, p, 503)
 			return
 		}
@@ -328,7 +332,7 @@ func (h *Handlers) handleCreate(w http.ResponseWriter, r *http.Request) {
 		"command_id", commandID, "dispatch_mode", dispatchMode, "provider_account_id", req.ProviderAccountID)
 
 	if mode == "SYNC" {
-		intent, claimErr := h.store.ClaimDirectIntent(ctx, commandID, "sync-"+idgen.New())
+		intent, claimErr := h.store.ClaimDirectIntent(ctx, tenantID, commandID, "sync-"+idgen.New())
 		if claimErr != nil {
 			h.log.Warn("intenção SYNC não pôde ser reivindicada", "trace_id", traceID, "protocol_id", protocolID, "error", claimErr)
 			acceptedError(w, protocolID, http.StatusServiceUnavailable, "dispatch_temporarily_unavailable")

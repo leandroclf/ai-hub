@@ -11,6 +11,7 @@ import (
 
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -37,10 +38,13 @@ func TestPublicProtocolLookupSurvivesTenantCellRelocation(t *testing.T) {
 	foreignProtocol := idgen.New()
 	insert := func(protocolID, protocolTenant, cell, key string) {
 		t.Helper()
-		_, err = db.Exec(`
-			INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at)
-			VALUES($1,$2,'app-relocation',$3,$4,'placement-hash','{}','ASYNC','QUEUED',$5,'SUCCEEDED',clock_timestamp()+interval '1 hour')
-		`, protocolID, protocolTenant, cell, key, idgen.New())
+		err = pg.WithTenantTx(context.Background(), db, protocolTenant, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec(`
+				INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at)
+				VALUES($1,$2,'app-relocation',$3,$4,'placement-hash','{}','ASYNC','QUEUED',$5,'SUCCEEDED',clock_timestamp()+interval '1 hour')
+			`, protocolID, protocolTenant, cell, key, idgen.New())
+			return execErr
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,7 +53,14 @@ func TestPublicProtocolLookupSurvivesTenantCellRelocation(t *testing.T) {
 	insert(newProtocol, tenant, "r2-cell-b", "new")
 	insert(foreignProtocol, otherTenant, "r2-cell-b", "foreign")
 	t.Cleanup(func() {
-		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id IN ($1,$2,$3)", oldProtocol, newProtocol, foreignProtocol)
+		pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM protocols WHERE protocol_id IN ($1,$2)", oldProtocol, newProtocol)
+			return nil
+		})
+		pg.WithTenantTx(context.Background(), db, otherTenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", foreignProtocol)
+			return nil
+		})
 	})
 
 	h := NewHandlers(store, nil, nil, nil, nil, nil)

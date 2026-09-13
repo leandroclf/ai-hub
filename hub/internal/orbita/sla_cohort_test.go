@@ -12,6 +12,7 @@ import (
 
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -51,13 +52,19 @@ func TestAdminSLAReportSeparatesOpenFulfilledExpiredAndExcludedCohort(t *testing
 			query = `INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at,config_snapshot)
 				VALUES($1,$2,'sla-cohort-app','sla-cohort-cell',$3,$4,'{}','ASYNC','QUEUED',$5,$6,clock_timestamp()+interval '1 hour',$7)`
 		}
-		if _, err := db.Exec(query, protocolID, tenant, "cohort-key-"+idgen.New(), "cohort-hash-"+idgen.New(), idgen.New(), status, config); err != nil {
+		if err := pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec(query, protocolID, tenant, "cohort-key-"+idgen.New(), "cohort-hash-"+idgen.New(), idgen.New(), status, config)
+			return execErr
+		}); err != nil {
 			t.Fatalf("inserir estado %d/%s: %v", index, status, err)
 		}
 	}
 	t.Cleanup(func() {
 		db.Exec("DELETE FROM protocol_access_audit WHERE requested_tenant=$1", tenant)
-		db.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+		pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+			return execErr
+		})
 	})
 
 	principal := auth.Principal{Subject: "sla-cohort-reader", TenantID: tenant, MFA: true, Roles: []string{"hub_protocol_reader"}, Scopes: []string{"protocols:read"}, ExpiresAt: time.Now().Add(time.Hour)}

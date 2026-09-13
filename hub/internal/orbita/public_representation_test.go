@@ -13,6 +13,7 @@ import (
 
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -38,10 +39,13 @@ func TestPublicLookupUsesLocalPendingAndExpiredRepresentation(t *testing.T) {
 	expiredID := idgen.New()
 	insert := func(protocolID, status string, representation []byte) {
 		t.Helper()
-		_, err = db.Exec(`
-			INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,result_version,final_body,final_representation,client_deadline_at)
-			VALUES($1,$2,$3,'r2-representation-state',$4,'representation-hash','{}','ASYNC','QUEUED',$5,$6,CASE WHEN $6='EXPIRED' THEN 1 ELSE 0 END,$7::jsonb,$8::bytea,clock_timestamp()+interval '1 hour')
-		`, protocolID, tenant, application, idgen.New(), idgen.New(), status, nullableJSON(representation), representation)
+		err = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec(`
+				INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,result_version,final_body,final_representation,client_deadline_at)
+				VALUES($1,$2,$3,'r2-representation-state',$4,'representation-hash','{}','ASYNC','QUEUED',$5,$6,CASE WHEN $6='EXPIRED' THEN 1 ELSE 0 END,$7::jsonb,$8::bytea,clock_timestamp()+interval '1 hour')
+			`, protocolID, tenant, application, idgen.New(), idgen.New(), status, nullableJSON(representation), representation)
+			return execErr
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -50,7 +54,10 @@ func TestPublicLookupUsesLocalPendingAndExpiredRepresentation(t *testing.T) {
 	expiredRepresentation := []byte(`{"protocol_id":"` + expiredID + `","status":"EXPIRED","result_version":1,"error_code":"SLA_EXCEEDED"}`)
 	insert(expiredID, string(StatusExpired), expiredRepresentation)
 	t.Cleanup(func() {
-		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id IN ($1,$2)", pendingID, expiredID)
+		pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM protocols WHERE protocol_id IN ($1,$2)", pendingID, expiredID)
+			return nil
+		})
 	})
 
 	h := NewHandlers(store, nil, nil, nil, nil, nil)

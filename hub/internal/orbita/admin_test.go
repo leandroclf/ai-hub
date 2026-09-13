@@ -14,6 +14,7 @@ import (
 
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -29,13 +30,19 @@ func TestAdminReconciliationRequestIsDurableAndAudited(t *testing.T) {
 	defer db.Close()
 	store := NewStore(db)
 	tenant, protocolID := "admin-reconciliation-"+idgen.New(), idgen.New()
-	if _, err = db.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at) VALUES($1,$2,'app-admin','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'RECONCILING',clock_timestamp()+interval '1 hour')`, protocolID, tenant, idgen.New(), idgen.New()); err != nil {
+	if err = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at) VALUES($1,$2,'app-admin','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'RECONCILING',clock_timestamp()+interval '1 hour')`, protocolID, tenant, idgen.New(), idgen.New())
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
 		db.Exec("DELETE FROM protocol_access_audit WHERE requested_tenant=$1", tenant)
-		db.Exec("DELETE FROM protocol_reconciliation_requests WHERE tenant_id=$1", tenant)
-		db.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+		pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM protocol_reconciliation_requests WHERE tenant_id=$1", tenant)
+			tx.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+			return nil
+		})
 	})
 
 	principal := auth.Principal{Subject: "operator-admin", TenantID: tenant, MFA: true, Roles: []string{"hub_protocol_reader"}, Scopes: []string{"protocols:read", "protocols:reconcile"}, ExpiresAt: time.Now().Add(time.Hour)}
@@ -70,7 +77,9 @@ func TestAdminReconciliationRequestIsDurableAndAudited(t *testing.T) {
 		t.Fatalf("open request was not idempotent: first=%s second=%s", first.Body.String(), second.Body.String())
 	}
 	var count, audits int
-	if err = db.QueryRow("SELECT count(*) FROM protocol_reconciliation_requests WHERE tenant_id=$1 AND protocol_id=$2 AND state='OPEN'", tenant, protocolID).Scan(&count); err != nil || count != 1 {
+	if err = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM protocol_reconciliation_requests WHERE tenant_id=$1 AND protocol_id=$2 AND state='OPEN'", tenant, protocolID).Scan(&count)
+	}); err != nil || count != 1 {
 		t.Fatalf("open requests=%d error=%v", count, err)
 	}
 	if err = db.QueryRow("SELECT count(*) FROM protocol_access_audit WHERE requested_tenant=$1 AND resource=$2 AND action='RECONCILIATION_REQUEST'", tenant, protocolID).Scan(&audits); err != nil || audits != 2 {
@@ -99,17 +108,23 @@ func TestAdminReconciliationRejectsUnknownWithoutProviderCorrelation(t *testing.
 	defer db.Close()
 	store := NewStore(db)
 	tenant, protocolID, operationID := "admin-unknown-no-correlation-"+idgen.New(), idgen.New(), idgen.New()
-	if _, err = db.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at) VALUES($1,$2,'app-admin','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'RECONCILING',clock_timestamp()+interval '1 hour')`, protocolID, tenant, idgen.New(), idgen.New()); err != nil {
-		t.Fatal(err)
-	}
-	if _, err = db.Exec(`INSERT INTO operations(operation_id,protocol_id,provider_account_id,tenant_id,application_id,cell_id,command,state) VALUES($1,$2,'provider-account',$3,'app-admin','r2-cell-a','{}','UNKNOWN')`, operationID, protocolID, tenant); err != nil {
+	if err = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+		if _, execErr := tx.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at) VALUES($1,$2,'app-admin','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'RECONCILING',clock_timestamp()+interval '1 hour')`, protocolID, tenant, idgen.New(), idgen.New()); execErr != nil {
+			return execErr
+		}
+		_, execErr := tx.Exec(`INSERT INTO operations(operation_id,protocol_id,provider_account_id,tenant_id,application_id,cell_id,command,state) VALUES($1,$2,'provider-account',$3,'app-admin','r2-cell-a','{}','UNKNOWN')`, operationID, protocolID, tenant)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
 		db.Exec("DELETE FROM protocol_access_audit WHERE requested_tenant=$1", tenant)
-		db.Exec("DELETE FROM protocol_reconciliation_requests WHERE tenant_id=$1", tenant)
-		db.Exec("DELETE FROM operations WHERE operation_id=$1", operationID)
-		db.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+		pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			tx.Exec("DELETE FROM protocol_reconciliation_requests WHERE tenant_id=$1", tenant)
+			tx.Exec("DELETE FROM operations WHERE operation_id=$1", operationID)
+			tx.Exec("DELETE FROM protocols WHERE tenant_id=$1", tenant)
+			return nil
+		})
 	})
 
 	principal := auth.Principal{Subject: "operator-admin", TenantID: tenant, MFA: true, Roles: []string{"hub_protocol_reader"}, Scopes: []string{"protocols:read", "protocols:reconcile"}, ExpiresAt: time.Now().Add(time.Hour)}
@@ -130,7 +145,9 @@ func TestAdminReconciliationRejectsUnknownWithoutProviderCorrelation(t *testing.
 		t.Fatalf("invalid rejection response: %s (%v)", response.Body.String(), err)
 	}
 	var state, lastError string
-	if err = db.QueryRow("SELECT state,last_error FROM protocol_reconciliation_requests WHERE request_id=$1", body.RequestID).Scan(&state, &lastError); err != nil {
+	if err = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state,last_error FROM protocol_reconciliation_requests WHERE request_id=$1", body.RequestID).Scan(&state, &lastError)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "REJECTED" || lastError == "" {
@@ -150,12 +167,18 @@ func TestR2Seg03Scenarios(t *testing.T) {
 	defer db.Close()
 	store := NewStore(db)
 	tenantA, tenantB, protocolID := "r2-seg03-a-"+idgen.New(), "r2-seg03-b-"+idgen.New(), idgen.New()
-	if _, err = db.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at,final_representation) VALUES($1,$2,'app-seg03','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'SUCCEEDED',clock_timestamp()+interval '1 hour','{"status":"SUCCEEDED","safe":"value"}')`, protocolID, tenantB, idgen.New(), idgen.New()); err != nil {
+	if err = pg.WithTenantTx(context.Background(), db, tenantB, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`INSERT INTO protocols(protocol_id,tenant_id,application_id,cell_id,idempotency_key,request_hash,request_body,mode,dispatch_mode,command_id,status,client_deadline_at,final_representation) VALUES($1,$2,'app-seg03','r2-cell-a',$3,'hash','{}','ASYNC','QUEUED',$4,'SUCCEEDED',clock_timestamp()+interval '1 hour','{"status":"SUCCEEDED","safe":"value"}')`, protocolID, tenantB, idgen.New(), idgen.New())
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
 		_, _ = db.Exec("DELETE FROM protocol_access_audit WHERE resource=$1 OR requested_tenant IN ($2,$3)", protocolID, tenantA, tenantB)
-		_, _ = db.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+		_ = pg.WithTenantTx(context.Background(), db, tenantB, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", protocolID)
+			return execErr
+		})
 	})
 
 	principal := auth.Principal{Subject: "developer-seg03", TenantID: tenantA, MFA: true, Roles: []string{"hub_protocol_reader"}, Scopes: []string{"protocols:read", "admin:cross_tenant"}, ExpiresAt: time.Now().Add(time.Hour)}

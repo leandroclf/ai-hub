@@ -13,6 +13,7 @@ import (
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 func TestAutoPostgresBoundedWait(t *testing.T) {
@@ -39,8 +40,11 @@ func TestAutoPostgresBoundedWait(t *testing.T) {
 		}
 		t.Cleanup(func() {
 			db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", p.ProtocolID)
-			db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
-			db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+			pg.WithTenantTx(context.Background(), db, p.TenantID, func(tx *sql.Tx) error {
+				tx.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
+				tx.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
+				return nil
+			})
 		})
 		return p
 	}
@@ -83,7 +87,9 @@ func TestAutoPostgresBoundedWait(t *testing.T) {
 		}
 		var count int
 		var mode, state string
-		if err := db.QueryRow("SELECT count(*),min(dispatch_mode),min(state) FROM command_intents WHERE protocol_id=$1", p.ProtocolID).Scan(&count, &mode, &state); err != nil || count != 1 || mode != "QUEUED" || state != "READY" {
+		if err := pg.WithTenantTx(context.Background(), db, p.TenantID, func(tx *sql.Tx) error {
+			return tx.QueryRow("SELECT count(*),min(dispatch_mode),min(state) FROM command_intents WHERE protocol_id=$1", p.ProtocolID).Scan(&count, &mode, &state)
+		}); err != nil || count != 1 || mode != "QUEUED" || state != "READY" {
 			t.Fatalf("intent mutated: %d %s %s %v", count, mode, state, err)
 		}
 	})
@@ -95,7 +101,9 @@ func TestAutoPostgresBoundedWait(t *testing.T) {
 			t.Fatal("cancellation ignored")
 		}
 		var count int
-		if err := db.QueryRow("SELECT count(*) FROM command_intents WHERE protocol_id=$1 AND state='READY'", p.ProtocolID).Scan(&count); err != nil || count != 1 {
+		if err := pg.WithTenantTx(context.Background(), db, p.TenantID, func(tx *sql.Tx) error {
+			return tx.QueryRow("SELECT count(*) FROM command_intents WHERE protocol_id=$1 AND state='READY'", p.ProtocolID).Scan(&count)
+		}); err != nil || count != 1 {
 			t.Fatal("disconnection removed obligation")
 		}
 	})

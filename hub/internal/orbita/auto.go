@@ -2,12 +2,14 @@ package orbita
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
 	"ai-hub/hub/internal/atlas"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 // AwaitAuto observes only the authoritative local protocol. Waiting does not
@@ -61,7 +63,9 @@ func (h *Handlers) respondExistingAdmission(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	var raw []byte
-	err := h.store.db.QueryRowContext(r.Context(), `SELECT config_snapshot FROM protocols WHERE protocol_id=$1 AND tenant_id=$2 AND application_id=$3`, p.ProtocolID, p.TenantID, p.ApplicationID).Scan(&raw)
+	err := pg.WithTenantTx(r.Context(), h.store.db, p.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(r.Context(), `SELECT config_snapshot FROM protocols WHERE protocol_id=$1 AND tenant_id=$2 AND application_id=$3`, p.ProtocolID, p.TenantID, p.ApplicationID).Scan(&raw)
+	})
 	var snapshot atlas.OfferSnapshot
 	if err != nil || json.Unmarshal(raw, &snapshot) != nil {
 		acceptedError(w, p.ProtocolID, 503, "snapshot_unavailable")

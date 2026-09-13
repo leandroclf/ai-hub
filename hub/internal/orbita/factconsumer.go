@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
 
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/queue"
 )
 
@@ -76,7 +78,7 @@ func (s *Store) ConsumeOperationFact(ctx context.Context, m queue.ReceivedMessag
 	if err != nil {
 		return err
 	}
-	stepID, product, stepErr := s.ProductStepByCommand(ctx, fact.OperationID)
+	stepID, product, stepErr := s.ProductStepByCommand(ctx, fact.TenantID, fact.OperationID)
 	if stepErr != nil {
 		return stepErr
 	}
@@ -89,12 +91,14 @@ func (s *Store) ConsumeOperationFact(ctx context.Context, m queue.ReceivedMessag
 	}
 	sum := sha256.Sum256(raw)
 	hash := hex.EncodeToString(sum[:])
-	_, err = s.db.ExecContext(ctx, `INSERT INTO orbita_fact_inbox(event_id,body_sha256,envelope,protocol_id,tenant_id,application_id,cell_id) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(event_id) DO NOTHING`, e.EventID, hash, raw, p.ProtocolID, p.TenantID, p.ApplicationID, p.CellID)
-	if err != nil {
-		return err
-	}
 	var original, disposition string
-	if err = s.db.QueryRowContext(ctx, `SELECT body_sha256,disposition FROM orbita_fact_inbox WHERE event_id=$1`, e.EventID).Scan(&original, &disposition); err != nil {
+	err = pg.WithTenantTx(ctx, s.db, fact.TenantID, func(tx *sql.Tx) error {
+		if _, execErr := tx.ExecContext(ctx, `INSERT INTO orbita_fact_inbox(event_id,body_sha256,envelope,protocol_id,tenant_id,application_id,cell_id) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(event_id) DO NOTHING`, e.EventID, hash, raw, p.ProtocolID, p.TenantID, p.ApplicationID, p.CellID); execErr != nil {
+			return execErr
+		}
+		return tx.QueryRowContext(ctx, `SELECT body_sha256,disposition FROM orbita_fact_inbox WHERE event_id=$1`, e.EventID).Scan(&original, &disposition)
+	})
+	if err != nil {
 		return err
 	}
 	if original != hash {
@@ -105,7 +109,7 @@ func (s *Store) ConsumeOperationFact(ctx context.Context, m queue.ReceivedMessag
 	}
 	disposition = "OBSERVED"
 	if product {
-		outcome, applyErr := s.ApplyProductFact(ctx, fact.ProtocolID, fact.OperationID, fact.Kind, fact.ResponseBody, fact.ErrorMessage)
+		outcome, applyErr := s.ApplyProductFact(ctx, fact.TenantID, fact.ProtocolID, fact.OperationID, fact.Kind, fact.ResponseBody, fact.ErrorMessage)
 		if applyErr != nil {
 			return applyErr
 		}
@@ -143,8 +147,10 @@ func (s *Store) ConsumeOperationFact(ctx context.Context, m queue.ReceivedMessag
 		}
 		disposition = "APPLIED"
 	}
-	_, err = s.db.ExecContext(ctx, `UPDATE orbita_fact_inbox SET disposition=$2,processed_at=clock_timestamp() WHERE event_id=$1 AND disposition='RECEIVED'`, e.EventID, disposition)
-	return err
+	return pg.WithTenantTx(ctx, s.db, fact.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `UPDATE orbita_fact_inbox SET disposition=$2,processed_at=clock_timestamp() WHERE event_id=$1 AND disposition='RECEIVED'`, e.EventID, disposition)
+		return execErr
+	})
 }
 
 func (s *Store) quarantineFact(ctx context.Context, m queue.ReceivedMessage, reason string) error {

@@ -19,6 +19,7 @@ import (
 	"ai-hub/hub/internal/objectstore"
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/queue"
 )
 
@@ -160,7 +161,10 @@ func TestFinalizeLateSuccessBecomesExpired(t *testing.T) {
 		db.Exec("DELETE FROM command_intents WHERE protocol_id=$1", p.ProtocolID)
 		db.Exec("DELETE FROM protocols WHERE protocol_id=$1", p.ProtocolID)
 	}()
-	if _, err = db.ExecContext(ctx, "UPDATE protocols SET client_deadline_at=clock_timestamp()-interval '1 second' WHERE protocol_id=$1", p.ProtocolID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, "UPDATE protocols SET client_deadline_at=clock_timestamp()-interval '1 second' WHERE protocol_id=$1", p.ProtocolID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -236,7 +240,10 @@ func TestLateCostlyResultKeepsErrorRepresentationAndFinanceContest(t *testing.T)
 		_, _ = financeDB.Exec("DELETE FROM credit_limits WHERE tenant_id=$1", tenant)
 	}
 	t.Cleanup(financeCleanup)
-	if _, err = coreDB.ExecContext(ctx, "UPDATE protocols SET client_deadline_at=clock_timestamp()-interval '1 second' WHERE protocol_id=$1", protocolID); err != nil {
+	if err = pg.WithTenantTx(ctx, coreDB, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, "UPDATE protocols SET client_deadline_at=clock_timestamp()-interval '1 second' WHERE protocol_id=$1", protocolID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -264,7 +271,10 @@ func TestLateCostlyResultKeepsErrorRepresentationAndFinanceContest(t *testing.T)
 		t.Fatalf("representação para webhook divergiu do GET: status=%s representation=%s", finalFact.Status, finalFact.Representation)
 	}
 
-	if _, err = financeDB.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,'2','BRL')`, tenant); err != nil {
+	if err = pg.WithTenantTx(ctx, financeDB, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,'2','BRL')`, tenant)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err = finance.ReserveExact(ctx, tenant, protocolID, "1", "BRL"); err != nil {
@@ -272,12 +282,12 @@ func TestLateCostlyResultKeepsErrorRepresentationAndFinanceContest(t *testing.T)
 	}
 	lateCost := libra.EconomicEvent{ProtocolID: protocolID, TenantID: tenant, OperationID: idgen.New(), AttemptID: idgen.New(), Status: "SUCCEEDED", Kind: "SUCCEEDED", EvidenceID: idgen.New(), OccurredAt: now, EconomicSnapshot: economic}
 	lateCostPayload, _ := json.Marshal(lateCost)
-	if err = finance.ProcessEnvelope(ctx, "cost", queue.Envelope{EventID: idgen.New(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: lateCostPayload}); err != nil {
+	if _, err = finance.ProcessEnvelope(ctx, "cost", queue.Envelope{EventID: idgen.New(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: tenant, ProtocolID: protocolID, OccurredAt: now, RecordedAt: now, Payload: lateCostPayload}); err != nil {
 		t.Fatalf("custo tardio elegível: %v", err)
 	}
 	lateRevenue := libra.EconomicEvent{ProtocolID: protocolID, TenantID: tenant, OperationID: lateCost.OperationID, Status: "EXPIRED", Kind: "EXPIRED", EvidenceID: finalFact.EvidenceID, OccurredAt: now, ExternalState: "SUCCEEDED", SafeToRelease: true, EconomicSnapshot: economic}
 	lateRevenuePayload, _ := json.Marshal(lateRevenue)
-	if err = finance.ProcessEnvelope(ctx, "revenue", queue.Envelope{EventID: finalFact.EventID, Type: "protocol.finalized", SchemaVersion: 1, Producer: "orbita", TenantID: tenant, ProtocolID: protocolID, OccurredAt: finalFact.OccurredAt, RecordedAt: finalFact.OccurredAt, Payload: lateRevenuePayload}); err != nil {
+	if _, err = finance.ProcessEnvelope(ctx, "revenue", queue.Envelope{EventID: finalFact.EventID, Type: "protocol.finalized", SchemaVersion: 1, Producer: "orbita", TenantID: tenant, ProtocolID: protocolID, OccurredAt: finalFact.OccurredAt, RecordedAt: finalFact.OccurredAt, Payload: lateRevenuePayload}); err != nil {
 		t.Fatalf("final expirado na receita: %v", err)
 	}
 
@@ -296,10 +306,12 @@ func TestLateCostlyResultKeepsErrorRepresentationAndFinanceContest(t *testing.T)
 		t.Fatalf("contestação do custo tardio: %v", err)
 	}
 	var disputes, ledgerEntries int
-	if err = financeDB.QueryRowContext(ctx, "SELECT count(*) FROM finance_disputes WHERE tenant_id=$1", tenant).Scan(&disputes); err != nil {
-		t.Fatal(err)
-	}
-	if err = financeDB.QueryRowContext(ctx, "SELECT count(*) FROM ledger_entries WHERE tenant_id=$1", tenant).Scan(&ledgerEntries); err != nil {
+	if err = pg.WithTenantTx(ctx, financeDB, tenant, func(tx *sql.Tx) error {
+		if err := tx.QueryRowContext(ctx, "SELECT count(*) FROM finance_disputes WHERE tenant_id=$1", tenant).Scan(&disputes); err != nil {
+			return err
+		}
+		return tx.QueryRowContext(ctx, "SELECT count(*) FROM ledger_entries WHERE tenant_id=$1", tenant).Scan(&ledgerEntries)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if disputes != 1 || ledgerEntries != 2 {
@@ -339,6 +351,9 @@ func TestFinalizeCommitCrossingDeadlineDoesNotEscapeAsSuccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer lockTx.Rollback()
+	if err = pg.SetTenantScope(ctx, lockTx, tenant); err != nil {
+		t.Fatal(err)
+	}
 	if err = lockTx.QueryRowContext(ctx, "SELECT protocol_id FROM protocols WHERE protocol_id=$1 FOR UPDATE", p.ProtocolID).Scan(new(string)); err != nil {
 		t.Fatal(err)
 	}

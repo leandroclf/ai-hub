@@ -13,6 +13,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/libraclient"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type Intent struct {
@@ -35,6 +36,9 @@ func (s *Store) RecoverOrphanedIntent(ctx context.Context, cell string, minAge t
 		return Intent{}, false, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetWorkerCellScope(ctx, tx, cell); err != nil {
+		return Intent{}, false, err
+	}
 	var raw []byte
 	var protocolID, tenantID string
 	var result Intent
@@ -47,7 +51,7 @@ func (s *Store) RecoverOrphanedIntent(ctx context.Context, cell string, minAge t
 		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
 		  AND i.created_at<=clock_timestamp()-($2 * interval '1 millisecond')
 		  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
-		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		  AND (p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED') OR i.continue_after_client_deadline)
 		ORDER BY i.next_attempt_at,i.command_id
 		FOR UPDATE OF i SKIP LOCKED LIMIT 1`, cell, minAge.Milliseconds()).Scan(&raw, &result.Epoch, &protocolID, &tenantID)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -60,6 +64,13 @@ func (s *Store) RecoverOrphanedIntent(ctx context.Context, cell string, minAge t
 		return Intent{}, false, errors.New("invalid orphan intent")
 	}
 	if _, err = tx.ExecContext(ctx, `UPDATE command_intents SET next_attempt_at=clock_timestamp(),last_error='orphan_recovered',lease_owner=NULL,lease_until=NULL WHERE command_id=$1 AND state='READY'`, result.Command.CommandID); err != nil {
+		return Intent{}, false, err
+	}
+	// protocol_audit não tem cell_id: worker_cell_scope não a alcança. Agora
+	// que o tenant da linha reivindicada é conhecido, aplica também o escopo
+	// de tenant (LOCAL, coexiste com o de célula já ativo) só para este
+	// insert de auditoria.
+	if err = pg.SetTenantScope(ctx, tx, tenantID); err != nil {
 		return Intent{}, false, err
 	}
 	details, _ := json.Marshal(map[string]any{"command_id": result.Command.CommandID, "dispatch_mode": result.Command.DispatchMode, "previous_epoch": result.Epoch})
@@ -106,24 +117,26 @@ func (s *Store) ClaimIntent(ctx context.Context, cell, owner string) (Intent, er
 // ClaimDirectIntent reivindica a intenção DIRECT criada para uma admissão
 // SYNC. O request original e o recuperador usam a mesma autoridade de lease;
 // assim, somente um deles pode atravessar o limite para o Cometa.
-func (s *Store) ClaimDirectIntent(ctx context.Context, commandID, owner string) (Intent, error) {
+func (s *Store) ClaimDirectIntent(ctx context.Context, tenantID, commandID, owner string) (Intent, error) {
 	if commandID == "" || owner == "" {
 		return Intent{}, errors.New("missing direct intent identity")
 	}
 	var raw []byte
 	var result Intent
 	result.Owner = owner
-	err := s.db.QueryRowContext(ctx, `
-		UPDATE command_intents i
-		SET lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',epoch=i.epoch+1,attempts=i.attempts+1
-		FROM protocols p
-		WHERE i.command_id=$1 AND i.protocol_id=p.protocol_id
-		  AND i.dispatch_mode=$3 AND i.state='READY'
-		  AND i.next_attempt_at<=clock_timestamp()
-		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
-		  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
-		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
-		RETURNING i.command,i.epoch,(i.retry_until IS NOT NULL AND i.retry_until<=clock_timestamp())`, commandID, owner, string(dispatch.DispatchDirect)).Scan(&raw, &result.Epoch, &result.Expired)
+	err := pg.WithTenantTx(ctx, s.db, tenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `
+			UPDATE command_intents i
+			SET lease_owner=$2,lease_until=clock_timestamp()+interval '15 seconds',epoch=i.epoch+1,attempts=i.attempts+1
+			FROM protocols p
+			WHERE i.command_id=$1 AND i.protocol_id=p.protocol_id
+			  AND i.dispatch_mode=$3 AND i.state='READY'
+			  AND i.next_attempt_at<=clock_timestamp()
+			  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
+			  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
+			  AND (p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED') OR i.continue_after_client_deadline)
+			RETURNING i.command,i.epoch,(i.retry_until IS NOT NULL AND i.retry_until<=clock_timestamp())`, commandID, owner, string(dispatch.DispatchDirect)).Scan(&raw, &result.Epoch, &result.Expired)
+	})
 	if err != nil {
 		return Intent{}, err
 	}
@@ -139,6 +152,9 @@ func (s *Store) claimIntentMode(ctx context.Context, cell, owner string, mode di
 		return Intent{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetWorkerCellScope(ctx, tx, cell); err != nil {
+		return Intent{}, err
+	}
 	var raw []byte
 	var protocolID string
 	var result Intent
@@ -154,7 +170,7 @@ func (s *Store) claimIntentMode(ctx context.Context, cell, owner string, mode di
 		  AND i.next_attempt_at<=clock_timestamp()
 		  AND (i.lease_until IS NULL OR i.lease_until<=clock_timestamp())
 		  AND (p.client_deadline_at>clock_timestamp() OR i.continue_after_client_deadline)
-		  AND p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED')
+		  AND (p.status NOT IN ('SUCCEEDED','PARTIALLY_SUCCEEDED','FAILED','EXPIRED','CANCELLED') OR i.continue_after_client_deadline)
 		  AND (NOT EXISTS (SELECT 1 FROM operation_plans op WHERE op.protocol_id=i.protocol_id)
 		       OR EXISTS (SELECT 1 FROM operation_steps os
 		                  JOIN operation_plans op ON op.protocol_id=os.protocol_id
@@ -222,6 +238,18 @@ func RunDirectRecovery(ctx context.Context, s *Store, d *Dispatcher, f *Finalize
 				log.Error("direct recovery claim unavailable")
 				continue
 			}
+			// R6-EXE-02: retry_until vencido barra nova submissão mesmo com o
+			// SLA do cliente ainda futuro — o mesmo comando não pode ser
+			// reenviado ao provedor sem saber se um efeito já ocorreu. A
+			// reconciliação de um efeito possivelmente já realizado segue pelo
+			// caminho de consulta autorizada (protocol_reconciliation_requests),
+			// nunca por reenvio às cegas.
+			if i.Expired {
+				if _, err = s.CompleteIntent(ctx, i, false); err != nil {
+					log.Error("expired direct intent finalization unavailable")
+				}
+				continue
+			}
 			call, cancel := context.WithTimeout(ctx, 5*time.Second)
 			result, err := d.DispatchDirect(call, i.Command)
 			cancel()
@@ -256,19 +284,25 @@ func RunReservationRecovery(ctx context.Context, s *Store, client *libraclient.C
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			rows, err := s.db.QueryContext(ctx, `SELECT i.command FROM command_intents i JOIN protocols p USING(protocol_id) WHERE i.cell_id=$1 AND i.state='WAITING_RESERVATION' AND p.client_deadline_at>clock_timestamp() AND p.status IN ('ACCEPTED','RUNNING') ORDER BY i.created_at LIMIT 5`, cell)
+			var commands []dispatch.Command
+			err := pg.WithWorkerCellTx(ctx, s.db, cell, func(tx *sql.Tx) error {
+				rows, queryErr := tx.QueryContext(ctx, `SELECT i.command FROM command_intents i JOIN protocols p USING(protocol_id) WHERE i.cell_id=$1 AND i.state='WAITING_RESERVATION' AND p.client_deadline_at>clock_timestamp() AND p.status IN ('ACCEPTED','RUNNING') ORDER BY i.created_at LIMIT 5`, cell)
+				if queryErr != nil {
+					return queryErr
+				}
+				defer rows.Close()
+				for rows.Next() {
+					var raw []byte
+					var cmd dispatch.Command
+					if rows.Scan(&raw) == nil && json.Unmarshal(raw, &cmd) == nil {
+						commands = append(commands, cmd)
+					}
+				}
+				return rows.Err()
+			})
 			if err != nil {
 				continue
 			}
-			var commands []dispatch.Command
-			for rows.Next() {
-				var raw []byte
-				var cmd dispatch.Command
-				if rows.Scan(&raw) == nil && json.Unmarshal(raw, &cmd) == nil {
-					commands = append(commands, cmd)
-				}
-			}
-			rows.Close()
 			for _, cmd := range commands {
 				var snapshot atlas.OfferSnapshot
 				if json.Unmarshal(cmd.ConfigSnapshot, &snapshot) != nil {
@@ -284,7 +318,11 @@ func RunReservationRecovery(ctx context.Context, s *Store, client *libraclient.C
 				if err != nil {
 					continue
 				}
-				if _, err = s.db.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE command_id=$1 AND state='WAITING_RESERVATION'", cmd.CommandID); err != nil {
+				err = pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+					_, execErr := tx.ExecContext(ctx, "UPDATE command_intents SET state='READY' WHERE command_id=$1 AND state='WAITING_RESERVATION'", cmd.CommandID)
+					return execErr
+				})
+				if err != nil {
 					log.Error("reservation confirmation unavailable")
 				}
 			}
@@ -302,43 +340,50 @@ func (s *Store) CompleteIntent(ctx context.Context, i Intent, delivered bool) (b
 	// The retry horizon starts at the first transient transport failure and
 	// remains immutable across attempts and process restarts. Once exhausted,
 	// the intent stops publishing and remains available to reconciliation.
-	res, err := s.db.ExecContext(ctx, `
-		UPDATE command_intents
-		SET state = CASE
-			WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN 'EXPIRED'
-			WHEN $4 = 'DELIVERED' THEN 'DELIVERED'
-			WHEN $6 <= 0 THEN 'EXPIRED'
-			ELSE 'READY'
-		END,
-			retry_started_at = CASE
-				WHEN $4 = 'DELIVERED' THEN retry_started_at
-				WHEN retry_started_at IS NULL THEN clock_timestamp()
-				ELSE retry_started_at
+	var n int64
+	err := pg.WithTenantTx(ctx, s.db, i.Command.TenantID, func(tx *sql.Tx) error {
+		res, execErr := tx.ExecContext(ctx, `
+			UPDATE command_intents
+			SET state = CASE
+				WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN 'EXPIRED'
+				WHEN $4 = 'DELIVERED' THEN 'DELIVERED'
+				WHEN $6 <= 0 THEN 'EXPIRED'
+				ELSE 'READY'
 			END,
-			retry_until = CASE
-			WHEN $4 = 'DELIVERED' THEN retry_until
-				WHEN retry_until IS NULL AND $6 > 0 THEN clock_timestamp() + make_interval(secs=>$6)
-				ELSE retry_until
-			END,
-			last_error=NULLIF($5,''), lease_owner=NULL, lease_until=NULL,
-			next_attempt_at = CASE
-				WHEN $4 = 'DELIVERED' AND (retry_until IS NULL OR retry_until>clock_timestamp()) THEN clock_timestamp()
-				WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN clock_timestamp()
-				WHEN $6 <= 0 THEN clock_timestamp()
-				ELSE clock_timestamp()+make_interval(secs=>LEAST(2,$6))
-			END
-		WHERE command_id=$1 AND lease_owner=$2 AND epoch=$3 AND lease_until>clock_timestamp() AND state='READY'`, i.Command.CommandID, i.Owner, i.Epoch, state, code, i.Command.RetryTTLSeconds)
-	if err != nil {
-		return false, err
-	}
-	n, err := res.RowsAffected()
-	if err == nil && n == 1 && !delivered {
-		_, err = s.db.ExecContext(ctx, `WITH released AS (
-			UPDATE operation_steps SET state='READY',lease_owner=NULL,lease_until=NULL,version=version+1,updated_at=clock_timestamp()
-			WHERE command_id=$1 AND state='RUNNING' RETURNING protocol_id
-		) UPDATE operation_plans p SET running_count=GREATEST(0,p.running_count-1),updated_at=clock_timestamp()
-		FROM released r WHERE p.protocol_id=r.protocol_id`, i.Command.CommandID)
-	}
+				retry_started_at = CASE
+					WHEN $4 = 'DELIVERED' THEN retry_started_at
+					WHEN retry_started_at IS NULL THEN clock_timestamp()
+					ELSE retry_started_at
+				END,
+				retry_until = CASE
+				WHEN $4 = 'DELIVERED' THEN retry_until
+					WHEN retry_until IS NULL AND $6 > 0 THEN clock_timestamp() + make_interval(secs=>$6)
+					ELSE retry_until
+				END,
+				last_error=NULLIF($5,''), lease_owner=NULL, lease_until=NULL,
+				next_attempt_at = CASE
+					WHEN $4 = 'DELIVERED' AND (retry_until IS NULL OR retry_until>clock_timestamp()) THEN clock_timestamp()
+					WHEN retry_until IS NOT NULL AND retry_until <= clock_timestamp() THEN clock_timestamp()
+					WHEN $6 <= 0 THEN clock_timestamp()
+					ELSE clock_timestamp()+make_interval(secs=>LEAST(2,$6))
+				END
+			WHERE command_id=$1 AND lease_owner=$2 AND epoch=$3 AND lease_until>clock_timestamp() AND state='READY'`, i.Command.CommandID, i.Owner, i.Epoch, state, code, i.Command.RetryTTLSeconds)
+		if execErr != nil {
+			return execErr
+		}
+		n, execErr = res.RowsAffected()
+		if execErr != nil {
+			return execErr
+		}
+		if n == 1 && !delivered {
+			_, execErr = tx.ExecContext(ctx, `WITH released AS (
+				UPDATE operation_steps SET state='READY',lease_owner=NULL,lease_until=NULL,version=version+1,updated_at=clock_timestamp()
+				WHERE command_id=$1 AND state='RUNNING' RETURNING protocol_id
+			) UPDATE operation_plans p SET running_count=GREATEST(0,p.running_count-1),updated_at=clock_timestamp()
+			FROM released r WHERE p.protocol_id=r.protocol_id`, i.Command.CommandID)
+		}
+		return execErr
+	})
 	return n == 1, err
 }
 
