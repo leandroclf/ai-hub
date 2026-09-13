@@ -1,0 +1,8 @@
+# Riscos
+
+| Risco observado | Prioridade | Mitigação | Dono |
+|---|---|---|---|
+| TransformJSON agora passa todos os probes anteriores. A perda reaparece depois: operationFact.ResponseBody é any e json.Unmarshal usa float64. Probe reproduziu 9007199254740993→9007199254740992 na desserialização/serialização desse fato. Consolidação de produto também usa any; frontend converte fact_id com Number. Correção do validador não protege essas fronteiras. | P0 | R5-DAD-01 | Dados e Financeiro |
+| Harness agora evita reutilizar alvo e compara digests SQL; permanece s3 sync/list-objects-v2 e uma única consulta ao oráculo antes de PASS. Não comprova versões históricas referenciadas, pins/tombstones, retomada nem reconciliação financeira/externa após replay. Lista de tabelas comparadas não inclui operation_plans/steps. Evidência histórica de cópia não encerra restore do produto atualizado. | P0 | R5-DAD-02 | Dados e Financeiro |
+| Incidências SUBMITTED/STATUS, dedupe e ledger balanceado avançaram. Captura ainda muda estado da reserva sem apurar liberação da diferença para o valor real; SetWatermark aparece chamado em teste, sem produtor integrado de completude. Evento tardio insere finance_quarantine, apesar do comentário prometer disputa. São lacunas de fechamento operacional, não ausência de ledger. | P0 | R5-DAD-03 | Dados e Financeiro |
+| ProcessEnvelope valida e chama Quarantine para envelope inválido; Quarantine persiste apenas payload_hash. O consumidor apaga a mensagem após retorno nil. Portanto o conteúdo inválido pode deixar de ser recuperável depois do ACK. O avanço do worker Cometa, que conserva bytes, não foi aplicado à autoridade financeira. | P0 | R5-DAD-04 | Dados e Financeiro |

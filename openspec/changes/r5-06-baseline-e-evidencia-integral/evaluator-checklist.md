@@ -1,0 +1,12 @@
+# Checklist avaliador
+- [ ] Problema observado resolvido no fluxo real e escopo respeitado.
+- [ ] Cada requisito/cenário vinculado a tarefa, código e evidência atual.
+- [ ] Negativas de autenticação, contrato e escopo demonstradas.
+- [ ] Concorrência, expiração, crash e retomada testados quando aplicáveis.
+- [ ] Custódia antes de ACK, idempotência e precisão preservadas.
+- [ ] Migrações e rollback preservam dados e checksums.
+- [ ] Observabilidade e jornada de usuário demonstradas.
+- [ ] Gates obrigatórios sem skips; histórico separado de execução atual.
+- [ ] Um único Compose conforme AGENTS, sem remoção ampla.
+- [ ] OpenSpec strict válido e relatório coerente com digests.
+- [ ] Decisões externas não aprovadas por inferência.

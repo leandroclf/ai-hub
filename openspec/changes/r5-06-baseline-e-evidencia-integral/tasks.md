@@ -1,0 +1,189 @@
+# Tasks: Baseline e evidência integral
+## 1. Estado inicial
+- [ ] 1.1 Revalidar snapshot, fontes e ambiente.
+  - Objective: preservar correções posteriores e trabalho local.
+  - Likely files/components: AGENTS.md, explore.md, docs/reviews/2026-09-12-r5/.
+  - Depends on: prompt e instruções do repositório.
+  - Validation: git status/diff, inventário e classificação por achado.
+  - Completion criteria: baseline/working tree e limitações identificadas.
+
+## 2. R5-QUA-01
+- [ ] 2.1 Reproduzir e fixar contrato de F-R5-15.
+  - Objective: Baseline reconciliada e resultados com proveniência.
+  - Likely files/components: docs/reviews/2026-09-09-r4/implementation/FINAL_REPORT.md, hub/deploy/r2/tests/generate-openspec-results.py, hub/deploy/r2/tests/generate-openspec-inventory.py.
+  - Depends on: 1.1.
+  - Validation: R5-QUA-01-S01/S02/S03 com oráculo independente.
+  - Completion criteria: comportamento atual demonstrado e solução compatível desenhada.
+- [ ] 2.2 Implementar a fronteira completa.
+  - Objective: A engenharia SHALL inventariar specs reais e reconciliar revisões não incorporadas com rastreio explícito, sem perder requisito nem duplicar identidade. Resultado deve carregar proveniência de cenário/conteúdo/artefato e oráculo, distinguindo PASS, FAIL, NOT_RUN e bloqueio externo. Associação a arquivo não é conformidade; mudança material invalida a prova afetada.
+  - Likely files/components: fontes acima e migrações/contratos/scripts relacionados.
+  - Depends on: 2.1 e ordem do plano de integração.
+  - Validation: integração real, concorrência/erro e recuperação.
+  - Completion criteria: código conectado ao fluxo, não só helper; sem perda das obrigações antigas.
+- [ ] 2.3 Qualificar e fechar por evidência.
+  - Objective: comprovar R5-QUA-01 e vínculos R4-QUA-01, R4-QUA-03, R3-QUA-01.
+  - Likely files/components: hub/evidence/r5 e docs/reviews/2026-09-12-r5/implementation.
+  - Depends on: 2.2.
+  - Validation: cenários, código/digests, logs saneados, upgrade/rollback pertinente.
+  - Completion criteria: evidência atual com resultado, oráculo e zero skip obrigatório afetado.
+
+## 3. Revisão e rollout
+- [ ] 3.1 Revisar compatibilidade e rollback.
+  - Objective: preparar entrega revisável sem implantação remota.
+  - Likely files/components: design, migrações, manifests e relatório final.
+  - Depends on: qualificações acima.
+  - Validation: checklist avaliador e diff final.
+  - Completion criteria: documentação e evidência consistentes; sem aprovação presumida.
+
+## Backlog herdado obrigatório
+
+- [ ] B-R5-01 Concluir a fatia R3-EXE-01 — Adapters executáveis e autenticação completa.
+  - Objective: rest-json-v1 instalado e teste HTTP independente do simulador; preservar registry e homologar provedores/contratos reais e capacidades por etapa.
+  - Likely files/components: hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/atlasclient/client.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-02 Concluir a fatia R3-EXE-02 — Callback com confirmação de custódia.
+  - Objective: Rota pública/HMAC/inbox/worker implementados. F-R5-01 demonstra caminho órfão sem verificação prévia; escopo/rotação/retention continuam exigindo prova.
+  - Likely files/components: hub/internal/cometa/handlers.go, hub/internal/cometa/executor.go, hub/cmd/cometa/main.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-03 Concluir a fatia R3-EXE-03 — Recuperação de efeito incerto e fencing.
+  - Objective: Fencing de submissão e reconciliação por status implementados. UNKNOWN sem correlação não é reenviado; falta reconciliação automática com oráculo por chave quando suportado e fechamento de efeito/financeiro sob crash.
+  - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/executor.go, hub/internal/orbita/intents.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-04 Concluir a fatia R3-EXE-04 — Relógios de retry, polling e prazo final.
+  - Objective: Polling saudável agora usa StepDeadline; TTL de primeira falha persistido. Barreira retry_until pré-despacho e semântica UI ainda pendentes; T-R2-01 não presumidamente resolvido.
+  - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/cometa/polling_custody.go, hub/internal/orbita/finalize.go, docs/reviews/2026-09-07-r2/implementation/ADR_T_R2_01_DEADLINE.md.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-05 Concluir a fatia R3-EXE-05 — Topologia de mensagens e quarentena recuperável.
+  - Objective: Worker Cometa/Pulsar conserva quarentena. Libra ainda só hash; startup dos publishers não confirma todas as assinaturas obrigatórias.
+  - Likely files/components: hub/internal/queue/bootstrap.go, hub/internal/queue/queue.go, hub/internal/libra/consumers.go, hub/internal/libra/store.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-06 Concluir a fatia R3-CAT-01 — Precisão numérica e validação de schemas.
+  - Objective: Probes JSON anteriores PASS no novo SHA. Não reimplementar TransformJSON. Perda numérica no consumidor de fatos segue em R5-DAD-01.
+  - Likely files/components: hub/internal/atlas/offers.go, hub/internal/orbita/handlers.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-07 Concluir a fatia R3-CAT-02 — Política efetiva e representação por cliente.
+  - Objective: Perfil técnico/output mapping/representação e versão solicitada avançaram. Produtos precisam snapshot por etapa e consolidação efetiva, preservar GET/webhook congelados.
+  - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/orbita/finalize.go, hub/internal/atlas/offers.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-08 Concluir a fatia R3-CAT-03 — Agregação e composição com executor de DAG.
+  - Objective: Plano/etapas/compensações persistidos e produto HTTP local executados. Concorrência de slots, recuperação pós-RUNNING, rotas por etapa e compensação fora do prazo do cliente são gaps atuais.
+  - Likely files/components: hub/internal/orbita/handlers.go, hub/internal/atlas/catalog.go, hub/internal/atlas/offers.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-09 Concluir a fatia R3-CAT-04 — Resolução indexada e projeção disponível.
+  - Objective: Oferta seletiva indexada implementada e cache fallback existe. Fallback em 403 reproduzido e remoto antes do cache mantém custo no caminho quente.
+  - Likely files/components: hub/internal/atlas/offers.go, hub/internal/atlasclient/client.go, hub/internal/atlas/catalog.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-10 Concluir a fatia R3-INT-01 — Controle adaptativo conectado a todo I/O.
+  - Objective: Capacidade agora ligada aos transportes e métricas de feedback. Qualificar política obrigatória, settlement recuperável e custo/justiça em escala, sem tratar implementação como ausente.
+  - Likely files/components: hub/internal/cometa/capacity.go, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-11 Concluir a fatia R3-INT-02 — Cache de autenticação isolado e sem tokens no Redis.
+  - Objective: L1 antes do cofre, locks limitados/canceláveis, revogação e mTLS têm código/testes. Probe adaptado PASS. Homologação de rotação multi-réplica/provedor continua gate específico.
+  - Likely files/components: hub/internal/providerauth/client.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-12 Concluir a fatia R3-INT-03 — Pools HTTP e budgets de concorrência.
+  - Objective: Pool de egress por origem implementado. Preservar testes SSRF/mTLS e qualificar budgets end-to-end, memória e concorrência global sob carga real.
+  - Likely files/components: hub/internal/platform/egress, hub/internal/cometa/executor.go, hub/internal/cometa/poller.go, hub/internal/providerauth/client.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-13 Concluir a fatia R3-ADM-01 — Fronteira administrativa e aplicação.
+  - Objective: MFA/papel nominal/escopo e reason auditados em admin; smokes de tenant/application. Adoção RLS e escopo de endpoints auxiliares precisam completar defesa.
+  - Likely files/components: hub/internal/orbita/admin.go, hub/internal/platform/auth/auth.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-14 Concluir a fatia R3-ADM-02 — Ações operacionais com API efetiva.
+  - Objective: OperationsPage corrige delivery ID e APIs de SLA/reconcile existem. Preservar melhorias; evoluir cenários de autorização, conflito, escala e frescor com dados reais.
+  - Likely files/components: hub/admin-ui/src/pages/OperationsPage.tsx, hub/internal/pulsar/handlers.go, hub/internal/orbita/admin.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-15 Concluir a fatia R3-ADM-03 — Comandos financeiros compatíveis.
+  - Objective: FinancePage corrige tenant/DTO/datas/ator e aprovação distinta. Falta intenção persistida sob duplo timeout/reload, IDs grandes e fechamento ligado a produtores.
+  - Likely files/components: hub/admin-ui/src/pages/FinancePage.tsx, hub/internal/libra/handlers.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-16 Concluir a fatia R3-ADM-04 — Formulários completos e tempo local.
+  - Objective: Multimodalidade, auth condicional, fuso, importação/simulação e mensagens de erro avançaram. Lookup falha acima de 1000 e DTO runtime ainda genérico.
+  - Likely files/components: hub/admin-ui/src/pages/CatalogPage.tsx, hub/admin-ui/src.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-17 Concluir a fatia R3-FIN-01 — Reserva estrita e franquia antes do efeito.
+  - Objective: Ledger/dedupe e testes UNKNOWN avançaram. Captura não demonstra diferença reserva versus valor efetivo; franquia pré-efeito e compensação exigem prova integral.
+  - Likely files/components: hub/internal/libra/store.go, hub/internal/orbita/handlers.go, hub/internal/contracts/economics/publication.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-18 Concluir a fatia R3-FIN-02 — Incidência completa e fechamento operacional.
+  - Objective: Incidências SUBMITTED/STATUS por attempt implementadas. SetWatermark apenas chamado em teste; faltam fechamento por completude e disputa tardia operacional.
+  - Likely files/components: hub/internal/cometa/custody.go, hub/internal/cometa/polling_custody.go, hub/internal/libra/store.go, hub/internal/libra/handlers.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-19 Concluir a fatia R3-FIN-03 — Destino de webhook congelado por aplicação.
+  - Objective: Destinos congelados no aceite e representação no fato final implementados; preservar igualdade de bytes e isolamento. Requalificar retry/rotação/consumo legado sem destino.
+  - Likely files/components: hub/internal/pulsar/custody.go, hub/internal/orbita/finalize.go, hub/internal/pulsar/handlers.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-20 Concluir a fatia R3-OPE-01 — Objetos conectados ao fluxo e retenção.
+  - Objective: FileRefs enviados ao adapter, resultado volumoso conservado/vinculado e retenção tem worker. Restore versionado/pins e prova produtiva de acesso a bytes externos continuam.
+  - Likely files/components: hub/internal/objectstore/catalog.go, hub/internal/objectstore/retention.go, hub/internal/cometa/executor.go, hub/internal/orbita/admission.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-21 Concluir a fatia R3-OPE-02 — Kind completo e ambientes reprodutíveis.
+  - Objective: Kind independente com dependências/UI/gateway implementado: não repetir achado de ausência. Laboratório usa recursos efêmeros; ambientes remotos completos/IaC/durabilidade precisam qualificação.
+  - Likely files/components: hub/deploy/r2/kind/render-runtime.py, hub/deploy/r2/k8s/base/workloads.yaml, hub/deploy/r2/k8s/overlays/prd/kustomization.yaml.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-22 Concluir a fatia R3-OPE-03 — Escala e continuidade com envelope.
+  - Objective: HPA/KEDA e perda de pods ensaiados localmente. Não equivalem a escala de nós/dados/placement nem justiça/RPO sob falha de zona.
+  - Likely files/components: hub/deploy/r2/k8s/base/workloads.yaml, hub/internal/platform/httpserver.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-23 Concluir a fatia R3-OPE-04 — Autoridade durável, isolamento e restore.
+  - Objective: RLS helper sem adoção nos stores e prova negativa com rollback permanecem. Restore digests melhora cópia, não comprova retomada populada reconciliada.
+  - Likely files/components: hub/migrations/core, hub/migrations/control, hub/internal/platform/pg, hub/internal/orbita/admission.go.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-24 Concluir a fatia R3-OPE-05 — SLA bilateral e telemetria verificável.
+  - Objective: SLA API e sinais reais/outbox/alertas têm novas provas. Qualificar coortes/budgets bilaterais, métricas de obrigação e SLO sob carga/falha por contrato.
+  - Likely files/components: hub/internal/platform/httpserver/telemetry.go, hub/admin-ui/src/pages/OperationsPage.tsx, hub/deploy/r2.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
+- [ ] B-R5-25 Concluir a fatia R3-QUA-01 — Qualificação integral do SHA sem skips ocultos.
+  - Objective: Inventário remoto 201/732 e 231 linhas associadas/501 não qualificadas registrados honestamente. Ponte da R4 regenerada ausente e proveniência por SHA/digest exigem fechamento.
+  - Likely files/components: hub/internal/atlas/catalog_test.go, hub/internal/cometa/custody_test.go, docs/reviews/2026-09-07-r2/implementation/FINAL_REPORT.md.
+  - Depends on: plano integrado e changes R5 relacionados.
+  - Validation: cenários originais com evidência atual e limites explícitos.
+  - Completion criteria: obrigação integral demonstrada, preservando correções já comprovadas.
