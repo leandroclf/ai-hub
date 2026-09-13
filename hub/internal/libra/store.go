@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"time"
 
+	"ai-hub/hub/internal/platform/pg"
 	"github.com/google/uuid"
 )
 
@@ -49,7 +50,9 @@ func (s *Store) CreditLimit(ctx context.Context, tenant string) (float64, error)
 }
 func (s *Store) CreditLimitExact(ctx context.Context, tenant string) (Decimal, error) {
 	var v string
-	e := s.db.QueryRowContext(ctx, `SELECT limit_amount::text FROM credit_limits WHERE tenant_id=$1`, tenant).Scan(&v)
+	e := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT limit_amount::text FROM credit_limits WHERE tenant_id=$1`, tenant).Scan(&v)
+	})
 	if errors.Is(e, sql.ErrNoRows) {
 		return "", ErrLimitMissing
 	}
@@ -69,6 +72,9 @@ func (s *Store) ReserveExact(ctx context.Context, tenant, protocol, amount, curr
 		return e
 	}
 	defer tx.Rollback()
+	if e = pg.SetTenantScope(ctx, tx, tenant); e != nil {
+		return e
+	}
 	if e = accountLock(ctx, tx, tenant); e != nil {
 		return e
 	}
@@ -116,6 +122,9 @@ func (s *Store) ReconcileReservation(ctx context.Context, tenant, protocol, stat
 		return e
 	}
 	defer tx.Rollback()
+	if e = pg.SetTenantScope(ctx, tx, tenant); e != nil {
+		return e
+	}
 	if e = accountLock(ctx, tx, tenant); e != nil {
 		return e
 	}
@@ -138,6 +147,9 @@ func (s *Store) CaptureEffective(ctx context.Context, tenant, protocol, effectiv
 		return err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, tenant); err != nil {
+		return err
+	}
 	if err = accountLock(ctx, tx, tenant); err != nil {
 		return err
 	}
@@ -252,6 +264,9 @@ func (s *Store) ApplyEvent(ctx context.Context, consumer, eventID string, ev Eco
 		return e
 	}
 	defer tx.Rollback()
+	if e = pg.SetTenantScope(ctx, tx, ev.TenantID); e != nil {
+		return e
+	}
 	if e = accountLock(ctx, tx, ev.TenantID); e != nil {
 		return e
 	}
@@ -450,12 +465,26 @@ func (s *Store) MarkQuarantineReplayed(ctx context.Context, id, actor string) er
 	return err
 }
 
+// RecordQuarantineReplayAttempt registers that an operator attempted a replay
+// that did not resolve the obligation (still quarantined or in conflict). The
+// item stays visible and pending — an attempt is evidence, never a promotion
+// to REPLAYED (R6-FIN-01: "nunca REPLAYED por simples nil").
+func (s *Store) RecordQuarantineReplayAttempt(ctx context.Context, id, actor string) error {
+	if id == "" || actor == "" {
+		return errors.New("libra: authorized quarantine replay required")
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE finance_quarantine SET attempts=attempts+1,last_attempted_at=clock_timestamp(),last_attempted_by=$2 WHERE id=$1 AND disposition='QUARANTINED'`, id, actor)
+	return err
+}
+
 func (s *Store) SetWatermark(ctx context.Context, tenant, producer, evidence string, through time.Time) error {
 	if tenant == "" || evidence == "" || (producer != "orbita" && producer != "cometa") || through.IsZero() {
 		return errors.New("libra: explicit producer completeness evidence required")
 	}
-	_, e := s.db.ExecContext(ctx, `INSERT INTO finance_watermarks(tenant_id,producer,complete_through,evidence_id) VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id,producer) DO UPDATE SET complete_through=GREATEST(finance_watermarks.complete_through,EXCLUDED.complete_through),evidence_id=EXCLUDED.evidence_id`, tenant, producer, through, evidence)
-	return e
+	return pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `INSERT INTO finance_watermarks(tenant_id,producer,complete_through,evidence_id) VALUES($1,$2,$3,$4) ON CONFLICT(tenant_id,producer) DO UPDATE SET complete_through=GREATEST(finance_watermarks.complete_through,EXCLUDED.complete_through),evidence_id=EXCLUDED.evidence_id`, tenant, producer, through, evidence)
+		return execErr
+	})
 }
 
 func invalidError(e error) bool {

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"ai-hub/hub/internal/platform/pg"
 	"github.com/google/uuid"
 )
 
@@ -22,20 +23,23 @@ type Account struct {
 }
 
 func (s *Store) Accounts(ctx context.Context, tenant string) ([]Account, error) {
-	rows, e := s.db.QueryContext(ctx, `SELECT c.tenant_id,c.currency,c.limit_amount::text,COALESCE(SUM(r.amount) FILTER(WHERE r.state='RESERVED'),0)::text,COALESCE(SUM(r.amount) FILTER(WHERE r.state='CAPTURED'),0)::text,COALESCE(SUM(r.amount) FILTER(WHERE r.state='UNCERTAIN_HOLD'),0)::text,(c.limit_amount-COALESCE(SUM(r.amount) FILTER(WHERE r.state IN('RESERVED','CAPTURED','UNCERTAIN_HOLD')),0))::text FROM credit_limits c LEFT JOIN reservations r ON r.tenant_id=c.tenant_id AND r.currency=c.currency WHERE c.tenant_id=$1 GROUP BY c.tenant_id,c.currency,c.limit_amount`, tenant)
-	if e != nil {
-		return nil, e
-	}
-	defer rows.Close()
 	out := []Account{}
-	for rows.Next() {
-		var a Account
-		if e = rows.Scan(&a.TenantID, &a.Currency, &a.Limit, &a.Reserved, &a.Captured, &a.Holds, &a.Available); e != nil {
-			return nil, e
+	err := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		rows, e := tx.QueryContext(ctx, `SELECT c.tenant_id,c.currency,c.limit_amount::text,COALESCE(SUM(r.amount) FILTER(WHERE r.state='RESERVED'),0)::text,COALESCE(SUM(r.amount) FILTER(WHERE r.state='CAPTURED'),0)::text,COALESCE(SUM(r.amount) FILTER(WHERE r.state='UNCERTAIN_HOLD'),0)::text,(c.limit_amount-COALESCE(SUM(r.amount) FILTER(WHERE r.state IN('RESERVED','CAPTURED','UNCERTAIN_HOLD')),0))::text FROM credit_limits c LEFT JOIN reservations r ON r.tenant_id=c.tenant_id AND r.currency=c.currency WHERE c.tenant_id=$1 GROUP BY c.tenant_id,c.currency,c.limit_amount`, tenant)
+		if e != nil {
+			return e
 		}
-		out = append(out, a)
-	}
-	return out, rows.Err()
+		defer rows.Close()
+		for rows.Next() {
+			var a Account
+			if e = rows.Scan(&a.TenantID, &a.Currency, &a.Limit, &a.Reserved, &a.Captured, &a.Holds, &a.Available); e != nil {
+				return e
+			}
+			out = append(out, a)
+		}
+		return rows.Err()
+	})
+	return out, err
 }
 
 type Fact struct {
@@ -63,20 +67,23 @@ func (s *Store) Facts(ctx context.Context, tenant, kind string, after int64, lim
 	if limit < 1 || limit > 200 {
 		limit = 50
 	}
-	rows, e := s.db.QueryContext(ctx, `SELECT id,tenant_id,protocol_id,kind,meter,amount::text,currency,COALESCE(contract_id,''),COALESCE(evidence_id,''),COALESCE(unit_key,''),provenance,occurred_at FROM economic_facts WHERE tenant_id=$1 AND ($2='' OR kind=$2) AND id>$3 ORDER BY id LIMIT $4`, tenant, kind, after, limit)
-	if e != nil {
-		return nil, e
-	}
-	defer rows.Close()
 	out := []Fact{}
-	for rows.Next() {
-		var f Fact
-		if e = rows.Scan(&f.ID, &f.TenantID, &f.ProtocolID, &f.Kind, &f.Meter, &f.Amount, &f.Currency, &f.ContractID, &f.EvidenceID, &f.UnitKey, &f.Provenance, &f.OccurredAt); e != nil {
-			return nil, e
+	err := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		rows, e := tx.QueryContext(ctx, `SELECT id,tenant_id,protocol_id,kind,meter,amount::text,currency,COALESCE(contract_id,''),COALESCE(evidence_id,''),COALESCE(unit_key,''),provenance,occurred_at FROM economic_facts WHERE tenant_id=$1 AND ($2='' OR kind=$2) AND id>$3 ORDER BY id LIMIT $4`, tenant, kind, after, limit)
+		if e != nil {
+			return e
 		}
-		out = append(out, f)
-	}
-	return out, rows.Err()
+		defer rows.Close()
+		for rows.Next() {
+			var f Fact
+			if e = rows.Scan(&f.ID, &f.TenantID, &f.ProtocolID, &f.Kind, &f.Meter, &f.Amount, &f.Currency, &f.ContractID, &f.EvidenceID, &f.UnitKey, &f.Provenance, &f.OccurredAt); e != nil {
+				return e
+			}
+			out = append(out, f)
+		}
+		return rows.Err()
+	})
+	return out, err
 }
 
 type JournalEntry struct {
@@ -99,20 +106,23 @@ func (s *Store) Journal(ctx context.Context, tenant string, after int64, limit i
 	if limit < 1 || limit > 200 {
 		limit = 50
 	}
-	rows, e := s.db.QueryContext(ctx, `SELECT id,batch_id,account,direction,amount::text,currency,COALESCE(origin_protocol_id::text,''),COALESCE(contract_id,''),COALESCE(evidence_id,'') FROM ledger_entries WHERE tenant_id=$1 AND id>$2 ORDER BY id LIMIT $3`, tenant, after, limit)
-	if e != nil {
-		return nil, e
-	}
-	defer rows.Close()
 	out := []JournalEntry{}
-	for rows.Next() {
-		var v JournalEntry
-		if e = rows.Scan(&v.ID, &v.BatchID, &v.Account, &v.Direction, &v.Amount, &v.Currency, &v.ProtocolID, &v.ContractID, &v.EvidenceID); e != nil {
-			return nil, e
+	err := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		rows, e := tx.QueryContext(ctx, `SELECT id,batch_id,account,direction,amount::text,currency,COALESCE(origin_protocol_id::text,''),COALESCE(contract_id,''),COALESCE(evidence_id,'') FROM ledger_entries WHERE tenant_id=$1 AND id>$2 ORDER BY id LIMIT $3`, tenant, after, limit)
+		if e != nil {
+			return e
 		}
-		out = append(out, v)
-	}
-	return out, rows.Err()
+		defer rows.Close()
+		for rows.Next() {
+			var v JournalEntry
+			if e = rows.Scan(&v.ID, &v.BatchID, &v.Account, &v.Direction, &v.Amount, &v.Currency, &v.ProtocolID, &v.ContractID, &v.EvidenceID); e != nil {
+				return e
+			}
+			out = append(out, v)
+		}
+		return rows.Err()
+	})
+	return out, err
 }
 
 type Adjustment struct {
@@ -135,6 +145,9 @@ func (s *Store) PrepareAdjustment(ctx context.Context, id, tenant, origin, reaso
 		return a, e
 	}
 	defer tx.Rollback()
+	if e = pg.SetTenantScope(ctx, tx, tenant); e != nil {
+		return a, e
+	}
 	if e = accountLock(ctx, tx, tenant); e != nil {
 		return a, e
 	}
@@ -168,6 +181,9 @@ func (s *Store) ApproveAdjustment(ctx context.Context, id, tenant, actor string)
 		return e
 	}
 	defer tx.Rollback()
+	if e = pg.SetTenantScope(ctx, tx, tenant); e != nil {
+		return e
+	}
 	if e = accountLock(ctx, tx, tenant); e != nil {
 		return e
 	}
@@ -224,6 +240,9 @@ func (s *Store) ClosePeriod(ctx context.Context, id, tenant, actor string, start
 		return out, e
 	}
 	defer tx.Rollback()
+	if e = pg.SetTenantScope(ctx, tx, tenant); e != nil {
+		return out, e
+	}
 	if e = accountLock(ctx, tx, tenant); e != nil {
 		return out, e
 	}
@@ -294,7 +313,9 @@ func (s *Store) ClosePeriod(ctx context.Context, id, tenant, actor string, start
 }
 func (s *Store) Export(ctx context.Context, tenant, id string) (Export, error) {
 	var v Export
-	e := s.db.QueryRowContext(ctx, `SELECT id,tenant_id,period_start,period_end,layout_version,checksum,export_body FROM settlement_periods WHERE tenant_id=$1 AND id=$2`, tenant, id).Scan(&v.ID, &v.TenantID, &v.Start, &v.End, &v.LayoutVersion, &v.Checksum, &v.Body)
+	e := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT id,tenant_id,period_start,period_end,layout_version,checksum,export_body FROM settlement_periods WHERE tenant_id=$1 AND id=$2`, tenant, id).Scan(&v.ID, &v.TenantID, &v.Start, &v.End, &v.LayoutVersion, &v.Checksum, &v.Body)
+	})
 	if errors.Is(e, sql.ErrNoRows) {
 		e = ErrNotFound
 	}
@@ -319,11 +340,15 @@ func (s *Store) Dispute(ctx context.Context, tenant string, fact int64, amount D
 		return "", errors.New("libra: invalid dispute")
 	}
 	id := uuid.NewString()
-	res, e := s.db.ExecContext(ctx, `INSERT INTO finance_disputes(id,tenant_id,fact_id,amount,reason,evidence_id,created_by) SELECT $1,$2,id,$4,$5,$6,$7 FROM economic_facts WHERE tenant_id=$2 AND id=$3`, id, tenant, fact, string(amount), reason, evidence, actor)
-	if e != nil {
-		return "", e
-	}
-	n, e := res.RowsAffected()
+	var n int64
+	e := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		res, execErr := tx.ExecContext(ctx, `INSERT INTO finance_disputes(id,tenant_id,fact_id,amount,reason,evidence_id,created_by) SELECT $1,$2,id,$4,$5,$6,$7 FROM economic_facts WHERE tenant_id=$2 AND id=$3`, id, tenant, fact, string(amount), reason, evidence, actor)
+		if execErr != nil {
+			return execErr
+		}
+		n, execErr = res.RowsAffected()
+		return execErr
+	})
 	if e != nil {
 		return "", e
 	}

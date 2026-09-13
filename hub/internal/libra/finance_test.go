@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/queue"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -114,7 +115,10 @@ func event(tenant string) EconomicEvent {
 func tenant() string { return "r2-fin-" + uuid.NewString() }
 func limit(t *testing.T, s *Store, tenant, amount string) {
 	t.Helper()
-	if _, e := s.db.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,$2,'BRL')`, tenant, amount); e != nil {
+	if e := pg.WithTenantTx(context.Background(), s.db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`INSERT INTO credit_limits(tenant_id,limit_amount,currency) VALUES($1,$2,'BRL')`, tenant, amount)
+		return execErr
+	}); e != nil {
 		t.Fatal(e)
 	}
 }
@@ -124,13 +128,41 @@ func apply(t *testing.T, s *Store, kind string, e EconomicEvent) {
 		t.Fatal(err)
 	}
 }
-func count(t *testing.T, s *Store, query string, args ...any) int {
+
+// count runs a tenant-scoped assertion query (RLS enforces tenant, the same
+// scope the real request path would use). tenant must be the row owner the
+// query's WHERE clause filters by.
+func count(t *testing.T, s *Store, tenant, query string, args ...any) int {
+	t.Helper()
+	var n int
+	if e := pg.WithTenantTx(context.Background(), s.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow(query, args...).Scan(&n)
+	}); e != nil {
+		t.Fatal(e)
+	}
+	return n
+}
+
+// countGlobal runs an assertion query against a table with no tenant_id/RLS
+// (e.g. finance_quarantine), so no scope is required or possible.
+func countGlobal(t *testing.T, s *Store, query string, args ...any) int {
 	t.Helper()
 	var n int
 	if e := s.db.QueryRow(query, args...).Scan(&n); e != nil {
 		t.Fatal(e)
 	}
 	return n
+}
+
+func sumEconomicFacts(t *testing.T, s *Store, tenant string) string {
+	t.Helper()
+	var sum string
+	if e := pg.WithTenantTx(context.Background(), s.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT sum(amount)::text FROM economic_facts WHERE tenant_id=$1`, tenant).Scan(&sum)
+	}); e != nil {
+		t.Fatal(e)
+	}
+	return sum
 }
 func TestFinancePostgresScenarios(t *testing.T) {
 	s := financeDB(t)
@@ -141,10 +173,10 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		e.Kind = "UNKNOWN"
 		apply(t, s, "cost", e)
 		apply(t, s, "revenue", e)
-		if got := count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID); got != 0 {
+		if got := count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID); got != 0 {
 			t.Fatalf("UNKNOWN generated economic facts: %d", got)
 		}
-		if got := count(t, s, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID); got != 0 {
+		if got := count(t, s, e.TenantID, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID); got != 0 {
 			t.Fatalf("UNKNOWN generated ledger entries: %d", got)
 		}
 	})
@@ -164,7 +196,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		e := event(tenant())
 		e.EconomicSnapshot.SettlementParty = "CLIENT_DIRECT"
 		apply(t, s, "cost", e)
-		if count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 1 || count(t, s, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 0 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 1 || count(t, s, e.TenantID, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 0 {
 			t.Fatal("client direct created Hub debt or lost usage")
 		}
 	})
@@ -187,7 +219,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		apply(t, s, "cost", e)
 		apply(t, s, "cost", e)
 		apply(t, s, "cost", other)
-		if count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 2 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 2 {
 			t.Fatal("semantic collision or duplicate")
 		}
 	})
@@ -200,7 +232,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 			apply(t, s, "cost", e)
 			apply(t, s, "cost", e)
 		}
-		if count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 3 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 3 {
 			t.Fatal("poll evidence dedup mismatch")
 		}
 	})
@@ -212,7 +244,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		e.EconomicKind = "SUBMITTED"
 		raw, _ := json.Marshal(e)
 		env := queue.Envelope{EventID: uuid.NewString(), Type: "operation.observed", SchemaVersion: 1, Producer: "cometa", TenantID: e.TenantID, ProtocolID: e.ProtocolID, Payload: raw}
-		if err := s.ProcessEnvelope(ctx, "cost", env); err != nil {
+		if _, err := s.ProcessEnvelope(ctx, "cost", env); err != nil {
 			t.Fatal(err)
 		}
 		e.AttemptID = uuid.NewString()
@@ -220,7 +252,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		raw, _ = json.Marshal(e)
 		env.EventID = uuid.NewString()
 		env.Payload = raw
-		if err := s.ProcessEnvelope(ctx, "cost", env); err != nil {
+		if _, err := s.ProcessEnvelope(ctx, "cost", env); err != nil {
 			t.Fatal(err)
 		}
 		facts, err := s.Facts(ctx, e.TenantID, "COST", 0, 50)
@@ -232,8 +264,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		e := event(tenant())
 		e.EconomicSnapshot.Buy = []PricingRule{{Meter: "one", Amount: "0.1", Incidence: []string{"SUCCEEDED"}, UnitScope: "OPERATION"}, {Meter: "two", Amount: "0.2", Incidence: []string{"SUCCEEDED"}, UnitScope: "OPERATION"}}
 		apply(t, s, "cost", e)
-		var sum string
-		s.db.QueryRow(`SELECT sum(amount)::text FROM economic_facts WHERE tenant_id=$1`, e.TenantID).Scan(&sum)
+		sum := sumEconomicFacts(t, s, e.TenantID)
 		if sum != "0.30000000" {
 			t.Fatal(sum)
 		}
@@ -319,8 +350,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 			e.ProtocolID = uuid.NewString()
 			apply(t, s, "revenue", e)
 		}
-		var sum string
-		s.db.QueryRow(`SELECT sum(amount)::text FROM economic_facts WHERE tenant_id=$1`, e.TenantID).Scan(&sum)
+		sum := sumEconomicFacts(t, s, e.TenantID)
 		if sum != "3.00000000" {
 			t.Fatal(sum)
 		}
@@ -354,20 +384,26 @@ func TestFinancePostgresScenarios(t *testing.T) {
 			}
 		}
 		f, _ := s.Facts(ctx, e.TenantID, "", 0, 50)
-		if len(f) != 2 || count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND amount=0`, e.TenantID) != 1 {
+		if len(f) != 2 || count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1 AND amount=0`, e.TenantID) != 1 {
 			t.Fatal(f)
 		}
 	})
 	t.Run("R2-FIN-05-S01_balanced_and_immutable", func(t *testing.T) {
 		e := event(tenant())
 		apply(t, s, "revenue", e)
-		if count(t, s, `SELECT count(*) FROM (SELECT batch_id,currency FROM ledger_entries WHERE tenant_id=$1 GROUP BY batch_id,currency HAVING SUM(CASE direction WHEN 'DEBIT' THEN amount ELSE -amount END)<>0) b`, e.TenantID) != 0 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM (SELECT batch_id,currency FROM ledger_entries WHERE tenant_id=$1 GROUP BY batch_id,currency HAVING SUM(CASE direction WHEN 'DEBIT' THEN amount ELSE -amount END)<>0) b`, e.TenantID) != 0 {
 			t.Fatal("unbalanced")
 		}
-		if _, err := s.db.Exec(`UPDATE economic_facts SET amount=9 WHERE tenant_id=$1`, e.TenantID); err == nil {
+		if err := pg.WithTenantTx(ctx, s.db, e.TenantID, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec(`UPDATE economic_facts SET amount=9 WHERE tenant_id=$1`, e.TenantID)
+			return execErr
+		}); err == nil {
 			t.Fatal("facts editable")
 		}
-		if _, err := s.db.Exec(`INSERT INTO ledger_entries(batch_id,account,direction,amount,currency,tenant_id) VALUES($1,'broken','DEBIT',1,'BRL',$2)`, uuid.NewString(), e.TenantID); err == nil {
+		if err := pg.WithTenantTx(ctx, s.db, e.TenantID, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec(`INSERT INTO ledger_entries(batch_id,account,direction,amount,currency,tenant_id) VALUES($1,'broken','DEBIT',1,'BRL',$2)`, uuid.NewString(), e.TenantID)
+			return execErr
+		}); err == nil {
 			t.Fatal("DB accepted unbalanced commit")
 		}
 	})
@@ -381,13 +417,13 @@ func TestFinancePostgresScenarios(t *testing.T) {
 			t.Fatal(er)
 		}
 		apply(t, s, "revenue", e)
-		if count(t, s, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 2 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 2 {
 			t.Fatal("replay generated entries")
 		}
-		if count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 1 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 1 {
 			t.Fatal("semantic redelivery generated a second economic fact")
 		}
-		if count(t, s, `SELECT count(*) FROM finance_inbox WHERE tenant_id=$1`, e.TenantID) != 2 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM finance_inbox WHERE tenant_id=$1`, e.TenantID) != 2 {
 			t.Fatal("redelivery was not durably recorded per event identity")
 		}
 	})
@@ -408,7 +444,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		if err = s.ApproveAdjustment(ctx, a.ID, e.TenantID, "approver"); err != nil {
 			t.Fatal(err)
 		}
-		if count(t, s, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 4 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID) != 4 {
 			t.Fatal("compensation not immutable/idempotent")
 		}
 	})
@@ -452,7 +488,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		if _, err := s.Dispute(ctx, e.TenantID, f[0].ID, "0.2", "late provider", "sla-receipt", "reviewer"); err != nil {
 			t.Fatal(err)
 		}
-		if count(t, s, `SELECT count(*) FROM finance_disputes WHERE tenant_id=$1 AND state='OPEN'`, e.TenantID) != 1 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM finance_disputes WHERE tenant_id=$1 AND state='OPEN'`, e.TenantID) != 1 {
 			t.Fatal("dispute missing")
 		}
 		f, _ = s.Facts(ctx, e.TenantID, "", 0, 50)
@@ -464,10 +500,10 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		e := event(tenant())
 		raw, _ := json.Marshal(e)
 		env := queue.Envelope{EventID: uuid.NewString(), SchemaVersion: 1, TenantID: "wrong", ProtocolID: e.ProtocolID, Producer: "orbita", Payload: raw}
-		if er := s.ProcessEnvelope(ctx, "revenue", env); er != nil {
+		if _, er := s.ProcessEnvelope(ctx, "revenue", env); er != nil {
 			t.Fatal(er)
 		}
-		if count(t, s, `SELECT count(*) FROM finance_quarantine WHERE event_id=$1`, env.EventID) != 1 {
+		if countGlobal(t, s, `SELECT count(*) FROM finance_quarantine WHERE event_id=$1`, env.EventID) != 1 {
 			t.Fatal("missing quarantine")
 		}
 		h := NewHandlers(s, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -479,6 +515,156 @@ func TestFinancePostgresScenarios(t *testing.T) {
 			t.Fatal(w.Code, w.Body.String())
 		}
 	})
+	t.Run("quarantine_replay_still_invalid_never_marks_replayed", func(t *testing.T) {
+		// R6-FIN-01-S01: a payload that never parses stays quarantined even
+		// under an authorized replay attempt — re-quarantining also returns a
+		// nil error, so the disposition must never be inferred from that
+		// alone.
+		env := queue.Envelope{EventID: uuid.NewString(), SchemaVersion: 1, TenantID: tenant(), Producer: "orbita", Payload: json.RawMessage(`"not-an-economic-event"`)}
+		disposition, e := s.ProcessEnvelope(ctx, "revenue", env)
+		if e != nil || disposition != DispositionQuarantined {
+			t.Fatalf("setup quarantine: disposition=%s err=%v", disposition, e)
+		}
+		var id string
+		if e = s.db.QueryRow(`SELECT id FROM finance_quarantine WHERE event_id=$1`, env.EventID).Scan(&id); e != nil {
+			t.Fatal(e)
+		}
+		h := NewHandlers(s, slog.New(slog.NewTextHandler(io.Discard, nil)))
+		principal := auth.Principal{Subject: "operator-a", TenantID: env.TenantID, Roles: []string{"hub_admin"}, Scopes: []string{"finance:write"}, MFA: true, ExpiresAt: time.Now().Add(time.Hour)}
+		replay := func() (int, map[string]string) {
+			req := httptest.NewRequest("POST", "/admin/v1/finance/quarantine/"+id+"/replay?tenant_id="+env.TenantID, nil)
+			req = req.WithContext(auth.WithPrincipal(ctx, principal))
+			w := httptest.NewRecorder()
+			h.handleAdmin(w, req)
+			var body map[string]string
+			json.Unmarshal(w.Body.Bytes(), &body)
+			return w.Code, body
+		}
+		code, body := replay()
+		if code != http.StatusConflict || body["status"] != "quarantined" {
+			t.Fatalf("first replay attempt: code=%d body=%+v", code, body)
+		}
+		var attempts int
+		var stillDisposition string
+		if e = s.db.QueryRow(`SELECT attempts,disposition FROM finance_quarantine WHERE id=$1`, id).Scan(&attempts, &stillDisposition); e != nil {
+			t.Fatal(e)
+		}
+		if attempts != 1 || stillDisposition != "QUARANTINED" {
+			t.Fatalf("replay attempt was not registered without promotion: attempts=%d disposition=%s", attempts, stillDisposition)
+		}
+		code, body = replay()
+		if code != http.StatusConflict || body["status"] != "quarantined" {
+			t.Fatalf("second replay attempt: code=%d body=%+v", code, body)
+		}
+		if e = s.db.QueryRow(`SELECT attempts,disposition FROM finance_quarantine WHERE id=$1`, id).Scan(&attempts, &stillDisposition); e != nil {
+			t.Fatal(e)
+		}
+		if attempts != 2 || stillDisposition != "QUARANTINED" {
+			t.Fatalf("second replay attempt was not registered: attempts=%d disposition=%s", attempts, stillDisposition)
+		}
+	})
+	t.Run("quarantine_replay_after_crash_between_apply_and_confirmation", func(t *testing.T) {
+		// R6-FIN-01-S03: the same command replayed with the same identity
+		// after a crash between a durable ApplyEvent and the replay's own
+		// confirmation must produce a single economic effect, a consistent
+		// state (REPLAYED, never stuck QUARANTINED forever) and an
+		// actor-attributed audit trail.
+		e := event(tenant())
+		factPayload, _ := json.Marshal(e)
+		eventID := uuid.NewString()
+		env := queue.Envelope{EventID: eventID, SchemaVersion: 1, TenantID: e.TenantID, ProtocolID: e.ProtocolID, Producer: "orbita", Payload: factPayload}
+		raw, _ := json.Marshal(env)
+		if err := s.Quarantine(ctx, "revenue", eventID, "SIMULATED_PENDING_REVIEW", raw); err != nil {
+			t.Fatal(err)
+		}
+		var id string
+		if err := s.db.QueryRow(`SELECT id FROM finance_quarantine WHERE event_id=$1`, eventID).Scan(&id); err != nil {
+			t.Fatal(err)
+		}
+		// The crash happens right here: a prior replay attempt already
+		// durably applied the fact but never reached MarkQuarantineReplayed.
+		if err := s.ApplyEvent(ctx, "revenue", eventID, e); err != nil {
+			t.Fatal(err)
+		}
+		factsBefore := count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID)
+		inboxBefore := count(t, s, e.TenantID, `SELECT count(*) FROM finance_inbox WHERE tenant_id=$1`, e.TenantID)
+		ledgerBefore := count(t, s, e.TenantID, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID)
+		if factsBefore == 0 {
+			t.Fatal("setup did not durably apply the fact")
+		}
+
+		h := NewHandlers(s, slog.New(slog.NewTextHandler(io.Discard, nil)))
+		principal := auth.Principal{Subject: "operator-crash-recovery", TenantID: e.TenantID, Roles: []string{"hub_admin"}, Scopes: []string{"finance:write"}, MFA: true, ExpiresAt: time.Now().Add(time.Hour)}
+		req := httptest.NewRequest("POST", "/admin/v1/finance/quarantine/"+id+"/replay?tenant_id="+e.TenantID, nil)
+		req = req.WithContext(auth.WithPrincipal(ctx, principal))
+		w := httptest.NewRecorder()
+		h.handleAdmin(w, req)
+		if w.Code != http.StatusOK {
+			t.Fatalf("replay after crash: code=%d body=%s", w.Code, w.Body.String())
+		}
+		var disposition, replayedBy string
+		if err := s.db.QueryRow(`SELECT disposition,COALESCE(replayed_by,'') FROM finance_quarantine WHERE id=$1`, id).Scan(&disposition, &replayedBy); err != nil {
+			t.Fatal(err)
+		}
+		if disposition != "REPLAYED" || replayedBy != principal.Subject {
+			t.Fatalf("state/audit not consistent after crash recovery: disposition=%s replayed_by=%s", disposition, replayedBy)
+		}
+		if got := count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID); got != factsBefore {
+			t.Fatalf("economic_facts duplicated: before=%d after=%d", factsBefore, got)
+		}
+		if got := count(t, s, e.TenantID, `SELECT count(*) FROM finance_inbox WHERE tenant_id=$1`, e.TenantID); got != inboxBefore {
+			t.Fatalf("finance_inbox duplicated: before=%d after=%d", inboxBefore, got)
+		}
+		if got := count(t, s, e.TenantID, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, e.TenantID); got != ledgerBefore {
+			t.Fatalf("ledger_entries duplicated: before=%d after=%d", ledgerBefore, got)
+		}
+	})
+	t.Run("R6-FIN-02-S02_partial_capture_release_and_duplicate", func(t *testing.T) {
+		// R6-FIN-02-S02: reserve 10, effective consumption 7, arriving twice
+		// (duplicate delivery) — capture 7, release 3, no duplicated ledger
+		// entry or economic fact.
+		ten := tenant()
+		limit(t, s, ten, "100")
+		protocolID := uuid.NewString()
+		if err := s.ReserveExact(ctx, ten, protocolID, "10", "BRL"); err != nil {
+			t.Fatal(err)
+		}
+		e := event(ten)
+		e.ProtocolID = protocolID
+		e.EconomicSnapshot.Sell = []PricingRule{{Meter: "product", Amount: "7", Incidence: []string{"SUCCEEDED"}, UnitScope: "PROTOCOL"}}
+		eventID := uuid.NewString()
+		if err := s.ApplyEvent(ctx, "revenue", eventID, e); err != nil {
+			t.Fatal(err)
+		}
+		// The same fact redelivered (duplicate) must be a no-op.
+		if err := s.ApplyEvent(ctx, "revenue", eventID, e); err != nil {
+			t.Fatal(err)
+		}
+		var reserved, captured, released, state string
+		if err := pg.WithTenantTx(ctx, s.db, ten, func(tx *sql.Tx) error {
+			return tx.QueryRow(`SELECT reserved_amount::text,captured_amount::text,released_amount::text,state FROM reservations WHERE tenant_id=$1 AND protocol_id=$2`, ten, protocolID).Scan(&reserved, &captured, &released, &state)
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if canon, _ := Decimal(reserved).Canonical(); canon != "10.00000000" {
+			t.Fatalf("reserved_amount changed: %s", reserved)
+		}
+		if canon, _ := Decimal(captured).Canonical(); canon != "7.00000000" {
+			t.Fatalf("captured_amount != 7: %s", captured)
+		}
+		if canon, _ := Decimal(released).Canonical(); canon != "3.00000000" {
+			t.Fatalf("released_amount != 3: %s", released)
+		}
+		if state != "CAPTURED" {
+			t.Fatalf("state != CAPTURED: %s", state)
+		}
+		if got := count(t, s, ten, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, ten); got != 1 {
+			t.Fatalf("economic_facts duplicated: %d", got)
+		}
+		if got := count(t, s, ten, `SELECT count(*) FROM ledger_entries WHERE tenant_id=$1`, ten); got != 2 {
+			t.Fatalf("ledger_entries duplicated: %d", got)
+		}
+	})
 	t.Run("failed_commit_rolls_back_inbox_and_journal", func(t *testing.T) {
 		e := event(tenant())
 		e.EconomicSnapshot.Sell = append(e.EconomicSnapshot.Sell, PricingRule{Meter: "bad-step", Amount: "1", Incidence: []string{"SUCCEEDED"}, UnitScope: "STEP"})
@@ -486,7 +672,7 @@ func TestFinancePostgresScenarios(t *testing.T) {
 		if err := s.ApplyEvent(ctx, "revenue", id, e); err == nil || !strings.Contains(err.Error(), "identity") {
 			t.Fatal(err)
 		}
-		if count(t, s, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 0 || count(t, s, `SELECT count(*) FROM finance_inbox WHERE event_id=$1`, id) != 0 {
+		if count(t, s, e.TenantID, `SELECT count(*) FROM economic_facts WHERE tenant_id=$1`, e.TenantID) != 0 || count(t, s, e.TenantID, `SELECT count(*) FROM finance_inbox WHERE event_id=$1`, id) != 0 {
 			t.Fatal("partial financial commit")
 		}
 	})

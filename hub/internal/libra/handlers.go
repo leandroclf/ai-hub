@@ -11,7 +11,10 @@ import (
 	"strings"
 	"time"
 
+	"database/sql"
+
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/queue"
 )
 
@@ -140,7 +143,10 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		auth.Error(w, 403, "forbidden")
 		return
 	}
-	if _, e := h.store.db.ExecContext(r.Context(), `INSERT INTO finance_action_audit(tenant_id,actor,action,resource) VALUES($1,$2,$3,$4)`, tenant, p.Subject, r.Method, path); e != nil {
+	if e := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(r.Context(), `INSERT INTO finance_action_audit(tenant_id,actor,action,resource) VALUES($1,$2,$3,$4)`, tenant, p.Subject, r.Method, path)
+		return execErr
+	}); e != nil {
 		h.fail(w, e)
 		return
 	}
@@ -206,22 +212,23 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		}
 		page(v, last, len(v))
 	case path == "adjustments" && r.Method == "GET":
-		rows, e := h.store.db.QueryContext(r.Context(), `SELECT id,tenant_id,origin_batch_id,reason,prepared_by,COALESCE(approved_by,''),state FROM finance_adjustments WHERE tenant_id=$1 ORDER BY id LIMIT $2`, tenant, limit)
-		if e != nil {
-			h.fail(w, e)
-			return
-		}
-		defer rows.Close()
 		items := []map[string]any{}
-		for rows.Next() {
-			var id, owner, origin, reason, prepared, approved, state string
-			if e = rows.Scan(&id, &owner, &origin, &reason, &prepared, &approved, &state); e != nil {
-				h.fail(w, e)
-				return
+		e := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			rows, queryErr := tx.QueryContext(r.Context(), `SELECT id,tenant_id,origin_batch_id,reason,prepared_by,COALESCE(approved_by,''),state FROM finance_adjustments WHERE tenant_id=$1 ORDER BY id LIMIT $2`, tenant, limit)
+			if queryErr != nil {
+				return queryErr
 			}
-			items = append(items, map[string]any{"id": id, "tenant_id": owner, "origin_batch_id": origin, "reason": reason, "prepared_by": prepared, "approved_by": approved, "state": state})
-		}
-		if e = rows.Err(); e != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, owner, origin, reason, prepared, approved, state string
+				if scanErr := rows.Scan(&id, &owner, &origin, &reason, &prepared, &approved, &state); scanErr != nil {
+					return scanErr
+				}
+				items = append(items, map[string]any{"id": id, "tenant_id": owner, "origin_batch_id": origin, "reason": reason, "prepared_by": prepared, "approved_by": approved, "state": state})
+			}
+			return rows.Err()
+		})
+		if e != nil {
 			h.fail(w, e)
 			return
 		}
@@ -282,23 +289,24 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		}
 		respond(w, 201, v)
 	case path == "periods" && r.Method == "GET":
-		rows, e := h.store.db.QueryContext(r.Context(), `SELECT id,period_start,period_end,checksum FROM settlement_periods WHERE tenant_id=$1 ORDER BY period_start DESC LIMIT $2`, tenant, limit)
-		if e != nil {
-			h.fail(w, e)
-			return
-		}
-		defer rows.Close()
 		items := []map[string]any{}
-		for rows.Next() {
-			var id, hash string
-			var start, end time.Time
-			if e = rows.Scan(&id, &start, &end, &hash); e != nil {
-				h.fail(w, e)
-				return
+		e := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			rows, queryErr := tx.QueryContext(r.Context(), `SELECT id,period_start,period_end,checksum FROM settlement_periods WHERE tenant_id=$1 ORDER BY period_start DESC LIMIT $2`, tenant, limit)
+			if queryErr != nil {
+				return queryErr
 			}
-			items = append(items, map[string]any{"id": id, "period_start": start, "period_end": end, "checksum": hash})
-		}
-		if e = rows.Err(); e != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, hash string
+				var start, end time.Time
+				if scanErr := rows.Scan(&id, &start, &end, &hash); scanErr != nil {
+					return scanErr
+				}
+				items = append(items, map[string]any{"id": id, "period_start": start, "period_end": end, "checksum": hash})
+			}
+			return rows.Err()
+		})
+		if e != nil {
 			h.fail(w, e)
 			return
 		}
@@ -346,23 +354,24 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		}
 		respond(w, 201, map[string]string{"id": id, "status": "OPEN"})
 	case path == "disputes" && r.Method == "GET":
-		rows, e := h.store.db.QueryContext(r.Context(), `SELECT id,fact_id,amount::text,reason,evidence_id,state FROM finance_disputes WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT $2`, tenant, limit)
-		if e != nil {
-			h.fail(w, e)
-			return
-		}
-		defer rows.Close()
 		items := []map[string]any{}
-		for rows.Next() {
-			var id, amount, reason, evidence, state string
-			var fact int64
-			if e = rows.Scan(&id, &fact, &amount, &reason, &evidence, &state); e != nil {
-				h.fail(w, e)
-				return
+		e := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			rows, queryErr := tx.QueryContext(r.Context(), `SELECT id,fact_id,amount::text,reason,evidence_id,state FROM finance_disputes WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT $2`, tenant, limit)
+			if queryErr != nil {
+				return queryErr
 			}
-			items = append(items, map[string]any{"id": id, "fact_id": strconv.FormatInt(fact, 10), "amount": amount, "reason": reason, "evidence_id": evidence, "state": state})
-		}
-		if e = rows.Err(); e != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, amount, reason, evidence, state string
+				var fact int64
+				if scanErr := rows.Scan(&id, &fact, &amount, &reason, &evidence, &state); scanErr != nil {
+					return scanErr
+				}
+				items = append(items, map[string]any{"id": id, "fact_id": strconv.FormatInt(fact, 10), "amount": amount, "reason": reason, "evidence_id": evidence, "state": state})
+			}
+			return rows.Err()
+		})
+		if e != nil {
 			h.fail(w, e)
 			return
 		}
@@ -412,8 +421,23 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 			auth.Error(w, 409, "quarantine_payload_not_replayable")
 			return
 		}
-		if e = h.store.ProcessEnvelope(r.Context(), consumer, env); e != nil {
+		disposition, e := h.store.ProcessEnvelope(r.Context(), consumer, env)
+		if e != nil && !errors.Is(e, ErrConflict) {
+			// Transient failure: the attempt is not even durably known, the
+			// item stays exactly as it was for a future retry.
 			h.fail(w, e)
+			return
+		}
+		if disposition != DispositionApplied {
+			// R6-FIN-01-S01: the payload is still invalid (re-quarantined) or
+			// conflicts with an already-custodied immutable value — the
+			// obligation is registered as attempted but never marked
+			// REPLAYED by a simple nil error from re-quarantining.
+			if e = h.store.RecordQuarantineReplayAttempt(r.Context(), id, p.Subject); e != nil {
+				h.fail(w, e)
+				return
+			}
+			respond(w, 409, map[string]string{"status": strings.ToLower(string(disposition))})
 			return
 		}
 		if e = h.store.MarkQuarantineReplayed(r.Context(), id, p.Subject); e != nil {

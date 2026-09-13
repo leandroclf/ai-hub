@@ -3,6 +3,7 @@ package libra
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log/slog"
 	"time"
 
@@ -10,9 +11,22 @@ import (
 	"ai-hub/hub/internal/queue"
 )
 
+// ReplayDisposition classifica o resultado de processar um envelope
+// econômico (R6-FIN-01): aplicado, ainda em quarentena (o payload continua
+// inválido) ou em conflito com um valor imutável já custodiado. Uma falha
+// transitória (erro de infraestrutura) não produz disposição — o chamador
+// trata o erro e a obrigação permanece recuperável.
+type ReplayDisposition string
+
+const (
+	DispositionApplied     ReplayDisposition = "APPLIED"
+	DispositionQuarantined ReplayDisposition = "QUARANTINED"
+	DispositionConflict    ReplayDisposition = "CONFLICT"
+)
+
 // ProcessEnvelope returns only after financial custody or durable quarantine.
 // Contract changes in Atlas cannot affect historical events: no runtime lookup.
-func (s *Store) ProcessEnvelope(ctx context.Context, consumer string, env queue.Envelope) error {
+func (s *Store) ProcessEnvelope(ctx context.Context, consumer string, env queue.Envelope) (ReplayDisposition, error) {
 	raw, _ := json.Marshal(env)
 	var fact EconomicEvent
 	reason := ""
@@ -30,7 +44,10 @@ func (s *Store) ProcessEnvelope(ctx context.Context, consumer string, env queue.
 		reason = "INVALID_ECONOMIC_INCIDENCE"
 	}
 	if reason != "" {
-		return s.Quarantine(ctx, consumer, env.EventID, reason, raw)
+		if err := s.Quarantine(ctx, consumer, env.EventID, reason, raw); err != nil {
+			return "", err
+		}
+		return DispositionQuarantined, nil
 	}
 	// The operational fact and the economic incidence are intentionally
 	// separate. UNKNOWN is a valid operational state for Orbita, while a
@@ -38,7 +55,13 @@ func (s *Store) ProcessEnvelope(ctx context.Context, consumer string, env queue.
 	if fact.EconomicKind != "" {
 		fact.Kind = fact.EconomicKind
 	}
-	return s.ApplyEvent(ctx, consumer, env.EventID, fact)
+	if err := s.ApplyEvent(ctx, consumer, env.EventID, fact); err != nil {
+		if errors.Is(err, ErrConflict) {
+			return DispositionConflict, err
+		}
+		return "", err
+	}
+	return DispositionApplied, nil
 }
 
 func validEconomicKind(kind string) bool {
@@ -71,7 +94,10 @@ func runConsumer(ctx context.Context, q *queue.Client, queueURL string, store *S
 			continue
 		}
 		for _, m := range msgs {
-			if e = store.ProcessEnvelope(ctx, consumer, m.Envelope); e != nil {
+			// The disposition only matters to an operator-triggered replay
+			// (see handlers.go); a queue delivery only cares whether the
+			// event was durably custodied (quarantine counts) or must retry.
+			if _, e = store.ProcessEnvelope(ctx, consumer, m.Envelope); e != nil {
 				log.Error("finance custody failed; message remains unacknowledged", "consumer", consumer, "event_id", m.Envelope.EventID, "error", e)
 				continue
 			}
