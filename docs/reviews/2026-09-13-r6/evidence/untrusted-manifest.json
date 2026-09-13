@@ -1,0 +1,17 @@
+[
+  {
+    "scenario_id": "R2-QUA-01-S02",
+    "status": "PASS_WITHOUT_EXECUTION",
+    "requirement": "Rastreabilidade do alvo at\u00e9 evid\u00eancia",
+    "expected": [
+      "invented"
+    ],
+    "observed": [
+      "invented"
+    ],
+    "command": "not executed",
+    "environment": "unverified",
+    "source_sha": "0000000000000000000000000000000000000000",
+    "evidence": "hub/deploy/r2/tests/fixtures/qualification-evidence/qualification-evidence-test.log"
+  }
+]

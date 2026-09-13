@@ -1,0 +1,14 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> atlas-admin-ui@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v5.4.21 building for production...
+transforming...
+✓ 43 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.56 kB │ gzip:  0.35 kB
+dist/assets/index-BzlQ1oIg.css    9.30 kB │ gzip:  2.93 kB
+dist/assets/index-XhukfGfm.js   200.99 kB │ gzip: 63.34 kB
+✓ built in 1.00s

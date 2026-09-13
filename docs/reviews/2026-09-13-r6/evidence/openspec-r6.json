@@ -1,0 +1,70 @@
+{
+  "items": [
+    {
+      "id": "r6-01-isolamento-e-custodia",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 63
+    },
+    {
+      "id": "r6-02-execucao-coerente-de-produtos",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 62
+    },
+    {
+      "id": "r6-03-reconciliacao-financeira",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 62
+    },
+    {
+      "id": "r6-04-qualificacao-operacional",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 59
+    },
+    {
+      "id": "r6-05-console-operavel",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 58
+    },
+    {
+      "id": "r6-06-evidencia-consolidada",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 58
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 6,
+        "passed": 6,
+        "failed": 0
+      },
+      "spec": {
+        "items": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/workspace/scratch/30287dd6a4c3/AI_HUB_R6",
+    "source": "nearest"
+  }
+}

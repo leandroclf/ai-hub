@@ -1,0 +1,53 @@
+BEGIN
+ set_config 
+------------
+ r2-rls-a
+(1 row)
+
+INSERT 0 0
+COMMIT
+BEGIN
+ set_config 
+------------
+ r2-rls-b
+(1 row)
+
+INSERT 0 0
+COMMIT
+hub_core (webhook_destinations): PASS
+BEGIN
+ set_config 
+------------
+ r2-rls-a
+(1 row)
+
+INSERT 0 0
+COMMIT
+BEGIN
+ set_config 
+------------
+ r2-rls-b
+(1 row)
+
+INSERT 0 0
+COMMIT
+hub_control (catalog_resources): PASS
+BEGIN
+ set_config 
+------------
+ r2-rls-a
+(1 row)
+
+INSERT 0 0
+COMMIT
+BEGIN
+ set_config 
+------------
+ r2-rls-b
+(1 row)
+
+INSERT 0 0
+COMMIT
+hub_finance (credit_limits): PASS
+RLS runtime proof (control/core/finance, non-owner role, committed reads, cross-tenant write denial, audited-scope): PASS
+exit=0

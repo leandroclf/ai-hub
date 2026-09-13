@@ -1,0 +1,8 @@
+=== RUN   TestR5OperationFactPreservesInteger
+--- PASS: TestR5OperationFactPreservesInteger (0.00s)
+=== RUN   TestR6ProductMustRejectOrFullyResolveDifferentProvider
+    r6_product_route_probe_test.go:17: accepted incoherent step: route=account-B account=account-A binding=binding-B/binding-A commandAccount=account-A
+--- FAIL: TestR6ProductMustRejectOrFullyResolveDifferentProvider (0.00s)
+FAIL
+FAIL	ai-hub/hub/internal/orbita	0.007s
+FAIL

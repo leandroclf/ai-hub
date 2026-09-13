@@ -1,0 +1,18 @@
+{
+  "snapshot": "a540b40007fe6b8ed523e17afe00e96ff8f8ad50",
+  "date": "2026-09-13",
+  "new_changes": 6,
+  "new_requirements": 15,
+  "new_scenarios": 45,
+  "requirements_total": 233,
+  "scenarios_total": 828,
+  "change_tasks": 72,
+  "continuity_checks": 25,
+  "go_pass": 139,
+  "go_skip": 70,
+  "integrated_qualification": "NOT_RUN",
+  "priority": {
+    "P0": 10,
+    "P1": 5
+  }
+}

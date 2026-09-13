@@ -1,0 +1,11 @@
+go build: OK
+go vet: OK
+=== RUN   TestRuntimeDSNFixesTenantSessionSetting
+--- PASS: TestRuntimeDSNFixesTenantSessionSetting (0.00s)
+=== RUN   TestWithTenantTxRejectsMissingScopeBeforeOpeningDatabase
+--- PASS: TestWithTenantTxRejectsMissingScopeBeforeOpeningDatabase (0.00s)
+=== RUN   TestWithTenantTxAndAuditedScopeEnforceRLSAgainstRealPostgres
+--- PASS: TestWithTenantTxAndAuditedScopeEnforceRLSAgainstRealPostgres (0.02s)
+PASS
+ok  	ai-hub/hub/internal/platform/pg	0.018s
+exit=0
