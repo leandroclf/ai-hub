@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,6 +53,12 @@ type Fact struct {
 	OccurredAt time.Time `json:"occurred_at"`
 }
 
+// MarshalJSON exposes sequence identifiers as text so browser clients never
+// coerce a BIGSERIAL beyond Number.MAX_SAFE_INTEGER.
+func (f Fact) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{"id": strconv.FormatInt(f.ID, 10), "tenant_id": f.TenantID, "protocol_id": f.ProtocolID, "kind": f.Kind, "meter": f.Meter, "amount": f.Amount, "currency": f.Currency, "contract_id": f.ContractID, "evidence_id": f.EvidenceID, "unit_key": f.UnitKey, "provenance": f.Provenance, "occurred_at": f.OccurredAt})
+}
+
 func (s *Store) Facts(ctx context.Context, tenant, kind string, after int64, limit int) ([]Fact, error) {
 	if limit < 1 || limit > 200 {
 		limit = 50
@@ -82,6 +89,10 @@ type JournalEntry struct {
 	ProtocolID string  `json:"protocol_id"`
 	ContractID string  `json:"contract_id"`
 	EvidenceID string  `json:"evidence_id"`
+}
+
+func (j JournalEntry) MarshalJSON() ([]byte, error) {
+	return json.Marshal(map[string]any{"id": strconv.FormatInt(j.ID, 10), "batch_id": j.BatchID, "account": j.Account, "direction": j.Direction, "amount": j.Amount, "currency": j.Currency, "protocol_id": j.ProtocolID, "contract_id": j.ContractID, "evidence_id": j.EvidenceID})
 }
 
 func (s *Store) Journal(ctx context.Context, tenant string, after int64, limit int) ([]JournalEntry, error) {

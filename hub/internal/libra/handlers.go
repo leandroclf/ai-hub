@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/queue"
 )
 
 type ReserveRequest struct {
@@ -39,6 +40,21 @@ func decodeBody(w http.ResponseWriter, r *http.Request, out any) bool {
 		return false
 	}
 	return true
+}
+
+func exactInt64(raw json.RawMessage) (int64, error) {
+	value := strings.TrimSpace(string(raw))
+	if len(value) >= 2 && value[0] == '"' && value[len(value)-1] == '"' {
+		var text string
+		if err := json.Unmarshal(raw, &text); err != nil {
+			return 0, err
+		}
+		value = text
+	}
+	if value == "" || strings.ContainsAny(value, ".eE") {
+		return 0, errors.New("integer required")
+	}
+	return strconv.ParseInt(value, 10, 64)
 }
 func respond(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -310,15 +326,20 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 		respond(w, 201, map[string]string{"status": "received"})
 	case path == "disputes" && r.Method == "POST":
 		var q struct {
-			FactID     int64   `json:"fact_id"`
-			Amount     Decimal `json:"amount"`
-			Reason     string  `json:"reason"`
-			EvidenceID string  `json:"evidence_id"`
+			FactID     json.RawMessage `json:"fact_id"`
+			Amount     Decimal         `json:"amount"`
+			Reason     string          `json:"reason"`
+			EvidenceID string          `json:"evidence_id"`
 		}
 		if !decodeBody(w, r, &q) {
 			return
 		}
-		id, e := h.store.Dispute(r.Context(), tenant, q.FactID, q.Amount, q.Reason, q.EvidenceID, p.Subject)
+		factID, e := exactInt64(q.FactID)
+		if e != nil {
+			auth.Error(w, 400, "invalid_fact_id")
+			return
+		}
+		id, e := h.store.Dispute(r.Context(), tenant, factID, q.Amount, q.Reason, q.EvidenceID, p.Subject)
 		if e != nil {
 			h.fail(w, e)
 			return
@@ -339,13 +360,67 @@ func (h *Handlers) handleAdmin(w http.ResponseWriter, r *http.Request) {
 				h.fail(w, e)
 				return
 			}
-			items = append(items, map[string]any{"id": id, "fact_id": fact, "amount": amount, "reason": reason, "evidence_id": evidence, "state": state})
+			items = append(items, map[string]any{"id": id, "fact_id": strconv.FormatInt(fact, 10), "amount": amount, "reason": reason, "evidence_id": evidence, "state": state})
 		}
 		if e = rows.Err(); e != nil {
 			h.fail(w, e)
 			return
 		}
 		respond(w, 200, map[string]any{"items": items})
+	case path == "quarantine" && r.Method == "GET":
+		// finance_quarantine has no tenant_id (some reasons, e.g. INVALID_JSON,
+		// never parse an identity) — listing is a nominal global-scope surface,
+		// audited above, not a per-tenant read.
+		if !p.HasRole("hub_admin") {
+			auth.Error(w, 403, "forbidden")
+			return
+		}
+		rows, e := h.store.db.QueryContext(r.Context(), `SELECT id,consumer,event_id,reason,created_at FROM finance_quarantine WHERE disposition='QUARANTINED' ORDER BY created_at LIMIT $1`, limit)
+		if e != nil {
+			h.fail(w, e)
+			return
+		}
+		defer rows.Close()
+		items := []map[string]any{}
+		for rows.Next() {
+			var id, consumer, eventID, reason string
+			var createdAt time.Time
+			if e = rows.Scan(&id, &consumer, &eventID, &reason, &createdAt); e != nil {
+				h.fail(w, e)
+				return
+			}
+			items = append(items, map[string]any{"id": id, "consumer": consumer, "event_id": eventID, "reason": reason, "created_at": createdAt})
+		}
+		if e = rows.Err(); e != nil {
+			h.fail(w, e)
+			return
+		}
+		respond(w, 200, map[string]any{"items": items})
+	case strings.HasPrefix(path, "quarantine/") && strings.HasSuffix(path, "/replay") && r.Method == "POST":
+		// R5-DAD-04: replay reprocesses the original economic fact through the
+		// same custody path (ApplyEvent/Quarantine); it never re-issues SUBMIT
+		// to the provider. Marking REPLAYED only happens after ProcessEnvelope
+		// durably accepts or re-quarantines the fact.
+		id := strings.TrimSuffix(strings.TrimPrefix(path, "quarantine/"), "/replay")
+		consumer, payload, e := h.store.ReplayQuarantine(r.Context(), id, p.Subject)
+		if e != nil {
+			h.fail(w, e)
+			return
+		}
+		var env queue.Envelope
+		if json.Unmarshal(payload, &env) != nil || env.TenantID != tenant {
+			auth.Error(w, 409, "quarantine_payload_not_replayable")
+			return
+		}
+		if e = h.store.ProcessEnvelope(r.Context(), consumer, env); e != nil {
+			h.fail(w, e)
+			return
+		}
+		if e = h.store.MarkQuarantineReplayed(r.Context(), id, p.Subject); e != nil {
+			h.fail(w, e)
+			return
+		}
+		respond(w, 200, map[string]string{"status": "replayed"})
 	default:
 		auth.Error(w, 404, "not_found")
 	}

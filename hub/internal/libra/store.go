@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 	"time"
 
@@ -98,7 +99,7 @@ func (s *Store) ReserveExact(ctx context.Context, tenant, protocol, amount, curr
 	if !approved {
 		return ErrLimitExceeded
 	}
-	_, e = tx.ExecContext(ctx, `INSERT INTO reservations(protocol_id,tenant_id,amount,currency,state) VALUES($1,$2,$3,$4,'RESERVED')`, protocol, tenant, amount, currency)
+	_, e = tx.ExecContext(ctx, `INSERT INTO reservations(protocol_id,tenant_id,amount,reserved_amount,currency,state) VALUES($1,$2,$3,$3,$4,'RESERVED')`, protocol, tenant, amount, currency)
 	if e != nil {
 		return e
 	}
@@ -122,6 +123,78 @@ func (s *Store) ReconcileReservation(ctx context.Context, tenant, protocol, stat
 		return e
 	}
 	return tx.Commit()
+}
+
+// CaptureEffective closes a reservation with the observed economic value and
+// preserves the remainder as an explicit release. Repeated evidence is
+// idempotent; a different settlement cannot rewrite a confirmed result.
+func (s *Store) CaptureEffective(ctx context.Context, tenant, protocol, effective, evidence string) error {
+	value, err := ParseDecimal(effective)
+	if err != nil || value.Sign() < 0 || evidence == "" {
+		return errors.New("libra: invalid effective settlement")
+	}
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = accountLock(ctx, tx, tenant); err != nil {
+		return err
+	}
+	if err = captureEffectiveTx(ctx, tx, tenant, protocol, value, evidence); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// captureEffectiveTx applies the effective settlement inside a transaction
+// that already holds the tenant account lock (ApplyEvent's own transaction,
+// or CaptureEffective's dedicated one). A protocol with no reservation
+// (e.g. CLIENT_DIRECT flows) has nothing to capture and is a no-op, mirroring
+// reservationState.
+func captureEffectiveTx(ctx context.Context, tx *sql.Tx, tenant, protocol string, value Decimal, evidence string) error {
+	var reserved, captured, currentState, settlementEvidence string
+	err := tx.QueryRowContext(ctx, `SELECT reserved_amount::text,captured_amount::text,state,COALESCE(settlement_evidence,'') FROM reservations WHERE tenant_id=$1 AND protocol_id=$2 FOR UPDATE`, tenant, protocol).Scan(&reserved, &captured, &currentState, &settlementEvidence)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if currentState == "CAPTURED" {
+		if settlementEvidence != evidence || captured != string(value) {
+			return ErrConflict
+		}
+		return nil
+	}
+	if currentState == "RELEASED" || currentState == "EXPIRED" {
+		return ErrConflict
+	}
+	reservedValue, _ := ParseDecimal(reserved)
+	released, err := decimalSubtract(reservedValue, value)
+	if err != nil {
+		return ErrConflict
+	}
+	if _, err = tx.ExecContext(ctx, `UPDATE reservations SET amount=$3,captured_amount=$3,released_amount=$4,state='CAPTURED',settlement_evidence=$5,updated_at=clock_timestamp() WHERE tenant_id=$1 AND protocol_id=$2`, tenant, protocol, string(value), string(released), evidence); err != nil {
+		return err
+	}
+	_, err = tx.ExecContext(ctx, `INSERT INTO reservation_settlements(id,tenant_id,protocol_id,reserved_amount,captured_amount,released_amount,evidence_id) VALUES($1,$2,$3,$4,$5,$6,$7) ON CONFLICT(protocol_id,evidence_id) DO NOTHING`, economicKey(tenant, protocol, evidence), tenant, protocol, string(reservedValue), string(value), string(released), evidence)
+	return err
+}
+
+func decimalSubtract(left, right Decimal) (Decimal, error) {
+	l, err := left.Rat()
+	if err != nil {
+		return "", err
+	}
+	r, err := right.Rat()
+	if err != nil {
+		return "", err
+	}
+	if l.Cmp(r) < 0 {
+		return "", ErrConflict
+	}
+	return Decimal(new(big.Rat).Sub(l, r).FloatString(8)), nil
 }
 func reservationState(ctx context.Context, tx *sql.Tx, tenant, protocol, state, evidence string) error {
 	var old string
@@ -280,14 +353,30 @@ func (s *Store) ApplyEvent(ctx context.Context, consumer, eventID string, ev Eco
 		}
 	}
 	if consumer == "revenue" {
-		state := "UNCERTAIN_HOLD"
-		if ev.Status == "SUCCEEDED" || ev.Status == "PARTIALLY_SUCCEEDED" {
-			state = "CAPTURED"
-		} else if ev.SafeToRelease && ev.ExternalState != "UNKNOWN" {
-			state = "RELEASED"
-		}
-		if e = reservationState(ctx, tx, ev.TenantID, ev.ProtocolID, state, ev.EvidenceID); e != nil {
-			return e
+		switch {
+		case ev.Status == "SUCCEEDED" || ev.Status == "PARTIALLY_SUCCEEDED":
+			// R5-DAD-03: the reservation captures the effective contracted
+			// value, not the originally held amount — the remainder returns
+			// to the tenant as an explicit release instead of being kept.
+			var effective string
+			if e = tx.QueryRowContext(ctx, `SELECT COALESCE(SUM(amount::numeric),0)::text FROM economic_facts WHERE tenant_id=$1 AND protocol_id=$2 AND kind='REVENUE'`, ev.TenantID, ev.ProtocolID).Scan(&effective); e != nil {
+				return e
+			}
+			value, perr := ParseDecimal(effective)
+			if perr != nil {
+				return perr
+			}
+			if e = captureEffectiveTx(ctx, tx, ev.TenantID, ev.ProtocolID, value, ev.EvidenceID); e != nil {
+				return e
+			}
+		case ev.SafeToRelease && ev.ExternalState != "UNKNOWN":
+			if e = reservationState(ctx, tx, ev.TenantID, ev.ProtocolID, "RELEASED", ev.EvidenceID); e != nil {
+				return e
+			}
+		default:
+			if e = reservationState(ctx, tx, ev.TenantID, ev.ProtocolID, "UNCERTAIN_HOLD", ev.EvidenceID); e != nil {
+				return e
+			}
 		}
 	}
 	// Any fact arriving into an already exported period opens a visible dispute;
@@ -297,7 +386,7 @@ func (s *Store) ApplyEvent(ctx context.Context, consumer, eventID string, ev Eco
 		return e
 	}
 	if closed {
-		_, e = tx.ExecContext(ctx, `INSERT INTO finance_quarantine(id,consumer,event_id,reason,payload_hash) VALUES($1,$2,$3,'LATE_FACT_CLOSED_PERIOD',$4) ON CONFLICT DO NOTHING`, economicKey(consumer, eventID, "late"), consumer, eventID, hash)
+		_, e = tx.ExecContext(ctx, `INSERT INTO finance_quarantine(id,consumer,event_id,reason,payload_hash,payload) VALUES($1,$2,$3,'LATE_FACT_CLOSED_PERIOD',$4,$5) ON CONFLICT DO NOTHING`, economicKey(consumer, eventID, "late"), consumer, eventID, hash, body)
 		if e != nil {
 			return e
 		}
@@ -329,9 +418,36 @@ func book(ctx context.Context, tx *sql.Tx, key, tenant, protocol, kind string, a
 	return e
 }
 func (s *Store) Quarantine(ctx context.Context, consumer, eventID, reason string, payload []byte) error {
+	if consumer == "" || eventID == "" || reason == "" || len(payload) == 0 {
+		return errors.New("libra: quarantine custody requires original payload")
+	}
 	hash := digest(payload)
-	_, e := s.db.ExecContext(ctx, `INSERT INTO finance_quarantine(id,consumer,event_id,reason,payload_hash) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`, economicKey(consumer, eventID, hash), consumer, eventID, reason, hash)
+	_, e := s.db.ExecContext(ctx, `INSERT INTO finance_quarantine(id,consumer,event_id,reason,payload_hash,payload) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING`, economicKey(consumer, eventID, hash), consumer, eventID, reason, hash, payload)
 	return e
+}
+
+// ReplayQuarantine returns the original bytes only to an explicitly
+// authorized operator. Marking is separate from processing so a failed replay
+// remains visible and can be retried without acknowledging the source event.
+func (s *Store) ReplayQuarantine(ctx context.Context, id, actor string) (consumer string, payload []byte, err error) {
+	if id == "" || actor == "" {
+		return "", nil, errors.New("libra: authorized quarantine replay required")
+	}
+	if err = s.db.QueryRowContext(ctx, `SELECT consumer,payload FROM finance_quarantine WHERE id=$1 AND disposition='QUARANTINED'`, id).Scan(&consumer, &payload); err != nil {
+		return "", nil, err
+	}
+	if len(payload) == 0 {
+		return "", nil, errors.New("libra: quarantined payload unavailable")
+	}
+	return consumer, append([]byte(nil), payload...), nil
+}
+
+func (s *Store) MarkQuarantineReplayed(ctx context.Context, id, actor string) error {
+	if id == "" || actor == "" {
+		return errors.New("libra: authorized quarantine replay required")
+	}
+	_, err := s.db.ExecContext(ctx, `UPDATE finance_quarantine SET disposition='REPLAYED',replayed_at=clock_timestamp(),replayed_by=$2 WHERE id=$1 AND disposition='QUARANTINED'`, id, actor)
+	return err
 }
 
 func (s *Store) SetWatermark(ctx context.Context, tenant, producer, evidence string, through time.Time) error {
