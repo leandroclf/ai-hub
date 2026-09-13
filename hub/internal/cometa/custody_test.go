@@ -23,6 +23,7 @@ import (
 	"ai-hub/hub/internal/callbackauth"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/providersim"
 	_ "github.com/lib/pq"
@@ -138,7 +139,10 @@ func TestPostgresSubmissionLeaseFencesStaleOwner(t *testing.T) {
 	if err != nil || !owned {
 		t.Fatalf("prepare: claim=%+v owned=%t err=%v", claim, owned, err)
 	}
-	if _, err = db.Exec("UPDATE operations SET submit_lease_until=clock_timestamp()-interval '1 second' WHERE operation_id=$1", id); err != nil {
+	if err = pg.WithTenantTx(ctx, db, cmd.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, "UPDATE operations SET submit_lease_until=clock_timestamp()-interval '1 second' WHERE operation_id=$1", id)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err = store.ValidateSubmission(ctx, claim); !errors.Is(err, ErrSubmissionFence) {
@@ -243,6 +247,210 @@ func TestPostgresOrphanAccountCallbackRequiresSignatureAndDeduplicates(t *testin
 
 	if err = store.StoreOrphanAccountCallback(context.Background(), operationID, accountID, at, "v1=invalid", body); !errors.Is(err, ErrCallbackCapabilityInvalid) {
 		t.Fatalf("forged signature was not rejected: %v", err)
+	}
+}
+
+// TestPostgresCallbackSurvivesKeyRotationDuringReconciliation prova R6-SEG-02
+// (S01): um callback aceito e custodiado com uma chave de ingresso continua
+// reconciliavel depois que essa chave e retirada da lista "corrente" e uma
+// chave nova assume — a reconciliacao usa o key_id persistido no momento do
+// ingresso, nunca "a chave atual" (ver ReconcileCallbackInboxBatch).
+func TestPostgresCallbackSurvivesKeyRotationDuringReconciliation(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Registered first so it runs LAST (t.Cleanup is LIFO): the DELETE
+	// cleanups below must run while the connection is still open. A plain
+	// `defer db.Close()` here would close it before t.Cleanup callbacks run,
+	// silently discarding every cleanup delete.
+	t.Cleanup(func() { db.Close() })
+	store := NewStore(db)
+	ctx := context.Background()
+
+	accountID := "rotation-account-" + idgen.New()
+	cmd := dispatch.Command{CommandID: idgen.New(), ProtocolID: idgen.New(), TenantID: "rotation-tenant", ApplicationID: "app", CellID: "cell-rotation", ProviderAccountID: accountID, StepDeadline: time.Now().Add(time.Minute)}
+	claim, owned, err := store.PrepareSubmission(ctx, cmd, "binding", "v1")
+	if err != nil || !owned {
+		t.Fatalf("prepare rotation claim: owned=%t err=%v", owned, err)
+	}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM attempts WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM operations WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM provider_receipts WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", claim.Command.CommandID)
+	})
+
+	// Ingress: only the OLD key is active.
+	t.Setenv("CALLBACK_INGRESS_KEYS", `[{"id":"old","secret":"rotation-old-secret"}]`)
+	t.Setenv("CALLBACK_INGRESS_CURRENT_KEY_ID", "old")
+	body := []byte(`{"provider_request_id":"rotation-correlation","status":"SUCCEEDED"}`)
+	at := time.Now()
+	signature := callbackauth.Sign("rotation-old-secret", accountID, claim.Command.CommandID, at, body)
+	if signature == "" {
+		t.Fatal("fixture signature generation failed")
+	}
+	if err = store.StoreOrphanAccountCallback(ctx, claim.Command.CommandID, accountID, at, signature, body); err != nil {
+		t.Fatalf("callback legítimo recusado antes da rotação: %v", err)
+	}
+	var storedKeyID string
+	if err = db.QueryRow("SELECT callback_key_id FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID).Scan(&storedKeyID); err != nil {
+		t.Fatal(err)
+	}
+	if storedKeyID != "old" {
+		t.Fatalf("key_id não persistido no ingresso: got %q", storedKeyID)
+	}
+
+	// Rotation: a NEW key becomes current; the old key remains in the ring
+	// only long enough to reconcile obligations already in flight — this
+	// models the overlap window, not permanent coexistence.
+	t.Setenv("CALLBACK_INGRESS_KEYS", `[{"id":"old","secret":"rotation-old-secret"},{"id":"new","secret":"rotation-new-secret"}]`)
+	t.Setenv("CALLBACK_INGRESS_CURRENT_KEY_ID", "new")
+
+	// O lote pode conter obrigações residuais de outros testes que
+	// compartilham o mesmo banco real; a prova de rotação é o disposition da
+	// própria linha, não a contagem agregada do lote.
+	applied := 0
+	for i := 0; i < 10; i++ {
+		count, err := store.ReconcileCallbackInboxBatch(ctx, "rotation-owner", 5, func(context.Context, string, dispatch.Result) error {
+			applied++
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("reconciliation batch failed: %v", err)
+		}
+		if count == 0 {
+			break
+		}
+	}
+	var disposition string
+	if err = db.QueryRow("SELECT disposition FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID).Scan(&disposition); err != nil {
+		t.Fatal(err)
+	}
+	if disposition != "APPLIED" {
+		t.Fatalf("obrigação não recebeu disposição aplicada após rotação: %s", disposition)
+	}
+}
+
+// TestPostgresCallbackApplyFailureExhaustsIntoRecoverableQuarantine prova
+// R6-SEG-02 (S02): tres falhas transitorias no apply de um callback ja
+// autenticado colocam a obrigacao em QUARANTINED (nunca REJECTED, nunca
+// elegivel a prune automatico) e um replay autorizado explicito a devolve a
+// processamento — o resultado chega sem que o provedor reenvie nada.
+func TestPostgresCallbackApplyFailureExhaustsIntoRecoverableQuarantine(t *testing.T) {
+	dsn := os.Getenv("R2_CORE_TEST_DSN")
+	if dsn == "" {
+		t.Skip("requires isolated migrated PostgreSQL")
+	}
+	db, err := sql.Open("postgres", dsn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Registered first so it runs LAST (t.Cleanup is LIFO) — see the
+	// analogous comment in TestPostgresCallbackSurvivesKeyRotationDuringReconciliation.
+	t.Cleanup(func() { db.Close() })
+	store := NewStore(db)
+	ctx := context.Background()
+
+	accountID := "quarantine-account-" + idgen.New()
+	cmd := dispatch.Command{CommandID: idgen.New(), ProtocolID: idgen.New(), TenantID: "quarantine-tenant", ApplicationID: "app", CellID: "cell-quarantine", ProviderAccountID: accountID, StepDeadline: time.Now().Add(time.Minute)}
+	claim, owned, err := store.PrepareSubmission(ctx, cmd, "binding", "v1")
+	if err != nil || !owned {
+		t.Fatalf("prepare quarantine claim: owned=%t err=%v", owned, err)
+	}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM attempts WHERE operation_id=$1", claim.Command.CommandID)
+		db.Exec("DELETE FROM operations WHERE operation_id=$1", claim.Command.CommandID)
+	})
+
+	t.Setenv("CALLBACK_INGRESS_KEY", "quarantine-secret")
+	body := []byte(`{"provider_request_id":"quarantine-correlation","status":"SUCCEEDED"}`)
+	at := time.Now()
+	signature := callbackauth.Sign("quarantine-secret", accountID, claim.Command.CommandID, at, body)
+	if signature == "" {
+		t.Fatal("fixture signature generation failed")
+	}
+	if err = store.StoreOrphanAccountCallback(ctx, claim.Command.CommandID, accountID, at, signature, body); err != nil {
+		t.Fatalf("callback legítimo recusado: %v", err)
+	}
+
+	// O lote pode conter obrigações residuais de outros testes que
+	// compartilham o mesmo banco real (received_at mais antigo, reclamadas
+	// primeiro): repete até a PRÓPRIA linha acumular 3 tentativas, em vez de
+	// assumir que cada chamada ao lote necessariamente reclama esta linha.
+	transientErr := errors.New("simulated transient dependency outage")
+	var disposition string
+	var inboxID string
+	var attemptsSoFar int
+	for i := 0; i < 500; i++ {
+		if _, err = store.ReconcileCallbackInboxBatch(ctx, "quarantine-owner", 200, func(context.Context, string, dispatch.Result) error {
+			return transientErr
+		}); err != nil {
+			t.Fatalf("reconciliation attempt %d failed: %v", i+1, err)
+		}
+		if err = db.QueryRow("SELECT inbox_id,disposition,processing_attempts FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID).Scan(&inboxID, &disposition, &attemptsSoFar); err != nil {
+			t.Fatal(err)
+		}
+		if disposition != "RECEIVED" {
+			break
+		}
+	}
+	if disposition != "QUARANTINED" {
+		t.Fatalf("esgotamento de retry não preservou a obrigação em quarentena: disposition=%s attempts=%d", disposition, attemptsSoFar)
+	}
+
+	// Retention must never sweep a QUARANTINED obligation away.
+	if _, err = store.PruneCallbackInbox(ctx, 24*time.Hour, 100); err != nil {
+		t.Fatal(err)
+	}
+	if err = db.QueryRow("SELECT disposition FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID).Scan(&disposition); err != nil {
+		t.Fatalf("retenção descartou obrigação em quarentena: %v", err)
+	}
+	if disposition != "QUARANTINED" {
+		t.Fatalf("retenção alterou disposição indevidamente: %s", disposition)
+	}
+
+	// An unauthorized/incorrect replay target must fail closed.
+	if err = store.ReplayCallbackInbox(ctx, "00000000-0000-0000-0000-000000000000", "operator-x:test"); !errors.Is(err, ErrCallbackNotQuarantined) {
+		t.Fatalf("replay de id inexistente não foi recusado: %v", err)
+	}
+
+	// Authorized replay: the SAME stored body/signature reprocesses — the
+	// provider is never asked to resend anything.
+	if err = store.ReplayCallbackInbox(ctx, inboxID, "operator-x:dependency restored"); err != nil {
+		t.Fatalf("replay autorizado falhou: %v", err)
+	}
+	var attempts int
+	if err = db.QueryRow("SELECT disposition,processing_attempts FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID).Scan(&disposition, &attempts); err != nil {
+		t.Fatal(err)
+	}
+	if disposition != "RECEIVED" || attempts != 0 {
+		t.Fatalf("replay não restaurou o orçamento de retentativa: disposition=%s attempts=%d", disposition, attempts)
+	}
+
+	for i := 0; i < 10; i++ {
+		count, err := store.ReconcileCallbackInboxBatch(ctx, "quarantine-owner-2", 5, func(context.Context, string, dispatch.Result) error {
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("reconciliation after replay failed: %v", err)
+		}
+		if count == 0 {
+			break
+		}
+	}
+	if err = db.QueryRow("SELECT disposition FROM callback_inbox WHERE operation_id=$1", claim.Command.CommandID).Scan(&disposition); err != nil {
+		t.Fatal(err)
+	}
+	if disposition != "APPLIED" {
+		t.Fatalf("obrigação reprocessada não chegou a disposição terminal aplicada: %s", disposition)
 	}
 }
 
@@ -365,7 +573,7 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 	}))
 	defer catalog.Close()
 	account, _ := json.Marshal(map[string]any{"base_url": providerHTTP.URL, "provider_mode": "sync", "auth_type": "NONE"})
-	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object","properties":{}}}`)}, SelectedRoute: atlas.Route{CapacityDomain: capacityPolicy.Domain}}
+	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1","provider_account_id":"account"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object","properties":{}}}`)}, SelectedRoute: atlas.Route{ProviderAccountID: "account", CapacityDomain: capacityPolicy.Domain}}
 	cmd.ConfigSnapshot, _ = json.Marshal(snapshot)
 	tokenFile := t.TempDir() + "/secret"
 	if err := os.WriteFile(tokenFile, []byte("fixture"), 0600); err != nil {
@@ -404,7 +612,9 @@ func TestPostgresExecutorDropAfterEffectIsUnknownAndNotReexecuted(t *testing.T) 
 		t.Fatalf("capacity did not retain uncertain effect: %+v %v", state, err)
 	}
 	var permits int
-	if err = db.QueryRow("SELECT count(*) FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain).Scan(&permits); err != nil || permits != 1 {
+	if err = pg.WithAuditedScopeTx(context.Background(), db, "test-fixture:count-permits", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(context.Background(), "SELECT count(*) FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain).Scan(&permits)
+	}); err != nil || permits != 1 {
 		t.Fatalf("capacity permit count=%d error=%v", permits, err)
 	}
 }
@@ -424,11 +634,26 @@ func TestPostgresValidResponseCommitFailureLeavesRecoverableObligation(t *testin
 	db.SetMaxOpenConns(8)
 	ctx := context.Background()
 	store := NewStore(db)
+	// This fixture needs a synthetic trigger to inject a terminal commit
+	// failure — genuine DDL rights that a non-superuser runtime role
+	// (hub_runtime, R6-SEG-01) correctly does not have. R2_CORE_ADMIN_DSN lets
+	// the qualification harness supply a migrator-privileged connection for
+	// just the DDL setup/teardown; it defaults to R2_CORE_TEST_DSN so this
+	// test is unaffected when run with an owner/superuser DSN, as before.
+	adminDSN := os.Getenv("R2_CORE_ADMIN_DSN")
+	if adminDSN == "" {
+		adminDSN = dsn
+	}
+	adminDB, err := sql.Open("postgres", adminDSN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = adminDB.Close() })
 	operationID := idgen.New()
 	triggerName := "qualification_fail_commit_" + strings.ReplaceAll(operationID, "-", "")
 	functionName := triggerName + "_fn"
 	targetsTable := triggerName + "_targets"
-	_, err = db.Exec(fmt.Sprintf(`CREATE TABLE %s (operation_id uuid PRIMARY KEY);
+	_, err = adminDB.Exec(fmt.Sprintf(`CREATE TABLE %s (operation_id uuid PRIMARY KEY);
 CREATE FUNCTION %s() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.state = 'SUCCEEDED' AND EXISTS (SELECT 1 FROM %s WHERE operation_id = NEW.operation_id) THEN
@@ -442,13 +667,13 @@ DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION %s();`, targetsTable
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec("INSERT INTO "+targetsTable+" (operation_id) VALUES ($1)", operationID); err != nil {
+	if _, err = adminDB.Exec("INSERT INTO "+targetsTable+" (operation_id) VALUES ($1)", operationID); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_, _ = db.Exec("DROP TRIGGER IF EXISTS " + triggerName + " ON operations")
-		_, _ = db.Exec("DROP FUNCTION IF EXISTS " + functionName + "()")
-		_, _ = db.Exec("DROP TABLE IF EXISTS " + targetsTable)
+		_, _ = adminDB.Exec("DROP TRIGGER IF EXISTS " + triggerName + " ON operations")
+		_, _ = adminDB.Exec("DROP FUNCTION IF EXISTS " + functionName + "()")
+		_, _ = adminDB.Exec("DROP TABLE IF EXISTS " + targetsTable)
 		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", operationID)
 		_, _ = db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", operationID)
 		_, _ = db.Exec("DELETE FROM provider_receipts WHERE operation_id=$1", operationID)
@@ -476,11 +701,22 @@ DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION %s();`, targetsTable
 	}))
 	defer catalog.Close()
 
+	capacity := NewCapacityController(db)
+	capacityPolicy := CapacityPolicy{Domain: "commit-recovery-capacity-" + operationID, Version: "fixture-v1", EvidenceRef: "commit-recovery-capacity", ValidUntil: time.Now().Add(time.Hour), MaxConcurrent: 8, MinConcurrent: 5, ReconciliationReserve: 1, MaxPending: 8, RatePerWindow: 200, WindowMillis: 1000, LeaseMillis: 5000, StableMillis: 100, LatencyThresholdMillis: 100, TenantLimits: map[string]int{tenant: 2}, TenantPendingLimits: map[string]int{tenant: 4}, TenantRateLimits: map[string]int{tenant: 90}}
+	if err = capacity.InstallPolicy(context.Background(), capacityPolicy); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityPolicy.Domain)
+	})
 	account, _ := json.Marshal(map[string]any{"base_url": providerHTTP.URL, "provider_mode": "sync", "auth_type": "NONE"})
 	snapshot := atlas.OfferSnapshot{
-		Account: atlas.Resource{ID: "account", Data: account},
-		Binding: atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)},
-		Target:  atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)},
+		Account:       atlas.Resource{ID: "account", Data: account},
+		Binding:       atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1","provider_account_id":"account"}`)},
+		Target:        atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)},
+		SelectedRoute: atlas.Route{ProviderAccountID: "account", CapacityDomain: capacityPolicy.Domain},
 	}
 	config, _ := json.Marshal(snapshot)
 	cmd := dispatch.Command{
@@ -497,28 +733,32 @@ DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION %s();`, targetsTable
 	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", secretPath)
 
 	executor := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: dropFixtureVault{}})
+	executor.SetCapacityController(capacity)
 	first := executor.Execute(ctx, cmd)
 	if first.Kind != dispatch.FactUnknown || !first.Durable || first.ProviderRequestID == "" || first.EvidenceID == "" {
 		t.Fatalf("falha de commit não virou obrigação UNKNOWN durável: %+v", first)
 	}
 	var state, providerRequestID, source string
 	var storedResult []byte
-	if err = db.QueryRow("SELECT state,COALESCE(provider_request_id,''),COALESCE(result,'null') FROM operations WHERE operation_id=$1", operationID).Scan(&state, &providerRequestID, &storedResult); err != nil {
+	var receipts int
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		if err := tx.QueryRow("SELECT state,COALESCE(provider_request_id,''),COALESCE(result,'null') FROM operations WHERE operation_id=$1", operationID).Scan(&state, &providerRequestID, &storedResult); err != nil {
+			return err
+		}
+		if err := tx.QueryRow("SELECT source FROM operation_receipts WHERE evidence_id=$1", first.EvidenceID).Scan(&source); err != nil {
+			return err
+		}
+		return tx.QueryRow("SELECT count(*) FROM provider_receipts WHERE operation_id=$1", operationID).Scan(&receipts)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != string(StateUnknown) || providerRequestID != first.ProviderRequestID {
 		t.Fatalf("obrigação não reteve correlação externa: state=%s provider_request_id=%s result=%s", state, providerRequestID, storedResult)
 	}
-	if err = db.QueryRow("SELECT source FROM operation_receipts WHERE evidence_id=$1", first.EvidenceID).Scan(&source); err != nil {
-		t.Fatal(err)
-	}
 	if source != "PROVIDER_RECOVERY" {
 		t.Fatalf("origem da obrigação inesperada: %s", source)
 	}
-	var receipts, outbox int
-	if err = db.QueryRow("SELECT count(*) FROM provider_receipts WHERE operation_id=$1", operationID).Scan(&receipts); err != nil {
-		t.Fatal(err)
-	}
+	var outbox int
 	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1", operationID).Scan(&outbox); err != nil {
 		t.Fatal(err)
 	}
@@ -596,11 +836,17 @@ func TestPostgresInvalidProviderResponseDoesNotBecomeSuccess(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(atlasclient.CredentialBinding{BindingID: bindingID, TenantID: tenant, SecretRef: "vault://fixture", SecretVersion: "v1", CredentialMode: "SHARED_HUB"})
 	}))
 	defer catalog.Close()
+	capacity := NewCapacityController(db)
+	capacityPolicy := CapacityPolicy{Domain: "invalid-provider-capacity-" + operationID, Version: "fixture-v1", EvidenceRef: "invalid-provider-capacity", ValidUntil: time.Now().Add(time.Hour), MaxConcurrent: 8, MinConcurrent: 5, ReconciliationReserve: 1, MaxPending: 8, RatePerWindow: 200, WindowMillis: 1000, LeaseMillis: 5000, StableMillis: 100, LatencyThresholdMillis: 100, TenantLimits: map[string]int{tenant: 2}, TenantPendingLimits: map[string]int{tenant: 4}, TenantRateLimits: map[string]int{tenant: 90}}
+	if err = capacity.InstallPolicy(context.Background(), capacityPolicy); err != nil {
+		t.Fatal(err)
+	}
 	account, _ := json.Marshal(map[string]any{"base_url": provider.URL, "provider_mode": "sync", "auth_type": "NONE"})
 	snapshot := atlas.OfferSnapshot{
-		Account: atlas.Resource{ID: "account", Data: account},
-		Binding: atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)},
-		Target:  atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)},
+		Account:       atlas.Resource{ID: "account", Data: account},
+		Binding:       atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1","provider_account_id":"account"}`)},
+		Target:        atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)},
+		SelectedRoute: atlas.Route{ProviderAccountID: "account", CapacityDomain: capacityPolicy.Domain},
 	}
 	config, _ := json.Marshal(snapshot)
 	cmd := dispatch.Command{CommandID: operationID, ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app-a", CellID: "r2-cell-a", ProviderAccountID: "account", DispatchMode: dispatch.DispatchDirect, ConfigSnapshot: config, RequestBody: map[string]any{"marker": "invalid-response"}, StepDeadline: time.Now().Add(time.Minute)}
@@ -612,6 +858,9 @@ func TestPostgresInvalidProviderResponseDoesNotBecomeSuccess(t *testing.T) {
 	t.Setenv("WORKLOAD_CLIENT_ID", "fixture")
 	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", secretPath)
 	t.Cleanup(func() {
+		db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityPolicy.Domain)
 		_, _ = db.Exec("DELETE FROM outbox WHERE aggregate_id=$1", operationID)
 		_, _ = db.Exec("DELETE FROM operation_receipts WHERE operation_id=$1", operationID)
 		_, _ = db.Exec("DELETE FROM provider_receipts WHERE operation_id=$1", operationID)
@@ -620,19 +869,22 @@ func TestPostgresInvalidProviderResponseDoesNotBecomeSuccess(t *testing.T) {
 	})
 
 	executor := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{Resolver: dropFixtureVault{}})
+	executor.SetCapacityController(capacity)
 	first := executor.Execute(ctx, cmd)
 	if first.Kind != dispatch.FactUnknown || !first.Durable || first.ErrorCode != "invalid_provider_response" {
 		t.Fatalf("resposta inválida não virou UNKNOWN durável: %+v", first)
 	}
 	var state string
-	if err = db.QueryRow("SELECT state FROM operations WHERE operation_id=$1", operationID).Scan(&state); err != nil {
-		t.Fatal(err)
-	}
 	var succeeded, receipts, facts int
-	if err = db.QueryRow("SELECT count(*) FROM operations WHERE operation_id=$1 AND state='SUCCEEDED'", operationID).Scan(&succeeded); err != nil {
-		t.Fatal(err)
-	}
-	if err = db.QueryRow("SELECT count(*) FROM provider_receipts WHERE operation_id=$1", operationID).Scan(&receipts); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		if scanErr := tx.QueryRowContext(ctx, "SELECT state FROM operations WHERE operation_id=$1", operationID).Scan(&state); scanErr != nil {
+			return scanErr
+		}
+		if scanErr := tx.QueryRowContext(ctx, "SELECT count(*) FROM operations WHERE operation_id=$1 AND state='SUCCEEDED'", operationID).Scan(&succeeded); scanErr != nil {
+			return scanErr
+		}
+		return tx.QueryRowContext(ctx, "SELECT count(*) FROM provider_receipts WHERE operation_id=$1", operationID).Scan(&receipts)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err = db.QueryRow("SELECT count(*) FROM outbox WHERE aggregate_id=$1 AND event_type='operation.observed'", operationID).Scan(&facts); err != nil {
@@ -686,16 +938,24 @@ func TestPostgresPendingCustodyAtomic(t *testing.T) {
 	}
 	var state string
 	var count int
-	if err = db.QueryRow("SELECT state FROM operations WHERE operation_id=$1", id).Scan(&state); err != nil || state != "SUBMITTING" {
+	if err = pg.WithTenantTx(ctx, db, cmd.TenantID, func(tx *sql.Tx) error {
+		if scanErr := tx.QueryRowContext(ctx, "SELECT state FROM operations WHERE operation_id=$1", id).Scan(&state); scanErr != nil {
+			return scanErr
+		}
+		return tx.QueryRowContext(ctx, "SELECT count(*) FROM operation_receipts WHERE operation_id=$1", id).Scan(&count)
+	}); err != nil || state != "SUBMITTING" {
 		t.Fatalf("partial state: %s %v", state, err)
 	}
-	if err = db.QueryRow("SELECT count(*) FROM operation_receipts WHERE operation_id=$1", id).Scan(&count); err != nil || count != 0 {
+	if count != 0 {
 		t.Fatalf("partial receipt: %d %v", count, err)
 	}
 	// Fixture adjustment of its persisted retry horizon, never a runtime backfill.
 	cmd.RetryDeadline = time.Now().Add(time.Minute)
 	raw, _ := json.Marshal(cmd)
-	if _, err = db.Exec("UPDATE operations SET command=$2 WHERE operation_id=$1", id, raw); err != nil {
+	if err = pg.WithTenantTx(ctx, db, cmd.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, "UPDATE operations SET command=$2 WHERE operation_id=$1", id, raw)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	attemptID := idgen.New()

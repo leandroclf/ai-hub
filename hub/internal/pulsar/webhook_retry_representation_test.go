@@ -17,6 +17,7 @@ import (
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -106,10 +107,13 @@ func TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC(t *testing.T) {
 	t.Setenv("EGRESS_PRIVATE_RULES", parsed.Host+"=127.0.0.1/32")
 
 	destinationID := idgen.New()
-	_, err = db.Exec(`
-		INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by)
-		VALUES($1,1,$2,$3,$4,'representation-retry-secret','v1',2,2,'ACTIVE','fixture')
-	`, destinationID, tenant, cell, u)
+	err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec(`
+			INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by)
+			VALUES($1,1,$2,$3,$4,'representation-retry-secret','v1',2,2,'ACTIVE','fixture')
+		`, destinationID, tenant, cell, u)
+		return execErr
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,7 +139,10 @@ func TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC(t *testing.T) {
 	}
 	deliveryID = first.ID
 	worker.attempt(ctx, first)
-	if _, err = db.Exec("UPDATE deliveries SET next_attempt_at=clock_timestamp() WHERE delivery_id=$1", deliveryID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec("UPDATE deliveries SET next_attempt_at=clock_timestamp() WHERE delivery_id=$1", deliveryID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	second, err := store.ClaimDelivery(ctx, cell, "retry-worker-2")
@@ -162,7 +169,9 @@ func TestPostgresWebhookRetryPreservesFinalRepresentationAndHMAC(t *testing.T) {
 	var state string
 	var attempts int
 	var hash string
-	if err = db.QueryRow("SELECT state,attempts_count,body_sha256 FROM deliveries WHERE delivery_id=$1", deliveryID).Scan(&state, &attempts, &hash); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state,attempts_count,body_sha256 FROM deliveries WHERE delivery_id=$1", deliveryID).Scan(&state, &attempts, &hash)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "DELIVERED" || attempts != 2 {

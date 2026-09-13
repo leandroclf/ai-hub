@@ -15,6 +15,7 @@ import (
 	"ai-hub/hub/internal/atlas"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 )
 
@@ -36,6 +37,9 @@ func (s *Store) ClaimReconciliation(ctx context.Context, cell, owner string) (Re
 		return ReconciliationClaim{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetWorkerCellScope(ctx, tx, cell); err != nil {
+		return ReconciliationClaim{}, err
+	}
 	var claim ReconciliationClaim
 	var raw []byte
 	err = tx.QueryRowContext(ctx, `SELECT r.request_id,r.protocol_id,r.claim_epoch+1,o.operation_id,o.provider_request_id,o.command
@@ -63,27 +67,36 @@ func (s *Store) ClaimReconciliation(ctx context.Context, cell, owner string) (Re
 }
 
 func (s *Store) ReleaseReconciliation(ctx context.Context, claim ReconciliationClaim, reason string) error {
-	_, err := s.db.ExecContext(ctx, `UPDATE protocol_reconciliation_requests
-		SET claim_owner=NULL,lease_until=NULL,last_error=$4,updated_at=clock_timestamp()
-		WHERE request_id=$1 AND state='OPEN' AND claim_owner=$2 AND claim_epoch=$3`, claim.RequestID, claim.Owner, claim.Epoch, reason)
-	return err
+	return pg.WithTenantTx(ctx, s.db, claim.Command.TenantID, func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `UPDATE protocol_reconciliation_requests
+			SET claim_owner=NULL,lease_until=NULL,last_error=$4,updated_at=clock_timestamp()
+			WHERE request_id=$1 AND state='OPEN' AND claim_owner=$2 AND claim_epoch=$3`, claim.RequestID, claim.Owner, claim.Epoch, reason)
+		return err
+	})
 }
 
 func (s *Store) ResolveReconciliation(ctx context.Context, claim ReconciliationClaim, evidenceID string) error {
 	if evidenceID == "" {
 		return errors.New("missing reconciliation evidence")
 	}
-	result, err := s.db.ExecContext(ctx, `UPDATE protocol_reconciliation_requests
-		SET state='RESOLVED',evidence_id=$4,claim_owner=NULL,lease_until=NULL,updated_at=clock_timestamp()
-		WHERE request_id=$1 AND state='OPEN' AND claim_owner=$2 AND claim_epoch=$3`, claim.RequestID, claim.Owner, claim.Epoch, evidenceID)
+	var n int64
+	err := pg.WithTenantTx(ctx, s.db, claim.Command.TenantID, func(tx *sql.Tx) error {
+		result, execErr := tx.ExecContext(ctx, `UPDATE protocol_reconciliation_requests
+			SET state='RESOLVED',evidence_id=$4,claim_owner=NULL,lease_until=NULL,updated_at=clock_timestamp()
+			WHERE request_id=$1 AND state='OPEN' AND claim_owner=$2 AND claim_epoch=$3`, claim.RequestID, claim.Owner, claim.Epoch, evidenceID)
+		if execErr != nil {
+			return execErr
+		}
+		n, execErr = result.RowsAffected()
+		return execErr
+	})
 	if err != nil {
 		return err
 	}
-	n, err := result.RowsAffected()
-	if err == nil && n != 1 {
+	if n != 1 {
 		return ErrPollFence
 	}
-	return err
+	return nil
 }
 
 // ReconcileExternal consulta o endpoint de status do provedor usando a

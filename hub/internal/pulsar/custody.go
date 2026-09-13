@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type ClaimedDelivery struct {
@@ -28,6 +29,9 @@ func (s *Store) ConserveFinal(ctx context.Context, envelopeID string, f protocol
 		return err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, f.TenantID); err != nil {
+		return err
+	}
 	res, err := tx.ExecContext(ctx, "INSERT INTO inbox(consumer,event_id) VALUES('pulsar',$1) ON CONFLICT DO NOTHING", envelopeID)
 	if err != nil {
 		return err
@@ -65,6 +69,9 @@ func (s *Store) ClaimDelivery(ctx context.Context, cell, owner string) (ClaimedD
 		return ClaimedDelivery{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetWorkerCellScope(ctx, tx, cell); err != nil {
+		return ClaimedDelivery{}, err
+	}
 	var d ClaimedDelivery
 	d.Owner = owner
 	d.AttemptID = idgen.New()
@@ -97,6 +104,9 @@ func (s *Store) CompleteDelivery(ctx context.Context, d ClaimedDelivery, status 
 		return err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, d.TenantID); err != nil {
+		return err
+	}
 	state, attemptState := "RETRY_SCHEDULED", "FAILED"
 	if status >= 200 && status < 300 && code == "" {
 		state = "DELIVERED"

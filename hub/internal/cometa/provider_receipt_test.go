@@ -3,6 +3,7 @@ package cometa
 import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -51,14 +52,18 @@ func TestPostgresProviderReceiptIsSeparateFromNormalizedResult(t *testing.T) {
 	})
 	var body []byte
 	var hash, receiptBody string
-	if err := db.QueryRow("SELECT body,body_sha256 FROM provider_receipts WHERE operation_id=$1", id).Scan(&body, &hash); err != nil {
+	if err := pg.WithTenantTx(context.Background(), db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(context.Background(), "SELECT body,body_sha256 FROM provider_receipts WHERE operation_id=$1", id).Scan(&body, &hash)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	sum := sha256.Sum256(raw)
 	if string(body) != string(raw) || hash != hex.EncodeToString(sum[:]) {
 		t.Fatalf("raw receipt was altered: body=%s hash=%s", body, hash)
 	}
-	if err := db.QueryRow("SELECT body::text FROM operation_receipts WHERE operation_id=$1", id).Scan(&receiptBody); err != nil {
+	if err := pg.WithTenantTx(context.Background(), db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(context.Background(), "SELECT body::text FROM operation_receipts WHERE operation_id=$1", id).Scan(&receiptBody)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(receiptBody, "normalized") || strings.Contains(receiptBody, "raw-only") {

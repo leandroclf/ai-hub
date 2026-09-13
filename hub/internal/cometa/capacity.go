@@ -11,6 +11,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"ai-hub/hub/internal/platform/pg"
 )
 
 var ErrCapacityDenied = errors.New("cometa: aggregate capacity unavailable")
@@ -175,6 +177,15 @@ func (c *CapacityController) Acquire(ctx context.Context, domain, id, tenant, ce
 		return permit, err
 	}
 	defer tx.Rollback()
+	// O orçamento agregado é por domínio de provedor, não por tenant nem por
+	// célula (TestPostgresCapacityAggregateReplicasCells prova que o mesmo
+	// domínio é compartilhado entre células). Nem tenant_runtime nem
+	// worker_cell_scope cobririam essa leitura/escrita corretamente; usa a
+	// autoridade dedicada do próprio controlador (R6-SEG-01: nunca acesso
+	// global implícito — motivo obrigatório, tabela única).
+	if err = pg.SetAuditedScope(ctx, tx, "capacity_aggregate:"+domain); err != nil {
+		return permit, err
+	}
 	var raw []byte
 	var limit, used int
 	var epoch int64
@@ -234,7 +245,9 @@ func (c *CapacityController) Acquire(ctx context.Context, domain, id, tenant, ce
 // requires its separate durable operation fence before any external effect.
 func (c *CapacityController) Validate(ctx context.Context, p CapacityPermit) error {
 	var ok bool
-	err := c.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM capacity_permits WHERE domain_id=$1 AND permit_id=$2 AND owner_id=$3 AND epoch=$4 AND tenant_id=$5 AND cell_id=$6 AND action=$7 AND transport_open AND lease_until>clock_timestamp())`, p.Domain, p.ID, p.Owner, p.Epoch, p.Tenant, p.Cell, p.Action).Scan(&ok)
+	err := pg.WithTenantTx(ctx, c.db, p.Tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM capacity_permits WHERE domain_id=$1 AND permit_id=$2 AND owner_id=$3 AND epoch=$4 AND tenant_id=$5 AND cell_id=$6 AND action=$7 AND transport_open AND lease_until>clock_timestamp())`, p.Domain, p.ID, p.Owner, p.Epoch, p.Tenant, p.Cell, p.Action).Scan(&ok)
+	})
 	if err != nil {
 		return err
 	}
@@ -256,6 +269,9 @@ func (c *CapacityController) CompleteTransport(ctx context.Context, p CapacityPe
 		return err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, p.Tenant); err != nil {
+		return err
+	}
 	var raw []byte
 	var limit int
 	var stable, now time.Time
@@ -308,13 +324,20 @@ func (c *CapacityController) Release(ctx context.Context, p CapacityPermit, evid
 	if evidence == "" {
 		return ErrCapacityPolicy
 	}
-	result, err := c.db.ExecContext(ctx, `UPDATE capacity_permits
-		SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$5
-		WHERE domain_id=$1 AND permit_id=$2 AND owner_id=$3 AND epoch=$4 AND transport_open`, p.Domain, p.ID, p.Owner, p.Epoch, evidence)
+	var n int64
+	err := pg.WithTenantTx(ctx, c.db, p.Tenant, func(tx *sql.Tx) error {
+		result, execErr := tx.ExecContext(ctx, `UPDATE capacity_permits
+			SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$5
+			WHERE domain_id=$1 AND permit_id=$2 AND owner_id=$3 AND epoch=$4 AND transport_open`, p.Domain, p.ID, p.Owner, p.Epoch, evidence)
+		if execErr != nil {
+			return execErr
+		}
+		n, execErr = result.RowsAffected()
+		return execErr
+	})
 	if err != nil {
 		return err
 	}
-	n, _ := result.RowsAffected()
 	if n != 1 {
 		return ErrCapacityFence
 	}
@@ -328,11 +351,18 @@ func (c *CapacityController) ResolvePending(ctx context.Context, domain, id stri
 	if evidence == "" {
 		return ErrCapacityPolicy
 	}
-	result, err := c.db.ExecContext(ctx, `UPDATE capacity_permits SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$4 WHERE domain_id=$1 AND permit_id=$2 AND epoch=$3 AND (transport_open OR pending_external)`, domain, id, epoch, evidence)
+	var n int64
+	err := pg.WithAuditedScopeTx(ctx, c.db, "capacity_reconciliation:"+domain, func(tx *sql.Tx) error {
+		result, execErr := tx.ExecContext(ctx, `UPDATE capacity_permits SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$4 WHERE domain_id=$1 AND permit_id=$2 AND epoch=$3 AND (transport_open OR pending_external)`, domain, id, epoch, evidence)
+		if execErr != nil {
+			return execErr
+		}
+		n, execErr = result.RowsAffected()
+		return execErr
+	})
 	if err != nil {
 		return err
 	}
-	n, _ := result.RowsAffected()
 	if n != 1 {
 		return ErrCapacityFence
 	}
@@ -343,15 +373,22 @@ func (c *CapacityController) ResolvePending(ctx context.Context, domain, id stri
 // observação terminal chega por polling, callback ou reconciliação. O domínio
 // vem do snapshot imutável da rota e o permit_id é o operation_id; não há
 // criação de uma nova concessão nem reciclagem por expiração.
-func (c *CapacityController) ResolvePendingByID(ctx context.Context, domain, id, evidence string) error {
+func (c *CapacityController) ResolvePendingByID(ctx context.Context, tenantID, domain, id, evidence string) error {
 	if domain == "" || id == "" || evidence == "" {
 		return ErrCapacityPolicy
 	}
-	result, err := c.db.ExecContext(ctx, `UPDATE capacity_permits SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$3 WHERE domain_id=$1 AND permit_id=$2 AND pending_external`, domain, id, evidence)
+	var n int64
+	err := pg.WithTenantTx(ctx, c.db, tenantID, func(tx *sql.Tx) error {
+		result, execErr := tx.ExecContext(ctx, `UPDATE capacity_permits SET transport_open=false,pending_external=false,completed_at=clock_timestamp(),evidence_ref=$3 WHERE domain_id=$1 AND permit_id=$2 AND pending_external`, domain, id, evidence)
+		if execErr != nil {
+			return execErr
+		}
+		n, execErr = result.RowsAffected()
+		return execErr
+	})
 	if err != nil {
 		return err
 	}
-	n, _ := result.RowsAffected()
 	if n != 1 {
 		return ErrCapacityFence
 	}
@@ -359,7 +396,9 @@ func (c *CapacityController) ResolvePendingByID(ctx context.Context, domain, id,
 }
 func (c *CapacityController) State(ctx context.Context, domain string) (CapacityState, error) {
 	var s CapacityState
-	err := c.db.QueryRowContext(ctx, `SELECT d.current_limit,d.rate_used,d.last_feedback,(SELECT count(*) FROM capacity_permits p WHERE p.domain_id=d.domain_id AND transport_open),(SELECT count(*) FROM capacity_permits p WHERE p.domain_id=d.domain_id AND pending_external) FROM capacity_domains d WHERE domain_id=$1`, domain).Scan(&s.Limit, &s.RateUsed, &s.LastFeedback, &s.TransportOpen, &s.PendingExternal)
+	err := pg.WithAuditedScopeTx(ctx, c.db, "capacity_state:"+domain, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT d.current_limit,d.rate_used,d.last_feedback,(SELECT count(*) FROM capacity_permits p WHERE p.domain_id=d.domain_id AND transport_open),(SELECT count(*) FROM capacity_permits p WHERE p.domain_id=d.domain_id AND pending_external) FROM capacity_domains d WHERE domain_id=$1`, domain).Scan(&s.Limit, &s.RateUsed, &s.LastFeedback, &s.TransportOpen, &s.PendingExternal)
+	})
 	return s, err
 }
 func (p CapacityPermit) String() string {

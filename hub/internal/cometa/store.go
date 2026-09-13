@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	"ai-hub/hub/internal/platform/pg"
 )
 
 // ErrOperationNotFound e retornado quando uma operacao/command_id nao
@@ -86,17 +88,38 @@ func (s *Store) UpdateState(ctx context.Context, operationID string, state State
 	return nil
 }
 
-// Get le uma operacao pelo ID — usada pela consulta interna de EXE-04
-// ("consulta interna por command_id/operation_id le o estado de
-// Cometa e nao consulta automaticamente o provedor").
+// Get le uma operacao pelo ID sem tenant conhecido — usada apenas pelo
+// ingresso de callback/observacao externa, que autentica por capability
+// (operation_id + token) antes de saber a qual tenant a operacao pertence
+// (R6-SEG-01: autoridade operacional especifica, auditada, nao acesso global
+// implicito). Para o caminho onde o tenant ja e conhecido (EXE-04: consulta
+// interna por command_id), use GetForTenant.
 func (s *Store) Get(ctx context.Context, operationID string) (Operation, error) {
+	op, err := s.getScoped(ctx, func(fn func(*sql.Tx) error) error {
+		return pg.WithAuditedScopeTx(ctx, s.db, "operation_ingress_lookup", fn)
+	}, operationID)
+	return op, err
+}
+
+// GetForTenant le uma operacao pelo ID no escopo do tenant que a admitiu
+// (EXE-04: "consulta interna por command_id/operation_id le o estado de
+// Cometa e nao consulta automaticamente o provedor").
+func (s *Store) GetForTenant(ctx context.Context, tenantID, operationID string) (Operation, error) {
+	return s.getScoped(ctx, func(fn func(*sql.Tx) error) error {
+		return pg.WithTenantTx(ctx, s.db, tenantID, fn)
+	}, operationID)
+}
+
+func (s *Store) getScoped(ctx context.Context, run func(func(*sql.Tx) error) error, operationID string) (Operation, error) {
 	var op Operation
 	var state string
-	row := s.db.QueryRowContext(ctx, `
-		SELECT operation_id, protocol_id, provider_account_id, provider_request_id, credential_binding_id, state
-		FROM operations WHERE operation_id = $1
-	`, operationID)
-	err := row.Scan(&op.OperationID, &op.ProtocolID, &op.ProviderAccountID, &op.ProviderRequestID, &op.CredentialBindingID, &state)
+	err := run(func(tx *sql.Tx) error {
+		row := tx.QueryRowContext(ctx, `
+			SELECT operation_id, protocol_id, provider_account_id, provider_request_id, credential_binding_id, state
+			FROM operations WHERE operation_id = $1
+		`, operationID)
+		return row.Scan(&op.OperationID, &op.ProtocolID, &op.ProviderAccountID, &op.ProviderRequestID, &op.CredentialBindingID, &state)
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Operation{}, ErrOperationNotFound
 	}

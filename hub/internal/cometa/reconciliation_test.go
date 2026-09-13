@@ -19,6 +19,7 @@ import (
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 )
 
@@ -76,8 +77,13 @@ func TestReconciliationWorkerResolvesStatusWithoutReplay(t *testing.T) {
 	t.Setenv("OIDC_TOKEN_URL", identity.URL)
 	t.Setenv("WORKLOAD_CLIENT_ID", "fixture")
 	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", secretFile)
+	capacity := NewCapacityController(db)
+	capacityPolicy := CapacityPolicy{Domain: "reconcile-capacity-" + operationID, Version: "fixture-v1", EvidenceRef: "reconcile-capacity", ValidUntil: time.Now().Add(time.Hour), MaxConcurrent: 8, MinConcurrent: 5, ReconciliationReserve: 1, MaxPending: 8, RatePerWindow: 200, WindowMillis: 1000, LeaseMillis: 5000, StableMillis: 100, LatencyThresholdMillis: 100, TenantLimits: map[string]int{cmd.TenantID: 2}, TenantPendingLimits: map[string]int{cmd.TenantID: 4}, TenantRateLimits: map[string]int{cmd.TenantID: 90}}
+	if err = capacity.InstallPolicy(context.Background(), capacityPolicy); err != nil {
+		t.Fatal(err)
+	}
 	account, _ := json.Marshal(map[string]any{"base_url": provider.URL, "provider_mode": "async_poll", "auth_type": "NONE", "polling": PollPolicy{1, 8, 1, 0, 100}})
-	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)}}
+	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)}, SelectedRoute: atlas.Route{ProviderAccountID: "account", CapacityDomain: capacityPolicy.Domain}}
 	cmd.ConfigSnapshot, _ = json.Marshal(snapshot)
 	if _, _, err = store.PrepareSubmission(ctx, cmd, "binding", "v1"); err != nil {
 		t.Fatal(err)
@@ -85,7 +91,10 @@ func TestReconciliationWorkerResolvesStatusWithoutReplay(t *testing.T) {
 	if _, err = store.ConserveAcceptance(ctx, cmd, "provider-correlation", true); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec(`INSERT INTO protocol_reconciliation_requests(request_id,protocol_id,tenant_id,requested_by,reason) VALUES($1,$2,$3,'operator','external status required')`, requestID, protocolID, cmd.TenantID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, cmd.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `INSERT INTO protocol_reconciliation_requests(request_id,protocol_id,tenant_id,requested_by,reason) VALUES($1,$2,$3,'operator','external status required')`, requestID, protocolID, cmd.TenantID)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
@@ -95,9 +104,13 @@ func TestReconciliationWorkerResolvesStatusWithoutReplay(t *testing.T) {
 		db.Exec("DELETE FROM polling_schedule WHERE operation_id=$1", operationID)
 		db.Exec("DELETE FROM attempts WHERE operation_id=$1", operationID)
 		db.Exec("DELETE FROM operations WHERE operation_id=$1", operationID)
+		db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityPolicy.Domain)
 	})
 
 	exec := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{})
+	exec.SetCapacityController(capacity)
 	workerCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	go RunReconciliationWorker(workerCtx, store, exec, cmd.CellID, 5*time.Millisecond, slog.New(slog.NewTextHandler(io.Discard, nil)))
@@ -105,7 +118,9 @@ func TestReconciliationWorkerResolvesStatusWithoutReplay(t *testing.T) {
 	deadline := time.Now().Add(3 * time.Second)
 	var state, operationState, evidenceID string
 	for time.Now().Before(deadline) {
-		if err = db.QueryRow(`SELECT state,COALESCE(evidence_id,'') FROM protocol_reconciliation_requests WHERE request_id=$1`, requestID).Scan(&state, &evidenceID); err != nil {
+		if err = pg.WithTenantTx(ctx, db, cmd.TenantID, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(ctx, `SELECT state,COALESCE(evidence_id,'') FROM protocol_reconciliation_requests WHERE request_id=$1`, requestID).Scan(&state, &evidenceID)
+		}); err != nil {
 			t.Fatal(err)
 		}
 		if state == "RESOLVED" {
@@ -116,7 +131,9 @@ func TestReconciliationWorkerResolvesStatusWithoutReplay(t *testing.T) {
 	if state != "RESOLVED" || evidenceID == "" {
 		t.Fatalf("reconciliation did not resolve: state=%s evidence=%s", state, evidenceID)
 	}
-	if err = db.QueryRow(`SELECT state FROM operations WHERE operation_id=$1`, operationID).Scan(&operationState); err != nil {
+	if err = pg.WithTenantTx(ctx, db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT state FROM operations WHERE operation_id=$1`, operationID).Scan(&operationState)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if operationState != "SUCCEEDED" || providerCalls.Load() != 1 || submitCalls.Load() != 0 {

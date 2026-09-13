@@ -22,6 +22,7 @@ import (
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 )
 
@@ -120,7 +121,11 @@ func TestPostgresPollingClaimsFenceAndAbsoluteDeadline(t *testing.T) {
 		t.Fatalf("stale update %v", err)
 	}
 	var state string
-	s.db.QueryRow(`SELECT state FROM operations WHERE operation_id=$1`, cmd.CommandID).Scan(&state)
+	if err := pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT state FROM operations WHERE operation_id=$1`, cmd.CommandID).Scan(&state)
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if state != "ACCEPTED_EXTERNAL" {
 		t.Fatalf("stale changed state %s", state)
 	}
@@ -161,7 +166,9 @@ func TestPostgresPollingRejectsProviderCorrelationMismatch(t *testing.T) {
 	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&beforeFacts); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&beforeReceipts); err != nil {
+	if err = pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&beforeReceipts)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	err = s.CompletePoll(ctx, claim, dispatch.Result{Kind: dispatch.FactSucceeded, ProviderRequestID: "another-operation"}, 0)
@@ -169,14 +176,18 @@ func TestPostgresPollingRejectsProviderCorrelationMismatch(t *testing.T) {
 		t.Fatalf("correlation mismatch accepted: %v", err)
 	}
 	var state string
-	if err = s.db.QueryRow(`SELECT state FROM operations WHERE operation_id=$1`, cmd.CommandID).Scan(&state); err != nil || state != string(StateAcceptedExternal) {
+	if err = pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT state FROM operations WHERE operation_id=$1`, cmd.CommandID).Scan(&state)
+	}); err != nil || state != string(StateAcceptedExternal) {
 		t.Fatalf("mismatch changed state=%s err=%v", state, err)
 	}
 	var afterFacts, afterReceipts int
 	if err = s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&afterFacts); err != nil {
 		t.Fatal(err)
 	}
-	if err = s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&afterReceipts); err != nil {
+	if err = pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&afterReceipts)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if afterFacts != beforeFacts || afterReceipts != beforeReceipts+1 {
@@ -238,8 +249,14 @@ func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	wg.Wait()
 	var facts, receipts, conflicts int
 	s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&facts)
-	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receipts)
-	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1 AND source LIKE '%CONFLICT'`, cmd.CommandID).Scan(&conflicts)
+	if err := pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		if scanErr := tx.QueryRowContext(ctx, `SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receipts); scanErr != nil {
+			return scanErr
+		}
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM operation_receipts WHERE operation_id=$1 AND source LIKE '%CONFLICT'`, cmd.CommandID).Scan(&conflicts)
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if facts < before+1 || facts > before+2 || receipts != 3 || conflicts != 1 {
 		t.Fatalf("facts=%d before=%d receipts=%d conflicts=%d", facts, before, receipts, conflicts)
 	}
@@ -252,7 +269,11 @@ func TestPostgresPollingCallbackConflictRetainsBoth(t *testing.T) {
 	}
 	var factsAfter, receiptsAfter int
 	s.db.QueryRow(`SELECT count(*) FROM outbox WHERE aggregate_id=$1`, cmd.CommandID).Scan(&factsAfter)
-	s.db.QueryRow(`SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receiptsAfter)
+	if err := pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM operation_receipts WHERE operation_id=$1`, cmd.CommandID).Scan(&receiptsAfter)
+	}); err != nil {
+		t.Fatal(err)
+	}
 	if factsAfter != facts || receiptsAfter != receipts+1 {
 		t.Fatalf("late callback changed terminal effect: facts=%d/%d receipts=%d/%d", factsAfter, facts, receiptsAfter, receipts+1)
 	}
@@ -321,10 +342,13 @@ func TestPostgresPollingAuthenticatedHTTP(t *testing.T) {
 	u, _ := url.Parse(provider.URL)
 	t.Setenv("EGRESS_PRIVATE_RULES", u.Host+"=127.0.0.1/32")
 	account, _ := json.Marshal(map[string]any{"base_url": provider.URL, "auth_type": "BASIC", "auth_username": "tenant-user", "polling": PollPolicy{1, 8, 1, 0, 100}})
-	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)}, SelectedRoute: atlas.Route{CapacityDomain: capacityPolicy.Domain}}
+	snapshot := atlas.OfferSnapshot{Account: atlas.Resource{ID: "account", Data: account}, Binding: atlas.Resource{ID: "binding", Version: 1, Data: json.RawMessage(`{"secret_version":"v1","provider_account_id":"account"}`)}, Target: atlas.Resource{Data: json.RawMessage(`{"adapter_id":"synthetic-provider","output_schema":{"type":"object"}}`)}, SelectedRoute: atlas.Route{ProviderAccountID: "account", CapacityDomain: capacityPolicy.Domain}}
 	cmd.ConfigSnapshot, _ = json.Marshal(snapshot)
 	raw, _ := json.Marshal(cmd)
-	if _, err := s.db.Exec(`UPDATE operations SET command=$2 WHERE operation_id=$1`, cmd.CommandID, raw); err != nil {
+	if err := pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `UPDATE operations SET command=$2 WHERE operation_id=$1`, cmd.CommandID, raw)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	acceptPoll(t, s, cmd)

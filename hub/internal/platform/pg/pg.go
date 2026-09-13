@@ -32,12 +32,51 @@ func RuntimeDSN(dsn, tenant string) (string, error) {
 	return u.String(), nil
 }
 
+// SetTenantScope aplica app.tenant_id LOCAL a uma transação já aberta pelo
+// chamador. Use quando a transação é gerenciada manualmente (BeginTx/defer
+// Rollback/Commit já existentes) e reestruturá-la em torno de um callback
+// aumentaria o risco de alterar o fluxo; para uma transação nova e simples,
+// prefira WithTenantTx.
+func SetTenantScope(ctx context.Context, tx *sql.Tx, tenant string) error {
+	if tx == nil || strings.TrimSpace(tenant) == "" || strings.ContainsAny(tenant, "\x00\r\n") {
+		return fmt.Errorf("pg: transação runtime sem tenant válido")
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('app.tenant_id',$1,true)`, tenant); err != nil {
+		return fmt.Errorf("pg: aplicar tenant runtime: %w", err)
+	}
+	return nil
+}
+
+// SetAuditedScope aplica app.access_reason LOCAL a uma transação já aberta
+// (ver WithAuditedScopeTx para a variante de transação nova).
+func SetAuditedScope(ctx context.Context, tx *sql.Tx, reason string) error {
+	if tx == nil || strings.TrimSpace(reason) == "" || strings.ContainsAny(reason, "\x00\r\n") {
+		return fmt.Errorf("pg: acesso cruzado sem motivo auditavel valido")
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('app.access_reason',$1,true)`, reason); err != nil {
+		return fmt.Errorf("pg: aplicar motivo de acesso cruzado: %w", err)
+	}
+	return nil
+}
+
+// SetWorkerCellScope aplica app.worker_cell_id LOCAL a uma transação já
+// aberta (ver WithWorkerCellTx para a variante de transação nova).
+func SetWorkerCellScope(ctx context.Context, tx *sql.Tx, cell string) error {
+	if tx == nil || strings.TrimSpace(cell) == "" || strings.ContainsAny(cell, "\x00\r\n") {
+		return fmt.Errorf("pg: transação de worker sem célula válida")
+	}
+	if _, err := tx.ExecContext(ctx, `SELECT set_config('app.worker_cell_id',$1,true)`, cell); err != nil {
+		return fmt.Errorf("pg: aplicar célula do worker: %w", err)
+	}
+	return nil
+}
+
 // WithTenantTx inicia uma transação cujo tenant é LOCAL à transação. O
 // contexto não fica preso na conexão do pool e o callback só pode confirmar
 // depois que o escopo RLS foi aplicado. Repositórios multi-tenant devem usar
 // este primitivo em vez de SET global ou de confiar apenas em WHERE.
 func WithTenantTx(ctx context.Context, db *sql.DB, tenant string, fn func(*sql.Tx) error) error {
-	if db == nil || strings.TrimSpace(tenant) == "" || strings.ContainsAny(tenant, "\x00\r\n") {
+	if db == nil {
 		return fmt.Errorf("pg: transação runtime sem tenant válido")
 	}
 	tx, err := db.BeginTx(ctx, nil)
@@ -45,11 +84,68 @@ func WithTenantTx(ctx context.Context, db *sql.DB, tenant string, fn func(*sql.T
 		return err
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, `SELECT set_config('app.tenant_id',$1,true)`, tenant); err != nil {
-		return fmt.Errorf("pg: aplicar tenant runtime: %w", err)
+	if err = SetTenantScope(ctx, tx, tenant); err != nil {
+		return err
 	}
 	if fn == nil {
 		return fmt.Errorf("pg: callback da transação runtime ausente")
+	}
+	if err = fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// WithAuditedScopeTx inicia uma transacao com escopo cruzado de tenant,
+// autorizado apenas quando reason for uma justificativa nao vazia (R6-SEG-01:
+// "workers globais e administrador nominal precisam claims limitados e
+// auditados, nao acesso global implicito"). O motivo fica LOCAL a transacao,
+// nunca preso na conexao do pool, e deve ser persistido pelo chamador na
+// mesma transacao (ex.: protocol_access_audit) antes do commit. Sem reason,
+// nenhuma linha de outro tenant fica visivel: a policy audited_scope exige
+// current_setting('app.access_reason') != ”.
+func WithAuditedScopeTx(ctx context.Context, db *sql.DB, reason string, fn func(*sql.Tx) error) error {
+	if db == nil {
+		return fmt.Errorf("pg: acesso cruzado sem motivo auditavel valido")
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = SetAuditedScope(ctx, tx, reason); err != nil {
+		return err
+	}
+	if fn == nil {
+		return fmt.Errorf("pg: callback da transação de acesso cruzado ausente")
+	}
+	if err = fn(tx); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// WithWorkerCellTx inicia uma transacao escopada a uma unica celula
+// operacional (app.worker_cell_id, LOCAL a transacao). Usado por workers
+// globais que processam fila entre tenants por natureza (claim/complete de
+// intents, varredura de deadlines): a celula e uma autoridade operacional
+// especifica, ja particionada pela topologia (D-05/EXE-*), nao um tenant
+// arbitrario. Cobre leitura e escrita, ao contrario de WithAuditedScopeTx
+// (somente leitura, para diagnostico administrativo).
+func WithWorkerCellTx(ctx context.Context, db *sql.DB, cell string, fn func(*sql.Tx) error) error {
+	if db == nil {
+		return fmt.Errorf("pg: transação de worker sem célula válida")
+	}
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err = SetWorkerCellScope(ctx, tx, cell); err != nil {
+		return err
+	}
+	if fn == nil {
+		return fmt.Errorf("pg: callback da transação de worker ausente")
 	}
 	if err = fn(tx); err != nil {
 		return err

@@ -1,16 +1,26 @@
 package cometa
 
 import (
+	"ai-hub/hub/internal/atlasclient"
+	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
+	"ai-hub/hub/internal/providerauth"
 	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/lib/pq"
+	"io"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 func capacityFixture(t *testing.T) (*sql.DB, *CapacityController, CapacityPolicy) {
@@ -72,7 +82,10 @@ func TestPostgresCapacityAggregateReplicasCells(t *testing.T) {
 	if err != nil || s.TransportOpen != 4 || s.PendingExternal != 4 {
 		t.Fatalf("aggregate %+v %v", s, err)
 	}
-	if _, err = db.Exec(`UPDATE capacity_permits SET lease_until=clock_timestamp()-interval '1 second' WHERE domain_id=$1`, p.Domain); err != nil {
+	if err = pg.WithAuditedScopeTx(ctx, db, "test-fixture:expire-lease", func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `UPDATE capacity_permits SET lease_until=clock_timestamp()-interval '1 second' WHERE domain_id=$1`, p.Domain)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if err = c.Validate(ctx, permits[0]); !errors.Is(err, ErrCapacityFence) {
@@ -234,7 +247,9 @@ func TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant(t 
 		t.Fatalf("réplica sem coordenador não foi interrompida: %v", err)
 	}
 	var total int
-	if err := db.QueryRow(`SELECT count(*) FROM capacity_permits WHERE domain_id=$1 AND transport_open`, p.Domain).Scan(&total); err != nil {
+	if err := pg.WithAuditedScopeTx(ctx, db, "test-fixture:count-open-permits", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM capacity_permits WHERE domain_id=$1 AND transport_open`, p.Domain).Scan(&total)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if total != 2 {
@@ -244,4 +259,76 @@ func TestPostgresCapacityPartitionDeniesStaleReplicaAndPreservesHealthyTenant(t 
 		t.Fatalf("tenant B perdeu sua reserva durante ruído/partição de A: %v", err)
 	}
 	t.Log("três réplicas disputaram o mesmo domínio sem multiplicar quota; a réplica particionada não enviou e B continuou elegível com reserva própria")
+}
+
+// TestPostgresCapacityPermitStuckAfterSettlementFailureResolvesOnlyWithEvidence
+// prova R6-OPE-04-S03: um permit cujo settlement (CompleteTransport) nunca
+// completou e cujo lease já venceu não libera a vaga sozinho — só uma
+// reconciliação administrativa autorizada, com evidência terminal, fecha a
+// obrigação; sem ela, a vaga continua ocupada.
+func TestPostgresCapacityPermitStuckAfterSettlementFailureResolvesOnlyWithEvidence(t *testing.T) {
+	db, c, p := capacityFixture(t)
+	ctx := context.Background()
+	if err := c.InstallPolicy(ctx, p); err != nil {
+		t.Fatal(err)
+	}
+	permit, err := c.Acquire(ctx, p.Domain, idgen.New(), "a", "cell", "owner-crash", "SUBMIT")
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Settlement never happens (simulating a crash between the provider
+	// response and CompleteTransport), and the lease expires.
+	if _, err = db.Exec(`UPDATE capacity_permits SET lease_until=clock_timestamp()-interval '1 second' WHERE domain_id=$1 AND permit_id=$2`, p.Domain, permit.ID); err != nil {
+		t.Fatal(err)
+	}
+	state, err := c.State(ctx, p.Domain)
+	if err != nil || state.TransportOpen != 1 {
+		t.Fatalf("stuck permit not counted as open: %+v %v", state, err)
+	}
+	// A blind TTL-based reap must never run: the lease passing time alone
+	// never resolves the permit. State stays open indefinitely without
+	// evidence.
+	time.Sleep(50 * time.Millisecond)
+	state, err = c.State(ctx, p.Domain)
+	if err != nil || state.TransportOpen != 1 {
+		t.Fatalf("permit was recycled blindly by TTL: %+v %v", state, err)
+	}
+
+	store := NewStore(db)
+	exec := NewExecutor(store, atlasclient.New("http://127.0.0.1:1", time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{})
+	exec.SetCapacityController(c)
+	h := NewHandlers(exec, store)
+	mux := http.NewServeMux()
+	h.RegisterAdmin(mux)
+
+	principal := auth.Principal{Subject: "operator-recovery", Scopes: []string{"integrations:write"}, MFA: true, ExpiresAt: time.Now().Add(time.Hour)}
+	req := httptest.NewRequest(http.MethodPost, "/admin/v1/capacity-domains/"+p.Domain+"/permits/"+permit.ID+"/resolve", nil)
+	req.Body = io.NopCloser(strings.NewReader(`{"reason":"provider confirmed terminal SUCCEEDED via out-of-band support ticket"}`))
+	req = req.WithContext(auth.WithPrincipal(ctx, principal))
+	w := httptest.NewRecorder()
+	mux.ServeHTTP(w, req)
+	if w.Code != http.StatusAccepted {
+		t.Fatalf("resolve request: code=%d body=%s", w.Code, w.Body.String())
+	}
+
+	state, err = c.State(ctx, p.Domain)
+	if err != nil || state.TransportOpen != 0 {
+		t.Fatalf("obligation not released after authorized evidence: %+v %v", state, err)
+	}
+	var evidenceRef string
+	if err = pg.WithAuditedScopeTx(ctx, db, "test-fixture:read-resolved-permit", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT COALESCE(evidence_ref,'') FROM capacity_permits WHERE domain_id=$1 AND permit_id=$2`, p.Domain, permit.ID).Scan(&evidenceRef)
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if evidenceRef != "operator-recovery:provider confirmed terminal SUCCEEDED via out-of-band support ticket" {
+		t.Fatalf("resolution not attributed to the authorizing actor: %q", evidenceRef)
+	}
+
+	// Acquiring a fresh permit for the same tenant proves the slot the stuck
+	// permit occupied was genuinely freed, not merely marked in a way that
+	// left the count stale.
+	if _, err = c.Acquire(ctx, p.Domain, idgen.New(), "a", "cell", "owner-recovered", "SUBMIT"); err != nil {
+		t.Fatalf("slot not actually released: %v", err)
+	}
 }

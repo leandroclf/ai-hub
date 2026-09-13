@@ -17,6 +17,7 @@ import (
 	"ai-hub/hub/internal/atlasclient"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 	_ "github.com/lib/pq"
 )
@@ -87,13 +88,23 @@ func TestPostgresExecutorUsesQualifiedRESTAdapter(t *testing.T) {
 	t.Setenv("WORKLOAD_CLIENT_ID", "rest-cometa")
 	t.Setenv("WORKLOAD_CLIENT_SECRET_FILE", secretPath)
 
+	capacity := NewCapacityController(db)
+	capacityPolicy := CapacityPolicy{Domain: "rest-executor-capacity-" + operationID, Version: "fixture-v1", EvidenceRef: "rest-executor-capacity", ValidUntil: time.Now().Add(time.Hour), MaxConcurrent: 8, MinConcurrent: 5, ReconciliationReserve: 1, MaxPending: 8, RatePerWindow: 200, WindowMillis: 1000, LeaseMillis: 5000, StableMillis: 100, LatencyThresholdMillis: 100, TenantLimits: map[string]int{tenant: 2}, TenantPendingLimits: map[string]int{tenant: 4}, TenantRateLimits: map[string]int{tenant: 90}}
+	if err = capacity.InstallPolicy(context.Background(), capacityPolicy); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM capacity_feedback WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_permits WHERE domain_id=$1", capacityPolicy.Domain)
+		db.Exec("DELETE FROM capacity_domains WHERE domain_id=$1", capacityPolicy.Domain)
+	})
 	account, _ := json.Marshal(atlasclient.ProviderAccount{ProviderAccountID: providerAccountID, ProviderID: "independent-rest", BaseURL: provider.URL, ProviderMode: "sync", AuthType: "NONE"})
 	target, _ := json.Marshal(atlas.CatalogData{AdapterID: "rest-json-v1", AdapterContract: &atlas.AdapterContract{SubmitPath: "/analise", StatusPath: "/consulta/{id}"}, OutputSchema: json.RawMessage(`{"type":"object"}`)})
 	snapshot := atlas.OfferSnapshot{
 		Account:       atlas.Resource{ID: providerAccountID, Data: account},
-		Binding:       atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1"}`)},
+		Binding:       atlas.Resource{ID: bindingID, Version: 1, Data: json.RawMessage(`{"secret_version":"v1","provider_account_id":"` + providerAccountID + `"}`)},
 		Target:        atlas.Resource{Kind: "services", ID: "rest-service", Version: 1, Data: target},
-		SelectedRoute: atlas.Route{ProviderAccountID: providerAccountID, BindingID: bindingID},
+		SelectedRoute: atlas.Route{ProviderAccountID: providerAccountID, BindingID: bindingID, CapacityDomain: capacityPolicy.Domain},
 	}
 	config, _ := json.Marshal(snapshot)
 	cmd := dispatch.Command{
@@ -111,6 +122,7 @@ func TestPostgresExecutorUsesQualifiedRESTAdapter(t *testing.T) {
 	})
 
 	executor := NewExecutor(store, atlasclient.New(catalog.URL, time.Second), slog.New(slog.NewTextHandler(io.Discard, nil)), "", &providerauth.TokenCache{})
+	executor.SetCapacityController(capacity)
 	result := executor.Execute(ctx, cmd)
 	if result.Kind != dispatch.FactSucceeded || result.ProviderRequestID != "rest-external-42" || result.ResponseBody == nil {
 		t.Fatalf("executor não custodiou o contrato REST: %+v", result)
@@ -119,7 +131,9 @@ func TestPostgresExecutorUsesQualifiedRESTAdapter(t *testing.T) {
 		t.Fatalf("executor não respeitou método/path/corpo REST: method=%s path=%s payload=%+v", method, path, received)
 	}
 	var state, providerRequestID string
-	if err = db.QueryRowContext(ctx, "SELECT state,provider_request_id FROM operations WHERE operation_id=$1", operationID).Scan(&state, &providerRequestID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT state,provider_request_id FROM operations WHERE operation_id=$1", operationID).Scan(&state, &providerRequestID)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "SUCCEEDED" || providerRequestID != "rest-external-42" {

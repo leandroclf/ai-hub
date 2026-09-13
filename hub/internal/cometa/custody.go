@@ -18,6 +18,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type Submission struct {
@@ -66,6 +67,9 @@ func (s *Store) PrepareSubmission(ctx context.Context, cmd dispatch.Command, bin
 		return Submission{}, false, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, cmd.TenantID); err != nil {
+		return Submission{}, false, err
+	}
 	res, err := tx.ExecContext(ctx, `INSERT INTO operations(operation_id,protocol_id,provider_account_id,credential_binding_id,secret_version_id,tenant_id,application_id,cell_id,command,command_hash,callback_token_hash,state,submit_owner,submit_epoch,submit_lease_until) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'SUBMITTING',$12,1,clock_timestamp()+interval '30 seconds') ON CONFLICT(operation_id) DO NOTHING`, cmd.CommandID, cmd.ProtocolID, cmd.ProviderAccountID, binding, secretVersion, cmd.TenantID, cmd.ApplicationID, cmd.CellID, raw, hash, tokenHash, claim.Owner)
 	if err != nil {
 		return Submission{}, false, err
@@ -107,17 +111,19 @@ func (s *Store) ValidateSubmission(ctx context.Context, claim Submission) error 
 	}
 	sum := sha256.Sum256(raw)
 	var valid bool
-	err = s.db.QueryRowContext(ctx, `SELECT EXISTS(
-		SELECT 1 FROM operations
-		WHERE operation_id=$1 AND protocol_id=$2 AND provider_account_id=$3
-		  AND tenant_id=$4 AND application_id=$5 AND cell_id=$6
-		  AND state='SUBMITTING'
-		  AND submit_owner=$7 AND submit_epoch=$8
-		  AND submit_lease_until>clock_timestamp()
-		  AND command_hash=$9
-	)`, claim.Command.CommandID, claim.Command.ProtocolID, claim.Command.ProviderAccountID,
-		claim.Command.TenantID, claim.Command.ApplicationID, claim.Command.CellID,
-		claim.Owner, claim.Epoch, hex.EncodeToString(sum[:])).Scan(&valid)
+	err = pg.WithTenantTx(ctx, s.db, claim.Command.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT EXISTS(
+			SELECT 1 FROM operations
+			WHERE operation_id=$1 AND protocol_id=$2 AND provider_account_id=$3
+			  AND tenant_id=$4 AND application_id=$5 AND cell_id=$6
+			  AND state='SUBMITTING'
+			  AND submit_owner=$7 AND submit_epoch=$8
+			  AND submit_lease_until>clock_timestamp()
+			  AND command_hash=$9
+		)`, claim.Command.CommandID, claim.Command.ProtocolID, claim.Command.ProviderAccountID,
+			claim.Command.TenantID, claim.Command.ApplicationID, claim.Command.CellID,
+			claim.Owner, claim.Epoch, hex.EncodeToString(sum[:])).Scan(&valid)
+	})
 	if err != nil {
 		return err
 	}
@@ -147,7 +153,10 @@ func (s *Store) AuthenticateCallback(ctx context.Context, operationID, token str
 		return ErrCallbackCapabilityInvalid
 	}
 	var expected string
-	if err := s.db.QueryRowContext(ctx, `SELECT callback_token_hash FROM operations WHERE operation_id=$1`, operationID).Scan(&expected); err != nil {
+	err := pg.WithAuditedScopeTx(ctx, s.db, "callback_capability_authentication", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT callback_token_hash FROM operations WHERE operation_id=$1`, operationID).Scan(&expected)
+	})
+	if err != nil {
 		return fmt.Errorf("callback capability authority: %w", err)
 	}
 	actual := callbackTokenHash(token)
@@ -160,18 +169,32 @@ func (s *Store) AuthenticateCallback(ctx context.Context, operationID, token str
 // AuthenticateAccountCallback valida a conta vinculada à operação e a
 // assinatura do corpo. O accountID recebido no header é apenas uma dica de
 // roteamento: a autoridade é o provider_account_id durável da operação.
-func (s *Store) AuthenticateAccountCallback(ctx context.Context, operationID, accountID string, at time.Time, signature string, body []byte) error {
+func (s *Store) AuthenticateAccountCallback(ctx context.Context, operationID, accountID string, at time.Time, signature string, body []byte) (string, error) {
 	if operationID == "" || accountID == "" || signature == "" || at.IsZero() {
-		return ErrCallbackCapabilityInvalid
+		return "", ErrCallbackCapabilityInvalid
 	}
 	var expectedAccount string
-	if err := s.db.QueryRowContext(ctx, "SELECT provider_account_id FROM operations WHERE operation_id=$1", operationID).Scan(&expectedAccount); err != nil {
-		return fmt.Errorf("callback account authority: %w", err)
+	err := pg.WithAuditedScopeTx(ctx, s.db, "callback_account_authentication", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT provider_account_id FROM operations WHERE operation_id=$1", operationID).Scan(&expectedAccount)
+	})
+	if err != nil {
+		return "", fmt.Errorf("callback account authority: %w", err)
 	}
-	if expectedAccount != accountID || !callbackauth.Verify(os.Getenv("CALLBACK_INGRESS_KEY"), expectedAccount, operationID, at, body, signature) {
-		return ErrCallbackCapabilityInvalid
+	if expectedAccount != accountID {
+		return "", ErrCallbackCapabilityInvalid
 	}
-	return nil
+	ring, err := callbackauth.LoadKeyRingFromEnv()
+	if err != nil {
+		return "", fmt.Errorf("callback signing key authority: %w", err)
+	}
+	// Any key currently in the ring may have signed this callback — rotation
+	// keeps the previous key valid for verification until it is retired
+	// (R6-SEG-02). The matched key_id is persisted by the caller.
+	keyID, ok := ring.VerifyAny(expectedAccount, operationID, at, body, signature)
+	if !ok {
+		return "", ErrCallbackCapabilityInvalid
+	}
+	return keyID, nil
 }
 
 // StoreOrphanCallback conserva um callback válido sintaticamente cuja
@@ -232,10 +255,15 @@ func (s *Store) StoreOrphanAccountCallback(ctx context.Context, operationID, acc
 	// A callback for an unknown operation has no database row from which to
 	// derive an expected account. Verify the ingress HMAC before durable
 	// custody; otherwise arbitrary bodies could fill the orphan inbox.
-	if !callbackauth.Verify(os.Getenv("CALLBACK_INGRESS_KEY"), accountID, operationID, at, body, signature) {
+	ring, err := callbackauth.LoadKeyRingFromEnv()
+	if err != nil {
+		return fmt.Errorf("callback signing key authority: %w", err)
+	}
+	keyID, ok := ring.VerifyAny(accountID, operationID, at, body, signature)
+	if !ok {
 		return ErrCallbackCapabilityInvalid
 	}
-	return s.storeOrphan(ctx, operationID, callbackAccountIdentity(accountID, operationID, body), body, accountID, callbackauth.Version, &at, signature)
+	return s.storeOrphan(ctx, operationID, callbackAccountIdentity(accountID, operationID, body), body, accountID, callbackauth.Version, &at, signature, keyID)
 }
 
 func callbackAccountIdentity(accountID, operationID string, body []byte) string {
@@ -243,14 +271,21 @@ func callbackAccountIdentity(accountID, operationID string, body []byte) string 
 	return hex.EncodeToString(sum[:])
 }
 
-func (s *Store) storeOrphan(ctx context.Context, operationID, tokenHash string, body []byte, accountID, authVersion string, at *time.Time, signature string) error {
+func (s *Store) storeOrphan(ctx context.Context, operationID, tokenHash string, body []byte, accountID, authVersion string, at *time.Time, signature, keyID string) error {
 	sum := sha256.Sum256(body)
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(72820311)"); err != nil {
+	// Partitioned by origin (account) and cell rather than one global
+	// constant (R6-SEG-02): a noisy account's orphan burst no longer
+	// serializes ingestion for every other account/cell sharing this table.
+	lockOrigin := accountID
+	if lockOrigin == "" {
+		lockOrigin = "legacy-capability"
+	}
+	if _, err = tx.ExecContext(ctx, "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", lockOrigin+"\x1f"+os.Getenv("CELL_ID")); err != nil {
 		return err
 	}
 	var known bool
@@ -278,12 +313,16 @@ func (s *Store) storeOrphan(ctx context.Context, operationID, tokenHash string, 
 			return ErrCallbackInboxQuota
 		}
 	}
+	var keyIDValue any
+	if keyID != "" {
+		keyIDValue = keyID
+	}
 	if _, err = tx.ExecContext(ctx, `
-		INSERT INTO callback_inbox(inbox_id,operation_id,token_hash,body_sha256,body,provider_account_id,callback_auth_version,callback_timestamp,callback_signature)
-		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+		INSERT INTO callback_inbox(inbox_id,operation_id,token_hash,body_sha256,body,provider_account_id,callback_auth_version,callback_timestamp,callback_signature,callback_key_id,verified_at)
+		VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,clock_timestamp())
 		ON CONFLICT (operation_id, body_sha256, token_hash)
 		DO UPDATE SET occurrences=callback_inbox.occurrences+1
-	`, idgen.New(), operationID, tokenHash, hex.EncodeToString(sum[:]), body, accountID, authVersion, at, signature); err != nil {
+	`, idgen.New(), operationID, tokenHash, hex.EncodeToString(sum[:]), body, accountID, authVersion, at, signature, keyIDValue); err != nil {
 		return err
 	}
 	return tx.Commit()
@@ -312,6 +351,37 @@ func (s *Store) PruneCallbackInbox(ctx context.Context, olderThan time.Duration,
 	return int(count), nil
 }
 
+// ErrCallbackNotQuarantined is returned when a replay is requested for an
+// inbox_id that is not (or no longer) in QUARANTINED disposition.
+var ErrCallbackNotQuarantined = errors.New("cometa: callback não está em quarentena")
+
+// ReplayCallbackInbox is the only authorized way a QUARANTINED obligation
+// (retry exhausted after an apply-side failure, R6-SEG-02) re-enters
+// processing: an explicit, attributed action, never an automatic timer or
+// retention sweep. It resets the retry budget and clears prior error
+// evidence so ReconcileCallbackInboxBatch claims it exactly as it would a
+// freshly received callback — the provider is never asked to resend.
+func (s *Store) ReplayCallbackInbox(ctx context.Context, inboxID, actor string) error {
+	if inboxID == "" || actor == "" {
+		return errors.New("cometa: replay de callback exige identidade e ator autorizado")
+	}
+	result, err := s.db.ExecContext(ctx, `UPDATE callback_inbox
+		SET disposition='RECEIVED', processing_attempts=0, last_error=NULL,
+		    claim_owner=NULL, lease_until=NULL, replayed_at=clock_timestamp(), replayed_by=$2
+		WHERE inbox_id=$1 AND disposition='QUARANTINED'`, inboxID, actor)
+	if err != nil {
+		return err
+	}
+	n, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n != 1 {
+		return ErrCallbackNotQuarantined
+	}
+	return nil
+}
+
 // ReconcileCallbackInbox reapplies callbacks received before operation
 // correlation. Invalid capabilities are retained as rejected evidence and
 // never reach the external-observation state machine.
@@ -331,9 +401,18 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 		return 0, err
 	}
 	defer tx.Rollback()
+	// Uma varredura de reconciliação de callbacks abrange operações de muitos
+	// tenants por natureza (R6-SEG-01): leitura auditada, nunca acesso global
+	// implícito. As escritas seguintes tocam apenas callback_inbox (sem
+	// tenant_id/RLS) ou passam por ConserveObservation, que aplica o escopo do
+	// tenant da própria operação.
+	if err = pg.SetAuditedScope(ctx, tx, "callback_reconciliation_batch:"+owner); err != nil {
+		return 0, err
+	}
 	rows, err := tx.QueryContext(ctx, `
 		SELECT i.inbox_id, i.operation_id, i.token_hash, i.body,
 		       COALESCE(i.provider_account_id,''), i.callback_auth_version, i.callback_timestamp, COALESCE(i.callback_signature,''),
+		       COALESCE(i.callback_key_id,''),
 		       o.callback_token_hash, o.provider_account_id, o.command, i.claim_epoch + 1, i.processing_attempts + 1
 		FROM callback_inbox i
 		JOIN operations o ON o.operation_id=i.operation_id
@@ -345,7 +424,7 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	}
 	type item struct {
 		inboxID, operationID, receivedHash, expectedHash string
-		accountID, authVersion, signature                string
+		accountID, authVersion, signature, keyID         string
 		body, commandRaw                                 []byte
 		authTimestamp                                    sql.NullTime
 		epoch, processingAttempts                        int64
@@ -354,7 +433,7 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	items := make([]item, 0, limit)
 	for rows.Next() {
 		var v item
-		if err := rows.Scan(&v.inboxID, &v.operationID, &v.receivedHash, &v.body, &v.accountID, &v.authVersion, &v.authTimestamp, &v.signature, &v.expectedHash, &v.operationAccount, &v.commandRaw, &v.epoch, &v.processingAttempts); err != nil {
+		if err := rows.Scan(&v.inboxID, &v.operationID, &v.receivedHash, &v.body, &v.accountID, &v.authVersion, &v.authTimestamp, &v.signature, &v.keyID, &v.expectedHash, &v.operationAccount, &v.commandRaw, &v.epoch, &v.processingAttempts); err != nil {
 			rows.Close()
 			return 0, err
 		}
@@ -371,6 +450,10 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 	if err := tx.Commit(); err != nil {
 		return 0, err
 	}
+	// Reconciliar contra a chave que originalmente autenticou o callback
+	// (persistida por inbox_id), nunca contra "a chave atual" — rotacionar o
+	// ring não pode invalidar custódia legítima ainda em trânsito (R6-SEG-02).
+	ring, ringErr := callbackauth.LoadKeyRingFromEnv()
 	count := 0
 	for _, v := range items {
 		var inboxID, operationID, receivedHash, expectedHash string
@@ -382,7 +465,8 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 		}
 		authenticated := subtle.ConstantTimeCompare([]byte(receivedHash), []byte(expectedHash)) == 1
 		if v.authVersion == callbackauth.Version {
-			authenticated = v.authTimestamp.Valid && v.operationAccount == v.accountID && callbackauth.Verify(os.Getenv("CALLBACK_INGRESS_KEY"), v.operationAccount, operationID, v.authTimestamp.Time, body, v.signature)
+			authenticated = ringErr == nil && v.keyID != "" && v.authTimestamp.Valid && v.operationAccount == v.accountID &&
+				ring.VerifyWithID(v.keyID, v.operationAccount, operationID, v.authTimestamp.Time, body, v.signature)
 		}
 		if !authenticated {
 			if err := dispose("REJECTED", "callback capability mismatch"); err != nil {
@@ -407,11 +491,20 @@ func (s *Store) ReconcileCallbackInboxBatch(ctx context.Context, owner string, l
 			continue
 		}
 		if err := apply(ctx, operationID, result.toDispatchResult(body)); err != nil {
+			// A callback that reached here is already authenticated and
+			// well-formed: retry exhaustion here is an apply-side failure
+			// (e.g. a transient dependency outage), never a contract
+			// violation. It must stay recoverable, distinct from REJECTED,
+			// and only leave quarantine through an explicitly authorized
+			// replay (R6-SEG-02) — never rediscovered by chance and never
+			// silently discarded by retention.
 			disposition := "RECEIVED"
 			if v.processingAttempts >= 3 {
-				disposition = "REJECTED"
+				disposition = "QUARANTINED"
 			}
-			_ = dispose(disposition, err.Error())
+			if disposeErr := dispose(disposition, err.Error()); disposeErr != nil {
+				return count, disposeErr
+			}
 			continue
 		}
 		if err := dispose("APPLIED", ""); err != nil {
@@ -444,7 +537,9 @@ func (r providersimOperationResult) toDispatchResult(raw []byte) dispatch.Result
 func (s *Store) DurableResult(ctx context.Context, cmd dispatch.Command) (dispatch.Result, error) {
 	var raw []byte
 	var tenant, cell string
-	err := s.db.QueryRowContext(ctx, "SELECT result,tenant_id,cell_id FROM operations WHERE operation_id=$1", cmd.CommandID).Scan(&raw, &tenant, &cell)
+	err := pg.WithTenantTx(ctx, s.db, cmd.TenantID, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT result,tenant_id,cell_id FROM operations WHERE operation_id=$1", cmd.CommandID).Scan(&raw, &tenant, &cell)
+	})
 	if err != nil {
 		return dispatch.Result{}, err
 	}
@@ -490,6 +585,9 @@ func (s *Store) ConserveRecoveryObligation(ctx context.Context, cmd dispatch.Com
 		return dispatch.Result{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, cmd.TenantID); err != nil {
+		return dispatch.Result{}, err
+	}
 	var state, tenant, cell string
 	var existingRaw []byte
 	err = tx.QueryRowContext(ctx, "SELECT state,tenant_id,cell_id,result FROM operations WHERE operation_id=$1 FOR UPDATE", cmd.CommandID).
@@ -558,6 +656,9 @@ func (s *Store) conserveObservation(ctx context.Context, cmd dispatch.Command, r
 		return dispatch.Result{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, cmd.TenantID); err != nil {
+		return dispatch.Result{}, err
+	}
 	var state, tenant, cell string
 	var original, result []byte
 	err = tx.QueryRowContext(ctx, "SELECT state,tenant_id,cell_id,command,result FROM operations WHERE operation_id=$1 FOR UPDATE", cmd.CommandID).Scan(&state, &tenant, &cell, &original, &result)

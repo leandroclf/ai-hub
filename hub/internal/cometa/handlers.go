@@ -15,9 +15,12 @@ import (
 
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providersim"
 	"github.com/google/uuid"
 )
+
+var errCapacityPolicyInvalid = errors.New("cometa: capacity policy invalid")
 
 // Handlers expoe a API interna do Cometa: despacho direto (COM-06),
 // consulta interna por operation_id (EXE-04) e recepcao de callback do
@@ -44,6 +47,55 @@ func (h *Handlers) Register(mux *http.ServeMux) {
 // próprio.
 func (h *Handlers) RegisterAdmin(mux *http.ServeMux) {
 	mux.HandleFunc("/admin/v1/capacity-domains", h.handleAdminCapacityDomains)
+	mux.HandleFunc("/admin/v1/capacity-domains/", h.handleAdminCapacityPermitResolve)
+	mux.HandleFunc("/admin/v1/callback-inbox/", h.handleAdminCallbackInboxReplay)
+}
+
+// handleAdminCallbackInboxReplay is the only authorized path that moves a
+// QUARANTINED callback obligation (retry exhausted after an apply-side
+// failure, R6-SEG-02) back into processing. A nominal, MFA-authenticated
+// operator identity and an explicit reason are required — never an
+// automatic timer, and never the provider resending.
+func (h *Handlers) handleAdminCallbackInboxReplay(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost || !strings.HasSuffix(r.URL.Path, "/replay") {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	p, ok := auth.FromContext(r.Context())
+	if !ok || p.Workload || !p.MFA || !auth.Authorize(r.Context(), "integrations:write", "") {
+		auth.Error(w, http.StatusForbidden, "forbidden")
+		return
+	}
+	inboxID := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/admin/v1/callback-inbox/"), "/replay")
+	if inboxID == "" {
+		auth.Error(w, http.StatusNotFound, "not_found")
+		return
+	}
+	var input struct {
+		Reason string `json:"reason"`
+	}
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4*1024))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&input) != nil {
+		auth.Error(w, http.StatusUnprocessableEntity, "reason_required")
+		return
+	}
+	input.Reason = strings.TrimSpace(input.Reason)
+	if len(input.Reason) < 8 || len(input.Reason) > 512 {
+		auth.Error(w, http.StatusUnprocessableEntity, "reason_required")
+		return
+	}
+	actor := p.Subject + ":" + input.Reason
+	if err := h.store.ReplayCallbackInbox(r.Context(), inboxID, actor); err != nil {
+		if errors.Is(err, ErrCallbackNotQuarantined) {
+			auth.Error(w, http.StatusConflict, "not_quarantined")
+			return
+		}
+		auth.Error(w, http.StatusServiceUnavailable, "replay_unavailable")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusAccepted)
 }
 
 type capacityDomainView struct {
@@ -83,37 +135,109 @@ func (h *Handlers) handleAdminCapacityDomains(w http.ResponseWriter, r *http.Req
 		args = append(args, domain)
 	}
 	query += " ORDER BY d.domain_id"
-	rows, err := h.store.db.QueryContext(r.Context(), query, args...)
-	if err != nil {
-		auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
+	items := make([]capacityDomainView, 0)
+	// capacity_permits (referenciada pelas subconsultas) tem RLS por
+	// tenant_id: este painel agrega abertos/pendentes entre tenants por
+	// domínio, um diagnóstico administrativo legítimo (R6-SEG-01), nunca
+	// acesso global implícito — exige motivo auditável.
+	err := pg.WithAuditedScopeTx(r.Context(), h.store.db, "admin_capacity_domains:"+p.Subject, func(tx *sql.Tx) error {
+		rows, queryErr := tx.QueryContext(r.Context(), query, args...)
+		if queryErr != nil {
+			return queryErr
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var (
+				id, rawPolicy, lastFeedback           string
+				currentLimit, open, pending, rateUsed int
+				epoch                                 int64
+			)
+			if scanErr := rows.Scan(&id, &rawPolicy, &currentLimit, &epoch, &rateUsed, &lastFeedback, &open, &pending); scanErr != nil {
+				return scanErr
+			}
+			var policy CapacityPolicy
+			if json.Unmarshal([]byte(rawPolicy), &policy) != nil {
+				return errCapacityPolicyInvalid
+			}
+			items = append(items, capacityDomainView{Domain: id, Version: policy.Version, EvidenceRef: policy.EvidenceRef, ValidUntil: policy.ValidUntil, MaxConcurrent: policy.MaxConcurrent, MinConcurrent: policy.MinConcurrent, EffectiveLimit: currentLimit, LatencyThresholdMillis: policy.LatencyThresholdMillis, TransportOpen: open, PendingExternal: pending, RateUsed: rateUsed, LastFeedback: lastFeedback, Epoch: epoch})
+		}
+		return rows.Err()
+	})
+	if errors.Is(err, errCapacityPolicyInvalid) {
+		auth.Error(w, http.StatusServiceUnavailable, "capacity_policy_invalid")
 		return
 	}
-	defer rows.Close()
-	items := make([]capacityDomainView, 0)
-	for rows.Next() {
-		var (
-			id, rawPolicy, lastFeedback           string
-			currentLimit, open, pending, rateUsed int
-			epoch                                 int64
-		)
-		if err := rows.Scan(&id, &rawPolicy, &currentLimit, &epoch, &rateUsed, &lastFeedback, &open, &pending); err != nil {
-			auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
-			return
-		}
-		var policy CapacityPolicy
-		if err := json.Unmarshal([]byte(rawPolicy), &policy); err != nil {
-			auth.Error(w, http.StatusServiceUnavailable, "capacity_policy_invalid")
-			return
-		}
-		items = append(items, capacityDomainView{Domain: id, Version: policy.Version, EvidenceRef: policy.EvidenceRef, ValidUntil: policy.ValidUntil, MaxConcurrent: policy.MaxConcurrent, MinConcurrent: policy.MinConcurrent, EffectiveLimit: currentLimit, LatencyThresholdMillis: policy.LatencyThresholdMillis, TransportOpen: open, PendingExternal: pending, RateUsed: rateUsed, LastFeedback: lastFeedback, Epoch: epoch})
-	}
-	if err := rows.Err(); err != nil {
+	if err != nil {
 		auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"items": items, "next_cursor": ""})
+}
+
+// handleAdminCapacityPermitResolve fecha uma concessão presa após falha de
+// settlement (CompleteTransport nunca completou) ou obrigação externa
+// pendente, com evidência terminal fornecida pelo operador (R6-OPE-04-S03).
+// O lease vencido nunca é, por si só, prova de conclusão: sem esta chamada
+// autorizada e evidenciada, o permit permanece aberto e ocupando a vaga.
+func (h *Handlers) handleAdminCapacityPermitResolve(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost || !strings.HasSuffix(r.URL.Path, "/resolve") {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	p, ok := auth.FromContext(r.Context())
+	if !ok || p.Workload || !p.MFA || !auth.Authorize(r.Context(), "integrations:write", "") {
+		auth.Error(w, http.StatusForbidden, "forbidden")
+		return
+	}
+	parts := strings.Split(strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/admin/v1/capacity-domains/"), "/resolve"), "/permits/")
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		auth.Error(w, http.StatusNotFound, "not_found")
+		return
+	}
+	domain, permitID := parts[0], parts[1]
+	var input struct {
+		Reason string `json:"reason"`
+	}
+	decoder := json.NewDecoder(http.MaxBytesReader(w, r.Body, 4*1024))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&input) != nil {
+		auth.Error(w, http.StatusUnprocessableEntity, "reason_required")
+		return
+	}
+	input.Reason = strings.TrimSpace(input.Reason)
+	if len(input.Reason) < 8 || len(input.Reason) > 512 {
+		auth.Error(w, http.StatusUnprocessableEntity, "reason_required")
+		return
+	}
+	if h.exec == nil || h.exec.Capacity() == nil {
+		auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
+		return
+	}
+	var epoch int64
+	err := pg.WithAuditedScopeTx(r.Context(), h.store.db, "admin_capacity_resolve:"+p.Subject+":"+input.Reason, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(r.Context(), `SELECT epoch FROM capacity_permits WHERE domain_id=$1 AND permit_id=$2 AND (transport_open OR pending_external)`, domain, permitID).Scan(&epoch)
+	})
+	if errors.Is(err, sql.ErrNoRows) {
+		auth.Error(w, http.StatusConflict, "permit_not_pending")
+		return
+	}
+	if err != nil {
+		auth.Error(w, http.StatusServiceUnavailable, "capacity_authority_unavailable")
+		return
+	}
+	evidence := p.Subject + ":" + input.Reason
+	if err = h.exec.Capacity().ResolvePending(r.Context(), domain, permitID, epoch, evidence); err != nil {
+		if errors.Is(err, ErrCapacityFence) {
+			auth.Error(w, http.StatusConflict, "permit_not_pending")
+			return
+		}
+		auth.Error(w, http.StatusServiceUnavailable, "resolve_unavailable")
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (h *Handlers) RegisterInternal(mux *http.ServeMux) {
@@ -185,7 +309,9 @@ func (h *Handlers) handleGetOperation(w http.ResponseWriter, r *http.Request) {
 		Result      json.RawMessage `json:"result,omitempty"`
 	}
 	var rawResult []byte
-	err := h.store.db.QueryRowContext(r.Context(), `SELECT operation_id,protocol_id,state,result FROM operations WHERE operation_id=$1 AND tenant_id=$2 AND application_id=$3 AND cell_id=$4`, operationID, tenant, application, principal.CellID).Scan(&result.OperationID, &result.ProtocolID, &result.State, &rawResult)
+	err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(r.Context(), `SELECT operation_id,protocol_id,state,result FROM operations WHERE operation_id=$1 AND tenant_id=$2 AND application_id=$3 AND cell_id=$4`, operationID, tenant, application, principal.CellID).Scan(&result.OperationID, &result.ProtocolID, &result.State, &rawResult)
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		auth.Error(w, 404, "operation_not_found")
 		return
@@ -241,7 +367,7 @@ func (h *Handlers) handleCallback(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "callback unauthorized", http.StatusUnauthorized)
 			return
 		}
-		err := h.store.AuthenticateAccountCallback(r.Context(), operationID, accountID, at, signature, body)
+		_, err := h.store.AuthenticateAccountCallback(r.Context(), operationID, accountID, at, signature, body)
 		if err == nil {
 			if _, err := h.exec.ApplyExternalObservationRaw(r.Context(), operationID, result, body); err != nil {
 				http.Error(w, "callback custody unavailable", http.StatusServiceUnavailable)

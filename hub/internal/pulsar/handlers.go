@@ -13,6 +13,7 @@ import (
 	"ai-hub/hub/internal/platform/auth"
 	"ai-hub/hub/internal/platform/egress"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type Handlers struct{ store *Store }
@@ -68,23 +69,24 @@ func (h *Handlers) destinations(w http.ResponseWriter, r *http.Request) {
 	}
 	switch r.Method {
 	case "GET":
-		rows, err := h.store.db.QueryContext(r.Context(), "SELECT id,version,application_id,url,state,max_attempts,timeout_seconds FROM webhook_destination_versions WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100", tenant)
-		if err != nil {
-			auth.Error(w, 503, "destinations_unavailable")
-			return
-		}
-		defer rows.Close()
 		items := []map[string]any{}
-		for rows.Next() {
-			var id, application, url, state string
-			var version, max, timeout int
-			if rows.Scan(&id, &version, &application, &url, &state, &max, &timeout) != nil {
-				auth.Error(w, 503, "destinations_unavailable")
-				return
+		err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			rows, err := tx.QueryContext(r.Context(), "SELECT id,version,application_id,url,state,max_attempts,timeout_seconds FROM webhook_destination_versions WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100", tenant)
+			if err != nil {
+				return err
 			}
-			items = append(items, map[string]any{"id": id, "version": version, "application_id": application, "url": url, "state": state, "max_attempts": max, "timeout_seconds": timeout})
-		}
-		if rows.Err() != nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, application, url, state string
+				var version, max, timeout int
+				if err := rows.Scan(&id, &version, &application, &url, &state, &max, &timeout); err != nil {
+					return err
+				}
+				items = append(items, map[string]any{"id": id, "version": version, "application_id": application, "url": url, "state": state, "max_attempts": max, "timeout_seconds": timeout})
+			}
+			return rows.Err()
+		})
+		if err != nil {
 			auth.Error(w, 503, "destinations_unavailable")
 			return
 		}
@@ -118,6 +120,18 @@ func (h *Handlers) destinations(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer tx.Rollback()
+		if err = pg.SetTenantScope(r.Context(), tx, tenant); err != nil {
+			auth.Error(w, 503, "destination_custody_unavailable")
+			return
+		}
+		// A verificacao de posse do ID abaixo precisa enxergar versoes de outros
+		// tenants (deteccao de colisao de ID entre tenants, EXE-08); e somente
+		// leitura, entao um escopo auditado adicional (nao substitui o tenant
+		// scope acima, usado nas escritas) e suficiente e correto (R6-SEG-01).
+		if err = pg.SetAuditedScope(r.Context(), tx, "destination_id_ownership_check:"+p.Subject); err != nil {
+			auth.Error(w, 503, "destination_custody_unavailable")
+			return
+		}
 		if _, err = tx.ExecContext(r.Context(), "SELECT pg_advisory_xact_lock(hashtextextended($1,0))", q.ID); err != nil {
 			auth.Error(w, 503, "destination_custody_unavailable")
 			return
@@ -171,6 +185,10 @@ func (h *Handlers) deliveries(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer tx.Rollback()
+		if err = pg.SetTenantScope(r.Context(), tx, tenant); err != nil {
+			auth.Error(w, 503, "delivery_unavailable")
+			return
+		}
 		result, err := tx.ExecContext(r.Context(), "UPDATE deliveries SET state='RETRY_SCHEDULED',next_attempt_at=clock_timestamp() WHERE delivery_id=$1 AND tenant_id=$2 AND state='EXHAUSTED' AND representation IS NOT NULL", id, tenant)
 		if err != nil {
 			auth.Error(w, 503, "delivery_unavailable")
@@ -199,7 +217,9 @@ func (h *Handlers) deliveries(w http.ResponseWriter, r *http.Request) {
 		var count int
 		var next time.Time
 		var representation []byte
-		err := h.store.db.QueryRowContext(r.Context(), `SELECT delivery_id,protocol_id,state,attempts_count,next_attempt_at,destination_id,destination_version,body_sha256,representation FROM deliveries WHERE tenant_id=$1 AND delivery_id::text=$2`, tenant, id).Scan(&deliveryID, &protocol, &state, &count, &next, &dest, &version, &hash, &representation)
+		err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(r.Context(), `SELECT delivery_id,protocol_id,state,attempts_count,next_attempt_at,destination_id,destination_version,body_sha256,representation FROM deliveries WHERE tenant_id=$1 AND delivery_id::text=$2`, tenant, id).Scan(&deliveryID, &protocol, &state, &count, &next, &dest, &version, &hash, &representation)
+		})
 		if err == sql.ErrNoRows {
 			auth.Error(w, 404, "not_found")
 			return
@@ -230,38 +250,39 @@ func (h *Handlers) deliveries(w http.ResponseWriter, r *http.Request) {
 	}
 	after := r.URL.Query().Get("cursor")
 	status := r.URL.Query().Get("status")
-	rows, err := h.store.db.QueryContext(r.Context(), `SELECT delivery_id,protocol_id,state,attempts_count,next_attempt_at,destination_id,destination_version,body_sha256 FROM deliveries WHERE tenant_id=$1 AND ($2='' OR delivery_id::text=$2) AND delivery_id::text>$3 AND ($4='' OR state=$4) ORDER BY delivery_id::text LIMIT $5`, tenant, id, after, status, limit+1)
-	if err != nil {
-		auth.Error(w, 503, "deliveries_unavailable")
-		return
-	}
-	defer rows.Close()
 	items := []map[string]any{}
 	last := ""
-	for rows.Next() {
-		var id, protocol, state, hash string
-		var dest sql.NullString
-		var version sql.NullInt64
-		var count int
-		var next time.Time
-		if rows.Scan(&id, &protocol, &state, &count, &next, &dest, &version, &hash) != nil {
-			auth.Error(w, 503, "deliveries_unavailable")
-			return
+	err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(r.Context(), `SELECT delivery_id,protocol_id,state,attempts_count,next_attempt_at,destination_id,destination_version,body_sha256 FROM deliveries WHERE tenant_id=$1 AND ($2='' OR delivery_id::text=$2) AND delivery_id::text>$3 AND ($4='' OR state=$4) ORDER BY delivery_id::text LIMIT $5`, tenant, id, after, status, limit+1)
+		if err != nil {
+			return err
 		}
-		var destinationID any
-		if dest.Valid {
-			destinationID = dest.String
+		defer rows.Close()
+		for rows.Next() {
+			var id, protocol, state, hash string
+			var dest sql.NullString
+			var version sql.NullInt64
+			var count int
+			var next time.Time
+			if err := rows.Scan(&id, &protocol, &state, &count, &next, &dest, &version, &hash); err != nil {
+				return err
+			}
+			var destinationID any
+			if dest.Valid {
+				destinationID = dest.String
+			}
+			var destinationVersion any
+			if version.Valid {
+				destinationVersion = version.Int64
+			}
+			items = append(items, map[string]any{"delivery_id": id, "protocol_id": protocol, "tenant_id": tenant, "state": state, "attempts_count": count, "next_attempt_at": next, "destination_id": destinationID, "destination_version": destinationVersion, "body_sha256": hash})
+			if len(items) == limit {
+				last = id
+			}
 		}
-		var destinationVersion any
-		if version.Valid {
-			destinationVersion = version.Int64
-		}
-		items = append(items, map[string]any{"delivery_id": id, "protocol_id": protocol, "tenant_id": tenant, "state": state, "attempts_count": count, "next_attempt_at": next, "destination_id": destinationID, "destination_version": destinationVersion, "body_sha256": hash})
-		if len(items) == limit {
-			last = id
-		}
-	}
-	if rows.Err() != nil {
+		return rows.Err()
+	})
+	if err != nil {
 		auth.Error(w, 503, "deliveries_unavailable")
 		return
 	}

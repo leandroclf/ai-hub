@@ -19,6 +19,7 @@ import (
 	"ai-hub/hub/internal/cometa"
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 	_ "github.com/lib/pq"
 )
@@ -85,14 +86,19 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 		tenant := cell + string(rune('a'+index))
 		ref := []string{"key-a", "key-b"}[index]
 		destinationID := idgen.New()
-		_, err = db.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,1,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, destinationID, tenant, cell, server.URL, ref)
+		err = pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+			if _, execErr := tx.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,1,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, destinationID, tenant, cell, server.URL, ref); execErr != nil {
+				return execErr
+			}
+			if index == 0 {
+				if _, execErr := tx.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,2,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, destinationID, tenant, cell, server.URL+"/new", ref); execErr != nil {
+					return execErr
+				}
+			}
+			return nil
+		})
 		if err != nil {
 			t.Fatal(err)
-		}
-		if index == 0 {
-			if _, err = db.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,2,$2,$3,$4,$5,'v1',3,2,'ACTIVE','fixture')`, destinationID, tenant, cell, server.URL+"/new", ref); err != nil {
-				t.Fatal(err)
-			}
 		}
 		facts = append(facts, protocolFact{ProtocolID: idgen.New(), TenantID: tenant, ApplicationID: "app-a", CellID: cell, EventID: event, Representation: body, Status: "SUCCEEDED", WebhookDestinations: []dispatch.DestinationSnapshot{{ID: destinationID, Version: 1, URL: server.URL, SecretRef: ref, SecretVersion: "v1", MaxAttempts: 3, TimeoutSecond: 2}}})
 		defer db.Exec("DELETE FROM inbox WHERE consumer='pulsar' AND event_id=$1", event)
@@ -105,7 +111,9 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 		}
 	}
 	var count int
-	if err = db.QueryRow("SELECT count(*) FROM deliveries WHERE cell_id=$1", cell).Scan(&count); err != nil || count != 2 {
+	if err = pg.WithWorkerCellTx(ctx, db, cell, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM deliveries WHERE cell_id=$1", cell).Scan(&count)
+	}); err != nil || count != 2 {
 		t.Fatalf("deliveries=%d %v", count, err)
 	}
 	first, err := s.ClaimDelivery(ctx, cell, "worker-a")
@@ -159,11 +167,15 @@ func TestPostgresVersionedWebhookCustody(t *testing.T) {
 	if len(received) != 2 {
 		t.Fatalf("received events=%d", len(received))
 	}
-	if err = db.QueryRow("SELECT count(*) FROM deliveries WHERE cell_id=$1 AND state='DELIVERED'", cell).Scan(&count); err != nil || count != 2 {
+	if err = pg.WithWorkerCellTx(ctx, db, cell, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM deliveries WHERE cell_id=$1 AND state='DELIVERED'", cell).Scan(&count)
+	}); err != nil || count != 2 {
 		t.Fatalf("acknowledged receipts=%d %v; worker log=%s", count, err, workerLogs.String())
 	}
 	var open, pending int
-	if err = db.QueryRow("SELECT count(*) FILTER (WHERE transport_open), count(*) FILTER (WHERE pending_external) FROM capacity_permits WHERE domain_id=$1", capacityDomain).Scan(&open, &pending); err != nil {
+	if err = pg.WithWorkerCellTx(ctx, db, cell, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FILTER (WHERE transport_open), count(*) FILTER (WHERE pending_external) FROM capacity_permits WHERE domain_id=$1", capacityDomain).Scan(&open, &pending)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if open != 0 || pending != 0 {
@@ -218,7 +230,10 @@ func TestPostgresSlowWebhookTenantDoesNotBlockHealthyDelivery(t *testing.T) {
 		{tenantHealthy, eventHealthy, "healthy-key"},
 	} {
 		destinationID := idgen.New()
-		if _, err := db.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,1,$2,$3,$4,$5,'v1',2,1,'ACTIVE','fixture')`, destinationID, fixture.tenant, cell, server.URL, fixture.key); err != nil {
+		if err := pg.WithTenantTx(ctx, db, fixture.tenant, func(tx *sql.Tx) error {
+			_, execErr := tx.Exec(`INSERT INTO webhook_destination_versions(id,version,tenant_id,cell_id,url,secret_ref,secret_version,max_attempts,timeout_seconds,state,created_by) VALUES($1,1,$2,$3,$4,$5,'v1',2,1,'ACTIVE','fixture')`, destinationID, fixture.tenant, cell, server.URL, fixture.key)
+			return execErr
+		}); err != nil {
 			t.Fatal(err)
 		}
 		fact := protocolFact{ProtocolID: idgen.New(), TenantID: fixture.tenant, ApplicationID: "app-delivery", CellID: cell, EventID: fixture.event, Representation: body, Status: "SUCCEEDED", WebhookDestinations: []dispatch.DestinationSnapshot{{ID: destinationID, Version: 1, URL: server.URL, SecretRef: fixture.key, SecretVersion: "v1", MaxAttempts: 2, TimeoutSecond: 1}}}
@@ -257,16 +272,23 @@ func TestPostgresSlowWebhookTenantDoesNotBlockHealthyDelivery(t *testing.T) {
 		t.Fatalf("entrega saudável foi serializada pelo tenant lento: duração=%s", elapsed)
 	}
 	var slowState, healthyState string
-	if err := db.QueryRow("SELECT state FROM deliveries WHERE event_id=$1", eventSlow).Scan(&slowState); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenantSlow, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state FROM deliveries WHERE event_id=$1", eventSlow).Scan(&slowState)
+	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.QueryRow("SELECT state FROM deliveries WHERE event_id=$1", eventHealthy).Scan(&healthyState); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenantHealthy, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state FROM deliveries WHERE event_id=$1", eventHealthy).Scan(&healthyState)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if slowState != "RETRY_SCHEDULED" || healthyState != "DELIVERED" {
 		t.Fatalf("isolamento de entrega incorreto: lento=%s saudável=%s", slowState, healthyState)
 	}
-	if _, err := db.Exec("UPDATE deliveries SET next_attempt_at=clock_timestamp() WHERE event_id=$1", eventSlow); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenantSlow, func(tx *sql.Tx) error {
+		_, execErr := tx.Exec("UPDATE deliveries SET next_attempt_at=clock_timestamp() WHERE event_id=$1", eventSlow)
+		return execErr
+	}); err != nil {
 		t.Fatal(err)
 	}
 	second, err := store.ClaimDelivery(ctx, cell, "isolation-retry-worker")
@@ -274,7 +296,9 @@ func TestPostgresSlowWebhookTenantDoesNotBlockHealthyDelivery(t *testing.T) {
 		t.Fatalf("retry do tenant lento não foi agendado: event=%s err=%v", second.EventID, err)
 	}
 	worker.attempt(ctx, second)
-	if err := db.QueryRow("SELECT state FROM deliveries WHERE event_id=$1", eventSlow).Scan(&slowState); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenantSlow, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state FROM deliveries WHERE event_id=$1", eventSlow).Scan(&slowState)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if slowState != "EXHAUSTED" {

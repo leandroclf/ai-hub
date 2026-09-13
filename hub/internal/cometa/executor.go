@@ -19,6 +19,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	"ai-hub/hub/internal/providerauth"
 	"ai-hub/hub/internal/providersim"
 )
@@ -64,17 +65,23 @@ func NewExecutor(store *Store, atlas *atlasclient.Client, log *slog.Logger, self
 }
 
 // SetCapacityController conecta a autoridade global de capacidade ao caminho
-// real de execução. O setter mantém fixtures legadas sem política explícita
-// compatíveis; serviços configurados com capacity_domain continuam falhando
-// fechado quando a autoridade não foi instalada.
+// real de execução. Toda rota exige capacidade (R6-OPE-04): sem controlador
+// instalado, qualquer submissão/poll falha fechado em acquireCapacity.
 func (e *Executor) SetCapacityController(c *CapacityController) { e.capacity = c }
 
+// Capacity expõe a autoridade de capacidade para reconciliação administrativa
+// (R6-OPE-04-S03): resolver um permit preso após falha de settlement e lease
+// vencido exige evidência terminal, nunca reciclagem cega por TTL.
+func (e *Executor) Capacity() *CapacityController { return e.capacity }
+
+// R6-OPE-04: capacidade é obrigatória para toda rota ativa — Atlas já recusa
+// publicar uma rota sem capacity_domain (catalog.go). Um snapshot que chega
+// aqui sem domínio, ou sem controlador instalado, nunca é um bypass
+// silencioso: é negado antes de qualquer I/O externo, exatamente como uma
+// política vencida ou um teto esgotado.
 func (e *Executor) acquireCapacity(ctx context.Context, cmd dispatch.Command, snapshot atlas.OfferSnapshot, action, id, owner string) (CapacityPermit, bool, error) {
 	domain := snapshot.SelectedRoute.CapacityDomain
-	if domain == "" {
-		return CapacityPermit{}, false, nil
-	}
-	if e.capacity == nil {
+	if domain == "" || e.capacity == nil {
 		return CapacityPermit{}, true, ErrCapacityPolicy
 	}
 	permit, err := e.capacity.Acquire(ctx, domain, id, cmd.TenantID, cmd.CellID, owner, action)
@@ -130,7 +137,7 @@ func (e *Executor) resolveCapacityPending(ctx context.Context, cmd dispatch.Comm
 	}
 	resolveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer cancel()
-	if err := e.capacity.ResolvePendingByID(resolveCtx, snapshot.SelectedRoute.CapacityDomain, cmd.CommandID, evidence); err != nil && !errors.Is(err, ErrCapacityFence) {
+	if err := e.capacity.ResolvePendingByID(resolveCtx, cmd.TenantID, snapshot.SelectedRoute.CapacityDomain, cmd.CommandID, evidence); err != nil && !errors.Is(err, ErrCapacityFence) {
 		e.log.Error("capacity pending resolution failed", "domain", snapshot.SelectedRoute.CapacityDomain, "operation_id", cmd.CommandID, "error", err)
 	}
 }
@@ -152,7 +159,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	if cmd.CellID != os.Getenv("CELL_ID") || cmd.TenantID == "" || cmd.CommandID == "" || cmd.StepDeadline.IsZero() {
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "invalid_command"}
 	}
-	if _, err := e.store.Get(ctx, operationID); err == nil {
+	if _, err := e.store.GetForTenant(ctx, cmd.TenantID, operationID); err == nil {
 		result, err := e.store.DurableResult(ctx, cmd)
 		if err == nil {
 			return result
@@ -202,6 +209,13 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	pa.ProviderAccountID = snapshot.Account.ID
 
 	binding, _ := atlas.DecodeCatalogData(snapshot.Binding)
+	// R6-EXE-01: verifica coerência entre rota, conta e vínculo dentro do
+	// próprio snapshot — um hash válido certifica bytes, não coerência
+	// semântica entre os campos. A etapa nunca executa com uma combinação de
+	// rota/conta/vínculo que não se referenciam mutuamente.
+	if snapshot.SelectedRoute.ProviderAccountID != snapshot.Account.ID || binding.ProviderAccountID != snapshot.Account.ID {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "snapshot_route_account_binding_mismatch"}
+	}
 	capacityPermit, capacityEnabled, err := e.acquireCapacity(ctx, cmd, snapshot, "SUBMIT", operationID, "submit-"+idgen.New())
 	if err != nil {
 		return dispatch.Result{CommandID: cmd.CommandID, OperationID: operationID, Kind: dispatch.FactRejected, ErrorCode: "capacity_unavailable"}
@@ -240,7 +254,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	effectiveBudget := effectiveHTTPBudget(ctx, providerBudget, capacityPermit, capacityEnabled)
 	if effectiveBudget <= 0 {
 		releaseCapacity("capacity-lease-budget-exhausted")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
+		return e.communicationFailure(ctx, cmd, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
 	}
 	if err := e.store.ValidateSubmission(ctx, claim); err != nil {
 		releaseCapacity("submission-fence-before-provider-auth")
@@ -248,7 +262,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	}
 	client, err := e.clients.Client(pa.BaseURL, effectiveBudget)
 	if err != nil {
-		result := e.communicationFailure(ctx, operationID, attemptID, sentAt, "egress_refused", err)
+		result := e.communicationFailure(ctx, cmd, attemptID, sentAt, "egress_refused", err)
 		releaseCapacity("egress-refused-before-provider")
 		return result
 	}
@@ -268,16 +282,16 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	httpReq, err := adapter.BuildSubmitRequest(ctx, pa.BaseURL, cmd, contract, pa.ProviderMode, callbackURL)
 	if err != nil {
 		releaseCapacity("request-build-failed")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "build_request", err)
+		return e.communicationFailure(ctx, cmd, attemptID, sentAt, "build_request", err)
 	}
 	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
 		releaseCapacity("capacity-fence-before-provider-auth")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
+		return e.communicationFailure(ctx, cmd, attemptID, sentAt, "capacity_fence", err)
 	}
 	authBudget := effectiveHTTPBudget(ctx, minDuration(providerBudget, 3*time.Second), capacityPermit, capacityEnabled)
 	if authBudget <= 0 {
 		releaseCapacity("capacity-lease-auth-budget-exhausted")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
+		return e.communicationFailure(ctx, cmd, attemptID, sentAt, "capacity_fence", ErrCapacityFence)
 	}
 	authCtx, authCancel := context.WithTimeout(ctx, authBudget)
 	authErr := e.tokenCache.Apply(authCtx, client, pa.ProviderAccountID, providerauth.Config{
@@ -290,11 +304,11 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	authCancel()
 	if authErr != nil {
 		releaseCapacity("provider-authentication-failed")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "provider_authentication", authErr)
+		return e.communicationFailure(ctx, cmd, attemptID, sentAt, "provider_authentication", authErr)
 	}
 	if err := e.validateCapacity(ctx, capacityPermit, capacityEnabled); err != nil {
 		releaseCapacity("capacity-fence-before-submit")
-		return e.communicationFailure(ctx, operationID, attemptID, sentAt, "capacity_fence", err)
+		return e.communicationFailure(ctx, cmd, attemptID, sentAt, "capacity_fence", err)
 	}
 	if err := e.store.ValidateSubmission(ctx, claim); err != nil {
 		releaseCapacity("submission-fence-before-submit")
@@ -305,7 +319,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	if err != nil {
 		// Falha de comunicacao: efeito possivelmente enviado e
 		// desconhecido (EXE-09/EXE-04) — nao inventar resposta final.
-		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "transport_error", err), true)
+		return settleCapacity(e.communicationFailure(ctx, cmd, attemptID, sentAt, "transport_error", err), true)
 	}
 	defer resp.Body.Close()
 
@@ -313,7 +327,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	body, readErr := io.ReadAll(io.LimitReader(resp.Body, 256*1024+1))
 	result, decodeErr := adapter.DecodeResult(resp.StatusCode, body)
 	if readErr != nil || len(body) > 256*1024 || decodeErr != nil {
-		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_provider_response", fmt.Errorf("invalid provider response")), true)
+		return settleCapacity(e.communicationFailure(ctx, cmd, attemptID, sentAt, "invalid_provider_response", fmt.Errorf("invalid provider response")), true)
 	}
 	if _, err := e.store.db.ExecContext(ctx, "UPDATE attempts SET sent_at=$2,received_at=$3 WHERE attempt_id=$1", attemptID, sentAt, receivedAt); err != nil {
 		return settleCapacity(dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactUnknown, ErrorCode: "receipt_unavailable"}, true)
@@ -322,13 +336,13 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	switch resp.StatusCode {
 	case http.StatusOK: // Provider final must have explicit terminal semantics.
 		if result.Status == "PENDING" {
-			return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_final", fmt.Errorf("pending result on final response")), true)
+			return settleCapacity(e.communicationFailure(ctx, cmd, attemptID, sentAt, "invalid_final", fmt.Errorf("pending result on final response")), true)
 		}
 		final := e.finalize(ctx, cmd, operationID, result)
 		return settleCapacity(final, final.Kind == dispatch.FactUnknown)
 	case http.StatusAccepted: // provedor assincrono: pendente
 		if result.Status != "PENDING" {
-			return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, "invalid_acceptance", fmt.Errorf("terminal result on pending response")), true)
+			return settleCapacity(e.communicationFailure(ctx, cmd, attemptID, sentAt, "invalid_acceptance", fmt.Errorf("terminal result on pending response")), true)
 		}
 		saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 		defer cancel()
@@ -338,7 +352,7 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 		}
 		return settleCapacity(durable, true)
 	default:
-		return settleCapacity(e.communicationFailure(ctx, operationID, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado")), true)
+		return settleCapacity(e.communicationFailure(ctx, cmd, attemptID, sentAt, fmt.Sprintf("status_%d", resp.StatusCode), fmt.Errorf("status inesperado")), true)
 	}
 }
 
@@ -361,14 +375,10 @@ func externalIdempotencyKey(cmd dispatch.Command) string {
 	return cmd.ProtocolID
 }
 
-func (e *Executor) communicationFailure(ctx context.Context, operationID, attemptID string, sentAt time.Time, code string, cause error) dispatch.Result {
+func (e *Executor) communicationFailure(ctx context.Context, cmd dispatch.Command, attemptID string, sentAt time.Time, code string, cause error) dispatch.Result {
 	saveCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 3*time.Second)
 	defer cancel()
-	var cmd dispatch.Command
-	var raw []byte
-	if err := e.store.db.QueryRowContext(saveCtx, "SELECT command FROM operations WHERE operation_id=$1", operationID).Scan(&raw); err == nil {
-		_ = json.Unmarshal(raw, &cmd)
-	}
+	operationID := cmd.CommandID
 	result := dispatch.Result{CommandID: operationID, OperationID: operationID, Kind: dispatch.FactUnknown, ErrorCode: code}
 	if cmd.CommandID == "" {
 		return result
@@ -539,7 +549,10 @@ func (e *Executor) applyExternalObservation(ctx context.Context, operationID str
 	}
 	var raw []byte
 	var storedCorrelation string
-	if err = e.store.db.QueryRowContext(ctx, "SELECT command,COALESCE(provider_request_id,'') FROM operations WHERE operation_id=$1", operationID).Scan(&raw, &storedCorrelation); err != nil {
+	err = pg.WithAuditedScopeTx(ctx, e.store.db, "operation_ingress_lookup", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, "SELECT command,COALESCE(provider_request_id,'') FROM operations WHERE operation_id=$1", operationID).Scan(&raw, &storedCorrelation)
+	})
+	if err != nil {
 		return dispatch.Result{}, err
 	}
 	if storedCorrelation != "" && storedCorrelation != result.ProviderRequestID {

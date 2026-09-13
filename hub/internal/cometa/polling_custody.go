@@ -12,6 +12,7 @@ import (
 	"ai-hub/hub/internal/dispatch"
 	"ai-hub/hub/internal/outbox"
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 var (
@@ -83,6 +84,9 @@ func (s *Store) ClaimPoll(ctx context.Context, cell, owner string) (PollClaim, e
 		return c, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetWorkerCellScope(ctx, tx, cell); err != nil {
+		return c, err
+	}
 	var id string
 	err = tx.QueryRowContext(ctx, `SELECT o.operation_id FROM operations o JOIN polling_schedule p USING(operation_id)
  WHERE o.cell_id=$1 AND o.state IN ('ACCEPTED_EXTERNAL','WAITING_FINAL','UNKNOWN') AND o.provider_request_id IS NOT NULL
@@ -124,6 +128,9 @@ func (s *Store) CompletePoll(ctx context.Context, c PollClaim, r dispatch.Result
 		return err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, c.Command.TenantID); err != nil {
+		return err
+	}
 	var state, tenant, cell string
 	var existingRaw []byte
 	err = tx.QueryRowContext(ctx, `SELECT state,tenant_id,cell_id,result FROM operations WHERE operation_id=$1 FOR UPDATE`, c.Command.CommandID).Scan(&state, &tenant, &cell, &existingRaw)
