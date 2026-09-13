@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 func raw(v any) json.RawMessage { b, _ := json.Marshal(v); return b }
@@ -234,10 +235,13 @@ func TestCatalogPublicationRejectsBindingFromAnotherProviderAccount(t *testing.T
 		{Kind: "provider-accounts", ID: "account-a", Version: 1, TenantID: "acme", Name: "Account A", Data: raw(map[string]any{})},
 		{Kind: "credential-bindings", ID: "binding-b", Version: 1, TenantID: "acme", Name: "Binding B", Data: raw(CatalogData{ProviderAccountID: "account-b", CredentialMode: "SHARED_HUB"})},
 	} {
-		if _, err := s.SaveResource(ctx, resource, 0, "fixture"); err != nil {
+		if _, err := s.SaveResource(ctx, "acme", resource, 0, "fixture"); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := s.db.ExecContext(ctx, `UPDATE catalog_resources SET state='PUBLISHED' WHERE kind=$1 AND id=$2 AND version=$3`, resource.Kind, resource.ID, resource.Version); err != nil {
+		if err := pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+			_, err := tx.ExecContext(ctx, `UPDATE catalog_resources SET state='PUBLISHED' WHERE kind=$1 AND id=$2 AND version=$3`, resource.Kind, resource.ID, resource.Version)
+			return err
+		}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -259,12 +263,12 @@ func TestR2Seg05Scenarios(t *testing.T) {
 	t.Run("R2-SEG-05-S01_alteracao_atribuivel", func(t *testing.T) {
 		s := integrationStore(t)
 		ctx := context.Background()
-		draft, err := s.SaveResource(ctx, Resource{Kind: "providers", ID: "audited-provider", Version: 1, TenantID: "acme", Name: "Audited provider", Data: raw(map[string]string{"environment": "sandbox"})}, 0, "operator-a")
+		draft, err := s.SaveResource(ctx, "acme", Resource{Kind: "providers", ID: "audited-provider", Version: 1, TenantID: "acme", Name: "Audited provider", Data: raw(map[string]string{"environment": "sandbox"})}, 0, "operator-a")
 		if err != nil {
 			t.Fatal(err)
 		}
 		validation := s.ValidatePublication(ctx, draft)
-		published, err := s.PublishResource(ctx, draft, draft.Revision, "operator-a", "homologação da conta", validation)
+		published, err := s.PublishResource(ctx, "acme", draft, draft.Revision, "operator-a", "homologação da conta", validation)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -381,7 +385,7 @@ func TestCatalogPostgresConcurrencyPublicationAndIsolation(t *testing.T) {
 	s := integrationStore(t)
 	ctx := context.Background()
 	r := Resource{Kind: "providers", ID: "fixture-provider", Version: 1, TenantID: "acme", Name: "Provider", Data: raw(map[string]string{"environment": "sandbox"})}
-	saved, err := s.SaveResource(ctx, r, 0, "operator-a")
+	saved, err := s.SaveResource(ctx, "acme", r, 0, "operator-a")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -394,7 +398,7 @@ func TestCatalogPostgresConcurrencyPublicationAndIsolation(t *testing.T) {
 			defer wg.Done()
 			edited := saved
 			edited.Name = fmt.Sprintf("edited-%d", i)
-			_, e := s.SaveResource(ctx, edited, 1, fmt.Sprintf("operator-%d", i))
+			_, e := s.SaveResource(ctx, "acme", edited, 1, fmt.Sprintf("operator-%d", i))
 			mu.Lock()
 			defer mu.Unlock()
 			if e == nil {
@@ -410,20 +414,23 @@ func TestCatalogPostgresConcurrencyPublicationAndIsolation(t *testing.T) {
 	if passed != 1 || conflicted != 1 {
 		t.Fatalf("writes=%d conflicts=%d", passed, conflicted)
 	}
-	current, err := s.GetResource(ctx, r.Kind, r.ID, r.Version)
+	current, err := s.GetResource(ctx, "acme", r.Kind, r.ID, r.Version)
 	if err != nil {
 		t.Fatal(err)
 	}
 	v := s.ValidatePublication(ctx, current)
-	published, err := s.PublishResource(ctx, current, current.Revision, "operator-a", "fixture publication", v)
+	published, err := s.PublishResource(ctx, "acme", current, current.Revision, "operator-a", "fixture publication", v)
 	if err != nil {
 		t.Fatal(err)
 	}
 	published.Name = "tampered"
-	if _, err = s.SaveResource(ctx, published, published.Revision, "operator-b"); !errors.Is(err, ErrConflict) {
+	if _, err = s.SaveResource(ctx, "acme", published, published.Revision, "operator-b"); !errors.Is(err, ErrConflict) {
 		t.Fatalf("published mutation: %v", err)
 	}
-	if _, err = s.db.Exec(`UPDATE catalog_resources SET data='{"tampered":true}' WHERE id=$1`, r.ID); err == nil {
+	if err = pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		_, err := tx.Exec(`UPDATE catalog_resources SET data='{"tampered":true}' WHERE id=$1`, r.ID)
+		return err
+	}); err == nil {
 		t.Fatal("DB allowed published mutation")
 	}
 	var count int
@@ -451,7 +458,7 @@ func TestCatalogPostgresPaginationAndStaging(t *testing.T) {
 	s := integrationStore(t)
 	ctx := context.Background()
 	for i := 0; i < 37; i++ {
-		_, err := s.SaveResource(ctx, Resource{Kind: "providers", ID: fmt.Sprintf("provider-%03d", i), Version: 1, TenantID: "acme", Name: "Synthetic provider", Data: json.RawMessage(`{}`)}, 0, "fixture")
+		_, err := s.SaveResource(ctx, "acme", Resource{Kind: "providers", ID: fmt.Sprintf("provider-%03d", i), Version: 1, TenantID: "acme", Name: "Synthetic provider", Data: json.RawMessage(`{}`)}, 0, "fixture")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -477,10 +484,14 @@ func TestCatalogPostgresPaginationAndStaging(t *testing.T) {
 		}
 	}
 	var n int
-	if err = s.db.QueryRow(`SELECT count(*) FROM catalog_imports`).Scan(&n); err != nil || n != 1 {
+	if err = pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT count(*) FROM catalog_imports`).Scan(&n)
+	}); err != nil || n != 1 {
 		t.Fatalf("import duplicated: %d %v", n, err)
 	}
-	if err = s.db.QueryRow(`SELECT count(*) FROM catalog_resources`).Scan(&n); err != nil || n != 37 {
+	if err = pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		return tx.QueryRow(`SELECT count(*) FROM catalog_resources`).Scan(&n)
+	}); err != nil || n != 37 {
 		t.Fatal("import changed catalog")
 	}
 }
@@ -536,7 +547,10 @@ func TestCatalogImportFailurePreservesPreviousBatchAndExecutableCatalog(t *testi
 	s := integrationStore(t)
 	ctx := context.Background()
 	p := auth.Principal{Subject: "operator-a", TenantID: "acme", MFA: true, Roles: []string{"tenant_operator"}, Scopes: []string{"catalog:read", "catalog:write"}, ExpiresAt: time.Now().Add(time.Hour)}
-	if _, err := s.db.ExecContext(ctx, `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES('prior-batch','prior-hash','fixture','operator-a','acme','{}')`); err != nil {
+	if err := pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		_, err := tx.ExecContext(ctx, `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES('prior-batch','prior-hash','fixture','operator-a','acme','{}')`)
+		return err
+	}); err != nil {
 		t.Fatal(err)
 	}
 	mux := http.NewServeMux()
@@ -548,10 +562,14 @@ func TestCatalogImportFailurePreservesPreviousBatchAndExecutableCatalog(t *testi
 		t.Fatalf("falha de lote não foi explicitada: status=%d body=%s", rec.Code, rec.Body.String())
 	}
 	var imports, executable int
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM catalog_imports WHERE tenant_id='acme'`).Scan(&imports); err != nil {
+	if err := pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM catalog_imports WHERE tenant_id='acme'`).Scan(&imports)
+	}); err != nil {
 		t.Fatal(err)
 	}
-	if err := s.db.QueryRowContext(ctx, `SELECT count(*) FROM catalog_resources WHERE tenant_id='acme'`).Scan(&executable); err != nil {
+	if err := pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		return tx.QueryRowContext(ctx, `SELECT count(*) FROM catalog_resources WHERE tenant_id='acme'`).Scan(&executable)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if imports != 1 || executable != 0 {

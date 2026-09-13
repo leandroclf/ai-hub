@@ -1,6 +1,7 @@
 package objectstore
 
 import (
+	"ai-hub/hub/internal/platform/pg"
 	"bytes"
 	"context"
 	"crypto/sha256"
@@ -101,13 +102,18 @@ func TestPostgresS3MultipartFileRef(t *testing.T) {
 		t.Fatalf("multipart incompleto aceito ou erro inesperado: %v", err)
 	}
 	var incompleteState string
-	if err = db.QueryRow("SELECT state FROM file_refs WHERE id=$1 AND tenant_id=$2", incomplete.FileRef.ID, "tenant-a").Scan(&incompleteState); err != nil {
+	if err = pg.WithTenantTx(ctx, db, "tenant-a", func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state FROM file_refs WHERE id=$1 AND tenant_id=$2", incomplete.FileRef.ID, "tenant-a").Scan(&incompleteState)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if incompleteState != "UPLOADING" {
 		t.Fatalf("multipart incompleto mudou para estado incorreto: %s", incompleteState)
 	}
-	if _, err = db.Exec("DELETE FROM file_refs WHERE id=$1 AND tenant_id=$2", incomplete.FileRef.ID, "tenant-a"); err != nil {
+	if err = pg.WithTenantTx(ctx, db, "tenant-a", func(tx *sql.Tx) error {
+		_, e := tx.Exec("DELETE FROM file_refs WHERE id=$1 AND tenant_id=$2", incomplete.FileRef.ID, "tenant-a")
+		return e
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err = catalog.Resolve(ctx, "tenant-b", session.FileRef.ID); !errors.Is(err, ErrNotFound) {
@@ -163,13 +169,19 @@ func TestPostgresS3MultipartFileRef(t *testing.T) {
 	if err != nil || n != size || hex.EncodeToString(downloadHash.Sum(nil)) != sha {
 		t.Fatal("versioned download differs")
 	}
-	if _, err = db.Exec("UPDATE file_refs SET sha256='changed' WHERE id=$1", ref.ID); err == nil {
+	if err = pg.WithTenantTx(ctx, db, "tenant-a", func(tx *sql.Tx) error {
+		_, e := tx.Exec("UPDATE file_refs SET sha256='changed' WHERE id=$1", ref.ID)
+		return e
+	}); err == nil {
 		t.Fatal("immutable checksum modified")
 	}
 	if err = catalog.Pin(ctx, "tenant-a", ref.ID, "protocol-obligation", "synthetic-test"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec("UPDATE file_refs SET retention_until=clock_timestamp()-interval '1 second' WHERE id=$1", ref.ID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, "tenant-a", func(tx *sql.Tx) error {
+		_, e := tx.Exec("UPDATE file_refs SET retention_until=clock_timestamp()-interval '1 second' WHERE id=$1", ref.ID)
+		return e
+	}); err != nil {
 		t.Fatal(err)
 	}
 	plan, err := catalog.DryRun(ctx, "tenant-a", "fixture-operator")
@@ -179,7 +191,10 @@ func TestPostgresS3MultipartFileRef(t *testing.T) {
 	if err = catalog.Unpin(ctx, "tenant-a", ref.ID, "protocol-obligation", "fixture-operator"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err = db.Exec("UPDATE file_refs SET retention_until=clock_timestamp()-interval '1 second' WHERE id=$1", ref.ID); err != nil {
+	if err = pg.WithTenantTx(ctx, db, "tenant-a", func(tx *sql.Tx) error {
+		_, e := tx.Exec("UPDATE file_refs SET retention_until=clock_timestamp()-interval '1 second' WHERE id=$1", ref.ID)
+		return e
+	}); err != nil {
 		t.Fatal(err)
 	}
 	batch, err := catalog.RunPurgeBatch(ctx, "tenant-a", "fixture-operator")
@@ -216,8 +231,11 @@ func TestStoreResultKeepsObligationReconciliableWhenS3IsUnavailable(t *testing.T
 		t.Fatal(err)
 	}
 	t.Cleanup(func() {
-		_, _ = db.Exec("DELETE FROM object_retention_pins WHERE tenant_id=$1", tenant)
-		_, _ = db.Exec("DELETE FROM file_refs WHERE tenant_id=$1", tenant)
+		_ = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			_, _ = tx.Exec("DELETE FROM object_retention_pins WHERE tenant_id=$1", tenant)
+			_, _ = tx.Exec("DELETE FROM file_refs WHERE tenant_id=$1", tenant)
+			return nil
+		})
 		_, _ = db.Exec("DELETE FROM object_retention_policies WHERE class=$1", class)
 	})
 	client, err := New(ctx, "http://127.0.0.1:1", "us-east-1", "r2-unavailable-fixture")
@@ -235,8 +253,12 @@ func TestStoreResultKeepsObligationReconciliableWhenS3IsUnavailable(t *testing.T
 	if err == nil {
 		t.Fatal("S3 indisponível produziu resultado confirmado")
 	}
+	assertCtx, assertCancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer assertCancel()
 	var state string
-	if err = db.QueryRow("SELECT state FROM file_refs WHERE tenant_id=$1 AND obligation_id=$2", tenant, obligation).Scan(&state); err != nil {
+	if err = pg.WithTenantTx(assertCtx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT state FROM file_refs WHERE tenant_id=$1 AND obligation_id=$2", tenant, obligation).Scan(&state)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "VALIDATING" {
@@ -249,7 +271,9 @@ func TestStoreResultKeepsObligationReconciliableWhenS3IsUnavailable(t *testing.T
 		t.Fatalf("reconcile promoveu obrigação sem storage disponível: reconciled=%d err=%v", reconciled, reconcileErr)
 	}
 	var ready int
-	if err = db.QueryRow("SELECT count(*) FROM file_refs WHERE tenant_id=$1 AND obligation_id=$2 AND state='READY'", tenant, obligation).Scan(&ready); err != nil {
+	if err = pg.WithTenantTx(assertCtx, db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRow("SELECT count(*) FROM file_refs WHERE tenant_id=$1 AND obligation_id=$2 AND state='READY'", tenant, obligation).Scan(&ready)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if ready != 0 {

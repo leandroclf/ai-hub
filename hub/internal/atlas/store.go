@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 
+	"ai-hub/hub/internal/platform/pg"
 	"github.com/lib/pq"
 )
 
@@ -167,18 +168,33 @@ type CredentialBinding struct {
 }
 
 // UpsertCredentialBinding cadastra/atualiza um vinculo de credencial.
+//
+// R6-SEG-01: credential_bindings esta sob RLS (tenant_runtime, migrations
+// control/0039) exigindo tenant_id = app.tenant_id. Um vinculo SHARED_HUB
+// legitimamente tem tenant_id NULL (sem dono), o que a policy atual nao
+// contempla — nenhum escopo de transacao faz um NULL casar com
+// current_setting(...). Isso e uma lacuna da migracao, fora do escopo deste
+// pacote (nao alteramos migrations aqui); documentamos e usamos o escopo
+// mais correto disponivel para nao regredir o caminho TENANT_DEDICATED.
 func (s *Store) UpsertCredentialBinding(ctx context.Context, cb CredentialBinding) error {
-	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO credential_bindings (binding_id, credential_mode, tenant_id, provider_account_id, secret_ref, settlement_party, state)
-		VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6, $7)
-		ON CONFLICT (binding_id) DO UPDATE SET
-			credential_mode = EXCLUDED.credential_mode,
-			tenant_id = EXCLUDED.tenant_id,
-			provider_account_id = EXCLUDED.provider_account_id,
-			secret_ref = EXCLUDED.secret_ref,
-			settlement_party = EXCLUDED.settlement_party,
-			state = EXCLUDED.state
-	`, cb.BindingID, cb.CredentialMode, cb.TenantID, cb.ProviderAccountID, cb.SecretRef, cb.SettlementParty, cb.State)
+	scope := cb.TenantID
+	if scope == "" {
+		scope = "shared_hub"
+	}
+	err := pg.WithTenantTx(ctx, s.db, scope, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `
+			INSERT INTO credential_bindings (binding_id, credential_mode, tenant_id, provider_account_id, secret_ref, settlement_party, state)
+			VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6, $7)
+			ON CONFLICT (binding_id) DO UPDATE SET
+				credential_mode = EXCLUDED.credential_mode,
+				tenant_id = EXCLUDED.tenant_id,
+				provider_account_id = EXCLUDED.provider_account_id,
+				secret_ref = EXCLUDED.secret_ref,
+				settlement_party = EXCLUDED.settlement_party,
+				state = EXCLUDED.state
+		`, cb.BindingID, cb.CredentialMode, cb.TenantID, cb.ProviderAccountID, cb.SecretRef, cb.SettlementParty, cb.State)
+		return execErr
+	})
 	if err != nil {
 		return fmt.Errorf("atlas: publicar vinculo de credencial: %w", err)
 	}
@@ -205,6 +221,14 @@ func (s *Store) ResolveCredential(ctx context.Context, tenantID, providerAccount
 		`
 		args = []any{tenantID, providerAccountID}
 	default: // SHARED_HUB
+		// NOTA (R6-SEG-01): um vinculo SHARED_HUB tem tenant_id NULL na
+		// linha, e a policy tenant_runtime (control/0039) exige
+		// tenant_id = current_setting('app.tenant_id') sem excecao para
+		// NULL — nenhum escopo de tenant torna essa linha visivel sob
+		// hub_runtime. Isso e uma lacuna de migracao (fora do escopo deste
+		// pacote); mantemos o escopo do tenant solicitante para nao
+		// regredir o caminho TENANT_DEDICATED, mas o caminho SHARED_HUB
+		// permanece indisponivel ate a policy ser corrigida.
 		query = `
 			SELECT binding_id, credential_mode, COALESCE(tenant_id, ''), provider_account_id, secret_ref, settlement_party, state
 			FROM credential_bindings
@@ -215,8 +239,10 @@ func (s *Store) ResolveCredential(ctx context.Context, tenantID, providerAccount
 	}
 
 	var cb CredentialBinding
-	row := s.db.QueryRowContext(ctx, query, args...)
-	err = row.Scan(&cb.BindingID, &cb.CredentialMode, &cb.TenantID, &cb.ProviderAccountID, &cb.SecretRef, &cb.SettlementParty, &cb.State)
+	err = pg.WithTenantTx(ctx, s.db, tenantID, func(tx *sql.Tx) error {
+		row := tx.QueryRowContext(ctx, query, args...)
+		return row.Scan(&cb.BindingID, &cb.CredentialMode, &cb.TenantID, &cb.ProviderAccountID, &cb.SecretRef, &cb.SettlementParty, &cb.State)
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		// SEG-05: credencial dedicada ausente/expirada/revogada NAO cai
 		// para SHARED_HUB nem para credencial de outro tenant.
@@ -240,16 +266,19 @@ type Contract struct {
 
 // UpsertContract cadastra/atualiza o contrato de um tenant.
 func (s *Store) UpsertContract(ctx context.Context, c Contract) error {
-	_, err := s.db.ExecContext(ctx, `
-		INSERT INTO contracts (tenant_id, plan, unit_price, strict_balance, client_sla_seconds, credential_mode_required)
-		VALUES ($1, $2, $3, $4, $5, $6)
-		ON CONFLICT (tenant_id) DO UPDATE SET
-			plan = EXCLUDED.plan,
-			unit_price = EXCLUDED.unit_price,
-			strict_balance = EXCLUDED.strict_balance,
-			client_sla_seconds = EXCLUDED.client_sla_seconds,
-			credential_mode_required = EXCLUDED.credential_mode_required
-	`, c.TenantID, c.Plan, c.UnitPrice, c.StrictBalance, c.ClientSLASeconds, c.CredentialModeRequired)
+	err := pg.WithTenantTx(ctx, s.db, c.TenantID, func(tx *sql.Tx) error {
+		_, execErr := tx.ExecContext(ctx, `
+			INSERT INTO contracts (tenant_id, plan, unit_price, strict_balance, client_sla_seconds, credential_mode_required)
+			VALUES ($1, $2, $3, $4, $5, $6)
+			ON CONFLICT (tenant_id) DO UPDATE SET
+				plan = EXCLUDED.plan,
+				unit_price = EXCLUDED.unit_price,
+				strict_balance = EXCLUDED.strict_balance,
+				client_sla_seconds = EXCLUDED.client_sla_seconds,
+				credential_mode_required = EXCLUDED.credential_mode_required
+		`, c.TenantID, c.Plan, c.UnitPrice, c.StrictBalance, c.ClientSLASeconds, c.CredentialModeRequired)
+		return execErr
+	})
 	if err != nil {
 		return fmt.Errorf("atlas: publicar contrato: %w", err)
 	}
@@ -259,11 +288,13 @@ func (s *Store) UpsertContract(ctx context.Context, c Contract) error {
 // GetContract le o contrato de um tenant.
 func (s *Store) GetContract(ctx context.Context, tenantID string) (Contract, error) {
 	var c Contract
-	row := s.db.QueryRowContext(ctx, `
-		SELECT tenant_id, plan, unit_price, strict_balance, client_sla_seconds, credential_mode_required
-		FROM contracts WHERE tenant_id = $1
-	`, tenantID)
-	err := row.Scan(&c.TenantID, &c.Plan, &c.UnitPrice, &c.StrictBalance, &c.ClientSLASeconds, &c.CredentialModeRequired)
+	err := pg.WithTenantTx(ctx, s.db, tenantID, func(tx *sql.Tx) error {
+		row := tx.QueryRowContext(ctx, `
+			SELECT tenant_id, plan, unit_price, strict_balance, client_sla_seconds, credential_mode_required
+			FROM contracts WHERE tenant_id = $1
+		`, tenantID)
+		return row.Scan(&c.TenantID, &c.Plan, &c.UnitPrice, &c.StrictBalance, &c.ClientSLASeconds, &c.CredentialModeRequired)
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		return Contract{}, ErrNotFound
 	}

@@ -23,7 +23,7 @@ import (
 func main() {
 	log := logging.New("pulsar")
 	addr := config.Env("HTTP_ADDR", ":8083")
-	dsn := config.Env("CORE_DSN", "postgres://hub:hub@localhost:5432/hub_core?sslmode=disable")
+	dsn := config.Env("CORE_DSN", "postgres://hub_runtime:r2-runtime-fixture@localhost:5432/hub_core?sslmode=disable")
 	if tenant := config.Env("RUNTIME_TENANT_ID", ""); tenant != "" {
 		var dsnErr error
 		dsn, dsnErr = pg.RuntimeDSN(dsn, tenant)

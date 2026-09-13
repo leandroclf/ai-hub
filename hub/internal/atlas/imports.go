@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type ImportItem struct {
@@ -161,22 +162,27 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if r.Method == "GET" {
-		rows, err := h.store.db.QueryContext(r.Context(), `SELECT id,source_hash,state,items FROM catalog_imports WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100`, tenant)
+		batches := []ImportBatch{}
+		err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			rows, err := tx.QueryContext(r.Context(), `SELECT id,source_hash,state,items FROM catalog_imports WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 100`, tenant)
+			if err != nil {
+				return err
+			}
+			defer rows.Close()
+			for rows.Next() {
+				var b ImportBatch
+				var items []byte
+				if err := rows.Scan(&b.ID, &b.SourceHash, &b.State, &items); err != nil {
+					return err
+				}
+				_ = json.Unmarshal(items, &b.Items)
+				batches = append(batches, b)
+			}
+			return rows.Err()
+		})
 		if err != nil {
 			catalogError(w, err)
 			return
-		}
-		defer rows.Close()
-		batches := []ImportBatch{}
-		for rows.Next() {
-			var b ImportBatch
-			var items []byte
-			if err = rows.Scan(&b.ID, &b.SourceHash, &b.State, &items); err != nil {
-				catalogError(w, err)
-				return
-			}
-			_ = json.Unmarshal(items, &b.Items)
-			batches = append(batches, b)
 		}
 		writeJSON(w, 200, map[string]any{"items": batches, "next_cursor": ""})
 		return
@@ -200,7 +206,9 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 	hash := contentHash(items)
 	id := hash[:32]
 	var previous []byte
-	err = h.store.db.QueryRowContext(r.Context(), `SELECT items FROM catalog_imports WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`, tenant).Scan(&previous)
+	err = pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(r.Context(), `SELECT items FROM catalog_imports WHERE tenant_id=$1 ORDER BY created_at DESC LIMIT 1`, tenant).Scan(&previous)
+	})
 	if errors.Is(err, sql.ErrNoRows) {
 		previous = nil
 	} else if err != nil {
@@ -231,7 +239,9 @@ func (h *Handlers) handleImports(w http.ResponseWriter, r *http.Request) {
 	}
 	body, _ := json.Marshal(items)
 	var storedID string
-	err = h.store.db.QueryRowContext(r.Context(), `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES($1,$2,'sanitized-inventory',$3,$4,$5) ON CONFLICT(tenant_id,source_hash) DO UPDATE SET source_hash=EXCLUDED.source_hash RETURNING id`, contentHash([]string{tenant, id})[:32], hash, p.Subject, tenant, body).Scan(&storedID)
+	err = pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+		return tx.QueryRowContext(r.Context(), `INSERT INTO catalog_imports(id,source_hash,source_name,actor,tenant_id,items) VALUES($1,$2,'sanitized-inventory',$3,$4,$5) ON CONFLICT(tenant_id,source_hash) DO UPDATE SET source_hash=EXCLUDED.source_hash RETURNING id`, contentHash([]string{tenant, id})[:32], hash, p.Subject, tenant, body).Scan(&storedID)
+	})
 	if err != nil {
 		catalogError(w, err)
 		return

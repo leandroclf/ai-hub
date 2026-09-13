@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"ai-hub/hub/internal/platform/idgen"
+	"ai-hub/hub/internal/platform/pg"
 	_ "github.com/lib/pq"
 )
 
@@ -29,9 +30,12 @@ func TestRequestCapacityKeepsPartialCellOutOfPlacementAndIsIdempotent(t *testing
 		Data:     raw(CatalogData{CellID: cell, CapacityUnits: 2}),
 	}
 	t.Cleanup(func() {
-		_, _ = db.Exec("DELETE FROM placements WHERE tenant_id=$1", tenant)
-		_, _ = db.Exec("DELETE FROM catalog_provisioning_requests WHERE tenant_id=$1", tenant)
-		_, _ = db.Exec("DELETE FROM catalog_onboardings WHERE tenant_id=$1", tenant)
+		_ = pg.WithTenantTx(context.Background(), db, tenant, func(tx *sql.Tx) error {
+			_, _ = tx.Exec("DELETE FROM placements WHERE tenant_id=$1", tenant)
+			_, _ = tx.Exec("DELETE FROM catalog_provisioning_requests WHERE tenant_id=$1", tenant)
+			_, _ = tx.Exec("DELETE FROM catalog_onboardings WHERE tenant_id=$1", tenant)
+			return nil
+		})
 	})
 
 	ctx := context.Background()
@@ -43,20 +47,22 @@ func TestRequestCapacityKeepsPartialCellOutOfPlacementAndIsIdempotent(t *testing
 
 	var state, reason string
 	var onboardingCount, requestCount, placementCount int
-	if err := db.QueryRow("SELECT state,reason FROM catalog_onboardings WHERE tenant_id=$1", tenant).Scan(&state, &reason); err != nil {
+	if err := pg.WithTenantTx(ctx, db, tenant, func(tx *sql.Tx) error {
+		if err := tx.QueryRow("SELECT state,reason FROM catalog_onboardings WHERE tenant_id=$1", tenant).Scan(&state, &reason); err != nil {
+			return err
+		}
+		if err := tx.QueryRow("SELECT count(*) FROM catalog_onboardings WHERE tenant_id=$1", tenant).Scan(&onboardingCount); err != nil {
+			return err
+		}
+		if err := tx.QueryRow("SELECT count(*) FROM catalog_provisioning_requests WHERE tenant_id=$1", tenant).Scan(&requestCount); err != nil {
+			return err
+		}
+		return tx.QueryRow("SELECT count(*) FROM placements WHERE tenant_id=$1", tenant).Scan(&placementCount)
+	}); err != nil {
 		t.Fatal(err)
 	}
 	if state != "PROVISIONING" || reason != "insufficient-qualified-headroom" {
 		t.Fatalf("partial cell was not held out of traffic: state=%s reason=%s", state, reason)
-	}
-	if err := db.QueryRow("SELECT count(*) FROM catalog_onboardings WHERE tenant_id=$1", tenant).Scan(&onboardingCount); err != nil {
-		t.Fatal(err)
-	}
-	if err := db.QueryRow("SELECT count(*) FROM catalog_provisioning_requests WHERE tenant_id=$1", tenant).Scan(&requestCount); err != nil {
-		t.Fatal(err)
-	}
-	if err := db.QueryRow("SELECT count(*) FROM placements WHERE tenant_id=$1", tenant).Scan(&placementCount); err != nil {
-		t.Fatal(err)
 	}
 	if onboardingCount != 1 || requestCount != 1 || placementCount != 0 {
 		t.Fatalf("reconcile duplicated or assigned partial placement: onboardings=%d requests=%d placements=%d", onboardingCount, requestCount, placementCount)

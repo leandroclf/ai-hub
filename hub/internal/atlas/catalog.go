@@ -3,6 +3,7 @@ package atlas
 import (
 	"ai-hub/hub/internal/contracts/economics"
 	"ai-hub/hub/internal/platform/egress"
+	"ai-hub/hub/internal/platform/pg"
 	"context"
 	"crypto/sha256"
 	"database/sql"
@@ -501,11 +502,39 @@ func scanResource(row interface{ Scan(...any) error }) (Resource, error) {
 	}
 	return r, err
 }
-func (s *Store) GetResource(ctx context.Context, kind, id string, version int) (Resource, error) {
-	return scanResource(s.db.QueryRowContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources WHERE kind=$1 AND id=$2 AND version=$3`, kind, id, version))
+
+// GetResource le um recurso do catalogo dentro de uma transacao escopada ao
+// tenant informado (R6-SEG-01). tenant deve ser o tenant proprietario do
+// recurso quando conhecido, ou qualquer tenant valido quando o recurso e
+// global (tenant_id vazio): a policy tenant_runtime aceita tenant_id vazio
+// independentemente do valor de app.tenant_id. Para leitura administrativa
+// genuinamente cruzada entre tenants (sem um tenant especifico de escopo),
+// use GetResourceAudited.
+func (s *Store) GetResource(ctx context.Context, tenant, kind, id string, version int) (Resource, error) {
+	var r Resource
+	err := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		scanned, scanErr := scanResource(tx.QueryRowContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources WHERE kind=$1 AND id=$2 AND version=$3`, kind, id, version))
+		r = scanned
+		return scanErr
+	})
+	return r, err
 }
-func (s *Store) ListResources(ctx context.Context, kind, tenant, query, state, afterID string, afterVersion, limit int) ([]Resource, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources WHERE kind=$1 AND ($2='*' OR tenant_id=$2 OR tenant_id='') AND ($3='' OR name ILIKE '%'||$3||'%' OR id ILIKE '%'||$3||'%') AND ($4='' OR state=$4) AND (id,version)>($5,$6) ORDER BY id,version LIMIT $7`, kind, tenant, query, state, afterID, afterVersion, limit)
+
+// GetResourceAudited le um recurso do catalogo em acesso cruzado
+// administrativo (perfil "*"), autorizado apenas com reason nao vazio
+// (R6-SEG-01).
+func (s *Store) GetResourceAudited(ctx context.Context, reason, kind, id string, version int) (Resource, error) {
+	var r Resource
+	err := pg.WithAuditedScopeTx(ctx, s.db, reason, func(tx *sql.Tx) error {
+		scanned, scanErr := scanResource(tx.QueryRowContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources WHERE kind=$1 AND id=$2 AND version=$3`, kind, id, version))
+		r = scanned
+		return scanErr
+	})
+	return r, err
+}
+
+func listResourcesTx(ctx context.Context, tx *sql.Tx, kind, tenantFilter, query, state, afterID string, afterVersion, limit int) ([]Resource, error) {
+	rows, err := tx.QueryContext(ctx, `SELECT `+resourceColumns+` FROM catalog_resources WHERE kind=$1 AND ($2='*' OR tenant_id=$2 OR tenant_id='') AND ($3='' OR name ILIKE '%'||$3||'%' OR id ILIKE '%'||$3||'%') AND ($4='' OR state=$4) AND (id,version)>($5,$6) ORDER BY id,version LIMIT $7`, kind, tenantFilter, query, state, afterID, afterVersion, limit)
 	if err != nil {
 		return nil, err
 	}
@@ -520,19 +549,61 @@ func (s *Store) ListResources(ctx context.Context, kind, tenant, query, state, a
 	}
 	return out, rows.Err()
 }
-func (s *Store) SaveResource(ctx context.Context, r Resource, expected int64, actor string) (Resource, error) {
+
+// ListResources lista recursos escopados a um tenant especifico (mais
+// recursos globais, tenant_id vazio). tenant nunca deve ser "*" aqui: a
+// listagem "todos os tenants" e um acesso cruzado administrativo genuino e
+// deve usar ListResourcesAudited, pois um escopo de transacao "*" tornaria
+// invisiveis (via RLS) as linhas de tenants reais que a consulta pretende
+// varrer.
+func (s *Store) ListResources(ctx context.Context, kind, tenant, query, state, afterID string, afterVersion, limit int) ([]Resource, error) {
+	var out []Resource
+	err := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		list, e := listResourcesTx(ctx, tx, kind, tenant, query, state, afterID, afterVersion, limit)
+		out = list
+		return e
+	})
+	return out, err
+}
+
+// ListResourcesAudited lista recursos entre todos os tenants (perfil "*"),
+// autorizado apenas com reason nao vazio (R6-SEG-01).
+func (s *Store) ListResourcesAudited(ctx context.Context, reason, kind, query, state, afterID string, afterVersion, limit int) ([]Resource, error) {
+	var out []Resource
+	err := pg.WithAuditedScopeTx(ctx, s.db, reason, func(tx *sql.Tx) error {
+		list, e := listResourcesTx(ctx, tx, kind, "*", query, state, afterID, afterVersion, limit)
+		out = list
+		return e
+	})
+	return out, err
+}
+
+// SaveResource grava um rascunho novo ou revisado. scope e o tenant sob o
+// qual a transacao roda (R6-SEG-01): o tenant proprietario do recurso
+// (r.TenantID) quando nao vazio, ou o escopo da requisicao administrativa
+// (podendo ser "*") para recursos globais.
+func (s *Store) SaveResource(ctx context.Context, scope string, r Resource, expected int64, actor string) (Resource, error) {
 	r.Hash = resourceHash(r)
 	if expected == 0 {
-		row := s.db.QueryRowContext(ctx, `INSERT INTO catalog_resources(kind,id,version,tenant_id,name,data,author,content_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING `+resourceColumns, r.Kind, r.ID, r.Version, r.TenantID, r.Name, []byte(r.Data), actor, r.Hash)
-		out, err := scanResource(row)
+		var out Resource
+		err := pg.WithTenantTx(ctx, s.db, scope, func(tx *sql.Tx) error {
+			scanned, scanErr := scanResource(tx.QueryRowContext(ctx, `INSERT INTO catalog_resources(kind,id,version,tenant_id,name,data,author,content_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING `+resourceColumns, r.Kind, r.ID, r.Version, r.TenantID, r.Name, []byte(r.Data), actor, r.Hash))
+			out = scanned
+			return scanErr
+		})
 		if errors.Is(err, ErrNotFound) {
 			return Resource{}, ErrConflict
 		}
 		return out, err
 	}
-	out, err := scanResource(s.db.QueryRowContext(ctx, `UPDATE catalog_resources SET name=$4,data=$5,revision=revision+1,author=$6,updated_at=clock_timestamp(),content_hash=$8 WHERE kind=$1 AND id=$2 AND version=$3 AND revision=$7 AND state='DRAFT' RETURNING `+resourceColumns, r.Kind, r.ID, r.Version, r.Name, []byte(r.Data), actor, expected, r.Hash))
+	var out Resource
+	err := pg.WithTenantTx(ctx, s.db, scope, func(tx *sql.Tx) error {
+		scanned, scanErr := scanResource(tx.QueryRowContext(ctx, `UPDATE catalog_resources SET name=$4,data=$5,revision=revision+1,author=$6,updated_at=clock_timestamp(),content_hash=$8 WHERE kind=$1 AND id=$2 AND version=$3 AND revision=$7 AND state='DRAFT' RETURNING `+resourceColumns, r.Kind, r.ID, r.Version, r.Name, []byte(r.Data), actor, expected, r.Hash))
+		out = scanned
+		return scanErr
+	})
 	if errors.Is(err, ErrNotFound) {
-		cur, e := s.GetResource(ctx, r.Kind, r.ID, r.Version)
+		cur, e := s.GetResource(ctx, scope, r.Kind, r.ID, r.Version)
 		if e != nil {
 			return Resource{}, e
 		}
@@ -545,9 +616,21 @@ func (s *Store) SaveResource(ctx context.Context, r Resource, expected int64, ac
 }
 
 // ValidatePublication checks all same-authority references against immutable versions.
+//
+// R6-SEG-01: todo acesso a catalog_resources roda sob um escopo de tenant.
+// Como as referencias validadas aqui devem, por regra de negocio, pertencer
+// ao mesmo tenant de r (ou ser globais, tenant_id vazio), o tenant de r e um
+// escopo correto para todas elas — a policy aceita tenant_id vazio sob
+// qualquer escopo nao vazio, e uma referencia de outro tenant real
+// continuaria invisivel (o que a validacao ja trata como referencia nao
+// encontrada, preservando o comportamento anterior).
 func (s *Store) ValidatePublication(ctx context.Context, r Resource) Validation {
 	v := ValidateResource(r)
 	d, _ := DecodeCatalogData(r)
+	scope := r.TenantID
+	if scope == "" {
+		scope = "*"
+	}
 	if r.Kind == "services" && d.QualificationID != "" {
 		var qualified bool
 		err := s.db.QueryRowContext(ctx, `SELECT EXISTS(SELECT 1 FROM catalog_qualifications WHERE id=$1 AND adapter_id=$2 AND state='QUALIFIED' AND valid_until>clock_timestamp())`, d.QualificationID, d.AdapterID).Scan(&qualified)
@@ -566,7 +649,7 @@ func (s *Store) ValidatePublication(ctx context.Context, r Resource) Validation 
 	}
 
 	check := func(kind, id string, version int) {
-		ref, err := s.GetResource(ctx, kind, id, version)
+		ref, err := s.GetResource(ctx, scope, kind, id, version)
 		if err != nil || ref.State != "PUBLISHED" || (ref.TenantID != "" && ref.TenantID != r.TenantID) {
 			v.Valid = false
 			v.FieldErrors[kind+"/"+id] = "referência publicada e autorizada não encontrada"
@@ -585,13 +668,13 @@ func (s *Store) ValidatePublication(ctx context.Context, r Resource) Validation 
 		for _, rt := range d.Routes {
 			check("credential-bindings", rt.BindingID, rt.BindingVersion)
 			check("provider-accounts", rt.ProviderAccountID, rt.ProviderAccountVersion)
-			binding, bindingErr := s.GetResource(ctx, "credential-bindings", rt.BindingID, rt.BindingVersion)
+			binding, bindingErr := s.GetResource(ctx, scope, "credential-bindings", rt.BindingID, rt.BindingVersion)
 			bindingData, bindingDataErr := DecodeCatalogData(binding)
 			if bindingErr != nil || bindingDataErr != nil || bindingData.ProviderAccountID != rt.ProviderAccountID || (bindingData.CredentialMode == "TENANT_DEDICATED" && binding.TenantID != r.TenantID) {
 				v.Valid = false
 				v.FieldErrors["routes/"+rt.ProviderAccountID] = "vínculo não corresponde à conta ou ao cliente da rota"
 			}
-			account, err := s.GetResource(ctx, "provider-accounts", rt.ProviderAccountID, rt.ProviderAccountVersion)
+			account, err := s.GetResource(ctx, scope, "provider-accounts", rt.ProviderAccountID, rt.ProviderAccountVersion)
 			ad, _ := DecodeCatalogData(account)
 			if err != nil || (contains(d.Modes, "SYNC") && ad.ProviderMode != "sync") {
 				v.Valid = false
@@ -609,7 +692,10 @@ func contains(values []string, s string) bool {
 	}
 	return false
 }
-func (s *Store) PublishResource(ctx context.Context, r Resource, expected int64, actor, reason string, v Validation) (Resource, error) {
+
+// PublishResource publica um recurso. scope e o tenant sob o qual a
+// transacao roda (R6-SEG-01), o mesmo criterio de SaveResource.
+func (s *Store) PublishResource(ctx context.Context, scope string, r Resource, expected int64, actor, reason string, v Validation) (Resource, error) {
 	if !v.Valid || v.Hash != resourceHash(r) {
 		return Resource{}, errors.New("validação inválida")
 	}
@@ -618,6 +704,9 @@ func (s *Store) PublishResource(ctx context.Context, r Resource, expected int64,
 		return Resource{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, scope); err != nil {
+		return Resource{}, err
+	}
 	out, err := scanResource(tx.QueryRowContext(ctx, `UPDATE catalog_resources SET state='PUBLISHED',revision=revision+1,author=$5,updated_at=clock_timestamp() WHERE kind=$1 AND id=$2 AND version=$3 AND revision=$4 AND state='DRAFT' AND content_hash=$6 RETURNING `+resourceColumns, r.Kind, r.ID, r.Version, expected, actor, v.Hash))
 	if errors.Is(err, ErrNotFound) {
 		return Resource{}, ErrRevision
@@ -638,12 +727,18 @@ func (s *Store) PublishResource(ctx context.Context, r Resource, expected int64,
 	}
 	return out, nil
 }
-func (s *Store) SuspendResource(ctx context.Context, r Resource, expected int64, actor, reason string) (Resource, error) {
+
+// SuspendResource suspende um recurso publicado. scope segue o mesmo
+// criterio de SaveResource/PublishResource (R6-SEG-01).
+func (s *Store) SuspendResource(ctx context.Context, scope string, r Resource, expected int64, actor, reason string) (Resource, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return Resource{}, err
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, scope); err != nil {
+		return Resource{}, err
+	}
 	out, err := scanResource(tx.QueryRowContext(ctx, `UPDATE catalog_resources SET state='SUSPENDED',revision=revision+1,updated_at=clock_timestamp() WHERE kind=$1 AND id=$2 AND version=$3 AND revision=$4 AND state='PUBLISHED' RETURNING `+resourceColumns, r.Kind, r.ID, r.Version, expected))
 	if errors.Is(err, ErrNotFound) {
 		return Resource{}, ErrRevision

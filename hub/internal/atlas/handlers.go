@@ -2,6 +2,8 @@ package atlas
 
 import (
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -47,8 +49,12 @@ func (h *Handlers) handleBoundCredential(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	tenant := r.URL.Query().Get("tenant_id")
-	resource, err := h.store.GetResource(r.Context(), "credential-bindings", parts[0], version)
-	if err != nil || tenant == "" || resource.State != "PUBLISHED" || (resource.TenantID != "" && resource.TenantID != tenant) {
+	if tenant == "" {
+		auth.Error(w, 409, "binding_unavailable")
+		return
+	}
+	resource, err := h.store.GetResource(r.Context(), tenant, "credential-bindings", parts[0], version)
+	if err != nil || resource.State != "PUBLISHED" || (resource.TenantID != "" && resource.TenantID != tenant) {
 		auth.Error(w, 409, "binding_unavailable")
 		return
 	}
@@ -86,7 +92,9 @@ func (h *Handlers) workloadRead(scope string, next http.HandlerFunc) http.Handle
 		}
 		if tenant != "" {
 			var cell string
-			err := h.store.db.QueryRowContext(r.Context(), "SELECT cell_id FROM placements WHERE tenant_id=$1", tenant).Scan(&cell)
+			err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+				return tx.QueryRowContext(r.Context(), "SELECT cell_id FROM placements WHERE tenant_id=$1", tenant).Scan(&cell)
+			})
 			if err != nil || cell != p.CellID {
 				auth.Error(w, 403, "tenant_outside_cell")
 				return

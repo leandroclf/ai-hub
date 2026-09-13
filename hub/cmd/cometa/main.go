@@ -28,7 +28,7 @@ func main() {
 	log := logging.New("cometa")
 	addr := config.Env("HTTP_ADDR", ":8082")
 	selfURL := config.Env("SELF_URL", "http://localhost:8082")
-	dsn := config.Env("CORE_DSN", "postgres://hub:hub@localhost:5432/hub_core?sslmode=disable")
+	dsn := config.Env("CORE_DSN", "postgres://hub_runtime:r2-runtime-fixture@localhost:5432/hub_core?sslmode=disable")
 	if tenant := config.Env("RUNTIME_TENANT_ID", ""); tenant != "" {
 		var dsnErr error
 		dsn, dsnErr = pg.RuntimeDSN(dsn, tenant)

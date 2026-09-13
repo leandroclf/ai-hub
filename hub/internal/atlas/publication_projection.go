@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 
+	"ai-hub/hub/internal/platform/pg"
 	"github.com/lib/pq"
 )
 
@@ -75,6 +76,11 @@ func (s *Store) requestCapacity(ctx context.Context, r Resource, actor string) e
 		return err
 	}
 	defer tx.Rollback()
+	// "clients" e o unico kind que chega aqui e sempre exige tenant_id
+	// (ValidateResource), então r.TenantID e um escopo valido (R6-SEG-01).
+	if err = pg.SetTenantScope(ctx, tx, r.TenantID); err != nil {
+		return err
+	}
 	_, err = tx.ExecContext(ctx, `INSERT INTO catalog_onboardings(tenant_id,cell_id,capacity_units,state,reason,actor) VALUES($1,$2,$3,'PROVISIONING','insufficient-qualified-headroom',$4) ON CONFLICT(tenant_id) DO UPDATE SET reason=EXCLUDED.reason,updated_at=clock_timestamp() WHERE catalog_onboardings.state<>'ACTIVE'`, r.TenantID, d.CellID, d.CapacityUnits, actor)
 	if err != nil {
 		return err

@@ -133,6 +133,11 @@ services:
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566
+      # R6-OPE-02: localstack:3.8 rejects the AWS SDK v2 default CRC32
+      # request/response checksum trailer (PutStream fails with
+      # "Checksum Type mismatch" on every multipart upload without this).
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
       S3_PUBLIC_ENDPOINT: http://localhost:14566
       S3_BUCKET: r2-custody
       SECRETS_ENDPOINT: http://localstack:4566
@@ -142,7 +147,7 @@ services:
       AWS_REGION: us-east-1
       REDIS_ADDR: ''
       QUEUE_NAMESPACE: r2-cell-a
-      CONTROL_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_control?sslmode=disable
+      CONTROL_DSN: postgres://hub_runtime:r2-runtime-fixture@postgres:5432/hub_control?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
       # A rede bridge local do Compose usa endereços privados 172.16/12;
       # a autorização continua limitada ao host:porta exato de cada origem.
@@ -191,6 +196,8 @@ services:
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
       S3_PUBLIC_ENDPOINT: http://localhost:14566
       S3_BUCKET: r2-custody
       SECRETS_ENDPOINT: http://localstack:4566
@@ -200,7 +207,7 @@ services:
       AWS_REGION: us-east-1
       REDIS_ADDR: ''
       QUEUE_NAMESPACE: r2-cell-a
-      CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
+      CORE_DSN: postgres://hub_runtime:r2-runtime-fixture@postgres:5432/hub_core?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
       EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
@@ -255,6 +262,8 @@ services:
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
       S3_PUBLIC_ENDPOINT: http://localhost:14566
       S3_BUCKET: r2-custody
       SECRETS_ENDPOINT: http://localstack:4566
@@ -264,7 +273,7 @@ services:
       AWS_REGION: us-east-1
       REDIS_ADDR: ''
       QUEUE_NAMESPACE: r2-cell-a
-      CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
+      CORE_DSN: postgres://hub_runtime:r2-runtime-fixture@postgres:5432/hub_core?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
       EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
@@ -314,6 +323,8 @@ services:
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
       S3_PUBLIC_ENDPOINT: http://localhost:14566
       S3_BUCKET: r2-custody
       SECRETS_ENDPOINT: http://localstack:4566
@@ -323,7 +334,7 @@ services:
       AWS_REGION: us-east-1
       REDIS_ADDR: ''
       QUEUE_NAMESPACE: r2-cell-a
-      CORE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_core?sslmode=disable
+      CORE_DSN: postgres://hub_runtime:r2-runtime-fixture@postgres:5432/hub_core?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
       EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:
@@ -370,6 +381,8 @@ services:
       QUEUE_ENDPOINT: http://localstack:4566
       QUEUE_REGION: us-east-1
       S3_ENDPOINT: http://localstack:4566
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
       S3_PUBLIC_ENDPOINT: http://localhost:14566
       S3_BUCKET: r2-custody
       SECRETS_ENDPOINT: http://localstack:4566
@@ -379,7 +392,7 @@ services:
       AWS_REGION: us-east-1
       REDIS_ADDR: ''
       QUEUE_NAMESPACE: r2-cell-a
-      FINANCE_DSN: postgres://hub:r2-local-fixture@postgres:5432/hub_finance?sslmode=disable
+      FINANCE_DSN: postgres://hub_runtime:r2-runtime-fixture@postgres:5432/hub_finance?sslmode=disable
       EGRESS_HTTP_ORIGINS: http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080
       EGRESS_PRIVATE_RULES: provider-sim:8090=${R2_PROVIDER_CIDR:-172.16.0.0/12};webhook-sink:8091=${R2_SINK_CIDR:-172.16.0.0/12};identity:8080=${R2_IDENTITY_CIDR:-172.16.0.0/12}
     ports:

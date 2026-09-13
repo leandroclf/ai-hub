@@ -3,6 +3,7 @@ package atlas
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 type OfferSnapshot struct {
@@ -30,6 +32,21 @@ type OfferSnapshot struct {
 	SelectionReason  string     `json:"selection_reason"`
 	Hash             string     `json:"content_hash"`
 	ValidUntil       time.Time  `json:"valid_until"`
+	// StepOffers holds each product step's OWN resolved route, provider
+	// account, credential binding and purchase contract — R6-EXE-01: a step
+	// is never allowed to inherit the parent product's identity by omission.
+	// Keyed by step ID; populated only when Target.Kind is "products".
+	StepOffers map[string]StepOffer `json:"step_offers,omitempty"`
+}
+
+// StepOffer is one product step's independently resolved route/account/
+// binding/purchase-contract, resolved with the same rigor ResolveOffer
+// applies to a standalone offer (R6-EXE-01).
+type StepOffer struct {
+	Account          Resource `json:"provider_account"`
+	Binding          Resource `json:"binding"`
+	PurchaseContract Resource `json:"purchase_contract"`
+	SelectedRoute    Route    `json:"selected_route"`
 }
 
 // SnapshotHash returns the canonical hash of the accepted snapshot. Hash is
@@ -100,13 +117,13 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 		Target   *Resource
 	}{{data.TargetKind, data.TargetID, data.TargetVersion, &snapshot.Target}, {"technical-profiles", data.TechnicalProfileID, data.TechnicalProfileVersion, &snapshot.TechnicalProfile}, {"contracts", data.PurchaseContractID, data.PurchaseContractVersion, &snapshot.PurchaseContract}, {"contracts", data.SaleContractID, data.SaleContractVersion, &snapshot.SaleContract}, {"credential-bindings", route.BindingID, route.BindingVersion, &snapshot.Binding}}
 	for _, ref := range refs {
-		r, e := s.GetResource(ctx, ref.Kind, ref.ID, ref.Version)
+		r, e := s.GetResource(ctx, tenant, ref.Kind, ref.ID, ref.Version)
 		if e != nil || r.State != "PUBLISHED" || (r.TenantID != "" && r.TenantID != tenant) {
 			return OfferSnapshot{}, ErrNotFound
 		}
 		*ref.Target = r
 	}
-	snapshot.Account, err = s.GetResource(ctx, "provider-accounts", route.ProviderAccountID, route.ProviderAccountVersion)
+	snapshot.Account, err = s.GetResource(ctx, tenant, "provider-accounts", route.ProviderAccountID, route.ProviderAccountVersion)
 	if err != nil || snapshot.Account.State != "PUBLISHED" || (snapshot.Account.TenantID != "" && snapshot.Account.TenantID != tenant) {
 		return OfferSnapshot{}, ErrNotFound
 	}
@@ -116,15 +133,30 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 	}
 	target, _ := DecodeCatalogData(snapshot.Target)
 	loadedServices := map[string]bool{}
+	if len(target.Steps) > 0 {
+		snapshot.StepOffers = make(map[string]StepOffer, len(target.Steps))
+	}
 	for _, step := range target.Steps {
-		r, e := s.GetResource(ctx, "services", step.ServiceID, step.ServiceVersion)
+		r, e := s.GetResource(ctx, tenant, "services", step.ServiceID, step.ServiceVersion)
 		if e != nil || r.State != "PUBLISHED" {
 			return OfferSnapshot{}, ErrNotFound
 		}
 		snapshot.Services = append(snapshot.Services, r)
 		loadedServices[r.ID+strconv.Itoa(r.Version)] = true
+		serviceData, sErr := DecodeCatalogData(r)
+		if sErr != nil {
+			return OfferSnapshot{}, ErrNotFound
+		}
+		// R6-EXE-01: a etapa é recusada aqui, antes de qualquer efeito, se
+		// não tiver referências suficientes para resolver sua própria rota —
+		// nunca herda a conta/vínculo do produto por omissão.
+		stepOffer, sErr := s.resolveStepOffer(ctx, tenant, serviceData)
+		if sErr != nil {
+			return OfferSnapshot{}, sErr
+		}
+		snapshot.StepOffers[step.ID] = stepOffer
 		if step.CompensationServiceID != "" {
-			comp, compErr := s.GetResource(ctx, "services", step.CompensationServiceID, step.CompensationServiceVersion)
+			comp, compErr := s.GetResource(ctx, tenant, "services", step.CompensationServiceID, step.CompensationServiceVersion)
 			if compErr != nil || comp.State != "PUBLISHED" {
 				return OfferSnapshot{}, ErrNotFound
 			}
@@ -133,6 +165,15 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 				snapshot.Services = append(snapshot.Services, comp)
 				loadedServices[key] = true
 			}
+			compensationData, cErr := DecodeCatalogData(comp)
+			if cErr != nil {
+				return OfferSnapshot{}, ErrNotFound
+			}
+			compensationOffer, cErr := s.resolveStepOffer(ctx, tenant, compensationData)
+			if cErr != nil {
+				return OfferSnapshot{}, cErr
+			}
+			snapshot.StepOffers["compensate_"+step.ID] = compensationOffer
 		}
 	}
 	if data.ValidUntil != nil && data.ValidUntil.Before(snapshot.ValidUntil) {
@@ -142,35 +183,84 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 	return snapshot, nil
 }
 
-func (s *Store) listEligibleOffers(ctx context.Context, tenant, application, service string, serviceVersion int, account string) ([]Resource, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT `+resourceColumns+` FROM (
-		SELECT `+resourceColumns+` FROM catalog_resources
-		WHERE kind='offers' AND state='PUBLISHED' AND tenant_id=$1
-		  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
-		  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
-		  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
-		  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
-		UNION ALL
-		SELECT `+resourceColumns+` FROM catalog_resources
-		WHERE kind='offers' AND state='PUBLISHED' AND tenant_id=''
-		  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
-		  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
-		  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
-		  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
-	) eligible ORDER BY id,version LIMIT 2`, tenant, application, service, strconv.Itoa(serviceVersion), account)
-	if err != nil {
-		return nil, err
+// resolveStepOffer resolves a product step's own route, provider account,
+// credential binding and purchase contract from the step's own CatalogData
+// — the same eligibility/state/tenant rigor ResolveOffer applies to a
+// standalone offer (R6-EXE-01). It never falls back to a caller-supplied
+// route/account: a step without its own published, coherent route fails
+// closed (ErrNotFound/ErrCredentialUnavailable), refusing the whole
+// admission rather than silently reusing the parent product's identity.
+func (s *Store) resolveStepOffer(ctx context.Context, tenant string, data CatalogData) (StepOffer, error) {
+	if len(data.Routes) == 0 {
+		return StepOffer{}, ErrNotFound
 	}
-	defer rows.Close()
-	resources := make([]Resource, 0, 2)
-	for rows.Next() {
-		r, err := scanResource(rows)
-		if err != nil {
-			return nil, err
+	routes := append([]Route(nil), data.Routes...)
+	sort.Slice(routes, func(i, j int) bool {
+		if routes[i].Priority == routes[j].Priority {
+			return routes[i].ProviderAccountID < routes[j].ProviderAccountID
 		}
-		resources = append(resources, r)
+		return routes[i].Priority < routes[j].Priority
+	})
+	route := routes[0]
+	out := StepOffer{SelectedRoute: route}
+	if data.PurchaseContractID != "" {
+		contract, e := s.GetResource(ctx, tenant, "contracts", data.PurchaseContractID, data.PurchaseContractVersion)
+		if e != nil || contract.State != "PUBLISHED" || (contract.TenantID != "" && contract.TenantID != tenant) {
+			return StepOffer{}, ErrNotFound
+		}
+		out.PurchaseContract = contract
 	}
-	return resources, rows.Err()
+	binding, e := s.GetResource(ctx, tenant, "credential-bindings", route.BindingID, route.BindingVersion)
+	if e != nil || binding.State != "PUBLISHED" || (binding.TenantID != "" && binding.TenantID != tenant) {
+		return StepOffer{}, ErrNotFound
+	}
+	out.Binding = binding
+	bindingData, _ := DecodeCatalogData(binding)
+	if bindingData.ProviderAccountID != route.ProviderAccountID || (bindingData.CredentialMode == "TENANT_DEDICATED" && binding.TenantID != tenant) {
+		return StepOffer{}, ErrCredentialUnavailable
+	}
+	account, e := s.GetResource(ctx, tenant, "provider-accounts", route.ProviderAccountID, route.ProviderAccountVersion)
+	if e != nil || account.State != "PUBLISHED" || (account.TenantID != "" && account.TenantID != tenant) {
+		return StepOffer{}, ErrNotFound
+	}
+	out.Account = account
+	return out, nil
+}
+
+func (s *Store) listEligibleOffers(ctx context.Context, tenant, application, service string, serviceVersion int, account string) ([]Resource, error) {
+	var resources []Resource
+	err := pg.WithTenantTx(ctx, s.db, tenant, func(tx *sql.Tx) error {
+		rows, err := tx.QueryContext(ctx, `SELECT `+resourceColumns+` FROM (
+			SELECT `+resourceColumns+` FROM catalog_resources
+			WHERE kind='offers' AND state='PUBLISHED' AND tenant_id=$1
+			  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
+			  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
+			  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
+			  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
+			UNION ALL
+			SELECT `+resourceColumns+` FROM catalog_resources
+			WHERE kind='offers' AND state='PUBLISHED' AND tenant_id=''
+			  AND data->>'application_id'=$2 AND data->>'target_id'=$3 AND data->>'target_version'=$4
+			  AND (NULLIF(data->>'valid_from','') IS NULL OR (data->>'valid_from')::timestamptz <= clock_timestamp())
+			  AND (NULLIF(data->>'valid_until','') IS NULL OR (data->>'valid_until')::timestamptz > clock_timestamp())
+			  AND ($5='' OR EXISTS (SELECT 1 FROM jsonb_array_elements(COALESCE(data->'routes','[]'::jsonb)) route WHERE route->>'provider_account_id'=$5))
+		) eligible ORDER BY id,version LIMIT 2`, tenant, application, service, strconv.Itoa(serviceVersion), account)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		out := make([]Resource, 0, 2)
+		for rows.Next() {
+			r, err := scanResource(rows)
+			if err != nil {
+				return err
+			}
+			out = append(out, r)
+		}
+		resources = out
+		return rows.Err()
+	})
+	return resources, err
 }
 func (h *Handlers) handleOfferResolve(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "GET" {
@@ -195,7 +285,10 @@ func (h *Handlers) handleOfferResolve(w http.ResponseWriter, r *http.Request) {
 	}
 	if p.Workload {
 		var cell string
-		if err := h.store.db.QueryRowContext(r.Context(), "SELECT cell_id FROM placements WHERE tenant_id=$1", tenant).Scan(&cell); err != nil || cell != p.CellID {
+		err := pg.WithTenantTx(r.Context(), h.store.db, tenant, func(tx *sql.Tx) error {
+			return tx.QueryRowContext(r.Context(), "SELECT cell_id FROM placements WHERE tenant_id=$1", tenant).Scan(&cell)
+		})
+		if err != nil || cell != p.CellID {
 			auth.Error(w, 403, "tenant_outside_cell")
 			return
 		}

@@ -49,6 +49,18 @@ func roleAllows(p auth.Principal, permission string) bool {
 	}
 }
 
+// writeScope escolhe o tenant sob o qual uma escrita em catalog_resources
+// roda (R6-SEG-01): o tenant proprietario do recurso quando conhecido, ou o
+// escopo administrativo da requisicao (podendo ser "*") para recursos
+// globais — a policy tenant_runtime aceita tenant_id vazio sob qualquer escopo
+// nao vazio.
+func writeScope(resourceTenant, requestTenant string) string {
+	if resourceTenant != "" {
+		return resourceTenant
+	}
+	return requestTenant
+}
+
 func adminScope(r *http.Request) (string, bool) {
 	p, ok := auth.FromContext(r.Context())
 	if !ok {
@@ -166,7 +178,13 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 			}
 			cursor = prior
 		}
-		items, err := h.store.ListResources(r.Context(), kind, tenant, q, state, cursor.ID, cursor.Version, limit+1)
+		var items []Resource
+		var err error
+		if tenant == "*" {
+			items, err = h.store.ListResourcesAudited(r.Context(), "admin_list:"+p.Subject, kind, q, state, cursor.ID, cursor.Version, limit+1)
+		} else {
+			items, err = h.store.ListResources(r.Context(), kind, tenant, q, state, cursor.ID, cursor.Version, limit+1)
+		}
 		if err != nil {
 			catalogError(w, err)
 			return
@@ -202,7 +220,7 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 			writeErr(w, 422, "invalid_resource", "nome, identidade, versão positiva e dados JSON obrigatórios")
 			return
 		}
-		out, err := h.store.SaveResource(r.Context(), resource, 0, p.Subject)
+		out, err := h.store.SaveResource(r.Context(), writeScope(resource.TenantID, tenant), resource, 0, p.Subject)
 		if err != nil {
 			catalogError(w, err)
 			return
@@ -219,7 +237,12 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, 400, "invalid_version", "versão inteira obrigatória")
 		return
 	}
-	resource, err := h.store.GetResource(r.Context(), kind, parts[1], version)
+	var resource Resource
+	if tenant == "*" {
+		resource, err = h.store.GetResourceAudited(r.Context(), "admin_view:"+p.Subject, kind, parts[1], version)
+	} else {
+		resource, err = h.store.GetResource(r.Context(), tenant, kind, parts[1], version)
+	}
 	if err != nil {
 		catalogError(w, err)
 		return
@@ -269,7 +292,7 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 		if len(patch.Data) > 0 {
 			resource.Data = patch.Data
 		}
-		out, err := h.store.SaveResource(r.Context(), resource, expected, p.Subject)
+		out, err := h.store.SaveResource(r.Context(), writeScope(resource.TenantID, tenant), resource, expected, p.Subject)
 		if err != nil {
 			catalogError(w, err)
 			return
@@ -311,7 +334,7 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 				writeJSON(w, 422, v)
 				return
 			}
-			out, err := h.store.PublishResource(r.Context(), resource, expected, p.Subject, command.Reason, v)
+			out, err := h.store.PublishResource(r.Context(), writeScope(resource.TenantID, tenant), resource, expected, p.Subject, command.Reason, v)
 			if err != nil {
 				catalogError(w, err)
 				return
@@ -319,7 +342,7 @@ func (h *Handlers) handleCatalog(w http.ResponseWriter, r *http.Request) {
 			resourceResponse(w, 200, out)
 			return
 		case "suspend":
-			out, err := h.store.SuspendResource(r.Context(), resource, expected, p.Subject, command.Reason)
+			out, err := h.store.SuspendResource(r.Context(), writeScope(resource.TenantID, tenant), resource, expected, p.Subject, command.Reason)
 			if err != nil {
 				catalogError(w, err)
 				return

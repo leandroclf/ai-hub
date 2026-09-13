@@ -22,7 +22,7 @@ data['CAPACITY_POLICY_JSON']='{"version":"r4-fixture-v1","evidence_ref":"r4-loca
 data['EGRESS_HTTP_ORIGINS']='http://provider-sim:8090,http://webhook-sink:8091,http://identity:8080'
 data['EGRESS_PRIVATE_RULES']='provider-sim:8090=10.96.0.0/12;webhook-sink:8091=10.96.0.0/12;identity:8080=10.96.0.0/12'
 docs.append({'apiVersion':'v1','kind':'ConfigMap','metadata':{'name':'hub-runtime','namespace':namespace},'data':data})
-docs.append({'apiVersion':'v1','kind':'Secret','metadata':{'name':'hub-runtime','namespace':namespace},'stringData':{domain.upper()+'_DSN':f'postgres://hub:r2-local-fixture@postgres:5432/hub_{domain}_kind?sslmode=disable' for domain in ['control','core','finance']}})
+docs.append({'apiVersion':'v1','kind':'Secret','metadata':{'name':'hub-runtime','namespace':namespace},'stringData':{domain.upper()+'_DSN':f'postgres://hub_runtime:r2-runtime-fixture@postgres:5432/hub_{domain}_kind?sslmode=disable' for domain in ['control','core','finance']}})
 for name in ['atlas','orbita','cometa','pulsar','libra']:
  docs.append({'apiVersion':'v1','kind':'Secret','metadata':{'name':name+'-workload','namespace':namespace},'stringData':{'client-secret':(root/'identity'/f'{name}-secret.txt').read_text().strip()}})
 print(yaml.safe_dump_all(docs,sort_keys=False))

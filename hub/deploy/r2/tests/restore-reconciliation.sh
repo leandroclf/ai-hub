@@ -53,12 +53,57 @@ if docker exec "$localstack_container" awslocal s3api head-bucket --bucket "$buc
   echo "restore target bucket already exists: $bucket; choose a new R2_RESTORE_SUFFIX or R2_RESTORE_BUCKET" >&2
   exit 2
 fi
+source_objects=$(docker exec "$localstack_container" awslocal s3api list-objects-v2 --bucket r2-custody --query 'length(Contents || `[]`)' --output text)
+# R6-OPE-02-S03: an empty backup, or the mere equality of two zero counts,
+# must never be announced as a reconciled restore — it is a BLOCK. A prior
+# round of this script accepted "restore objects: 0" as evidence; that is
+# exactly the false positive this requirement closes.
+if [[ "$source_objects" == "0" || -z "$source_objects" ]]; then
+  echo "RESTORE_RECONCILIATION=BLOCK reason=empty_source_bucket bucket=r2-custody" >&2
+  exit 1
+fi
 docker exec "$localstack_container" awslocal s3 mb "s3://$bucket" >/dev/null
 docker exec "$localstack_container" awslocal s3 sync s3://r2-custody "s3://$bucket" >/dev/null
-source_objects=$(docker exec "$localstack_container" awslocal s3api list-objects-v2 --bucket r2-custody --query 'length(Contents || `[]`)' --output text)
 restored_objects=$(docker exec "$localstack_container" awslocal s3api list-objects-v2 --bucket "$bucket" --query 'length(Contents || `[]`)' --output text)
 test "$source_objects" = "$restored_objects" || { echo "object restore mismatch: $source_objects != $restored_objects" >&2; exit 1; }
 printf 'restore objects: %s\n' "$source_objects"
+
+# Count equality alone is not proof of recovery: every referenced key/version
+# must resolve to byte-identical content in the restored bucket, and every
+# file_refs row that references an object_version must exist and match its
+# recorded sha256 (R6-OPE-02: "todas as referências resolvem para bytes
+# corretos").
+keys=$(docker exec "$localstack_container" awslocal s3api list-objects-v2 --bucket r2-custody --query 'Contents[].Key' --output text)
+verified_objects=0
+verified_keys_file=$(mktemp)
+trap 'rm -f "$verified_keys_file"' EXIT
+for key in $keys; do
+  source_digest=$(docker exec "$localstack_container" sh -c "awslocal s3 cp 's3://r2-custody/$key' - 2>/dev/null | sha256sum" | awk '{print $1}')
+  restored_digest=$(docker exec "$localstack_container" sh -c "awslocal s3 cp 's3://$bucket/$key' - 2>/dev/null | sha256sum" | awk '{print $1}')
+  test -n "$source_digest" && test "$source_digest" = "$restored_digest" || { echo "object byte mismatch key=$key source=$source_digest restored=$restored_digest" >&2; exit 1; }
+  verified_objects=$((verified_objects + 1))
+  echo "$key" >> "$verified_keys_file"
+  printf 'restore object verified: key=%s sha256=%s\n' "$key" "$source_digest"
+done
+test "$verified_objects" -gt 0 || { echo "no object keys enumerated despite non-zero count: $source_objects" >&2; exit 1; }
+# Every file_refs row scoped to the qualification fixture tenant must resolve
+# to one of the keys just verified byte-for-byte in the restored bucket — a
+# reference to a key that was never actually confirmed is not a "restore
+# obligation preserved," it is an unverified pointer. Scoped to the fixture
+# tenant deliberately: hub_core is the shared long-lived database also used
+# by the Go test suite (R2_CORE_TEST_DSN), which legitimately leaves other
+# tenants' fixture rows (e.g. a test that intentionally simulates S3 being
+# unavailable) with no backing object — that is a different, already-covered
+# concern, not this restore's completeness.
+fixture_tenant=${RESTORE_FIXTURE_TENANT:-restore-qualification}
+referenced_keys=$("${psql_hub[@]}" -d "hub_core_restore_${suffix}" -Atqc "SELECT object_key FROM file_refs WHERE object_key<>'' AND tenant_id='${fixture_tenant}'")
+unresolved=0
+while IFS= read -r referenced; do
+  [[ -z "$referenced" ]] && continue
+  grep -qxF "$referenced" "$verified_keys_file" || { echo "restored file_refs references unverified object key: $referenced" >&2; unresolved=$((unresolved + 1)); }
+done <<< "$referenced_keys"
+test "$unresolved" = "0" || exit 1
+printf 'restore file_refs cross-check: all object_key references resolve to verified bytes\n'
 
 effects_before=$(curl -fsS http://127.0.0.1:18090/__qualification/effects)
 printf 'external effect oracle before reconciliation: %s\n' "$effects_before"

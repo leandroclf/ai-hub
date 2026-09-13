@@ -2,6 +2,7 @@ package atlas
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"ai-hub/hub/internal/platform/auth"
+	"ai-hub/hub/internal/platform/pg"
 )
 
 func TestOfferResolveRequiresVersionedTarget(t *testing.T) {
@@ -35,34 +37,37 @@ func TestOfferResolutionBoundsIndexedCandidates(t *testing.T) {
 	s := integrationStore(t)
 	ctx := context.Background()
 
-	for i := 0; i < 1500; i++ {
-		_, err := s.db.ExecContext(ctx, `
-			INSERT INTO catalog_resources(kind,id,version,tenant_id,name,state,data,author,content_hash)
-			VALUES ('offers',$1,1,'acme',$1,'PUBLISHED',$2,'qualification',$3)
-		`, fmt.Sprintf("unrelated-offer-%04d", i), raw(map[string]any{
-			"application_id": fmt.Sprintf("other-application-%04d", i),
-			"target_id":      "growth-service",
-			"target_version": "1",
-		}), fmt.Sprintf("hash-unrelated-%04d", i))
-		if err != nil {
-			t.Fatal(err)
+	if err := pg.WithTenantTx(ctx, s.db, "acme", func(tx *sql.Tx) error {
+		for i := 0; i < 1500; i++ {
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO catalog_resources(kind,id,version,tenant_id,name,state,data,author,content_hash)
+				VALUES ('offers',$1,1,'acme',$1,'PUBLISHED',$2,'qualification',$3)
+			`, fmt.Sprintf("unrelated-offer-%04d", i), raw(map[string]any{
+				"application_id": fmt.Sprintf("other-application-%04d", i),
+				"target_id":      "growth-service",
+				"target_version": "1",
+			}), fmt.Sprintf("hash-unrelated-%04d", i)); err != nil {
+				return err
+			}
 		}
-	}
-	for _, id := range []string{"eligible-offer-a", "eligible-offer-b"} {
-		_, err := s.db.ExecContext(ctx, `
-			INSERT INTO catalog_resources(kind,id,version,tenant_id,name,state,data,author,content_hash)
-			VALUES ('offers',$1,1,'acme',$1,'PUBLISHED',$2,'qualification',$3)
-		`, id, raw(map[string]any{
-			"application_id": "growth-application",
-			"target_id":      "growth-service",
-			"target_version": "1",
-			"valid_from":     time.Now().UTC().Add(-time.Minute).Format(time.RFC3339),
-			"valid_until":    time.Now().UTC().Add(time.Hour).Format(time.RFC3339),
-			"routes":         []map[string]string{{"provider_account_id": "account-a"}},
-		}), "hash-"+id)
-		if err != nil {
-			t.Fatal(err)
+		for _, id := range []string{"eligible-offer-a", "eligible-offer-b"} {
+			if _, err := tx.ExecContext(ctx, `
+				INSERT INTO catalog_resources(kind,id,version,tenant_id,name,state,data,author,content_hash)
+				VALUES ('offers',$1,1,'acme',$1,'PUBLISHED',$2,'qualification',$3)
+			`, id, raw(map[string]any{
+				"application_id": "growth-application",
+				"target_id":      "growth-service",
+				"target_version": "1",
+				"valid_from":     time.Now().UTC().Add(-time.Minute).Format(time.RFC3339),
+				"valid_until":    time.Now().UTC().Add(time.Hour).Format(time.RFC3339),
+				"routes":         []map[string]string{{"provider_account_id": "account-a"}},
+			}), "hash-"+id); err != nil {
+				return err
+			}
 		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
 	}
 
 	candidates, err := s.listEligibleOffers(ctx, "acme", "growth-application", "growth-service", 1, "")
@@ -82,6 +87,9 @@ func TestOfferResolutionBoundsIndexedCandidates(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer tx.Rollback()
+	if err = pg.SetTenantScope(ctx, tx, "acme"); err != nil {
+		t.Fatal(err)
+	}
 	if _, err = tx.ExecContext(ctx, "SET LOCAL enable_seqscan=off"); err != nil {
 		t.Fatal(err)
 	}
