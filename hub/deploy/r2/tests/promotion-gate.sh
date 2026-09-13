@@ -33,6 +33,12 @@ case "$environment" in
     ;;
   prd)
     missing=()
+    # Production cannot be promoted from prose, a shell PASS or an absent
+    # manifest. The manifest is the binding between scenarios and their
+    # reproducible artifacts; approvals are evaluated only after it passes.
+    if [[ -z "$evidence_manifest" ]]; then
+      missing+=(qualification_evidence_manifest)
+    fi
     [[ -n "$profile" ]] || missing+=(qualification_profile)
     [[ "$isolation" == PASS ]] || missing+=(environment_isolation_proof)
     has_approval P-01 || missing+=(P-01)
