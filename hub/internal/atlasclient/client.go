@@ -18,25 +18,48 @@ import (
 	"time"
 )
 
-// Offer resolves a published, tenant/application scoped snapshot. Authorization
-// decisions are never served past the validity returned by its owner.
+// Offer resolves a published, tenant/application scoped snapshot. The local
+// projection is the hot-path authority until its lease expires; an explicit
+// refresh is available for catalog invalidation/revocation events.
 func (c *Client) Offer(ctx context.Context, tenant, application, service string, serviceVersion int, account string) (atlas.OfferSnapshot, error) {
 	key := fmt.Sprintf("offer:%s:%s:%s:%d:%s", tenant, application, service, serviceVersion, account)
-	q := url.Values{"tenant_id": {tenant}, "application_id": {application}, "service_code": {service}, "service_version": {strconv.Itoa(serviceVersion)}, "provider_account_id": {account}}
-	var out atlas.OfferSnapshot
-	_, err := c.getJSON(ctx, "/v1/offers/resolve?"+q.Encode(), &out)
-	if err == nil {
-		if !time.Now().Before(out.ValidUntil) || out.Hash == "" {
-			return atlas.OfferSnapshot{}, fmt.Errorf("atlasclient: snapshot expired or invalid")
-		}
-		c.setCached(key, out)
-		return out, nil
-	}
 	if cached, ok := c.getCached(key); ok {
 		candidate, valid := cached.(atlas.OfferSnapshot)
 		if valid && candidate.Hash != "" && time.Now().Before(candidate.ValidUntil) {
 			return candidate, nil
 		}
+		c.invalidate(key)
+	}
+	return c.refreshOffer(ctx, key, tenant, application, service, serviceVersion, account)
+}
+
+// OfferAuthoritative forces a lookup at Atlas. Denials and invalid snapshots
+// evict the projection and are never hidden by an older successful offer.
+func (c *Client) OfferAuthoritative(ctx context.Context, tenant, application, service string, serviceVersion int, account string) (atlas.OfferSnapshot, error) {
+	key := fmt.Sprintf("offer:%s:%s:%s:%d:%s", tenant, application, service, serviceVersion, account)
+	return c.refreshOffer(ctx, key, tenant, application, service, serviceVersion, account)
+}
+
+// InvalidateOffer removes a projection after a catalog, account or policy
+// event. Subsequent Offer calls must obtain a new published snapshot.
+func (c *Client) InvalidateOffer(tenant, application, service string, serviceVersion int, account string) {
+	c.invalidate(fmt.Sprintf("offer:%s:%s:%s:%d:%s", tenant, application, service, serviceVersion, account))
+}
+
+func (c *Client) refreshOffer(ctx context.Context, key, tenant, application, service string, serviceVersion int, account string) (atlas.OfferSnapshot, error) {
+	q := url.Values{"tenant_id": {tenant}, "application_id": {application}, "service_code": {service}, "service_version": {strconv.Itoa(serviceVersion)}, "provider_account_id": {account}}
+	var out atlas.OfferSnapshot
+	status, err := c.getJSON(ctx, "/v1/offers/resolve?"+q.Encode(), &out)
+	if err == nil {
+		if !time.Now().Before(out.ValidUntil) || out.Hash == "" {
+			c.invalidate(key)
+			return atlas.OfferSnapshot{}, ErrOfferProjectionInvalid
+		}
+		c.setCached(key, out)
+		return out, nil
+	}
+	if status == http.StatusForbidden || status == http.StatusConflict {
+		c.invalidate(key)
 	}
 	return atlas.OfferSnapshot{}, err
 }
@@ -54,6 +77,25 @@ type Client struct {
 type cacheEntry struct {
 	value   any
 	expires time.Time
+}
+
+// maxCacheEntries bounds unbounded growth from an ever-widening set of
+// tenant/application/service/account combinations. On overflow, expired
+// entries are swept first; a still-full cache drops one arbitrary entry
+// rather than grow past the limit.
+const maxCacheEntries = 10000
+
+var ErrOfferProjectionInvalid = fmt.Errorf("atlasclient: snapshot expired or invalid")
+
+// HTTPError keeps the authoritative status available to callers that must
+// distinguish denial/revocation from temporary Atlas unavailability.
+type HTTPError struct {
+	Status int
+	Path   string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("atlasclient: status %d de %s", e.Status, e.Path)
 }
 
 // New cria um cliente do Atlas.
@@ -130,7 +172,27 @@ func (c *Client) getCached(key string) (any, bool) {
 func (c *Client) setCached(key string, v any) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	if _, exists := c.cache[key]; !exists && len(c.cache) >= maxCacheEntries {
+		now := time.Now()
+		for k, e := range c.cache {
+			if now.After(e.expires) {
+				delete(c.cache, k)
+			}
+		}
+		if len(c.cache) >= maxCacheEntries {
+			for k := range c.cache {
+				delete(c.cache, k)
+				break
+			}
+		}
+	}
 	c.cache[key] = cacheEntry{value: v, expires: time.Now().Add(c.ttl)}
+}
+
+func (c *Client) invalidate(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.cache, key)
 }
 
 func (c *Client) getJSON(ctx context.Context, path string, out any) (int, error) {
@@ -146,7 +208,7 @@ func (c *Client) getJSON(ctx context.Context, path string, out any) (int, error)
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return resp.StatusCode, json.NewDecoder(resp.Body).Decode(out)
 	}
-	return resp.StatusCode, fmt.Errorf("atlasclient: status %d de %s", resp.StatusCode, path)
+	return resp.StatusCode, &HTTPError{Status: resp.StatusCode, Path: path}
 }
 
 // Contract busca o contrato do tenant, usando o cache local quando

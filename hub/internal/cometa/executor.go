@@ -71,8 +71,11 @@ func (e *Executor) SetCapacityController(c *CapacityController) { e.capacity = c
 
 func (e *Executor) acquireCapacity(ctx context.Context, cmd dispatch.Command, snapshot atlas.OfferSnapshot, action, id, owner string) (CapacityPermit, bool, error) {
 	domain := snapshot.SelectedRoute.CapacityDomain
-	if domain == "" || e.capacity == nil {
+	if domain == "" {
 		return CapacityPermit{}, false, nil
+	}
+	if e.capacity == nil {
+		return CapacityPermit{}, true, ErrCapacityPolicy
 	}
 	permit, err := e.capacity.Acquire(ctx, domain, id, cmd.TenantID, cmd.CellID, owner, action)
 	return permit, true, err
@@ -161,6 +164,9 @@ func (e *Executor) Execute(ctx context.Context, cmd dispatch.Command) dispatch.R
 	var snapshot atlas.OfferSnapshot
 	if json.Unmarshal(cmd.ConfigSnapshot, &snapshot) != nil || snapshot.Binding.ID == "" {
 		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "invalid_snapshot"}
+	}
+	if snapshot.Hash != "" && !atlas.ValidSnapshotHash(snapshot) {
+		return dispatch.Result{CommandID: cmd.CommandID, Kind: dispatch.FactRejected, ErrorCode: "snapshot_integrity_failed"}
 	}
 	target, err := atlas.DecodeCatalogData(snapshot.Target)
 	if err != nil || target.AdapterID == "" {

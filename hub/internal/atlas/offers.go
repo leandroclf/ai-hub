@@ -32,6 +32,18 @@ type OfferSnapshot struct {
 	ValidUntil       time.Time  `json:"valid_until"`
 }
 
+// SnapshotHash returns the canonical hash of the accepted snapshot. Hash is
+// excluded from its own input so derived product-step snapshots can be
+// independently verified after serialization and restart.
+func SnapshotHash(snapshot OfferSnapshot) string {
+	snapshot.Hash = ""
+	return contentHash(snapshot)
+}
+
+func ValidSnapshotHash(snapshot OfferSnapshot) bool {
+	return snapshot.Hash != "" && snapshot.Hash == SnapshotHash(snapshot)
+}
+
 func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service string, serviceVersion int, account string) (OfferSnapshot, error) {
 	if serviceVersion < 1 {
 		return OfferSnapshot{}, ErrNotFound
@@ -126,7 +138,7 @@ func (s *Store) ResolveOffer(ctx context.Context, tenant, application, service s
 	if data.ValidUntil != nil && data.ValidUntil.Before(snapshot.ValidUntil) {
 		snapshot.ValidUntil = *data.ValidUntil
 	}
-	snapshot.Hash = contentHash(snapshot)
+	snapshot.Hash = SnapshotHash(snapshot)
 	return snapshot, nil
 }
 
