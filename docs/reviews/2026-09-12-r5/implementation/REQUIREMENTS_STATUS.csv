@@ -1,0 +1,18 @@
+requirement_id,change,status,evidence_ref,notes
+R5-SEG-01,r5-01-fronteiras-de-autorizacao,PARTIAL,SCENARIO_RESULTS#R5-SEG-01-S01,bug de SQL corrigido e S01 provado; S02/S03 nao replicados isoladamente nesta sessao
+R5-SEG-02,r5-01-fronteiras-de-autorizacao,PARTIAL,EVIDENCE_INDEX#4,S01 e limite de cache provados; S03 (multi-replica) nao provado
+R5-SEG-03,r5-01-fronteiras-de-autorizacao,PARTIAL,EVIDENCE_INDEX#9,prova negativa cross-tenant real PASS; inventario completo tabela-policy nao refeito
+R5-EXE-01,r5-02-produtos-e-prazos-duraveis,PARTIAL,EVIDENCE_INDEX#7,implementado no working tree; sem cenario isolado novo
+R5-EXE-02,r5-02-produtos-e-prazos-duraveis,PARTIAL,EVIDENCE_INDEX#7,implementado no working tree; sem cenario isolado novo
+R5-EXE-03,r5-02-produtos-e-prazos-duraveis,PARTIAL,EVIDENCE_INDEX#7,implementado no working tree; sem cenario isolado novo
+R5-EXE-04,r5-02-produtos-e-prazos-duraveis,PARTIAL,EVIDENCE_INDEX#7,implementado no working tree; sem cenario isolado novo
+R5-EXE-05,r5-02-produtos-e-prazos-duraveis,PARTIAL,EVIDENCE_INDEX#7,implementado no working tree; sem cenario isolado novo
+R5-DAD-01,r5-03-integridade-e-reconciliacao,PARTIAL,EVIDENCE_INDEX#7,implementado no working tree; probe manual nao reexecutado nesta sessao
+R5-DAD-02,r5-03-integridade-e-reconciliacao,NOT_STARTED,DECISIONS_AND_BLOCKERS,requer ambiente de restore real
+R5-DAD-03,r5-03-integridade-e-reconciliacao,PARTIAL,FINDINGS_STATUS#F-R5-10,captura efetiva ligada ao ApplyEvent; watermark ainda sem produtor
+R5-DAD-04,r5-03-integridade-e-reconciliacao,PARTIAL,FINDINGS_STATUS#F-R5-16,endpoints de replay adicionados; sem teste HTTP dedicado
+R5-OPE-01,r5-04-capacidade-e-promocao-verificaveis,PARTIAL,FINDINGS_STATUS#F-R5-11,bypass fechado no working tree; reciclagem de permits nao revisada
+R5-OPE-02,r5-04-capacidade-e-promocao-verificaveis,PARTIAL,EVIDENCE_INDEX#10,caminho BLOCK provado; caminho ALLOW com manifesto real nao provado
+R5-OPE-03,r5-04-capacidade-e-promocao-verificaveis,NOT_STARTED,DECISIONS_AND_BLOCKERS,requer kind/k8s
+R5-UX-01,r5-05-console-escalavel-e-contratual,PARTIAL,EVIDENCE_INDEX#11,build limpo; sem E2E de browser
+R5-QUA-01,r5-06-baseline-e-evidencia-integral,PARTIAL,EVIDENCE_INDEX#12,openspec strict PASS; inventario/CSVs nao regenerados

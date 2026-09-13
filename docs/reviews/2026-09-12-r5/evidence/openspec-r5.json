@@ -1,0 +1,70 @@
+{
+  "items": [
+    {
+      "id": "r5-01-fronteiras-de-autorizacao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 85
+    },
+    {
+      "id": "r5-02-produtos-e-prazos-duraveis",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 83
+    },
+    {
+      "id": "r5-03-integridade-e-reconciliacao",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 84
+    },
+    {
+      "id": "r5-04-capacidade-e-promocao-verificaveis",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 83
+    },
+    {
+      "id": "r5-05-console-escalavel-e-contratual",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 83
+    },
+    {
+      "id": "r5-06-baseline-e-evidencia-integral",
+      "type": "change",
+      "valid": true,
+      "issues": [],
+      "durationMs": 84
+    }
+  ],
+  "summary": {
+    "totals": {
+      "items": 6,
+      "passed": 6,
+      "failed": 0
+    },
+    "byType": {
+      "change": {
+        "items": 6,
+        "passed": 6,
+        "failed": 0
+      },
+      "spec": {
+        "items": 0,
+        "passed": 0,
+        "failed": 0
+      }
+    }
+  },
+  "version": "1.0",
+  "root": {
+    "path": "/workspace/scratch/30287dd6a4c3/AI_HUB_R5",
+    "source": "nearest"
+  }
+}

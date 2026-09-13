@@ -1,0 +1,10 @@
+=== RUN   TestR5OperationFactPreservesInteger
+    r5_precision_probe_test.go:7: fato recebido perdeu precisão: {"id":9007199254740992}
+--- FAIL: TestR5OperationFactPreservesInteger (0.00s)
+FAIL
+FAIL	ai-hub/hub/internal/orbita	0.045s
+=== RUN   TestR4WarmTokenSurvivesVaultOutage
+--- PASS: TestR4WarmTokenSurvivesVaultOutage (0.00s)
+PASS
+ok  	ai-hub/hub/internal/providerauth	0.044s
+FAIL

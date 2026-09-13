@@ -1,0 +1,12 @@
+scenario_id,requirement_id,result,oracle,provenance
+R5-SEG-01-S01,R5-SEG-01,PASS,go test TestPostgresOrphanAccountCallbackRequiresSignatureAndDeduplicates,EXECUTION_PLAN#R5-SEG-01
+R5-SEG-01-S02,R5-SEG-01,NOT_RUN,-,cenario nao replicado isoladamente nesta sessao
+R5-SEG-01-S03,R5-SEG-01,NOT_RUN,-,cenario nao replicado isoladamente nesta sessao
+R5-SEG-02-S01,R5-SEG-02,PASS,go test TestOfferDenialIsNeverMaskedByCache,EVIDENCE_INDEX#4
+R5-SEG-02-S02,R5-SEG-02,PASS,go test TestOfferUsesValidProjectionWhenAtlasIsUnavailableAndRejectsExpiredProjection (preexistente),EVIDENCE_INDEX#3
+R5-SEG-02-S03,R5-SEG-02,NOT_RUN,-,requer topologia multi-replica
+R5-SEG-03-S01,R5-SEG-03,PASS,rls-runtime-proof.sh (hub_core/hub_control/hub_finance),EVIDENCE_INDEX#9
+R5-SEG-03-S02,R5-SEG-03,NOT_RUN,-,pool reutilizado/worker tenant alternado nao exercitado
+R5-SEG-03-S03,R5-SEG-03,NOT_RUN,-,escopo operador local vs global nao exercitado
+R5-OPE-02-S_BLOCK,R5-OPE-02,PASS,promotion-gate.sh sem manifesto em prd,EVIDENCE_INDEX#10
+R5-OPE-02-S_ALLOW,R5-OPE-02,NOT_RUN,-,requer manifesto de evidencia real

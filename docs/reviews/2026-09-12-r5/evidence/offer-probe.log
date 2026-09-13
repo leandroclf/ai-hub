@@ -1,0 +1,6 @@
+=== RUN   TestR5OfferDenialMustNotUseCache
+    r5_offer_probe_test.go:6: negação explícita 403 foi substituída por oferta em cache
+--- FAIL: TestR5OfferDenialMustNotUseCache (0.04s)
+FAIL
+FAIL	ai-hub/hub/internal/atlasclient	0.102s
+FAIL

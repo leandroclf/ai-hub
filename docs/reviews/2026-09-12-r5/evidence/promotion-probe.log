@@ -1,0 +1,1 @@
+PROMOTION_GATE=ALLOW environment=prd profile=unverified approvals=P-01,P-08,P-10 regional_profile=none

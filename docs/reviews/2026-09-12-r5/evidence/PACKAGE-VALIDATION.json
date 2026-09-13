@@ -1,0 +1,14 @@
+{
+  "snapshot": "f87ce33034ae29c9431b1910dcc6a633b545e330",
+  "review_date": "2026-09-12",
+  "changes_added": 6,
+  "requirements_added": 17,
+  "scenarios_added": 51,
+  "tasks_added": 88,
+  "requirements_total": 218,
+  "scenarios_total": 783,
+  "go_test_pass": 137,
+  "go_test_skip": 69,
+  "integrated_qualification": "NOT_RUN",
+  "production_code_changed": false
+}
